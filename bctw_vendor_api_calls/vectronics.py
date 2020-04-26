@@ -120,8 +120,6 @@ def vectronics_api_calls():
             except requests.exceptions.RequestException as e:
                 print(str(e))
 
-            print('Length of array:', len(a))
-            print(a)
             if len(a) > 0:
 
                 for ii in range(len(a)):

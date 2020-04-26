@@ -38,7 +38,6 @@ def lotex_api_calls():
                         device_info_dict = device_position_info.json()
                         a.append(["api_lotex_device_position_data", device_info_dict])
                     if device_position_info.status_code == 400:
-                        # only need to record/print this once for an ID as it must not exist anywhere in their system
                         print('This device was not found:', device_id)
                     if not device_position_info.json():
                         # a device may exist in the system but not have position data
@@ -65,6 +64,8 @@ def lotex_api_calls():
                     if not list_of_specific_device_information.status_code == 400 and list_of_specific_device_information.json():
                         list_of_specific_device_information_dict = list_of_specific_device_information.json()
                         a.append(["api_lotex_device_info", list_of_specific_device_information_dict])
+                    if device_position_info.status_code == 400:
+                        print('This device was not found:', device_id)
                     if not list_of_specific_device_information.json():
                         print('Device found but there is device information:', device_id)
                 except requests.exceptions.RequestException as e:
