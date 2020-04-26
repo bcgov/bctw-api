@@ -7,6 +7,7 @@ from database import CursorFromConnectionFromPool
 
 
 def lotex_api_calls():
+
     login_dict = lotex_login()
 
     if type(login_dict) == dict:

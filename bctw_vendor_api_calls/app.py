@@ -47,7 +47,7 @@ def main():
     # At the time of writing, ATS has no API
     ########################################
 
-    # vectronics_api_calls()
+    vectronics_api_calls()
     lotex_api_calls()
 
     return "Database Loaded"

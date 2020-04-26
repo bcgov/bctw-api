@@ -4,9 +4,9 @@ import sys
 
 
 def build_query(table_name, json_dict):
-    print("\ntable name for JSON data: ", table_name)
-
-    print("\nJSON records object type:", type(json_dict))  # should return "<class 'list'>"
+    # print("\ntable name for JSON data: ", table_name)
+    #
+    # print("\nJSON records object type:", type(json_dict))  # should return "<class 'list'>"
 
     # concatenate a SQL string
     sql_string = 'INSERT INTO {} '.format(table_name)
@@ -17,7 +17,7 @@ def build_query(table_name, json_dict):
 
         # get the column names from the first record
         columns = list(first_record.keys())
-        print("\ncolumns name: ", columns)
+        # print("\ncolumns name: ", columns)
 
     # if just one dict obj or nested JSON dict
     else:
@@ -51,8 +51,8 @@ def build_query(table_name, json_dict):
     # remove the last comma and end statement with a semicolon
     sql_string = sql_string[:-2] + ";"
 
-    print("\nSQL string")
-    print(sql_string)
+    # print("\nSQL string")
+    # print(sql_string)
 
     with CursorFromConnectionFromPool() as cursor:
         # only attempt to execute SQL if cursor is valid
