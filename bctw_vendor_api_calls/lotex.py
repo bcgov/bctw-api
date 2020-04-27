@@ -67,7 +67,7 @@ def lotex_api_calls():
                     if device_position_info.status_code == 400:
                         print('This device was not found:', device_id)
                     if not list_of_specific_device_information.json():
-                        print('Device found but there is device information:', device_id)
+                        print('Device found but there is no device information:', device_id)
                 except requests.exceptions.RequestException as e:
                     print(str(e))
 
