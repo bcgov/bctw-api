@@ -24,7 +24,6 @@ def vectronics_api_calls():
             key = i[1]
 
             print(device_id)
-            print(key)
 
             a = []
 
