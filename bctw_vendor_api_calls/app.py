@@ -1,5 +1,7 @@
 from lotex import lotex_api_calls
 from vectronics import vectronics_api_calls
+from vectronic_data_transfer import transfer_vectronic_data
+from lotex_data_transfer import transfer_lotex_data
 from database import Database
 from flask import Flask
 
@@ -12,12 +14,12 @@ def main():
     # Local machine test database
     #############################
 
-    # Database.initialise(
-    #     dbname="sample_caribou_data",
-    #     user="postgres",
-    #     host="127.0.0.1",
-    #     password="Ch3k@v88",
-    #     port=5433)
+    Database.initialise(
+        dbname="sample_caribou_data",
+        user="postgres",
+        host="127.0.0.1",
+        password="Ch3k@v88",
+        port=5433)
 
     ######################################
     # Connect to database inside OpenShift
@@ -49,6 +51,9 @@ def main():
 
     vectronics_api_calls()
     lotex_api_calls()
+
+    transfer_vectronic_data()
+    transfer_lotex_data()
 
     return "Database Loaded"
 

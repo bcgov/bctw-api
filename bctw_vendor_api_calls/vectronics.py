@@ -6,11 +6,14 @@ from psycopg2 import Error
 
 
 def vectronics_api_calls():
+    # Clear staggin tables
+    vectronics_truncate_tables()
+
     # Create cursor
     with CursorFromConnectionFromPool() as cursor:
         # only attempt to execute SQL if cursor is valid
         if cursor:
-            sql_string = 'SELECT idcollar, collarkey from api_vectronics_collar_data;'
+            sql_string = 'SELECT idcollar, collarkey FROM api_vectronics_collar_data LIMIT 10;'
 
             try:
                 cursor.execute(sql_string)
@@ -129,3 +132,20 @@ def vectronics_api_calls():
             else:
                 print('All Vectronic calls failed')
     return
+
+
+def vectronics_truncate_tables():
+    # Create cursor
+    with CursorFromConnectionFromPool() as cursor:
+        # only attempt to execute SQL if cursor is valid
+        if cursor:
+            sql_string = 'TRUNCATE TABLE api_gpsplusx_device_activity_data,' \
+                         'api_gpsplusx_device_gps_data, api_gpsplusx_device_mortality_data,' \
+                         'api_gpsplusx_device_mortality_implant_data, api_gpsplusx_device_proximity_data,'\
+                         'api_gpsplusx_device_separation_data;'
+
+            try:
+                cursor.execute(sql_string)
+            except(Exception, Error) as error:
+                print("\nexecute_sql() error: ", error)
+        return

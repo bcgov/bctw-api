@@ -7,6 +7,8 @@ from database import CursorFromConnectionFromPool
 
 
 def lotex_api_calls():
+    
+    lotex_truncate_tables()
 
     login_dict = lotex_login()
 
@@ -19,7 +21,7 @@ def lotex_api_calls():
         with CursorFromConnectionFromPool() as cursor:
             # only attempt to execute SQL if cursor is valid
             if cursor:
-                sql_string = 'SELECT device_id from api_lotex_collar_data;'
+                sql_string = 'SELECT device_id FROM api_lotex_collar_data LIMIT 10;'
 
                 try:
                     cursor.execute(sql_string)
@@ -78,3 +80,18 @@ def lotex_api_calls():
 
                         build_query.build_query(table_name, info_dict)
         return
+
+
+def lotex_truncate_tables():
+    # Create cursor
+    with CursorFromConnectionFromPool() as cursor:
+        # only attempt to execute SQL if cursor is valid
+        if cursor:
+            sql_string = 'TRUNCATE TABLE api_lotex_device_info,' \
+                         'api_lotex_device_position_data,' \
+                         'api_lotex_devices_by_user;'
+            try:
+                cursor.execute(sql_string)
+            except(Exception, Error) as error:
+                print("\nexecute_sql() error: ", error)
+    return
