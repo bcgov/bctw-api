@@ -130,7 +130,7 @@ def vectronics_api_calls():
 
                     build_query.build_query(table_name, info_dict)
             else:
-                print('All Vectronic calls failed')
+                print('Vectronic calls failed for ID:', device_id)
     return
 
 

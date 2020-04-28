@@ -80,6 +80,8 @@ def lotex_api_calls():
                         info_dict = a[ii][1]
 
                         build_query.build_query(table_name, info_dict)
+                else:
+                    print('Lotex calls failed for ID:', device_id)
         return
 
 
