@@ -6,8 +6,10 @@ from psycopg2 import Error
 
 
 def vectronics_api_calls():
-    # Clear staggin tables
+
     vectronics_truncate_tables()
+
+    print('Lotex staging tables truncated')
 
     # Create cursor
     with CursorFromConnectionFromPool() as cursor:
