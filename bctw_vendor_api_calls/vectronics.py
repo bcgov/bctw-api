@@ -13,7 +13,7 @@ def vectronics_api_calls():
     with CursorFromConnectionFromPool() as cursor:
         # only attempt to execute SQL if cursor is valid
         if cursor:
-            sql_string = 'SELECT idcollar, collarkey FROM api_vectronics_collar_data LIMIT 10;'
+            sql_string = 'SELECT idcollar, collarkey FROM api_vectronics_collar_data LIMIT 4;'
 
             try:
                 cursor.execute(sql_string)
