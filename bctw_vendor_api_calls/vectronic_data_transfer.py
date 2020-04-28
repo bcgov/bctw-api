@@ -154,7 +154,6 @@ def transfer_vectronic_data():
                          'NULL,  ' \
                          'NULL  ' \
                          'FROM api_gpsplusx_device_gps_data;' % param
-            print(sql_string)
             try:
                 cursor.execute(sql_string)
             except(Exception, Error) as error:

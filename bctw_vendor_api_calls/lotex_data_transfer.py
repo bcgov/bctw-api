@@ -154,7 +154,6 @@ def transfer_lotex_data():
                          'NULL, ' \
                          'NULL   ' \
                          'FROM api_lotex_device_position_data; ' % param
-            print(sql_string)
             try:
                 cursor.execute(sql_string)
             except(Exception, Error) as error:
