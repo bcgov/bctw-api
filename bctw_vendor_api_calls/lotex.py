@@ -21,7 +21,7 @@ def lotex_api_calls():
         with CursorFromConnectionFromPool() as cursor:
             # only attempt to execute SQL if cursor is valid
             if cursor:
-                sql_string = 'SELECT device_id FROM api_lotex_collar_data LIMIT 4;'
+                sql_string = 'SELECT device_id FROM api_lotex_collar_data LIMIT 5;'
 
                 try:
                     cursor.execute(sql_string)
