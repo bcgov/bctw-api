@@ -14,12 +14,12 @@ def main():
     # Local machine test database
     #############################
 
-    Database.initialise(
-        dbname="sample_caribou_data",
-        user="postgres",
-        host="127.0.0.1",
-        password="Ch3k@v88",
-        port=5433)
+    # Database.initialise(
+    #     dbname="sample_caribou_data",
+    #     user="postgres",
+    #     host="127.0.0.1",
+    #     password="Ch3k@v88",
+    #     port=5433)
 
     ######################################
     # Connect to database inside OpenShift
