@@ -25,23 +25,23 @@ def main():
     # Connect to database inside OpenShift
     ######################################
 
-    # Database.initialise(
-    #     dbname="bctw",
-    #     user="bctw",
-    #     host="bctw-db",
-    #     password="data4Me",
-    #     port=5432)
+    Database.initialise(
+        dbname="bctw",
+        user="bctw",
+        host="bctw-db",
+        password="data4Me",
+        port=5432)
 
     ######################################
     # Connect to database inside OpenShift
     ######################################
 
-    Database.initialise(
-        dbname="bctw",
-        user="bctw",
-        host="bctw-db-dgsbmb-dev.pathfinder.gov.bc.ca",
-        password="data4Me",
-        port=5432)
+    # Database.initialise(
+    #     dbname="bctw",
+    #     user="bctw",
+    #     host="bctw-db-dgsbmb-dev.pathfinder.gov.bc.ca",
+    #     password="data4Me",
+    #     port=5432)
 
     ##################################################
     # Connect to OpenShift database from local machine
