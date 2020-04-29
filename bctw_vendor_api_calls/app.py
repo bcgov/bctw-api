@@ -25,12 +25,12 @@ def main():
     # Connect to database inside OpenShift
     ######################################
 
-    # Database.initialise(
-    #     dbname="bctw",
-    #     user="bctw",
-    #     host="bctw-db",
-    #     password="data4Me",
-    #     port=5432)
+    Database.initialise(
+        dbname="bctw",
+        user="bctw",
+        host="bctw-db",
+        password="data4Me",
+        port=5432)
 
     ######################################
     # Connect to database inside OpenShift
@@ -60,12 +60,12 @@ def main():
     # E.g. oc port-forward bctw-db-9-m7hx7 5432:5432
     ##################################################
 
-    Database.initialise(
-        dbname="bctw",
-        user="bctw",
-        host="127.0.0.1",
-        password="data4Me",
-        port=5432)
+    # Database.initialise(
+    #     dbname="bctw",
+    #     user="bctw",
+    #     host="127.0.0.1",
+    #     password="data4Me",
+    #     port=5432)
 
     ########################################
     # At the time of writing, ATS has no API
