@@ -104,7 +104,7 @@ def main():
 
     gc.collect()
 
-    return "Database Loaded"
+    # return "Database Loaded"
 
 
 if __name__ == '__main__':
