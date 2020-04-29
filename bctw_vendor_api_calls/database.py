@@ -6,8 +6,8 @@ class Database:
 
     @classmethod
     def initialise(cls, **kwargs):
-        cls.__connection_pool = pool.SimpleConnectionPool(5,
-                                                          40,
+        cls.__connection_pool = pool.SimpleConnectionPool(2,
+                                                          50,
                                                           **kwargs)
 
     @classmethod
