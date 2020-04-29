@@ -4,12 +4,23 @@ from vectronic_data_transfer import transfer_vectronic_data
 from lotex_data_transfer import transfer_lotex_data
 from database import Database
 from flask import Flask
+import gc
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def main():
+    for name in dir():
+        if not name.startswith('_'):
+            del globals()[name]
+
+    for name in dir():
+        if not name.startswith('_'):
+            del locals()[name]
+
+    gc.collect()
+
     #############################
     # Local machine test database
     #############################
@@ -82,6 +93,16 @@ def main():
 
     transfer_lotex_data()
     print('Lotex data transfered')
+
+    for name in dir():
+        if not name.startswith('_'):
+            del globals()[name]
+
+    for name in dir():
+        if not name.startswith('_'):
+            del locals()[name]
+
+    gc.collect()
 
     return "Database Loaded"
 
