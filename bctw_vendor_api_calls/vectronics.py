@@ -9,7 +9,7 @@ def vectronics_api_calls():
 
     vectronics_truncate_tables()
 
-    print('Lotex staging tables truncated')
+    print('Vectronic staging tables truncated')
 
     # Create cursor
     with CursorFromConnectionFromPool() as cursor:
