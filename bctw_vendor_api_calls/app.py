@@ -50,10 +50,16 @@ def main():
     ########################################
 
     vectronics_api_calls()
+    print('Vectronic data pulled')
+
     lotex_api_calls()
+    print('Lotex data pulled')
 
     transfer_vectronic_data()
+    print('Vectronic data transfered')
+
     transfer_lotex_data()
+    print('Lotex data transfered')
 
     return "Database Loaded"
 
