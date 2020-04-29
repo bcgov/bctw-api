@@ -94,7 +94,9 @@ def lotex_truncate_tables():
         if cursor:
             sql_string = 'TRUNCATE TABLE api_lotex_device_info,' \
                          'api_lotex_device_position_data,' \
-                         'api_lotex_devices_by_user;'
+                         'api_lotex_devices_by_user' \
+                         'api_lotex_collar_data' \
+                         'api_lotex_lp;'
             try:
                 cursor.execute(sql_string)
             except(Exception, Error) as error:
