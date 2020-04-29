@@ -83,7 +83,7 @@ def main():
     transfer_lotex_data()
     print('Lotex data transfered')
 
-    return "Database Loaded"
+    # return "Database Loaded"
 
 
 if __name__ == '__main__':
