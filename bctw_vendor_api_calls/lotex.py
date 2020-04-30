@@ -40,7 +40,7 @@ def lotex_api_calls():
         if rs:
             for i in rs:
                 lotex_device_id = i[0]
-                print('Lotex ID:', device_id)
+                print('Lotex ID:', lotex_device_id)
                 a = []
                 try:
                     device_position_info = requests.get(constants.LOTEX_URL + '/gps?deviceId=' + str(lotex_device_id),
