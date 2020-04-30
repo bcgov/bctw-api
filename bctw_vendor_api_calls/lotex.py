@@ -4,9 +4,19 @@ import constants
 import build_query
 from psycopg2 import Error
 from database import CursorFromConnectionFromPool
+import gc
 
 
 def lotex_api_calls():
+    for name in dir():
+        if not name.startswith('_'):
+            del globals()[name]
+
+    for name in dir():
+        if not name.startswith('_'):
+            del locals()[name]
+
+    gc.collect()
 
     login_dict = lotex_login()
 
@@ -29,20 +39,20 @@ def lotex_api_calls():
 
         if rs:
             for i in rs:
-                device_id = i[0]
+                lotex_device_id = i[0]
                 print('Lotex ID:', device_id)
                 a = []
                 try:
-                    device_position_info = requests.get(constants.LOTEX_URL + '/gps?deviceId=' + str(device_id),
+                    device_position_info = requests.get(constants.LOTEX_URL + '/gps?deviceId=' + str(lotex_device_id),
                                                         auth=BearerAuth(bearer_token))
                     if not device_position_info.status_code == 400 and device_position_info.json():
                         device_info_dict = device_position_info.json()
                         a.append(["api_lotex_device_position_data", device_info_dict])
                     if device_position_info.status_code == 400:
-                        print('This device was not found:', device_id)
+                        print('This device was not found:', lotex_device_id)
                     if not device_position_info.json():
                         # a device may exist in the system but not have position data
-                        print('This device exists but has no position data:', device_id)
+                        print('This device exists but has no position data:', lotex_device_id)
                 except requests.exceptions.RequestException as e:
                     print(str(e))
 
@@ -60,15 +70,15 @@ def lotex_api_calls():
 
                 try:
                     list_of_specific_device_information = requests.get(
-                        constants.LOTEX_URL + '/devices/' + str(device_id),
+                        constants.LOTEX_URL + '/devices/' + str(lotex_device_id),
                         auth=BearerAuth(bearer_token))
                     if not list_of_specific_device_information.status_code == 400 and list_of_specific_device_information.json():
                         list_of_specific_device_information_dict = list_of_specific_device_information.json()
                         a.append(["api_lotex_device_info", list_of_specific_device_information_dict])
                     if device_position_info.status_code == 400:
-                        print('This device was not found:', device_id)
+                        print('This device was not found:', lotex_device_id)
                     if not list_of_specific_device_information.json():
-                        print('Device found but there is no device information:', device_id)
+                        print('Device found but there is no device information:', lotex_device_id)
                 except requests.exceptions.RequestException as e:
                     print(str(e))
 
@@ -79,8 +89,5 @@ def lotex_api_calls():
 
                         build_query.build_query(table_name, info_dict)
                 else:
-                    print('Lotex calls failed for ID:', device_id)
-        return
-
-
-
+                    print('Lotex calls failed for ID:', lotex_device_id)
+        # return

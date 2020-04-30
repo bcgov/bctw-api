@@ -3,10 +3,17 @@ import constants
 from database import CursorFromConnectionFromPool
 import build_query
 from psycopg2 import Error
+import gc
 
 
 def vectronic_api_calls():
+    for name in dir():
+        if not name.startswith('_'):
+            del globals()[name]
 
+    for name in dir():
+        if not name.startswith('_'):
+            del locals()[name]
     print('Vectronic staging tables truncated')
 
     # Create cursor
@@ -23,88 +30,88 @@ def vectronic_api_calls():
 
     if rs:
         for i in rs:
-            device_id = i[0]
+            vec_device_id = i[0]
             key = i[1]
 
-            print('Vectronic ID:', device_id)
+            print('Vectronic ID:', vec_device_id)
 
             a = []
 
             try:
                 device_mortality_implant_data = requests.get(
-                    constants.VECTRONICS_URL + str(device_id) + '/mit?collarkey=' + str(key))
+                    constants.VECTRONICS_URL + str(vec_device_id) + '/mit?collarkey=' + str(key))
                 if not device_mortality_implant_data.status_code == 400 and device_mortality_implant_data.json():
                     device_mortality_implant_data_dict = device_mortality_implant_data.json()
                     a.append(["api_gpsplusx_device_mortality_implant_data", device_mortality_implant_data_dict])
                 if device_mortality_implant_data.status_code == 400:
-                    print('This device was not found:', device_id)
+                    print('This device was not found:', vec_device_id)
                 if not device_mortality_implant_data.json():
-                    print('This device exists but has no mortality implant data', device_id)
+                    print('This device exists but has no mortality implant data', vec_device_id)
             except requests.exceptions.RequestException as e:
                 print(str(e))
 
             try:
                 device_vaginal_implant_data = requests.get(
-                    constants.VECTRONICS_URL + str(device_id) + '/vit?collarkey=' + str(key))
+                    constants.VECTRONICS_URL + str(vec_device_id) + '/vit?collarkey=' + str(key))
                 if not device_vaginal_implant_data.status_code == 400 and device_vaginal_implant_data.json():
                     device_vaginal_implant_data_dict = device_vaginal_implant_data.json()
                     a.append(["api_gpsplusx_device_vaginal_implant_data", device_vaginal_implant_data_dict])
                 if device_vaginal_implant_data.status_code == 400:
-                    print('This device was not found:', device_id)
+                    print('This device was not found:', vec_device_id)
                 if not device_vaginal_implant_data.json():
-                    print('This device exists but has no vaginal implant data', device_id)
+                    print('This device exists but has no vaginal implant data', vec_device_id)
             except requests.exceptions.RequestException as e:
                 print(str(e))
 
             try:
                 device_separation_data = requests.get(
-                    constants.VECTRONICS_URL + str(device_id) + '/sep?collarkey=' + str(key))
+                    constants.VECTRONICS_URL + str(vec_device_id) + '/sep?collarkey=' + str(key))
                 if not device_separation_data.status_code == 400 and device_separation_data.json():
                     device_separation_data_dict = device_separation_data.json()
                     a.append(["api_gpsplusx_device_separation_data", device_separation_data_dict])
                 if device_separation_data.status_code == 400:
-                    print('This device was not found:', device_id)
+                    print('This device was not found:', vec_device_id)
                 if not device_separation_data.json():
-                    print('This device exists but has no separation data', device_id)
+                    print('This device exists but has no separation data', vec_device_id)
             except requests.exceptions.RequestException as e:
                 print(str(e))
 
             try:
                 device_proximity_data = requests.get(
-                    constants.VECTRONICS_URL + str(device_id) + '/prx?collarkey=' + str(key))
+                    constants.VECTRONICS_URL + str(vec_device_id) + '/prx?collarkey=' + str(key))
                 if not device_proximity_data.status_code == 400 and device_proximity_data.json():
                     device_proximity_data_dict = device_proximity_data.json()
                     a.append(["api_gpsplusx_device_proximity_data", device_proximity_data_dict])
                 if device_proximity_data.status_code == 400:
-                    print('This device was not found:', device_id)
+                    print('This device was not found:', vec_device_id)
                 if not device_proximity_data.json():
-                    print('This device exists but has no proximity data', device_id)
+                    print('This device exists but has no proximity data', vec_device_id)
             except requests.exceptions.RequestException as e:
                 print(str(e))
 
             try:
                 device_activity_data = requests.get(
-                    constants.VECTRONICS_URL + str(device_id) + '/act?collarkey=' + str(key))
+                    constants.VECTRONICS_URL + str(vec_device_id) + '/act?collarkey=' + str(key))
                 if not device_activity_data.status_code == 400 and device_activity_data.json():
                     device_activity_data_dict = device_activity_data.json()
                     a.append(["api_gpsplusx_device_activity_data", device_activity_data_dict])
                 if device_activity_data.status_code == 400:
-                    print('This device was not found:', device_id)
+                    print('This device was not found:', vec_device_id)
                 if not device_activity_data.json():
-                    print('This device exists but has no activity data:', device_id)
+                    print('This device exists but has no activity data:', vec_device_id)
             except requests.exceptions.RequestException as e:
                 print(str(e))
 
             try:
                 device_gps_data = requests.get(
-                    constants.VECTRONICS_URL + str(device_id) + '/gps?collarkey=' + str(key))
+                    constants.VECTRONICS_URL + str(vec_device_id) + '/gps?collarkey=' + str(key))
                 if not device_gps_data.status_code == 400 and device_gps_data.json():
                     device_gps_data_dict = device_gps_data.json()
                     a.append(["api_gpsplusx_device_gps_data", device_gps_data_dict])
                 if device_gps_data.status_code == 400:
-                    print('This device was not found:', device_id)
+                    print('This device was not found:', vec_device_id)
                 if not device_gps_data.json():
-                    print('This device exists but has no GPS data:', device_id)
+                    print('This device exists but has no GPS data:', vec_device_id)
             except requests.exceptions.RequestException as e:
                 print(str(e))
 
@@ -130,5 +137,5 @@ def vectronic_api_calls():
 
                     build_query.build_query(table_name, info_dict)
             else:
-                print('Vectronic calls failed for ID:', device_id)
-    return
+                print('Vectronic calls failed for ID:', vec_device_id)
+    # return
