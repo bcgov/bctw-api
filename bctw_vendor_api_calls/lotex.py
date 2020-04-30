@@ -58,19 +58,19 @@ def lotex_api_calls():
                 #         print(str(e))
                 ############################################################################
 
-                # try:
-                #     list_of_specific_device_information = requests.get(
-                #         constants.LOTEX_URL + '/devices/' + str(device_id),
-                #         auth=BearerAuth(bearer_token))
-                #     if not list_of_specific_device_information.status_code == 400 and list_of_specific_device_information.json():
-                #         list_of_specific_device_information_dict = list_of_specific_device_information.json()
-                #         a.append(["api_lotex_device_info", list_of_specific_device_information_dict])
-                #     if device_position_info.status_code == 400:
-                #         print('This device was not found:', device_id)
-                #     if not list_of_specific_device_information.json():
-                #         print('Device found but there is no device information:', device_id)
-                # except requests.exceptions.RequestException as e:
-                #     print(str(e))
+                try:
+                    list_of_specific_device_information = requests.get(
+                        constants.LOTEX_URL + '/devices/' + str(device_id),
+                        auth=BearerAuth(bearer_token))
+                    if not list_of_specific_device_information.status_code == 400 and list_of_specific_device_information.json():
+                        list_of_specific_device_information_dict = list_of_specific_device_information.json()
+                        a.append(["api_lotex_device_info", list_of_specific_device_information_dict])
+                    if device_position_info.status_code == 400:
+                        print('This device was not found:', device_id)
+                    if not list_of_specific_device_information.json():
+                        print('Device found but there is no device information:', device_id)
+                except requests.exceptions.RequestException as e:
+                    print(str(e))
 
                 if len(a) > 0:
                     for ii in range(len(a)):
