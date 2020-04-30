@@ -7,7 +7,6 @@ from database import CursorFromConnectionFromPool
 
 
 def lotex_api_calls():
-    lotex_truncate_tables()
 
     print('Lotex staging tables truncated')
 
@@ -86,16 +85,4 @@ def lotex_api_calls():
         return
 
 
-def lotex_truncate_tables():
-    # Create cursor
-    with CursorFromConnectionFromPool() as cursor:
-        # only attempt to execute SQL if cursor is valid
-        if cursor:
-            sql_string = 'TRUNCATE TABLE api_lotex_device_info,' \
-                         'api_lotex_device_position_data,' \
-                         'api_lotex_devices_by_user;'
-            try:
-                cursor.execute(sql_string)
-            except(Exception, Error) as error:
-                print("\nexecute_sql() error: ", error)
-    return
+

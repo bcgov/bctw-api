@@ -1,7 +1,8 @@
 from lotex import lotex_api_calls
-from vectronics import vectronics_api_calls
+from vectronic import vectronic_api_calls
 from vectronic_data_transfer import transfer_vectronic_data
 from lotex_data_transfer import transfer_lotex_data
+from truncate_tables import truncate_vendor_merge_table, vectronic_truncate_tables, lotex_truncate_tables
 from database import Database
 from flask import Flask
 import gc
@@ -36,12 +37,12 @@ def main():
     # Connect to database inside OpenShift
     ######################################
 
-    Database.initialise(
-        dbname="bctw",
-        user="bctw",
-        host="bctw-db",
-        password="data4Me",
-        port=5432)
+    # Database.initialise(
+    #     dbname="bctw",
+    #     user="bctw",
+    #     host="bctw-db",
+    #     password="data4Me",
+    #     port=5432)
 
     ######################################
     # Connect to database inside OpenShift
@@ -58,12 +59,12 @@ def main():
     # Connect to database inside OpenShift
     ######################################
 
-    # Database.initialise(
-    #     dbname="bctw",
-    #     user="bctw",
-    #     host="bctw - db.dgsbmb - dev.svc.cluster.local",
-    #     password="data4Me",
-    #     port=5432)
+    Database.initialise(
+        dbname="bctw",
+        user="bctw",
+        host="bctw - db.dgsbmb - dev.svc.cluster.local",
+        password="data4Me",
+        port=5432)
 
     ##################################################
     # Connect to OpenShift database from local machine
@@ -82,11 +83,20 @@ def main():
     # At the time of writing, ATS has no API
     ########################################
 
-    vectronics_api_calls()
+    vectronic_truncate_tables()
+    print('Vectronics tables truncated')
+
+    vectronic_api_calls()
     print('Vectronic data pulled')
+
+    lotex_truncate_tables()
+    print('Lotex tables truncated')
 
     lotex_api_calls()
     print('Lotex data pulled')
+
+    truncate_vendor_merge_table()
+    print('vendor_merge_table truncated')
 
     transfer_vectronic_data()
     print('Vectronic data transfered')
