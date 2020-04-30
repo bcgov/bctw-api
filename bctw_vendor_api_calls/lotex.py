@@ -8,8 +8,6 @@ from database import CursorFromConnectionFromPool
 
 def lotex_api_calls():
 
-    print('Lotex staging tables truncated')
-
     login_dict = lotex_login()
 
     if type(login_dict) == dict:
