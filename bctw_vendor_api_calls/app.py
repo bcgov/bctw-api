@@ -43,6 +43,7 @@ def main():
         host="bctw-db",
         password="data4Me",
         port=5432)
+
     ######################################
     # Connect to database inside OpenShift
     ######################################
@@ -113,7 +114,7 @@ def main():
 
     gc.collect()
 
-    return "Database Loaded"
+    return
 
 
 if __name__ == '__main__':
