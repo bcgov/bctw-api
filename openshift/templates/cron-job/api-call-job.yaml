@@ -1,0 +1,86 @@
+---
+kind: 'Template'
+apiVersion: 'v1'
+metadata:
+  name: 'cronjob-${JOB_NAME}'
+  annotations:
+    description: 'Cronjob to call API using Node.js'
+    tags: 'scheduler,cronjob,apicall'
+objects:
+  - kind: 'CronJob'
+    apiVersion: 'batch/v1beta1'
+    metadata:
+      name: '${JOB_NAME}'
+      namespace: ${NAMESPACE}
+      labels:
+        template: 'bctw-cronjob'
+        cronjob: '${JOB_NAME}'
+    spec:
+      schedule: '${SCHEDULE}'
+      concurrencyPolicy: 'Forbid'
+      successfulJobsHistoryLimit: ${{SUCCESS_JOBS_HISTORY_LIMIT}}
+      failedJobsHistoryLimit: ${{FAILED_JOBS_HISTORY_LIMIT}}
+      jobTemplate:
+        metadata:
+          labels:
+            template: 'bctw-cronjob'
+            cronjob: '${JOB_NAME}'
+        spec:
+          backoffLimit: ${{JOB_BACKOFF_LIMIT}}
+          template:
+            spec:
+              containers:
+                - name: '${JOB_NAME}'
+                  image: 'docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}'
+                  command:
+                    - 'npm'
+                    - 'run'
+                    - 'externalapicall'
+                  #env:
+              restartPolicy: 'Never'
+              terminationGracePeriodSeconds: 30
+              activeDeadlineSeconds: 90
+              dnsPolicy: 'ClusterFirst'
+parameters:
+  - name: 'NAMESPACE'
+    displayName: 'Namespace'
+    description: 'Name of the Namespace where to deploy the Scheduled Job'
+    value: 'dev'
+    required: true
+  - name: 'JOB_NAME'
+    displayName: 'Job Name'
+    description: 'Name of the Scheduled Job to Create.'
+    value: 'bctw-externalapi'
+    required: true
+  - name: 'IMAGE_NAMESPACE'
+    displayName: 'Image Namespace'
+    description: 'The locate of the image to use for this cron job.'
+    value: 'dev'
+    required: true
+  - name: 'IMAGE_NAME'
+    displayName: 'Image Name'
+    description: 'The image name to use for this cron job.'
+    value: 'cronjob-app:latest'
+    required: true
+  - name: 'SCHEDULE'
+    displayName: 'Cron Schedule'
+    description: 'Cron Schedule to Execute the Job (in UTC)'
+    # Currently targeting 4:00 AM weekley
+    #value: '0 14 * * 0'
+    value: '*/3 * * * *' #every three minutes
+    required: true
+  - name: 'SUCCESS_JOBS_HISTORY_LIMIT'
+    displayName: 'Successful Job History Limit'
+    description: 'The number of successful jobs that will be retained'
+    value: '3'
+    required: true
+  - name: 'FAILED_JOBS_HISTORY_LIMIT'
+    displayName: 'Failed Job History Limit'
+    description: 'The number of failed jobs that will be retained'
+    value: '3'
+    required: true
+  - name: 'JOB_BACKOFF_LIMIT'
+    displayName: 'Job Backoff Limit'
+    description: 'The number of attempts to try for a successful job outcome (default: 6)'
+    value: '0'
+    required: false

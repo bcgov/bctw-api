@@ -1,0 +1,27 @@
+{
+  "name": "cron-job",
+  "version": "1.0.0",
+  "description": "Cron job for API integration",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "externalapicall": "node scripts/externalapi.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bcgov/bctw-api.git"
+  },
+  "keywords": [
+    "cron",
+    "job",
+    "scheduler"
+  ],
+  "author": "Ronald Garcia",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/bcgov/bctw-api/issues"
+  },
+  "homepage": "https://github.com/bcgov/bctw-api#readme",
+  "dependencies": {}
+}
