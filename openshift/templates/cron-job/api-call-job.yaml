@@ -2,7 +2,7 @@
 kind: 'Template'
 apiVersion: 'v1'
 metadata:
-  name: 'cronjob-${JOB_NAME}'
+  name: 'cronjob-demo'
   annotations:
     description: 'Cronjob to call API using Node.js'
     tags: 'scheduler,cronjob,apicall'
@@ -45,7 +45,7 @@ parameters:
   - name: 'NAMESPACE'
     displayName: 'Namespace'
     description: 'Name of the Namespace where to deploy the Scheduled Job'
-    value: 'dev'
+    value: 'dgsbmb-dev'
     required: true
   - name: 'JOB_NAME'
     displayName: 'Job Name'
@@ -55,7 +55,7 @@ parameters:
   - name: 'IMAGE_NAMESPACE'
     displayName: 'Image Namespace'
     description: 'The locate of the image to use for this cron job.'
-    value: 'dev'
+    value: 'dgsbmb-dev'
     required: true
   - name: 'IMAGE_NAME'
     displayName: 'Image Name'
@@ -65,9 +65,9 @@ parameters:
   - name: 'SCHEDULE'
     displayName: 'Cron Schedule'
     description: 'Cron Schedule to Execute the Job (in UTC)'
-    # Currently targeting 4:00 AM weekley
-    #value: '0 14 * * 0'
-    value: '*/3 * * * *' #every three minutes
+    # Currently targeting 4:00 AM daily
+    value: '0 14 * * *'
+    #value: '*/3 * * * *' #every three minutes  
     required: true
   - name: 'SUCCESS_JOBS_HISTORY_LIMIT'
     displayName: 'Successful Job History Limit'
