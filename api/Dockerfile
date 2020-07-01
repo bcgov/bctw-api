@@ -28,8 +28,10 @@ RUN aptitude -y install nodejs
 # Install Cron
 RUN aptitude -y install cron
 
-# Install local NodeJS dependencies
+# Enter the dispense directory
 WORKDIR /dispense
+
+# Install local NodeJS dependencies
 RUN npm install
 
 # Run the server
