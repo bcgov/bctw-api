@@ -1,8 +1,10 @@
 FROM ubuntu:20.10
 
+WORKDIR /usr/src/app
+
 # Copy in all the code
-COPY . /collect
-COPY . /dispense
+COPY collect ./
+COPY dispense ./
 
 # Docs
 LABEL maintainer="popkinj@littleearth.ca"
@@ -25,17 +27,20 @@ RUN apt-get -y --no-install-recommends install aptitude
 # Install NodeJS
 RUN aptitude -y install nodejs
 
+# Install NPM (Node Package Manager)
+RUN aptitude -y install npm
+
 # Install Cron
 RUN aptitude -y install cron
 
 # Enter the dispense directory
-WORKDIR /dispense
+WORKDIR /usr/src/app/dispense
 
 # Install local NodeJS dependencies
 RUN npm install
 
 # Run the server
-RUN npm start
+CMD ["npm", "start"]
 
 # API runs on one port
 EXPOSE 3000
