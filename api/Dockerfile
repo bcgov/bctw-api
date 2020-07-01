@@ -28,6 +28,12 @@ RUN aptitude -y install nodejs
 # Install Cron
 RUN aptitude -y install cron
 
+# Install local NodeJS dependencies
+WORKDIR /dispense
+RUN npm install
+
+# Run the server
+RUN npm start
+
 # API runs on one port
 EXPOSE 3000
-

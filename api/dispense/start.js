@@ -1,16 +1,16 @@
-import pg from 'pg';
-import cors from 'cors';
-import http from 'http';
-import morgan from 'morgan';
-import helmet from 'helmet';
-import express from 'express';
-import compression from 'compression';
+const fs = require('fs');
+const pg = require('pg');
+const cors = require('cors');
+const http = require('http');
+const helmet = require('helmet');
+const express = require('express');
+const compression = require('compression');
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 const isLiveData = process.env.BCTW_IS_LIVE_DATA;
 
 // Set up the database pool
-var pgPool = new pg.Pool({
+const pgPool = new pg.Pool({
   user: process.env.POSTGRES_USER,
   database: process.env.POSTGRES_DB,
   password: process.env.POSTGRES_PASSWORD,
@@ -52,5 +52,40 @@ const getDBCollars = function (req, res, next) {
   pgPool.query(sql,done);
 };
 
-// use enhanced logging in non-prod environments
-const logger = isProd ? 'combined' : 'dev';
+/* ## getFileCollars
+  Get collar data from the test file
+  @param req {object} Node/Express request object
+  @param res {object} Node/Express response object
+  @param next {function} Node/Express function for flow control
+ */
+const getFileCollars = function (req, res, next) {
+  console.log("Retrieving collar data from local file on server.");
+  fs.readFile(__dirname + '/data/lotek_plusx_merge_light.json', (err,data) => {
+    if (err) {
+      return res.status(500).send('Failed to read sample GeoJSON file');
+    }
+    res.send(data.toString());
+  });
+};
+
+
+/* ## notFound
+  Catch-all router for any request that does not have an endpoint defined.
+  @param req {object} Node/Express request object
+  @param res {object} Node/Express response object
+ */
+const notFound = function (req, res) {
+  return res.status(404).json({error: "Sorry you must be lost :("});
+};
+
+/* ## Server
+  Run the server.
+ */
+const app = express()
+  .use(helmet())
+  .use(cors())
+  .use(compression())
+  .get('/get-collars',(isLiveData === 'true') ? getDBCollars : getFileCollars)
+  .get('*', notFound);
+
+http.createServer(app).listen(3000);
