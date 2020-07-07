@@ -1,3 +1,8 @@
+# Telemetry Data Collector
+
+Cron is installed in the container to schedule regular data polling.
+TODO: Install NodeJS dependencies globally
+
 # Cron Job (demo) - Implementation
 
 Here are some notes and steps regarding the Cron Job (example):
