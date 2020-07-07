@@ -70,13 +70,6 @@ print(sql_string)
 
 try:
     # declare a new PostgreSQL connection object
-    conn = connect(
-        dbname="python_json",
-        user="postgres",
-        host="127.0.0.1",
-        password="Ch3k@v88",
-        # attempt to connect for 3 seconds then raise exception
-        connect_timeout=3
     )
 
     cur = conn.cursor()

@@ -1,19 +1,6 @@
 import os
 import psycopg2
 
-# conn = psycopg2.connect(
-#     dbname="bctw",
-#     user="bctw",
-#     host="127.0.0.1",
-#     password="data4Me",
-#     port=5432)
-
-conn = psycopg2.connect(
-    dbname="sample_caribou_data",
-    user="postgres",
-    host="127.0.0.1",
-    password="Ch3k@v88",
-    port=5433)
 
 cur = conn.cursor()
 

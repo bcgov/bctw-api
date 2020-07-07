@@ -26,45 +26,6 @@ def main():
     # Local machine test database
     #############################
 
-    # Database.initialise(
-    #     dbname="sample_caribou_data",
-    #     user="postgres",
-    #     host="127.0.0.1",
-    #     password="Ch3k@v88",
-    #     port=5433)
-
-    ######################################
-    # Connect to database inside OpenShift
-    ######################################
-
-    Database.initialise(
-        dbname="bctw",
-        user="bctw",
-        host="bctw-db",
-        password="data4Me",
-        port=5432)
-
-    ######################################
-    # Connect to database inside OpenShift
-    ######################################
-
-    # Database.initialise(
-    #     dbname="bctw",
-    #     user="bctw",
-    #     host="bctw-db-dgsbmb-dev.pathfinder.gov.bc.ca",
-    #     password="data4Me",
-    #     port=5432)
-
-    ######################################
-    # Connect to database inside OpenShift
-    ######################################
-
-    # Database.initialise(
-    #     dbname="bctw",
-    #     user="bctw",
-    #     host="bctw - db.dgsbmb - dev.svc.cluster.local",
-    #     password="data4Me",
-    #     port=5432)
 
 
     ########################################
