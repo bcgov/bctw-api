@@ -1,0 +1,15 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: .
+# Template File: ../openshift/templates/data-collector/data-collector-deploy.yaml
+#=========================================================
+# NAME=data-collector
+# APP_GROUP=bctw
+# SOURCE_IMAGE_NAME=bctw-data-collector
+# IMAGE_NAMESPACE=dgsbmb-tools
+TAG_NAME=prod
+APPLICATION_DOMAIN=data-collector-dgsbmb-prod.pathfinder.gov.bc.ca
+# CPU_REQUEST=10m
+# CPU_LIMIT=500m
+# MEMORY_REQUEST=10Mi
+# MEMORY_LIMIT=512Mi

@@ -1,11 +1,12 @@
 #=========================================================
 # OpenShift Jenkins pipeline template parameters for:
-# Jenkinsfile: ./jenkins/deployment/prod/Jenkinsfile
+# Jenkinsfile: ../jenkins/data-collector/Jenkinsfile
 # Template File: https://raw.githubusercontent.com/BCDevOps/openshift-tools/master/provisioning/pipeline/resources/pipeline-build.json
 #=========================================================
-NAME=deploy-to-prod
+NAME=data-collector
 # GITHUB_WEBHOOK_SECRET=[a-zA-Z0-9]{40}
+# GENERIC_WEBHOOK_SECRET=[a-zA-Z0-9]{40}
 SOURCE_REPOSITORY_URL=https://github.com/bcgov/bctw-api.git
-SOURCE_REPOSITORY_REF=test
-CONTEXT_DIR=jenkins/deployment/prod
+SOURCE_REPOSITORY_REF=master
+CONTEXT_DIR=./jenkins/data-collector
 JENKINSFILE_PATH=Jenkinsfile
