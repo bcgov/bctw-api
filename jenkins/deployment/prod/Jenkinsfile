@@ -2,7 +2,7 @@
 // In other words all of the images that are currently deployed in DEV will be tagged for deployment to TEST.
 
 // Define these in the order they should be deployed.
-def APP_NAMES = ['bctw-app', 'bctw-api']
+def APP_NAMES = ['data-collector']
 def SOURCE_TAG = 'test'
 def DESTINATION_TAG = 'prod'
 

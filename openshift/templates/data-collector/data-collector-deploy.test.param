@@ -5,7 +5,7 @@
 #=========================================================
 # NAME=data-collector
 # APP_GROUP=bctw
-# SOURCE_IMAGE_NAME=bctw-data-collector
+# SOURCE_IMAGE_NAME=data-collector
 # IMAGE_NAMESPACE=dgsbmb-tools
 TAG_NAME=test
 APPLICATION_DOMAIN=data-collector-dgsbmb-test.pathfinder.gov.bc.ca
