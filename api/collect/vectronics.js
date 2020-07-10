@@ -48,7 +48,13 @@ const insertCollarRecords = function(err,result) {
   }
 
   // What is return is an array of arrays
-  console.log(result.map((e) => {return e.body;}));
+  // console.log(result.map((e) => {return e.body;}));
+
+  const records = result
+    .map((e) => {return e.body;})
+    .flat();
+
+  console.log(records);
 
   pgPool.end();
 }
