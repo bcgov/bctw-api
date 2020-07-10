@@ -4,7 +4,8 @@
   "description": "Collecting and dispensing BC Telemetry data",
   "main": "start.js",
   "scripts": {
-    "start": "node start.js",
+    "start": "npx pm2@4.4.0 start start.js",
+    "dev": "node start.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
