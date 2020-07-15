@@ -6,7 +6,7 @@
 NAME=bctw-api
 GIT_REPO_URL=https://github.com/bcgov/bctw-api.git
 GIT_REF=master
-SOURCE_CONTEXT_DIR=/api
+SOURCE_CONTEXT_DIR=/bctw-api
 SOURCE_IMAGE_KIND=DockerImage
 SOURCE_IMAGE_NAME=centos/nodejs-12-centos7
 SOURCE_IMAGE_TAG=latest

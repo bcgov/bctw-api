@@ -107,7 +107,7 @@
       "displayName": "Source Context Directory",
       "description": "The source context directory.",
       "required": true,
-      "value": "/api"
+      "value": "/bctw-api"
     },
     {
       "name": "SOURCE_IMAGE_KIND",
