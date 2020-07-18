@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bcgov/bctw-api/api"
+    "url": "https://github.com/bcgov/bctw-api/bctw-api"
   },
   "author": "BC Government",
   "license": "ISC",
@@ -20,6 +20,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "helmet": "^3.23.3",
+    "moment": "^2.27.0",
     "morgan": "^1.10.0",
     "needle": "^2.5.0",
     "pg": "^8.2.1"
