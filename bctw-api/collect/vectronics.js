@@ -17,6 +17,15 @@ const pgPool = new pg.Pool({
   max: 10
 });
 
+const disconnect = function (err) {
+  pgPool.end();
+  const now = moment().utc();
+  if (err) {
+    return console.error(`${now}: Failed to process Vectronics collars: `,err);
+  }
+  console.log(`${now}: Successfully processed Vectronics collars.`);
+};
+
 const getAllCollars = function () {
   const sql = 'select * from api_vectronics_collar_data';
 
@@ -25,12 +34,7 @@ const getAllCollars = function () {
       return console.error('Failed to fetch Vectronics collars: ',err);
     }
 
-    /*****************************************/
-    // testing = data.rows.slice(0,1);
-    // async.concatSeries(testing,getCollarRecords,insertCollarRecords);
-    /*****************************************/
-
-    async.concatSeries(data.rows,getCollarRecords,insertCollarRecords);
+    async.concatSeries(data.rows,getCollarRecords,disconnect);
   };
 
   pgPool.query(sql,done);
@@ -43,21 +47,25 @@ const getCollarRecords = function(collar, callback) {
   const weekAgo = moment().subtract(7,'d').format('YYYY-MM-DDTHH:mm:ss');
   const url = `${apiUrl}/${id}/gps?collarkey=${key}&afterScts=${weekAgo}`;
 
-
   console.log(`Fetching data for ${id}`);
 
-  needle.get(url,(err,res,body) => {callback(err,body)});
+  needle.get(url,(err,res,body) => {insertCollarRecords(err,body,callback)});
 };
 
-const insertCollarRecords = function(err,result) {
+const insertCollarRecords = function(err,result,callback) {
   if (err) {
     pgPool.end();
-    return console.error("Error fetching collar data: ",err);
+    return callback("Error fetching collar data: ",err);
   }
 
   const records = result
     .flat()
     .filter((e) => { return e && e.idPosition});
+
+  if (records.length < 1) {
+    console.log("no records");
+    return callback(null);
+  }
 
   let sqlPreamble = `
     insert into vectronics_collar_data (
@@ -168,21 +176,11 @@ const insertCollarRecords = function(err,result) {
 
   const sqlPostamble = ' on conflict (idPosition) do nothing';
 
-
   sql = sqlPreamble + values.join(',') + sqlPostamble;
 
-  console.log('Possibly entering ' + values.length + ' records');
+  console.log('Entering ' + values.length + ' records');
 
-
-  const done = function (err) {
-    if (err) {
-      return console.error('Failed to insert records: ',err);
-    }
-    pgPool.end();
-  }
-
-  pgPool.query(sql,done);
-
+  pgPool.query(sql,callback);
 }
 
 getAllCollars();
