@@ -53,6 +53,45 @@ const insertCollarData = function(records,callback) {
       "geom"
     ) values
   `;
+
+  let values = [];
+  for (const p of records) {
+    values.push(
+      `(
+        '${p.ChannelStatus}',
+        '${p.UploadTimeStamp}',
+        ${p.Latitude},
+        ${p.Longitude},
+        ${p.Altitude},
+        ${p.ECEFx},
+        ${p.ECEFy},
+        ${p.ECEFz},
+        ${p.RxStatus},
+        ${p.PDOP},
+        ${p.MainV},
+        ${p.BkUpV},
+        ${p.Temperature},
+        ${p.FixDuration},
+        ${p.bHasTempVoltage},
+        ${p.DevName},
+        ${p.DeltaTime},
+        ${p.FixType},
+        ${p.CEPRadius},
+        ${p.CRC},
+        ${p.DeviceID},
+        '${p.RecDateTime}',
+        st_setSrid(st_point(${p.Longitude},${p.Latitude}),4326)
+        )`
+    );
+  }
+
+  const sqlPostamble = ' on conflict (DeviceID, RecDateTime) do nothing';
+
+  sql = sqlPreamble + values.join(',') + sqlPostamble;
+
+  console.log('Entering ' + values.length + ' records');
+
+  pgPool.query(sql,callback);
 };
 
 const iterateCollars = function(collar,callback) {
@@ -90,6 +129,9 @@ const getAllCollars = function (err, _, data) {
     if (err) {
       console.error('Unsuccessfully iterated over collar array: ',err);
     }
+    const now = moment().utc();
+    console.log(`${now}: Successfully processed Lotek collars.`);
+
     pgPool.end(); // Disconnect from database
   }
 
