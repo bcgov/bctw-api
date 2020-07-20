@@ -34,13 +34,13 @@ const getAllCollars = function () {
       return console.error('Failed to fetch Vectronics collars: ',err);
     }
 
-    async.concatSeries(data.rows,getCollarRecords,disconnect);
+    async.concatSeries(data.rows,iterateCollars,disconnect);
   };
 
   pgPool.query(sql,done);
 };
 
-const getCollarRecords = function(collar, callback) {
+const iterateCollars = function(collar, callback) {
   const apiUrl = process.env.VECTRONICS_URL
   const key = collar.collarkey;
   const id = collar.idcollar
@@ -67,7 +67,7 @@ const insertCollarRecords = function(err,result,callback) {
     return callback(null);
   }
 
-  let sqlPreamble = `
+  const sqlPreamble = `
     insert into vectronics_collar_data (
       "idposition",
       "idcollar",
