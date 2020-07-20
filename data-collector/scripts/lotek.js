@@ -26,6 +26,33 @@ let tokenConfig = {};
 const insertCollarData = function(records,callback) {
   console.log(records);
   callback(null);
+  const sqlPreamble = `
+    insert into lotek_collar_data (
+      "channelstatus",
+      "uploadtimestamp",
+      "latitude",
+      "longitude",
+      "altitude",
+      "ecefx",
+      "ecefy",
+      "ecefz",
+      "rxstatus",
+      "pdop",
+      "mainv",
+      "bkupv",
+      "temperature",
+      "fixduration",
+      "bhastempvoltage",
+      "devname",
+      "deltatime",
+      "fixtype",
+      "cepradius",
+      "crc",
+      "deviceid",
+      "recdatetime",
+      "geom"
+    ) values
+  `;
 };
 
 const iterateCollars = function(collar,callback) {
