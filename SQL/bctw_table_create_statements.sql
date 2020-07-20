@@ -531,12 +531,12 @@ alter table vectronics_collar_data add column geom geometry(Point,4326);
 create index vectronics_collar_data_gist on vectronics_collar_data using gist ("geom");
 
 /**************************************************/
-/***************lotex_collar_data******************/
+/***************lotek_collar_data******************/
 /**************************************************/
 
-DROP TABLE IF EXISTS lotex_collar_data;
+DROP TABLE IF EXISTS lotek_collar_data;
 
-CREATE TABLE lotex_collar_data
+CREATE TABLE lotek_collar_data
 (
     channelstatus character varying(500) COLLATE pg_catalog."default",
     uploadtimestamp timestamp without time zone,
@@ -563,9 +563,9 @@ CREATE TABLE lotex_collar_data
 );
 
 -- Create a geometry column with a spatial index
-alter table lotex_collar_data add column geom geometry(Point,4326);
-create index lotex_collar_data_gist on lotex_collar_data using gist ("geom");
+alter table lotek_collar_data add column geom geometry(Point,4326);
+create index lotek_collar_data_gist on lotek_collar_data using gist ("geom");
 
 -- Create an index on deviceid so we can avoid duplicates
-create index lotex_collar_data_idx on lotex_collar_data(deviceid);
-create index lotex_collar_data_idx2 on lotex_collar_data(recdatetime);
+create index lotek_collar_data_idx on lotek_collar_data(deviceid);
+create index lotek_collar_data_idx2 on lotek_collar_data(recdatetime);
