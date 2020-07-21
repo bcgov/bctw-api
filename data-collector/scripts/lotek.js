@@ -24,8 +24,6 @@ const lotexUrl = process.env.LOTEX_URL;
 let tokenConfig = {};
 
 const insertCollarData = function(records,callback) {
-  console.log(records);
-  callback(null);
   const sqlPreamble = `
     insert into lotek_collar_data (
       "channelstatus",
@@ -72,7 +70,7 @@ const insertCollarData = function(records,callback) {
         ${p.BkUpV},
         ${p.Temperature},
         ${p.FixDuration},
-        ${p.bHasTempVoltage},
+        '${p.bHasTempVoltage}',
         ${p.DevName},
         ${p.DeltaTime},
         ${p.FixType},
@@ -91,7 +89,9 @@ const insertCollarData = function(records,callback) {
 
   console.log('Entering ' + values.length + ' records');
 
-  pgPool.query(sql,callback);
+  // pgPool.query(sql,callback);
+  console.log(sql);
+  callback(null);
 };
 
 const iterateCollars = function(collar,callback) {
