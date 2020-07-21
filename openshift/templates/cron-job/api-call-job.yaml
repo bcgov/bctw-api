@@ -2,10 +2,10 @@
 kind: 'Template'
 apiVersion: 'v1'
 metadata:
-  name: 'cronjob-demo'
+  name: 'bctw-cronjob-vectronics'
   annotations:
-    description: 'Cronjob to call API using Node.js'
-    tags: 'scheduler,cronjob,apicall'
+    description: 'Cron job to call Vectronics API using Node.js'
+    tags: 'scheduler,cron job,external, vectronics'
 objects:
   - kind: 'CronJob'
     apiVersion: 'batch/v1beta1'
@@ -13,7 +13,7 @@ objects:
       name: '${JOB_NAME}'
       namespace: ${NAMESPACE}
       labels:
-        template: 'bctw-cronjob'
+        template: 'bctw-cronjob-vectronics'
         cronjob: '${JOB_NAME}'
     spec:
       schedule: '${SCHEDULE}'
@@ -23,7 +23,7 @@ objects:
       jobTemplate:
         metadata:
           labels:
-            template: 'bctw-cronjob'
+            template: 'bctw-cronjob-vectronics'
             cronjob: '${JOB_NAME}'
         spec:
           backoffLimit: ${{JOB_BACKOFF_LIMIT}}
@@ -35,8 +35,36 @@ objects:
                   command:
                     - 'npm'
                     - 'run'
-                    - 'externalapicall'
-                  #env:
+                    - 'vectronics'
+                  env:
+                  - name: NODE_ENV
+                    value: production
+                  - name: POSTGRES_USER
+                    valueFrom:
+                      secretKeyRef:
+                        key: username
+                        name: bctw
+                  - name: POSTGRES_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: password
+                        name: bctw
+                  - name: POSTGRES_DB
+                    value: bctw
+                  - name: LOTEX_USER
+                    valueFrom:
+                      secretKeyRef:
+                        key: username
+                        name: lotex
+                  - name: LOTEX_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: password
+                        name: lotex
+                  - name: LOTEX_URL
+                    value: 'https://webservice.lotek.com/API'
+                  - name: VECTRONICS_URL
+                    value: 'https://api.vectronic-wildlife.com/v2/collar'
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
               activeDeadlineSeconds: 90
@@ -50,24 +78,24 @@ parameters:
   - name: 'JOB_NAME'
     displayName: 'Job Name'
     description: 'Name of the Scheduled Job to Create.'
-    value: 'bctw-externalapi'
+    value: 'bctw-cronjob-vectronics'
     required: true
   - name: 'IMAGE_NAMESPACE'
     displayName: 'Image Namespace'
     description: 'The locate of the image to use for this cron job.'
-    value: 'dgsbmb-dev'
+    value: 'dgsbmb-tools'
     required: true
   - name: 'IMAGE_NAME'
     displayName: 'Image Name'
     description: 'The image name to use for this cron job.'
-    value: 'cronjob-app:latest'
+    value: 'data-collector:latest'
     required: true
   - name: 'SCHEDULE'
     displayName: 'Cron Schedule'
     description: 'Cron Schedule to Execute the Job (in UTC)'
-    # Currently targeting 4:00 AM daily
+    # Currently targeting 2:00 PM daily
     value: '0 14 * * *'
-    #value: '*/3 * * * *' #every three minutes  
+    #value: '*/5 * * * *' #every three minutes  
     required: true
   - name: 'SUCCESS_JOBS_HISTORY_LIMIT'
     displayName: 'Successful Job History Limit'

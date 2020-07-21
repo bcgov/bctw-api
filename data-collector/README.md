@@ -3,16 +3,15 @@
 Cron is installed in the container to schedule regular data polling.
 TODO: Install NodeJS dependencies globally
 
-# Cron Job (demo) - Implementation
+# Cron Job - Implementation
 
-Here are some notes and steps regarding the Cron Job (example):
-* The cron job template is pulling a Node.js image (**cronjob-app**)
-* Node.js code has been deployed as part of the demo / example
-* The following oc command has been used to create a cron job object in OpenShift 
+Here are some notes regarding the Vectronics Cron Job:
+* The cron job template is pulling a Node.js image from the Tools project (**data-collector**)
+* The following oc command can be used to create a cron job object in OpenShift to fetch Vectronics collars
 ```
-oc process cronjob-demo | oc create -f -
+oc process bctw-cronjob-vectronics | oc create -f -
 ```
-* A succesful execution of the cron job will display this message in the console log:
+* A succesful execution of the Vectronics cron job will display the following message:
 ```
-Cron job is running ... ${new Date()}
+console.log(`${now}: Successfully processed Vectronics collars.`);
 ```
