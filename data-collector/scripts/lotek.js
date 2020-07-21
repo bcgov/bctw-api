@@ -48,6 +48,7 @@ const insertCollarData = function(records,callback) {
       "crc",
       "deviceid",
       "recdatetime",
+      "timeid",
       "geom"
     ) values
   `;
@@ -71,32 +72,33 @@ const insertCollarData = function(records,callback) {
         ${p.Temperature},
         ${p.FixDuration},
         '${p.bHasTempVoltage}',
-        ${p.DevName},
+        ${p.DevName || null},
         ${p.DeltaTime},
         ${p.FixType},
         ${p.CEPRadius},
         ${p.CRC},
         ${p.DeviceID},
         '${p.RecDateTime}',
+        '${p.DeviceID}_${p.RecDateTime}',
         st_setSrid(st_point(${p.Longitude},${p.Latitude}),4326)
         )`
     );
   }
 
-  const sqlPostamble = ' on conflict (DeviceID, RecDateTime) do nothing';
+  const sqlPostamble = ' on conflict (timeid) do nothing';
 
   sql = sqlPreamble + values.join(',') + sqlPostamble;
 
-  console.log('Entering ' + values.length + ' records');
+  const now = moment().utc();
+  console.log(`${now}: Entering ` + values.length + ' records');
 
-  // pgPool.query(sql,callback);
-  console.log(sql);
-  callback(null);
+  pgPool.query(sql,callback);
+  // console.log(sql);
+  // callback(null);
 };
 
 const iterateCollars = function(collar,callback) {
   const url = `${lotexUrl}/gps?deviceId=${collar.nDeviceID}`
-  console.log(url);
 
   needle.get(url,tokenConfig,(err,res,body) => {
     if (err) {
@@ -141,11 +143,11 @@ const getAllCollars = function (err, _, data) {
     }
 
     // testing
-    const testing = body.slice(0,1);
+    // const testing = body.slice(0,1);
     //////////
 
-    async.concatSeries(testing,iterateCollars,done); // Testing 
-    // async.series(body,iterateCollars,done); // kick off collar iteration
+    // async.concatSeries(testing,iterateCollars,done); // Testing 
+    async.concatSeries(body,iterateCollars,done); // kick off collar iteration
   });
 };
 

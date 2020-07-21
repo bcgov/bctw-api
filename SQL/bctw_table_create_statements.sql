@@ -538,7 +538,7 @@ DROP TABLE IF EXISTS lotek_collar_data;
 
 CREATE TABLE lotek_collar_data
 (
-    channelstatus character varying(500) COLLATE pg_catalog."default",
+    channelstatus text,
     uploadtimestamp timestamp without time zone,
     latitude double precision,
     longitude double precision,
@@ -559,7 +559,8 @@ CREATE TABLE lotek_collar_data
     cepradius double precision,
     crc double precision,
     deviceid integer,
-    recdatetime timestamp without time zone
+    recdatetime timestamp without time zone,
+    timeid text unique not null
 );
 
 -- Create a geometry column with a spatial index
