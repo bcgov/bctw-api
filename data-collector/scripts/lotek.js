@@ -98,7 +98,8 @@ const insertCollarData = function(records,callback) {
 };
 
 const iterateCollars = function(collar,callback) {
-  const url = `${lotexUrl}/gps?deviceId=${collar.nDeviceID}`
+  const weekAgo = moment().subtract(7,'d').format('YYYY-MM-DDTHH:mm:ss');
+  const url = `${lotexUrl}/gps?deviceId=${collar.nDeviceID}&dtStart=${weekAgo}`
 
   needle.get(url,tokenConfig,(err,res,body) => {
     if (err) {
