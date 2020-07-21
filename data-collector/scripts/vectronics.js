@@ -3,7 +3,8 @@ const async = require('async'); // Async management
 const needle = require('needle'); // HTTP requests
 const moment = require('moment'); // Time calculation
 
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
+// const isProd = process.env.NODE_ENV === 'production' ? true : false;
+const isProd = true;
 
 // Set up the database pool
 const pgPool = new pg.Pool({
