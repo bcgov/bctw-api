@@ -23,6 +23,12 @@ const lotexUrl = process.env.LOTEX_URL;
 // Store the access token globally
 let tokenConfig = {};
 
+/* ## insertCollarData
+Insert collar data into the database.
+This is run under and asyncJS series loop. If there is an error, pass it to the callback as the first parameter.
+@param records {object} Array object of collar records
+@param callback {function} The asyncJS callback function. Provide an error message if something fails, otherwise null.
+ */
 const insertCollarData = function(records,callback) {
   const sqlPreamble = `
     insert into lotek_collar_data (
@@ -93,17 +99,26 @@ const insertCollarData = function(records,callback) {
   console.log(`${now}: Entering ` + values.length + ' records');
 
   pgPool.query(sql,callback);
-  // console.log(sql);
-  // callback(null);
 };
 
+/* ## iterateCollars
+  This function gets called for each collar in series.
+  Creates a query to the API containing the ID of the collar.
+  The results get passed to the *insertCollarData* function along with
+  the asyncJS callback function to be called on completion of collar operations.
+  @param collar {object} The collar object containing the unique ID.
+  @param callback {function} The asyncJS callback function. Provide an error message if something fails, otherwise null.
+ */
 const iterateCollars = function(collar,callback) {
   const weekAgo = moment().subtract(7,'d').format('YYYY-MM-DDTHH:mm:ss');
   const url = `${lotexUrl}/gps?deviceId=${collar.nDeviceID}&dtStart=${weekAgo}`
 
+  // Send request to the API
   needle.get(url,tokenConfig,(err,res,body) => {
     if (err) {
-      return console.error('Could not get collar list: ',error);
+      const msg = `Could not get collar data for ${collar.nDeviceID}: ${err}`
+      callback(msg);
+      return console.error(msg);
     }
     const records = body
       .flat()
@@ -119,6 +134,12 @@ const iterateCollars = function(collar,callback) {
 
 };
 
+/* ## getAllCollars
+  Request all collars through the API
+  @param err {string} Error message if there is one. Null if not
+  @param _ {object} The network request object. Blanked
+  @param data {object} The array object of all collars, containing IDs
+ */
 const getAllCollars = function (err, _, data) {
   // If error... exit with a message.
   if (err) {return console.error("Could not get a token: ",err)};
@@ -143,11 +164,11 @@ const getAllCollars = function (err, _, data) {
       return console.error('Could not get collar list: ',error);
     }
 
-    // testing
-    // const testing = body.slice(0,1);
-    //////////
-
-    // async.concatSeries(testing,iterateCollars,done); // Testing 
+    /*
+      Async workflow of cycling through all the collars.
+      Run the IterateCollars function on each collar.
+      When done. Shut down the database connection.
+     */
     async.concatSeries(body,iterateCollars,done); // kick off collar iteration
   });
 };
@@ -169,4 +190,7 @@ const getToken = function () {
 
 }
 
+/*
+  Entry point - Start script
+ */
 getToken();
