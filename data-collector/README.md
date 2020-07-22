@@ -5,6 +5,9 @@ Cron is installed in the container to schedule regular data polling.
 # Cron Job - Implementation
 
 Here are some notes regarding the Vectronics and Lotek Cron Jobs:
+
+[Cron Job OpenShift Templates](openshift/templates/cron-job)
+
 * The cron job template is pulling a Node.js image from the Tools project (**data-collector**)
 * The following oc command can be used to create a cron job object in OpenShift to fetch Vectronics and Lotek data
 ```
