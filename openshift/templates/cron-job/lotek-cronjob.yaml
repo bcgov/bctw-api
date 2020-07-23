@@ -42,7 +42,7 @@ objects:
                   - name: POSTGRES_SERVER_HOST
                     value: bctw-db
                   - name: POSTGRES_SERVER_PORT
-                    value: 5432
+                    value: '5432'
                   - name: POSTGRES_USER
                     valueFrom:
                       secretKeyRef:
@@ -59,12 +59,12 @@ objects:
                     valueFrom:
                       secretKeyRef:
                         key: username
-                        name: lotek
+                        name: lotex
                   - name: LOTEK_PASSWORD
                     valueFrom:
                       secretKeyRef:
                         key: password
-                        name: lotek
+                        name: lotex
                   - name: LOTEK_URL
                     value: 'https://webservice.lotek.com/API'
                   - name: VECTRONICS_URL
