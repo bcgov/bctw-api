@@ -5,10 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "vectronics": "node scripts/vectronics.js",
-    "lotek": "node scripts/lotek.js",
-    "externalapicall": "node scripts/externalapi.s"
+    "lotek": "node scripts/lotek.js"
   },
   "repository": {
     "type": "git",

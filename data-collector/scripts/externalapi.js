@@ -1,1 +1,0 @@
-console.log(`Cron job is running ... ${new Date()} \n`);
