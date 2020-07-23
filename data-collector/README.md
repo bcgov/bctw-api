@@ -22,3 +22,13 @@ console.log(`${now}: Successfully processed Vectronics collars.`);
 ```
 console.log(`${now}: Successfully processed Lotek collars.`);
 ```
+
+* View cron jobs
+```
+oc get CronJob
+```
+
+* Remove cron jobs
+```
+oc delete CronJob bctw-cronjob-vectronics
+```
