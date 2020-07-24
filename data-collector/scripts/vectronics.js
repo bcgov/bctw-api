@@ -5,12 +5,12 @@ const moment = require('moment'); // Time calculation
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
-console.log("env",process.env.NODE_ENV);
-console.log("user",process.env.POSTGRES_USER);
-console.log("db",process.env.POSTGRES_DB);
-console.log("password",process.env.POSTGRES_PASSWORD);
-console.log("host",process.env.POSTGRES_SERVER_HOST);
-console.log("port",process.env.POSTGRES_SERVER_PORT);
+// console.log("env",process.env.NODE_ENV);
+// console.log("user",process.env.POSTGRES_USER);
+// console.log("db",process.env.POSTGRES_DB);
+// console.log("password",process.env.POSTGRES_PASSWORD);
+// console.log("host",process.env.POSTGRES_SERVER_HOST);
+// console.log("port",process.env.POSTGRES_SERVER_PORT);
 
 // Set up the database pool
 const pgPool = new pg.Pool({
