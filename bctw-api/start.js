@@ -7,7 +7,6 @@ const express = require('express');
 const compression = require('compression');
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
-const isLiveData = process.env.BCTW_IS_LIVE_DATA;
 
 // Set up the database pool
 const pgPool = new pg.Pool({
@@ -52,23 +51,6 @@ const getDBCollars = function (req, res, next) {
   pgPool.query(sql,done);
 };
 
-/* ## getFileCollars
-  Get collar data from the test file
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
-  @param next {function} Node/Express function for flow control
- */
-const getFileCollars = function (req, res, next) {
-  console.log("Retrieving collar data from local file on server.");
-  fs.readFile(__dirname + '/data/lotek_plusx_merge_light.json', (err,data) => {
-    if (err) {
-      return res.status(500).send('Failed to read sample GeoJSON file');
-    }
-    res.send(data.toString());
-  });
-};
-
-
 /* ## notFound
   Catch-all router for any request that does not have an endpoint defined.
   @param req {object} Node/Express request object
@@ -85,7 +67,7 @@ const app = express()
   .use(helmet())
   .use(cors())
   .use(compression())
-  .get('/get-collars',(isLiveData === 'true') ? getDBCollars : getFileCollars)
+  .get('/get-collars', getDBCollars)
   .get('*', notFound);
 
 http.createServer(app).listen(3000);
