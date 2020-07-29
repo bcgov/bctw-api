@@ -44,7 +44,7 @@ const getDBCollars = function (req, res, next) {
   `;
   const done = function (err,data) {
     if (err) {
-      return res.status(500).send('Failed to query database');
+      return res.status(500).send(`Failed to query database: ${err}`);
     }
     res.send(data.rows[0].row_to_json);
   };
