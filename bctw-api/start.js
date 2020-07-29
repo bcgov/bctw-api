@@ -70,4 +70,4 @@ const app = express()
   .get('/get-collars', getDBCollars)
   .get('*', notFound);
 
-http.createServer(app).listen(3000);
+http.createServer(app).listen(8080);
