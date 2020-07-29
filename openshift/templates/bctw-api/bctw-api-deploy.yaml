@@ -50,6 +50,10 @@ objects:
           env:
           - name: NODE_ENV
             value: production
+          - name: POSTGRES_SERVER_HOST
+            value: bctw-db
+          - name: POSTGRES_SERVER_PORT
+            value: 5432
           - name: POSTGRES_USER
             valueFrom:
               secretKeyRef:
