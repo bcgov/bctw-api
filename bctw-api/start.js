@@ -30,7 +30,7 @@ const getDBCollars = function (req, res, next) {
   console.log(`db: ${process.env.POSTGRES_DB}`)
   console.log(`password: ${process.env.POSTGRES_PASSWORD}`)
   console.log(`host: ${process.env.POSTGRES_SERVER_HOST}`)
-  console.log(`port: ${process.env.POSTGRES_PORT}`)
+  console.log(`port: ${process.env.POSTGRES_SERVER_PORT}`)
   const sql = `
     SELECT row_to_json(fc)
      FROM ( SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features
