@@ -16,9 +16,9 @@ const pgPool = new pg.Pool({
 });
 
 // Grab credentials as Environment Variables
-const lotexUser = process.env.LOTEX_USER;
-const lotexPassword = process.env.LOTEX_PASSWORD;
-const lotexUrl = process.env.LOTEX_URL;
+const lotexUser = process.env.LOTEK_USER;
+const lotexPassword = process.env.LOTEK_PASSWORD;
+const lotexUrl = process.env.LOTEK_URL;
 
 // Store the access token globally
 let tokenConfig = {};
