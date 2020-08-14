@@ -146,7 +146,7 @@ const notFound = function (req, res) {
 const app = express()
   .use(helmet())
   .use(cors())
-  .use(compression())
+  // .use(compression())
   .get('/get-collars', getDBCollars)
   .get('/get-critters',getDBCritters)
   .get('*', notFound);
