@@ -35,7 +35,7 @@ const getDBCritters = function (req, res, next) {
     from
       lotek_collar_data
     where
-      recdatetime > (current_date - INTERVAL '1 months') and
+      recdatetime > (current_date - INTERVAL '2 weeks') and
       st_isValid(geom)
 
     union
@@ -48,7 +48,7 @@ const getDBCritters = function (req, res, next) {
     from
       vectronics_collar_data
     where
-      scts > (current_date - INTERVAL '1 months') and
+      scts > (current_date - INTERVAL '2 weeks') and
       st_isValid(geom)
     ),
 
