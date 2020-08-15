@@ -31,7 +31,7 @@ const getDBCritters = function (req, res, next) {
     from
       vendor_merge
     where
-      date_recorded > (current_date - INTERVAL '1 week')
+      date_recorded > (current_date - INTERVAL '${req.query.time}')
   `;
 
   const done = function (err,data) {
