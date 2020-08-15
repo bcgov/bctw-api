@@ -26,6 +26,7 @@ const pgPool = new pg.Pool({
  */
 const getDBCritters = function (req, res, next) {
   const interval = req.query.time || '1 days';
+  console.log("time query parameter",req.query.time)
   const sql = `
     select
       geojson
