@@ -25,13 +25,14 @@ const pgPool = new pg.Pool({
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req, res, next) {
+  const interval = req.query.time || '1 days';
   const sql = `
     select
       geojson
     from
       vendor_merge
     where
-      date_recorded > (current_date - INTERVAL '${req.query.time}')
+      date_recorded > (current_date - INTERVAL '${interval}')
   `;
 
   const done = function (err,data) {
