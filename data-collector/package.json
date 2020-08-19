@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "vectronics": "node scripts/vectronics.js",
-    "lotek": "node scripts/lotek.js"
+    "lotek": "node scripts/lotek.js",
+    "vendor-merge": "node scripts/vendor-merge.js"
   },
   "repository": {
     "type": "git",
