@@ -1,0 +1,103 @@
+---
+kind: 'Template'
+apiVersion: 'v1'
+metadata:
+  name: 'bctw-cronjob-vendor-merge'
+  annotations:
+    description: 'Cron job to merge vendor tables using Node.js'
+    tags: 'scheduler,cron job,external, vendor, merge'
+objects:
+  - kind: 'CronJob'
+    apiVersion: 'batch/v1beta1'
+    metadata:
+      name: '${JOB_NAME}'
+      namespace: ${NAMESPACE}
+      labels:
+        template: 'bctw-cronjob-vendor-merge'
+        cronjob: '${JOB_NAME}'
+    spec:
+      schedule: '${SCHEDULE}'
+      concurrencyPolicy: 'Forbid'
+      successfulJobsHistoryLimit: ${{SUCCESS_JOBS_HISTORY_LIMIT}}
+      failedJobsHistoryLimit: ${{FAILED_JOBS_HISTORY_LIMIT}}
+      jobTemplate:
+        metadata:
+          labels:
+            template: 'bctw-cronjob-vendor-merge'
+            cronjob: '${JOB_NAME}'
+        spec:
+          backoffLimit: ${{JOB_BACKOFF_LIMIT}}
+          template:
+            spec:
+              containers:
+                - name: '${JOB_NAME}'
+                  image: 'docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}'
+                  command:
+                    - 'npm'
+                    - 'run'
+                    - 'vendor-merge'
+                  env:
+                  - name: NODE_ENV
+                    value: production
+                  - name: POSTGRES_SERVER_HOST
+                    value: bctw-db
+                  - name: POSTGRES_SERVER_PORT
+                    value: '5432'
+                  - name: POSTGRES_USER
+                    valueFrom:
+                      secretKeyRef:
+                        key: username
+                        name: bctw
+                  - name: POSTGRES_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: password
+                        name: bctw
+                  - name: POSTGRES_DB
+                    value: bctw
+              restartPolicy: 'Never'
+              terminationGracePeriodSeconds: 30
+              activeDeadlineSeconds: 90
+              dnsPolicy: 'ClusterFirst'
+parameters:
+  - name: 'NAMESPACE'
+    displayName: 'Namespace'
+    description: 'Name of the Namespace where to deploy the Scheduled Job'
+    value: 'dgsbmb-test'
+    required: true
+  - name: 'JOB_NAME'
+    displayName: 'Job Name'
+    description: 'Name of the Scheduled Job to Create.'
+    value: 'bctw-cronjob-vendor-merge'
+    required: true
+  - name: 'IMAGE_NAMESPACE'
+    displayName: 'Image Namespace'
+    description: 'The locate of the image to use for this cron job.'
+    value: 'dgsbmb-tools'
+    required: true
+  - name: 'IMAGE_NAME'
+    displayName: 'Image Name'
+    description: 'The image name to use for this cron job.'
+    value: 'data-collector:latest'
+    required: true
+  - name: 'SCHEDULE'
+    displayName: 'Cron Schedule'
+    description: 'Cron Schedule to Execute the Job (in UTC)'
+    value: '0 3 * * *' # at two o'clock
+    # value: '*/5 * * * *' #every five minutes  
+    required: true
+  - name: 'SUCCESS_JOBS_HISTORY_LIMIT'
+    displayName: 'Successful Job History Limit'
+    description: 'The number of successful jobs that will be retained'
+    value: '3'
+    required: true
+  - name: 'FAILED_JOBS_HISTORY_LIMIT'
+    displayName: 'Failed Job History Limit'
+    description: 'The number of failed jobs that will be retained'
+    value: '3'
+    required: true
+  - name: 'JOB_BACKOFF_LIMIT'
+    displayName: 'Job Backoff Limit'
+    description: 'The number of attempts to try for a successful job outcome (default: 6)'
+    value: '0'
+    required: false
