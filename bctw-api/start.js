@@ -51,6 +51,38 @@ const getDBCritters = function (req, res, next) {
   pgPool.query(sql,done);
 };
 
+/* ## getLastPings
+  Get the last know location of every collar ever deployed.
+  @param req {object} Node/Express request object
+  @param res {object} Node/Express response object
+  @param next {function} Node/Express function for flow control
+ */
+const getLastPings = function (req, res, next) {
+  const sql = `
+    select distinct on (animal_id)
+      geojson
+    from
+      vendor_merge
+    order by
+      animal_id,
+      date_recorded desc
+  `;
+
+  const done = function (err,data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    features = data.rows.map(row => row.geojson);
+    featureCollection = {
+      type: "FeatureCollection",
+      features: features
+    };
+
+    res.send(featureCollection);
+  };
+  pgPool.query(sql,done);
+};
+
 
 /* ## getDBCollars
   Get collar data from the database. Returns GeoJSON through Express.
