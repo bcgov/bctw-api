@@ -96,6 +96,8 @@ const sql = `
   create index vendor_merge_gist on vendor_merge using gist ("geom");
   create index vendor_merge_idx on vendor_merge(vendor_merge_id);
   create index vendor_merge_idx2 on vendor_merge(date_recorded);
+
+  refresh materialized view last_critter_pings_view;
 `;
 
 pgPool.query(sql,callback);
