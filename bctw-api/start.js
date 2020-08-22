@@ -59,13 +59,7 @@ const getDBCritters = function (req, res, next) {
  */
 const getLastPings = function (req, res, next) {
   const sql = `
-    select distinct on (animal_id)
-      geojson
-    from
-      vendor_merge
-    order by
-      animal_id,
-      date_recorded desc
+    select * from last_critter_pings_view
   `;
 
   const done = function (err,data) {
@@ -135,6 +129,7 @@ const app = express()
   // .use(compression())
   .get('/get-collars', getDBCollars)
   .get('/get-critters',getDBCritters)
+  .get('/get-last-pings',getLastPings)
   .get('*', notFound);
 
 http.createServer(app).listen(3000);
