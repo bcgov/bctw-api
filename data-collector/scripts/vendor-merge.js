@@ -17,7 +17,7 @@ const pgPool = new pg.Pool({
 const callback = (err) => {
   const now = moment().utc();
   if (err) {
-    return console.error(`${now}: Merge of vendor tables failed`);
+    return console.error(`${now}: Merge of vendor tables failed`,err);
   } else {
     return console.log(`${now}: Merge of vendor tables successfull`);
   }
