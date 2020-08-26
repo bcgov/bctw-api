@@ -31,7 +31,7 @@ const getDBCritters = function (req, res, next) {
     select
       geojson
     from
-      vendor_merge
+      vendor_merge_view
     where
       date_recorded > (current_date - INTERVAL '${interval}')
   `;
