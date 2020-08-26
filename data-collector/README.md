@@ -32,5 +32,6 @@ oc get CronJob
 
 * Remove cron jobs
 ```
+oc delete template bctw-cronjob-vectronics
 oc delete CronJob bctw-cronjob-vectronics
 ```
