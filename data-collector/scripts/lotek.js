@@ -117,16 +117,24 @@ const iterateCollars = function(collar,callback) {
   needle.get(url,tokenConfig,(err,res,body) => {
     if (err) {
       const msg = `Could not get collar data for ${collar.nDeviceID}: ${err}`
-      callback(msg);
+      callback(null);
       return console.error(msg);
     }
+
+    if (!body.flat) {
+      const msg = `Did not receive a valid array for ${collar.nDeviceID}`
+      callback(null);
+      return console.error(msg);
+    }
+
     const records = body
       .flat()
       .filter((e) => { return e && e.RecDateTime && e.DeviceID});
 
     if (records.length < 1) {
-      console.log("no records");
-      return callback(null);
+      const msg = `No records for ${collar.nDeviceID}`
+      callback(null);
+      return console.error(msg);
     }
      
     insertCollarData(records,callback);
