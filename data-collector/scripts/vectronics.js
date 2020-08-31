@@ -61,8 +61,15 @@ const iterateCollars = function(collar, callback) {
 
 const insertCollarRecords = function(err,result,callback) {
   if (err) {
-    pgPool.end();
-    return callback("Error fetching collar data: ",err);
+    const msg = `Could not get collar data for ${collar.idcollar}: ${err}`
+    callback(null);
+    return console.error(msg); 
+  }
+
+  if (!result.flat) {
+    const msg = `Did not receive a valid array for ${collar.idcollar}`
+    callback(null);
+    return console.error(msg);
   }
 
   const records = result
@@ -70,8 +77,9 @@ const insertCollarRecords = function(err,result,callback) {
     .filter((e) => { return e && e.idPosition});
 
   if (records.length < 1) {
-    console.log("no records");
-    return callback(null);
+    const msg = `No records for ${collar.idcollar}`
+    callback(null);
+    return console.error(msg);
   }
 
   const sqlPreamble = `
