@@ -56,10 +56,10 @@ const iterateCollars = function(collar, callback) {
 
   console.log(`Fetching data for ${id}`);
 
-  needle.get(url,(err,res,body) => {insertCollarRecords(err,body,callback)});
+  needle.get(url,(err,res,body) => {insertCollarRecords(err,body,collar,callback)});
 };
 
-const insertCollarRecords = function(err,result,callback) {
+const insertCollarRecords = function(err,result,collar,callback) {
   if (err) {
     const msg = `Could not get collar data for ${collar.idcollar}: ${err}`
     callback(null);

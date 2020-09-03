@@ -194,6 +194,7 @@ const getToken = function () {
     content_type: 'application/x-www-form-urlencoded'
   };
 
+  console.log(url);
   needle.post(url,data,config,getAllCollars);
 
 }
