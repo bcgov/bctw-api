@@ -8,6 +8,8 @@ const compression = require('compression');
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
+const authUsers = JSON.parse(process.env.BCTW_AUTHORIZED_USERS);
+
 // Set up the database pool
 const pgPool = new pg.Pool({
   user: process.env.POSTGRES_USER,
@@ -25,9 +27,15 @@ const pgPool = new pg.Pool({
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req, res, next) {
+  /* To Deprecate */
+  const idir = req.query.idir;
+  const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
+  const collars = JSON.parse(process.env[txt]) || false;
+  /****************/
+
   const interval = req.query.time || '1 days';
   console.log("time query parameter",req.query.time)
-  const sql = `
+  var sql = `
     select
       geojson
     from
@@ -35,6 +43,12 @@ const getDBCritters = function (req, res, next) {
     where
       date_recorded > (current_date - INTERVAL '${interval}')
   `;
+
+  /* To Deprecate */
+  if (collars) {
+    sql += ` and device_id in (${collars.join(',')})`
+  }
+  /****************/
 
   const done = function (err,data) {
     if (err) {
@@ -80,6 +94,7 @@ const getLastPings = function (req, res, next) {
 
 /* ## getDBCollars
   Get collar data from the database. Returns GeoJSON through Express.
+  TODO: Deprecate
   @param req {object} Node/Express request object
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
@@ -127,7 +142,7 @@ const app = express()
   .use(helmet())
   .use(cors())
   // .use(compression())
-  .get('/get-collars', getDBCollars)
+  .get('/get-collars', getDBCollars) // TODO: deprecate
   .get('/get-critters',getDBCritters)
   .get('/get-last-pings',getLastPings)
   .get('*', notFound);
