@@ -46,7 +46,7 @@ const getDBCritters = function (req, res, next) {
 
   /* To Deprecate */
   if (collars) {
-    sql += ` and device_id in (${collars.join(',')})`
+    sql += ` and device_id in (${collars.join(',')})`;
   }
   /****************/
 
