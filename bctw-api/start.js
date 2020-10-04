@@ -1,25 +1,14 @@
 const fs = require('fs');
-const pg = require('pg');
 const cors = require('cors');
 const http = require('http');
 const helmet = require('helmet');
 const express = require('express');
-// const compression = require('compression');
 
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
+const pg = require('./pg')
+const collar_helpers = require('./collar/collar_access')
 
+const pgPool = pg.pgPool;
 const authUsers = JSON.parse(process.env.BCTW_AUTHORIZED_USERS);
-
-// Set up the database pool
-const pgPool = new pg.Pool({
-  user: process.env.POSTGRES_USER,
-  database: process.env.POSTGRES_DB,
-  password: process.env.POSTGRES_PASSWORD,
-  host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
-  port: isProd ? process.env.POSTGRES_SERVER_PORT : 5432,
-  max: 10
-});
-
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -28,33 +17,22 @@ const pgPool = new pg.Pool({
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req, res, next) {
-
-  /* To Deprecate when the user table exists.*/
-  var collars = [];
-  try {
-    const idir = req.query.idir;
-    const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
-
-    collars = JSON.parse(process.env[txt]) || false;
-  } catch (err) {
-    console.error("no IDIR specified: ",err);
-  }
-  /****************/
-
+  // todo: add idir to query params
+  const idir = req.query.idir || JSON.parse(process.env.BCTW_AUTHORIZED_USERS)[1];
   const interval = req.query.time || '1 days';
-  console.log("time query parameter",req.query.time)
-  var sql = `
-    select
-      geojson
-    from
-      vendor_merge_view
-    where
-      date_recorded > (current_date - INTERVAL '${interval}')
-  `;
+  console.log(`time interval: ${interval}, idir: ${idir}`)
 
-  if (collars && collars.length > 0) {
-    sql += ` and device_id in (${collars.join(',')})`;
-  }
+  var sql = `
+    with collar_ids as (
+      select collar_id from bctw.user_collar_access uca
+      join bctw.user u on u.user_id = uca.user_id
+      where u.idir = '${idir}'
+      and uca.collar_access = any(${pg.to_pg_array(collar_helpers.can_view_collar)})
+    )
+    select geojson from vendor_merge_view 
+    where device_id = any(select * from collar_ids)
+    and date_recorded > (current_date - INTERVAL '${interval}');
+  `;
 
   const done = function (err,data) {
     if (err) {

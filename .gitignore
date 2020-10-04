@@ -1,5 +1,6 @@
 /bctw_vendor_api_calls/static/
 /bctw_vendor_api_calls/templates/
+/bctw-api/.env
 bctw_vendor_api_calls/fix_vectronics_api_don't_include
 .idea/
 *.log
