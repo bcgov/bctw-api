@@ -4,7 +4,7 @@ const cors = require('cors');
 const http = require('http');
 const helmet = require('helmet');
 const express = require('express');
-const compression = require('compression');
+// const compression = require('compression');
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
@@ -28,10 +28,20 @@ const pgPool = new pg.Pool({
  */
 const getDBCritters = function (req, res, next) {
   /* To Deprecate */
-  const idir = req.query.idir;
-  const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
-  const collars = JSON.parse(process.env[txt]) || false;
+  // const idir = req.query.idir;
+  // console.log(req.query);
+  // const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
+  // const collars = JSON.parse(process.env[txt]) || false;
   /****************/
+  console.log('kauth',req.kauth);
+
+  return res.send('blah');
+  const auth = req.kauth.grant.access_token.content.preferred_username; 
+  const user = auth.split('@')[0];
+  const domain = auth.split('@')[1];
+  // if (authorizedUsers.includes(user)) {
+
+
 
   const interval = req.query.time || '1 days';
   console.log("time query parameter",req.query.time)
