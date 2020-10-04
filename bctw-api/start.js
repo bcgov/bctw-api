@@ -28,9 +28,13 @@ const pgPool = new pg.Pool({
  */
 const getDBCritters = function (req, res, next) {
   /* To Deprecate */
-  const idir = req.query.idir;
-  const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
-  const collars = JSON.parse(process.env[txt]) || false;
+  try {
+    const idir = req.query.idir;
+    const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
+    const collars = JSON.parse(process.env[txt]) || false;
+  } catch (err) {
+    console.error("no IDIR specified: ",err);
+  }
   /****************/
 
   const interval = req.query.time || '1 days';
