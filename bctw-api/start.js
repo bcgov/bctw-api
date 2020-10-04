@@ -22,16 +22,18 @@ const pgPool = new pg.Pool({
 
 
 /* ## getDBCritters
+  Request all collars the user has access to.
   @param req {object} Node/Express request object
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req, res, next) {
-  /* To Deprecate */
+  /* To Deprecate when the user table exists.*/
+  const collars = [];
   try {
     const idir = req.query.idir;
     const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
-    const collars = JSON.parse(process.env[txt]) || false;
+    collars = JSON.parse(process.env[txt]) || false;
   } catch (err) {
     console.error("no IDIR specified: ",err);
   }
@@ -48,8 +50,8 @@ const getDBCritters = function (req, res, next) {
       date_recorded > (current_date - INTERVAL '${interval}')
   `;
 
-  /* To Deprecate */
-  if (collars) {
+  /* To Deprecate when the user table exists.*/
+  if (collars && collars.length > 0) {
     sql += ` and device_id in (${collars.join(',')})`;
   }
   /****************/
