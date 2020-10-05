@@ -52,11 +52,9 @@ const getDBCritters = function (req, res, next) {
       date_recorded > (current_date - INTERVAL '${interval}')
   `;
 
-  /* To Deprecate when the user table exists.*/
   if (collars && collars.length > 0) {
     sql += ` and device_id in (${collars.join(',')})`;
   }
-  /****************/
 
   const done = function (err,data) {
     if (err) {
