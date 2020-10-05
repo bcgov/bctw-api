@@ -33,11 +33,17 @@ const getDBCritters = function (req, res, next) {
   console.log('query: ',req.query);
   try {
     const idir = req.query.idir;
+
     console.log('idir: ',idir);
+
     const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
+
     console.log('txt: ',txt);
     console.log('collar string: ',process.env[txt]);
-    collars = JSON.parse(process.env[txt]) || false;
+    collarString = process.env[txt];
+
+    collars = JSON.parse(collarString) || false;
+
     console.log('collars: ',collars);
   } catch (err) {
     console.error("no IDIR specified: ",err);
