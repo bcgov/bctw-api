@@ -4,7 +4,7 @@ const cors = require('cors');
 const http = require('http');
 const helmet = require('helmet');
 const express = require('express');
-const compression = require('compression');
+// const compression = require('compression');
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
@@ -28,24 +28,14 @@ const pgPool = new pg.Pool({
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req, res, next) {
+
   /* To Deprecate when the user table exists.*/
   var collars = [];
-  console.log('query: ',req.query);
   try {
     const idir = req.query.idir;
-
-    console.log('idir: ',idir);
-
     const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
 
-    console.log('txt: ',txt);
-    console.log('collar string: ',process.env[txt]);
-    collarString = process.env[txt];
-    console.log('collarString: ',collarString);
-
-    collars = JSON.parse(collarString) || false;
-
-    console.log('collars: ',collars);
+    collars = JSON.parse(process.env[txt]) || false;
   } catch (err) {
     console.error("no IDIR specified: ",err);
   }
@@ -109,41 +99,6 @@ const getLastPings = function (req, res, next) {
   pgPool.query(sql,done);
 };
 
-
-/* ## getDBCollars
-  Get collar data from the database. Returns GeoJSON through Express.
-  TODO: Deprecate
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
-  @param next {function} Node/Express function for flow control
- */
-const getDBCollars = function (req, res, next) {
-  console.log("Retrieving collar data from database.");
-  const sql = `
-    SELECT row_to_json(fc)
-     FROM ( SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features
-     FROM (
-      SELECT 'Feature' As type,
-        ST_AsGeoJSON(lg.geometry)::json As geometry,
-        row_to_json((
-          animal_id,
-          collar_id,
-          local_timestamp
-        )) As properties
-       FROM vendor_data_merge As lg
-       order by local_timestamp desc
-       limit 2000
-    ) As f )  As fc;
-  `;
-  const done = function (err,data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    res.send(data.rows[0].row_to_json);
-  };
-  pgPool.query(sql,done);
-};
-
 /* ## notFound
   Catch-all router for any request that does not have an endpoint defined.
   @param req {object} Node/Express request object
@@ -160,7 +115,6 @@ const app = express()
   .use(helmet())
   .use(cors())
   // .use(compression())
-  .get('/get-collars', getDBCollars) // TODO: deprecate
   .get('/get-critters',getDBCritters)
   .get('/get-last-pings',getLastPings)
   .get('*', notFound);
