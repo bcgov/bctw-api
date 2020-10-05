@@ -36,6 +36,7 @@ const getDBCritters = function (req, res, next) {
     console.log('idir: ',idir);
     const txt = `BCTW_${idir.toUpperCase()}_COLLARS`;
     console.log('txt: ',txt);
+    console.log('collar string: ',process.env[txt]);
     collars = JSON.parse(process.env[txt]) || false;
     console.log('collars: ',collars);
   } catch (err) {
