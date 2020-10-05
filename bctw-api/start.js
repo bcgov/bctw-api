@@ -40,7 +40,7 @@ const getDBCritters = function (req, res, next) {
 
     console.log('txt: ',txt);
     console.log('collar string: ',process.env[txt]);
-    collarString = `"${process.env[txt]}"`;
+    collarString = process.env[txt];
     console.log('collarString: ',collarString);
 
     collars = JSON.parse(collarString) || false;
