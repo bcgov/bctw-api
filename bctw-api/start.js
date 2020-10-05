@@ -29,7 +29,7 @@ const pgPool = new pg.Pool({
  */
 const getDBCritters = function (req, res, next) {
   /* To Deprecate when the user table exists.*/
-  const collars = [];
+  var collars = [];
   console.log('query: ',req.query);
   try {
     const idir = req.query.idir;
