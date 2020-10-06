@@ -15,6 +15,7 @@ const app = express()
   .get('/get-critters',api.getDBCritters)
   .get('/get-last-pings',api.getLastPings)
   .get('/role',api.getRole)
+  .get('/user-collars', api.getCollarAccess)
   .get('*', api.notFound);
 
 http.createServer(app).listen(3000, () => {

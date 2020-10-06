@@ -15,3 +15,7 @@ http://localhost:3000/role?idir=stuff
 ###
 
 http://localhost:3000/role?idir=jcraven
+
+###
+
+http://localhost:3000/user-collars?idir=jcraven

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bash -c 'node_modules/supervisor/lib/cli-wrapper.js -w server.js server.js'",
     "start": "npx pm2@4.4.0 --no-daemon start server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -26,6 +26,13 @@
     "pg": "^8.2.1"
   },
   "devDependencies": {
+    "jest": "^26.5.2",
     "supervisor": "^0.12.0"
+  },
+  "jest": {
+    "verbose": true,
+    "modulePaths": [
+      "<rootDir>"
+    ]
   }
 }

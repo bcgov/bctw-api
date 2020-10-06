@@ -1,6 +1,6 @@
 const collar_helpers = require('./collar/collar_access')
 const pg = require('./pg')
-const user_api = require('./user_management')
+const user_api = require('./user_api')
 
 const pgPool = pg.pgPool;
 
@@ -85,13 +85,30 @@ const getRole = async function (req, res) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    console.log(`your role is: ${data}`);
-    res.send(data);
+    const results = data.rows.map(row => row['get_user_role'])
+    if (results && results.length) {
+      res.send(results[0]);
+    }
   };
   await user_api.getUserRole(params, done)
 }
 
+const getCollarAccess = async function (req, res) {
+  const params = req.query && req.query.idir || '';
+  const done = function (err,data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data.rows.map(row => row['get_collars'])
+    if (results && results.length) {
+      res.send(results[0]);
+    }
+  };
+  await user_api.getUserCollars(params, done)
+}
+
 exports.getRole = getRole;
+exports.getCollarAccess = getCollarAccess;
 exports.notFound = notFound;
 exports.getDBCritters = getDBCritters;
 exports.getLastPings = getLastPings;

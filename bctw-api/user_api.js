@@ -29,5 +29,14 @@ const getUserRole = function(idir, onDone) {
   return pgPool.query(sql, onDone);
 }
 
+const getUserCollars = function(idir, onDone) {
+  if (!idir) {
+    throw('IDIR must be supplied')
+  }
+  const sql = `select bctw.get_collars('${idir}');`
+  return pgPool.query(sql, onDone);
+}
+
 exports.getUserRole = getUserRole;
+exports.getUserCollars = getUserCollars;
 
