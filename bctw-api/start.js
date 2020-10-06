@@ -1,14 +1,8 @@
-const fs = require('fs');
-const cors = require('cors');
-const http = require('http');
-const helmet = require('helmet');
-const express = require('express');
-
-const pg = require('./pg')
 const collar_helpers = require('./collar/collar_access')
+const pg = require('./pg')
+const user_api = require('./user_management')
 
 const pgPool = pg.pgPool;
-const authUsers = JSON.parse(process.env.BCTW_AUTHORIZED_USERS);
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -84,15 +78,20 @@ const notFound = function (req, res) {
   return res.status(404).json({error: "Sorry you must be lost :("});
 };
 
-/* ## Server
-  Run the server.
- */
-const app = express()
-  .use(helmet())
-  .use(cors())
-  // .use(compression())
-  .get('/get-critters',getDBCritters)
-  .get('/get-last-pings',getLastPings)
-  .get('*', notFound);
 
-http.createServer(app).listen(3000);
+const getRole = async function (req, res) {
+  const params = req.query && req.query.idir || '';
+  const done = function (err,data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    console.log(`your role is: ${data}`);
+    res.send(data);
+  };
+  await user_api.getUserRole(params, done)
+}
+
+exports.getRole = getRole;
+exports.notFound = notFound;
+exports.getDBCritters = getDBCritters;
+exports.getLastPings = getLastPings;

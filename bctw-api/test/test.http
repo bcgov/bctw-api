@@ -9,3 +9,9 @@ http://localhost:3000/get-critters
 http://localhost:3000/
 
 ###
+
+http://localhost:3000/role?idir=stuff
+
+###
+
+http://localhost:3000/role?idir=jcraven

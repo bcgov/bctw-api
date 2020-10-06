@@ -7,12 +7,12 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "launch start.js from chrome debugger",
+      "name": "launch server.js from chrome debugger",
       "skipFiles": [
         "<node_internals>/**"
       ],
       "envFile": "${workspaceFolder}/bctw-api/.env",
-      "program": "${workspaceFolder}/bctw-api/start.js"
+      "program": "${workspaceFolder}/bctw-api/server.js"
     }
   ]
 }

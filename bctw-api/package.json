@@ -4,8 +4,8 @@
   "description": "Collecting and dispensing BC Telemetry data",
   "main": "start.js",
   "scripts": {
-    "dev": "bash -c 'node_modules/supervisor/lib/cli-wrapper.js -w start.js start.js'",
-    "start": "npx pm2@4.4.0 --no-daemon start start.js",
+    "dev": "bash -c 'node_modules/supervisor/lib/cli-wrapper.js -w server.js server.js'",
+    "start": "npx pm2@4.4.0 --no-daemon start server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
