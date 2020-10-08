@@ -5,6 +5,7 @@ const collar_api = require('./apis/collar_api')
 
 const pgPool = pg.pgPool;
 
+const isProd = process.env.NODE_ENV === 'production' ? true : false;
 /* ## getDBCritters
   Request all collars the user has access to.
   @param req {object} Node/Express request object
@@ -12,7 +13,11 @@ const pgPool = pg.pgPool;
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req, res, next) {
-  // todo: add idir to query params
+  console.log(`production: ${isProd}`)
+  console.log(JSON.stringify(req.query))
+  if (req && req.domain) {
+    console.log(JSON.stringify(req.domain))
+  }
   const idir = req.query.idir || JSON.parse(process.env.BCTW_AUTHORIZED_USERS)[1];
   const interval = req.query.time || '1 days';
   console.log(`time interval: ${interval}, idir: ${idir}`)
