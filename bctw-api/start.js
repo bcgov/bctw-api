@@ -13,14 +13,8 @@ const isProd = process.env.NODE_ENV === 'production' ? true : false;
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req, res, next) {
-  console.log(`production: ${isProd}`)
-  console.log(JSON.stringify(req.query))
-  if (req && req.domain) {
-    console.log(JSON.stringify(req.domain))
-  }
-  const idir = req.query.idir || JSON.parse(process.env.BCTW_AUTHORIZED_USERS)[1];
+  const idir = req.query.idir;
   const interval = req.query.time || '1 days';
-  console.log(`time interval: ${interval}, idir: ${idir}`)
 
   var sql = `
     with collar_ids as (
