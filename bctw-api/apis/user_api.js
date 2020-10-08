@@ -1,25 +1,24 @@
-const pg = require('./pg');
+const pg = require('../pg');
 const pgPool = pg.pgPool;
+const toPgStr = pg.to_pg_str;
 
-/* maybe not required? */
-const login = function() {
+const addUser = function(params, onDone) {
+  const sql = `select * from bctw.add_user('${JSON.stringify(params.user)}', ${toPgStr(params.role)})`;
+  return pgPool.query(sql, onDone);
 }
 
-/* maybe not required? */
-const logout = function() {
-}
+const updateUser = function() {}
+const logout = function() {}
 
 /*
   for updating a user's system role. ex granting another user admin
 */
-const updateSystemUserPermission = function() {
-}
+const updateSystemUserPermission = function() {}
 
 /* 
   - needs to have admin role?
 */
-const deleteUser = function() {
-}
+const deleteUser = function() {}
 
 const getUserRole = function(idir, onDone) {
   if (!idir) {
@@ -37,6 +36,7 @@ const getUserCollars = function(idir, onDone) {
   return pgPool.query(sql, onDone);
 }
 
+exports.addUser = addUser;
 exports.getUserRole = getUserRole;
 exports.getUserCollars = getUserCollars;
 

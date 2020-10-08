@@ -1,6 +1,7 @@
-const collar_helpers = require('./collar/collar_access')
+const collar_helpers = require('./apis/collar_api')
 const pg = require('./pg')
-const user_api = require('./user_api')
+const user_api = require('./apis/user_api')
+const collar_api = require('./apis/collar_api')
 
 const pgPool = pg.pgPool;
 
@@ -78,6 +79,18 @@ const notFound = function (req, res) {
   return res.status(404).json({error: "Sorry you must be lost :("});
 };
 
+const addUser = async function(req, res) {
+  const params = req.body;
+  const done = function (err,data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data;
+    return true
+  };
+  await user_api.addUser(params, done);
+}
+
 
 const getRole = async function (req, res) {
   const params = req.query && req.query.idir || '';
@@ -107,8 +120,35 @@ const getCollarAccess = async function (req, res) {
   await user_api.getUserCollars(params, done)
 }
 
+const grantCollarAccess = async function (req, res) {
+  const params = req.body;
+  // const idir = params.idir || 'jcraven';
+  const idir = params.idir;
+  const accessType = params.accessType || collar_helpers.collar_access_types.view;
+  // const collarIds = params.collarIds || [101583, 101775, 101827];
+  const collarIds = params.collarIds;
+
+  const done = function (err,data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    return true;
+    // const results = data.rows.map(row => row['get_collars'])
+    // console.log(results)
+  };
+  await collar_api.grantCollarAccess(
+    idir,
+    accessType,
+    collarIds,
+    done
+  )
+}
+
+exports.addUser = addUser;
 exports.getRole = getRole;
 exports.getCollarAccess = getCollarAccess;
-exports.notFound = notFound;
+
 exports.getDBCritters = getDBCritters;
 exports.getLastPings = getLastPings;
+exports.grantCollarAccess = grantCollarAccess;
+exports.notFound = notFound;

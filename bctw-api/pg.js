@@ -15,6 +15,11 @@ const pgPool = new pg.Pool({
 // converts a javascript array to the postgresql format
 // ['abc','def'] => '{abc, def}'
 const to_pg_array = (arr) => `'{${arr.join(',')}}'`
+const to_pg_str = (str) => {
+  if (!str) return null;
+  return `'${str}'`;
+}
 
 exports.pgPool = pgPool;
 exports.to_pg_array = to_pg_array;
+exports.to_pg_str = to_pg_str;

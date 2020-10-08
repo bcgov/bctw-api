@@ -19,3 +19,51 @@ http://localhost:3000/role?idir=jcraven
 ###
 
 http://localhost:3000/user-collars?idir=jcraven
+
+###
+
+POST http://localhost:3000/grant-collars HTTP/1.1
+content-type: application/json
+
+{
+  "idir": "jcraven",
+  "accessType": "view",
+  "collarIds":[101583, 101775, 101827]
+}
+
+### 
+
+# should fail, no collar ids supplied
+POST http://localhost:3000/grant-collars HTTP/1.1
+content-type: application/json
+
+{
+  "idir": "jcraven",
+  "accessType": "view",
+  "collarIds":[]
+}
+
+###
+POST http://localhost:3000/add-user HTTP/1.1
+content-type: application/json
+
+{
+  "user": {
+    "idir": "vchongv",
+    "email": "vchong@qt.com"
+  },
+  "role": "administrator"
+}
+
+###
+
+POST http://localhost:3000/add-user HTTP/1.1
+content-type: application/json
+
+{
+  "user": {
+    "idir": "vchongv",
+    "email": "vchong@qt.com"
+  },
+  "role": "administrat"
+}
