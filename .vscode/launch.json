@@ -1,18 +1,21 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "node",
+      "name": "nodemon tsc",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "program": "${workspaceFolder}/bctw-api/server.ts",
       "request": "launch",
-      "name": "launch server.js from chrome debugger",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "restart": true,
+      "runtimeExecutable": "nodemon",
+      "skipFiles": [ "<node_internals>/**" ],
+      "type": "pwa-node",
       "envFile": "${workspaceFolder}/bctw-api/.env",
-      "program": "${workspaceFolder}/bctw-api/server.js"
+      "outFiles": [
+        "${workspaceFolder}/bctw-api/build/*.js",
+        "!**/node_modules/**"
+      ]
     }
   ]
 }

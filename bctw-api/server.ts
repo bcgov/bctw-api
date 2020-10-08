@@ -1,9 +1,9 @@
-const cors = require('cors');
-const bodyParser = require('body-parser')
-const http = require('http');
-const helmet = require('helmet');
-const express = require('express');
-const api = require('./start')
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import http from 'http';
+import helmet from 'helmet';
+import express from 'express';
+import * as api from './start';
 
 /* ## Server
   Run the server.
@@ -25,6 +25,7 @@ const app = express()
   .get('/user-collars', api.getCollarAccess)
   .get('*', api.notFound);
 
+  
 http.createServer(app).listen(3000, () => {
   console.log(`listening on port 3000`)
 });

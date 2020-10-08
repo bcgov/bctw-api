@@ -2,7 +2,7 @@ http://localhost:3000/get-last-pings
 
 ###
 
-http://localhost:3000/get-critters
+http://localhost:3000/get-critters?idir=jcraven
 
 ###
 

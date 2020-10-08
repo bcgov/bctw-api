@@ -1,27 +1,28 @@
-const collar_helpers = require('./apis/collar_api')
-const pg = require('./pg')
-const user_api = require('./apis/user_api')
-const collar_api = require('./apis/collar_api')
+// import collar_helpers from './apis/collar_api';
+import {pgPool, to_pg_array} from './pg';
+import {addUser as _addUser, getUserCollars, getUserRole} from './apis/user_api';
+import {grantCollarAccess as _grantCollarAccess, can_view_collar } from './apis/collar_api';
+import { NextFunction, Request, Response } from 'express';
+import { User, UserRole } from './types/user';
 
-const pgPool = pg.pgPool;
+// const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
 /* ## getDBCritters
   Request all collars the user has access to.
   @param req {object} Node/Express request object
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getDBCritters = function (req, res, next) {
+const getDBCritters = function (req: Request, res: Response, next: NextFunction): void {
   const idir = req.query.idir;
   const interval = req.query.time || '1 days';
 
-  var sql = `
+  const sql = `
     with collar_ids as (
       select collar_id from bctw.user_collar_access uca
       join bctw.user u on u.user_id = uca.user_id
       where u.idir = '${idir}'
-      and uca.collar_access = any(${pg.to_pg_array(collar_helpers.can_view_collar)})
+      and uca.collar_access = any(${to_pg_array(can_view_collar)})
     )
     select geojson from vendor_merge_view 
     where device_id = any(select * from collar_ids)
@@ -32,8 +33,8 @@ const getDBCritters = function (req, res, next) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    features = data.rows.map(row => row.geojson);
-    featureCollection = {
+    const features = data.rows.map(row => row.geojson);
+    const featureCollection = {
       type: "FeatureCollection",
       features: features
     };
@@ -49,7 +50,7 @@ const getDBCritters = function (req, res, next) {
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getLastPings = function (req, res, next) {
+const getLastPings = function (req:Request, res:Response, next:NextFunction): void {
   const sql = `
     select * from last_critter_pings_view
   `;
@@ -58,8 +59,8 @@ const getLastPings = function (req, res, next) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    features = data.rows.map(row => row.geojson);
-    featureCollection = {
+    const features = data.rows.map(row => row.geojson);
+    const featureCollection = {
       type: "FeatureCollection",
       features: features
     };
@@ -74,26 +75,32 @@ const getLastPings = function (req, res, next) {
   @param req {object} Node/Express request object
   @param res {object} Node/Express response object
  */
-const notFound = function (req, res) {
+const notFound = function (req: Request, res: Response): Response {
   return res.status(404).json({error: "Sorry you must be lost :("});
 };
 
-const addUser = async function(req, res) {
+/* addUser
+*/
+const addUser = async function(req: Request, res: Response): Promise<void> {
   const params = req.body;
-  const done = function (err,data) {
+  const user: User = JSON.parse(params.user);
+  const role: string = params.role;
+
+  const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
     const results = data;
     return true
   };
-  await user_api.addUser(params, done);
+  await _addUser(user, role as UserRole, done);
 }
 
-
-const getRole = async function (req, res) {
-  const params = req.query && req.query.idir || '';
-  const done = function (err,data) {
+/*
+*/
+const getRole = async function (req: Request, res: Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
@@ -102,12 +109,14 @@ const getRole = async function (req, res) {
       res.send(results[0]);
     }
   };
-  await user_api.getUserRole(params, done)
+  await getUserRole(idir, done)
 }
 
-const getCollarAccess = async function (req, res) {
-  const params = req.query && req.query.idir || '';
-  const done = function (err,data) {
+/*
+*/
+const getCollarAccess = async function (req: Request, res: Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
@@ -116,18 +125,19 @@ const getCollarAccess = async function (req, res) {
       res.send(results[0]);
     }
   };
-  await user_api.getUserCollars(params, done)
+  await getUserCollars(idir, done)
 }
 
-const grantCollarAccess = async function (req, res) {
+/*
+*/
+const grantCollarAccess = async function (req: Request, res: Response): Promise<void> {
   const params = req.body;
-  // const idir = params.idir || 'jcraven';
-  const idir = params.idir;
-  const accessType = params.accessType || collar_helpers.collar_access_types.view;
+  const idir = (req?.query?.idir || '') as string;
+  const accessType = params.accessType;
   // const collarIds = params.collarIds || [101583, 101775, 101827];
   const collarIds = params.collarIds;
 
-  const done = function (err,data) {
+  const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
@@ -135,7 +145,7 @@ const grantCollarAccess = async function (req, res) {
     // const results = data.rows.map(row => row['get_collars'])
     // console.log(results)
   };
-  await collar_api.grantCollarAccess(
+  await _grantCollarAccess(
     idir,
     accessType,
     collarIds,
@@ -143,11 +153,12 @@ const grantCollarAccess = async function (req, res) {
   )
 }
 
-exports.addUser = addUser;
-exports.getRole = getRole;
-exports.getCollarAccess = getCollarAccess;
-
-exports.getDBCritters = getDBCritters;
-exports.getLastPings = getLastPings;
-exports.grantCollarAccess = grantCollarAccess;
-exports.notFound = notFound;
+export {
+  addUser,
+  getRole,
+  getCollarAccess,
+  getDBCritters,
+  getLastPings,
+  grantCollarAccess,
+  notFound
+}
