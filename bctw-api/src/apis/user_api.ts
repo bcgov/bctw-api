@@ -1,8 +1,13 @@
 import { pgPool, to_pg_str, QueryResultCbFn } from '../pg';
 import { User, UserRole } from '../types/user'
 
+const isProd = process.env.NODE_ENV === 'production' ? true : false;
+
 const addUser = function(user: User, userRole: UserRole, onDone: QueryResultCbFn): void {
-  const sql = `select * from bctw.add_user('${JSON.stringify(user)}', ${to_pg_str(userRole)})`;
+  let sql = `select * from bctw.add_user('${JSON.stringify(user)}', ${to_pg_str(userRole)});`;
+  if (!isProd) {
+    sql = `begin;\n ${sql}\n select * from bctw.user where idir=${to_pg_str(user.idir)}; rollback;`
+  }
   return pgPool.query(sql, onDone);
 }
 
@@ -21,7 +26,7 @@ const addUser = function(user: User, userRole: UserRole, onDone: QueryResultCbFn
 
 const getUserRole = function(idir: string, onDone: QueryResultCbFn): void {
   if (!idir) {
-    throw('IDIR must be supplied')
+    return onDone(Error('IDIR must be supplied'), null);
   }
   const sql = `select bctw.get_user_role('${idir}');`
   return pgPool.query(sql, onDone);
@@ -29,7 +34,7 @@ const getUserRole = function(idir: string, onDone: QueryResultCbFn): void {
 
 const getUserCollars = function(idir: string, onDone: QueryResultCbFn): void {
   if (!idir) {
-    throw('IDIR must be supplied')
+    return onDone(Error('IDIR must be supplied'), null);
   }
   const sql = `select bctw.get_collars('${idir}');`
   return pgPool.query(sql, onDone);

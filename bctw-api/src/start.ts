@@ -5,7 +5,7 @@ import {grantCollarAccess as _grantCollarAccess, can_view_collar } from './apis/
 import { NextFunction, Request, Response } from 'express';
 import { User, UserRole } from './types/user';
 
-// const isProd = process.env.NODE_ENV === 'production' ? true : false;
+const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -80,25 +80,31 @@ const notFound = function (req: Request, res: Response): Response {
   return res.status(404).json({error: "Sorry you must be lost :("});
 };
 
-/* addUser
+/* ## addUser
+  - idir must be unique
+  - todo: user adding must be admin?
 */
 const addUser = async function(req: Request, res: Response): Promise<void> {
   const params = req.body;
-  const user: User = JSON.parse(params.user);
+  const user: User = params.user;
   const role: string = params.role;
 
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    const results = data;
+    if (!isProd) {
+      const results = data.filter(obj => obj.command === 'SELECT' && obj.rows.length)
+      const userObj = results[results.length -1]
+      console.log(`user added: ${JSON.stringify(userObj.rows[0])}`)
+    }
+    res.send(`user ${user.idir} added sucessfully`);
     return true
-    console.log('hi')
   };
   await _addUser(user, role as UserRole, done);
 }
 
-/*
+/* ## getRole
 */
 const getRole = async function (req: Request, res: Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
@@ -114,7 +120,7 @@ const getRole = async function (req: Request, res: Response): Promise<void> {
   await getUserRole(idir, done)
 }
 
-/*
+/* ## getCollarAccess
 */
 const getCollarAccess = async function (req: Request, res: Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
@@ -131,27 +137,21 @@ const getCollarAccess = async function (req: Request, res: Response): Promise<vo
 }
 
 /*
+  ## grantCollarAccess
+  todo: make sure user granting has permission to do so?
+  returns an array of integers representing all of the collarids the user has access to
 */
 const grantCollarAccess = async function (req: Request, res: Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body;
-  const accessType = body.accessType;
-  const collarIds: number[] = body.collarIds;
-  console.log('HI')
-
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    return true;
-    // const results = data.rows.map(row => row['get_collars'])
+    const results = data?.find(obj => obj.command === 'SELECT')?.rows[0];
+    res.send(results?.['get_collars'] ?? []);
   };
-  await _grantCollarAccess(
-    idir,
-    accessType,
-    collarIds,
-    done
-  )
+  await _grantCollarAccess(idir, body.grantToIdir, body.accessType, body.collarIds, done)
 }
 
 export {

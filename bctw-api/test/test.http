@@ -10,6 +10,10 @@ http://localhost:3000/
 
 ###
 
+http://localhost:3000/role
+
+###
+
 http://localhost:3000/role?idir=stuff
 
 ###
@@ -22,11 +26,11 @@ http://localhost:3000/user-collars?idir=jcraven
 
 ###
 
-POST http://localhost:3000/grant-collars HTTP/1.1
+POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
 content-type: application/json
 
 {
-  "idir": "jcraven",
+  "grantToIdir": "jrpopkin",
   "accessType": "view",
   "collarIds":[101583, 101775, 101827]
 }
@@ -38,6 +42,7 @@ POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
 content-type: application/json
 
 {
+  "idir": 
   "accessType": "view",
   "collarIds":[]
 }
@@ -48,7 +53,7 @@ content-type: application/json
 
 {
   "user": {
-    "idir": "vchongv",
+    "idir": "vchongvv",
     "email": "vchong@qt.com"
   },
   "role": "administrator"

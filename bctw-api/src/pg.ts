@@ -23,7 +23,7 @@ const to_pg_str = (str: string): string | null => {
 }
 
 // define a callback function type 
-type QueryResultCbFn = (err: Error, result: QueryResult<any>) => void
+type QueryResultCbFn = (err: Error, result: QueryResult<any> | null) => void
 
 export {
   pgPool,

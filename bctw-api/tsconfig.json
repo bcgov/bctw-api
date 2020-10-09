@@ -40,5 +40,6 @@
     "skipLibCheck": true,                     /* Skip type checking of declaration files. */
     "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
   },
-  "exclude": ["**/*.test.ts", "build/*"]
+  "exclude": ["**/*.test.ts", "build/*"],
+  "include": ["src/**/*.ts"]
 }
