@@ -1,7 +1,13 @@
-// import collar_helpers from './apis/collar_api';
 import {pgPool, to_pg_array} from './pg';
-import {addUser as _addUser, getUserCollars, getUserRole} from './apis/user_api';
-import {grantCollarAccess as _grantCollarAccess, can_view_collar } from './apis/collar_api';
+import {
+  addUser as _addUser,
+  getUserCollars as _getUserCollars, 
+  getUserRole as _getUserRole
+} from './apis/user_api';
+import {
+  grantCollarAccess as _grantCollarAccess,
+  can_view_collar
+} from './apis/collar_api';
 import { NextFunction, Request, Response } from 'express';
 import { User, UserRole } from './types/user';
 
@@ -99,14 +105,13 @@ const addUser = async function(req: Request, res: Response): Promise<void> {
       console.log(`user added: ${JSON.stringify(userObj.rows[0])}`)
     }
     res.send(`user ${user.idir} added sucessfully`);
-    return true
   };
   await _addUser(user, role as UserRole, done);
 }
 
 /* ## getRole
 */
-const getRole = async function (req: Request, res: Response): Promise<void> {
+const getUserRole = async function (req: Request, res: Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   const done = function (err, data) {
     if (err) {
@@ -117,12 +122,12 @@ const getRole = async function (req: Request, res: Response): Promise<void> {
       res.send(results[0]);
     }
   };
-  await getUserRole(idir, done)
+  await _getUserRole(idir, done)
 }
 
 /* ## getCollarAccess
 */
-const getCollarAccess = async function (req: Request, res: Response): Promise<void> {
+const getUserCollars = async function (req: Request, res: Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   const done = function (err, data) {
     if (err) {
@@ -133,7 +138,7 @@ const getCollarAccess = async function (req: Request, res: Response): Promise<vo
       res.send(results[0]);
     }
   };
-  await getUserCollars(idir, done)
+  await _getUserCollars(idir, done)
 }
 
 /*
@@ -156,8 +161,8 @@ const grantCollarAccess = async function (req: Request, res: Response): Promise<
 
 export {
   addUser,
-  getRole,
-  getCollarAccess,
+  getUserRole,
+  getUserCollars,
   getDBCritters,
   getLastPings,
   grantCollarAccess,

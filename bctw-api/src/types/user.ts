@@ -1,4 +1,5 @@
 type User = {
+  user_id: string,
   idir: string,
   bceid: string,
   email: string,

@@ -18,8 +18,8 @@ const app = express()
   .post('/add-user', api.addUser)
   .get('/get-critters',api.getDBCritters)
   .get('/get-last-pings',api.getLastPings)
-  .get('/role',api.getRole)
-  .get('/user-collars', api.getCollarAccess)
+  .get('/role',api.getUserRole)
+  .get('/user-collars', api.getUserCollars)
   .get('*', api.notFound);
 
   
