@@ -34,11 +34,10 @@ content-type: application/json
 ### 
 
 # should fail, no collar ids supplied
-POST http://localhost:3000/grant-collars HTTP/1.1
+POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
 content-type: application/json
 
 {
-  "idir": "jcraven",
   "accessType": "view",
   "collarIds":[]
 }

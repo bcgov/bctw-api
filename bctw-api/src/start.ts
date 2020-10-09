@@ -51,6 +51,7 @@ const getDBCritters = function (req: Request, res: Response, next: NextFunction)
   @param next {function} Node/Express function for flow control
  */
 const getLastPings = function (req:Request, res:Response, next:NextFunction): void {
+  console.log('hi im relaoding')
   const sql = `
     select * from last_critter_pings_view
   `;
@@ -92,6 +93,7 @@ const addUser = async function(req: Request, res: Response): Promise<void> {
     }
     const results = data;
     return true
+    console.log('hi')
   };
   await _addUser(user, role as UserRole, done);
 }
@@ -131,11 +133,11 @@ const getCollarAccess = async function (req: Request, res: Response): Promise<vo
 /*
 */
 const grantCollarAccess = async function (req: Request, res: Response): Promise<void> {
-  const params = req.body;
   const idir = (req?.query?.idir || '') as string;
-  const accessType = params.accessType;
-  // const collarIds = params.collarIds || [101583, 101775, 101827];
-  const collarIds = params.collarIds;
+  const body = req.body;
+  const accessType = body.accessType;
+  const collarIds: number[] = body.collarIds;
+  console.log('HI')
 
   const done = function (err, data) {
     if (err) {
@@ -143,7 +145,6 @@ const grantCollarAccess = async function (req: Request, res: Response): Promise<
     }
     return true;
     // const results = data.rows.map(row => row['get_collars'])
-    // console.log(results)
   };
   await _grantCollarAccess(
     idir,

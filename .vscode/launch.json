@@ -1,17 +1,29 @@
+/*
+  debugging this application with vscode chrome debugger:
+    - install nodemon globally
+    - start debugger for the 'nodemon tsc' config
+    - the nodemon watcher should start. you may get an error about 
+      not being able to track the task, but it should appear in 
+      one of the integrated terminal windows. if that happens or you 
+      dont see the debugger attached to the node process, run the debugger
+      again for the 'nodemon tsc' config and it should attach
+*/
 {
   "version": "0.2.0",
   "configurations": [
     {
       "name": "nodemon tsc",
+      "preLaunchTask": "watch",
       "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/bctw-api/.env",
       "internalConsoleOptions": "neverOpen",
-      "program": "${workspaceFolder}/bctw-api/server.ts",
+      "program": "${workspaceFolder}/bctw-api/src/server.ts",
       "request": "launch",
       "restart": true,
       "runtimeExecutable": "nodemon",
       "skipFiles": [ "<node_internals>/**" ],
       "type": "pwa-node",
-      "envFile": "${workspaceFolder}/bctw-api/.env",
+      "sourceMaps": true,
       "outFiles": [
         "${workspaceFolder}/bctw-api/build/*.js",
         "!**/node_modules/**"
