@@ -5,7 +5,7 @@
   "main": "start.js",
   "scripts": {
     "dev": "bash -c 'node_modules/supervisor/lib/cli-wrapper.js -w build/server.js build/server.js'",
-    "start": "tsc && npx pm2@4.4.0 --no-daemon start build/server.js",
+    "start": "npx pm2@4.4.0 --no-daemon start build/server.js",
     "build": "rimraf ./build && tsc",
     "test": "jest",
     "lint": "eslint . --ext .ts --no-error-on-unmatched-pattern",
@@ -28,8 +28,7 @@
     "moment": "^2.27.0",
     "morgan": "^1.10.0",
     "needle": "^2.5.0",
-    "pg": "^8.2.1",
-    "typescript": "^4.0.3"
+    "pg": "^8.2.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.7",
@@ -45,7 +44,8 @@
     "nodemon": "^2.0.4",
     "rimraf": "^3.0.2",
     "supervisor": "^0.12.0",
-    "ts-node": "^9.0.0"
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
   },
   "jest": {
     "verbose": true,
