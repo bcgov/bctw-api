@@ -28,6 +28,7 @@ var http_1 = __importDefault(require("http"));
 var helmet_1 = __importDefault(require("helmet"));
 var express_1 = __importDefault(require("express"));
 var api = __importStar(require("./start"));
+var xml_1 = require("./import/xml");
 /* ## Server
   Run the server.
  */
@@ -42,6 +43,7 @@ var app = express_1.default()
     .get('/get-last-pings', api.getLastPings)
     .get('/role', api.getUserRole)
     // .get('/user-collars', api.getUserCollars)
+    .get('/xml', xml_1.testxml)
     .get('*', api.notFound);
 http_1.default.createServer(app).listen(3000, function () {
     console.log("listening on port 3000");

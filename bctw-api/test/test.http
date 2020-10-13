@@ -71,3 +71,6 @@ content-type: application/json
   },
   "role": "administrat"
 }
+
+###
+http://localhost:3000/xml

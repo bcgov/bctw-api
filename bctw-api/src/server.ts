@@ -4,6 +4,7 @@ import http from 'http';
 import helmet from 'helmet';
 import express from 'express';
 import * as api from './start';
+import { testxml } from './import/xml';
 
 /* ## Server
   Run the server.
@@ -20,6 +21,7 @@ const app = express()
   .get('/get-last-pings',api.getLastPings)
   .get('/role',api.getUserRole)
   // .get('/user-collars', api.getUserCollars)
+  .get('/xml', testxml)
   .get('*', api.notFound);
 
   
