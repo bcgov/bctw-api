@@ -23,16 +23,21 @@ const getDBCritters = function (req: Request, res: Response, next: NextFunction)
   const idir = req.query.idir;
   const interval = req.query.time || '1 days';
 
+  // deprecating this - move to animal based access
+  // const sql = `
+  //   with collar_ids as (
+  //     select collar_id from bctw.user_collar_access uca
+  //     join bctw.user u on u.user_id = uca.user_id
+  //     where u.idir = '${idir}'
+  //     and uca.collar_access = any(${to_pg_array(can_view_collar)})
+  //   )
+  //   select geojson from vendor_merge_view 
+  //   where device_id = any(select * from collar_ids)
+  //   and date_recorded > (current_date - INTERVAL '${interval}');
+  // `;
   const sql = `
-    with collar_ids as (
-      select collar_id from bctw.user_collar_access uca
-      join bctw.user u on u.user_id = uca.user_id
-      where u.idir = '${idir}'
-      and uca.collar_access = any(${to_pg_array(can_view_collar)})
-    )
     select geojson from vendor_merge_view 
-    where device_id = any(select * from collar_ids)
-    and date_recorded > (current_date - INTERVAL '${interval}');
+    where date_recorded > (current_date - INTERVAL '${interval}');
   `;
 
   const done = function (err,data) {

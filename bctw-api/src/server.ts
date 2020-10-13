@@ -14,12 +14,12 @@ const app = express()
   .use(cors())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
-  .post('/grant-collars', api.grantCollarAccess)
+  // .post('/grant-collars', api.grantCollarAccess)
   .post('/add-user', api.addUser)
   .get('/get-critters',api.getDBCritters)
   .get('/get-last-pings',api.getLastPings)
   .get('/role',api.getUserRole)
-  .get('/user-collars', api.getUserCollars)
+  // .get('/user-collars', api.getUserCollars)
   .get('*', api.notFound);
 
   
