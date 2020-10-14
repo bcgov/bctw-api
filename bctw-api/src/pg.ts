@@ -1,6 +1,6 @@
 import pg, { QueryResult } from 'pg';
+import { isProd } from './server';
 
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
 const devPort = '5432';
 
 // Set up the database pool
@@ -22,6 +22,9 @@ const to_pg_str = (str: string): string | null => {
   return `'${str}'`;
 }
 
+const to_pg_obj = (obj: any): string => {
+  return `'${JSON.stringify(obj)}'`
+}
 // define a callback function type 
 type QueryResultCbFn = (err: Error, result: QueryResult<any> | null) => void
 
@@ -29,5 +32,6 @@ export {
   pgPool,
   to_pg_array,
   to_pg_str,
+  to_pg_obj,
   QueryResultCbFn
 }

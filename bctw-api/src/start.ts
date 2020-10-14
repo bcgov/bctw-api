@@ -8,10 +8,13 @@ import {
   grantCollarAccess as _grantCollarAccess,
   can_view_collar
 } from './apis/collar_api';
+import {
+  addCritter as _addCritter
+} from './apis/animal_api';
 import { NextFunction, Request, Response } from 'express';
 import { User, UserRole } from './types/user';
+import { isProd } from './server';
 
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -130,46 +133,61 @@ const getUserRole = async function (req: Request, res: Response): Promise<void> 
   await _getUserRole(idir, done)
 }
 
-/* ## getCollarAccess
+/* ## getCollarAccess - deprecated
 */
-const getUserCollars = async function (req: Request, res: Response): Promise<void> {
-  const idir = (req?.query?.idir || '') as string;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const results = data.rows.map(row => row['get_collars'])
-    if (results && results.length) {
-      res.send(results[0]);
-    }
-  };
-  await _getUserCollars(idir, done)
-}
+// const getUserCollars = async function (req: Request, res: Response): Promise<void> {
+//   const idir = (req?.query?.idir || '') as string;
+//   const done = function (err, data) {
+//     if (err) {
+//       return res.status(500).send(`Failed to query database: ${err}`);
+//     }
+//     const results = data.rows.map(row => row['get_collars'])
+//     if (results && results.length) {
+//       res.send(results[0]);
+//     }
+//   };
+//   await _getUserCollars(idir, done)
+// }
 
 /*
-  ## grantCollarAccess
-  todo: make sure user granting has permission to do so?
+  ## grantCollarAccess - deprecated
   returns an array of integers representing all of the collarids the user has access to
 */
-const grantCollarAccess = async function (req: Request, res: Response): Promise<void> {
+// const grantCollarAccess = async function (req: Request, res: Response): Promise<void> {
+//   const idir = (req?.query?.idir || '') as string;
+//   const body = req.body;
+//   const done = function (err, data) {
+//     if (err) {
+//       return res.status(500).send(`Failed to query database: ${err}`);
+//     }
+//     const results = data?.find(obj => obj.command === 'SELECT')?.rows[0];
+//     res.send(results?.['get_collars'] ?? []);
+//   };
+//   await _grantCollarAccess(idir, body.grantToIdir, body.accessType, body.collarIds, done)
+// }
+
+const addCritter = async function (req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body;
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    const results = data?.find(obj => obj.command === 'SELECT')?.rows[0];
-    res.send(results?.['get_collars'] ?? []);
+    const results = data?.find(obj => obj.command === 'SELECT');
+    const row = results.rows[0];
+    res.send(row);
   };
-  await _grantCollarAccess(idir, body.grantToIdir, body.accessType, body.collarIds, done)
+  await _addCritter(idir, body.animal, body.deviceId, done)
 }
+
 
 export {
   addUser,
   getUserRole,
-  getUserCollars,
+  // getUserCollars,
   getDBCritters,
   getLastPings,
-  grantCollarAccess,
+  // grantCollarAccess,
+  addCritter,
   notFound
 }

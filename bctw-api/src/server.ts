@@ -9,6 +9,7 @@ import { testxml } from './import/xml';
 /* ## Server
   Run the server.
  */
+const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 const app = express()
   .use(helmet())
@@ -22,9 +23,14 @@ const app = express()
   .get('/role',api.getUserRole)
   // .get('/user-collars', api.getUserCollars)
   .get('/xml', testxml)
+  .post('/add-critter', api.addCritter)
   .get('*', api.notFound);
 
   
 http.createServer(app).listen(3000, () => {
   console.log(`listening on port 3000`)
 });
+
+export {
+  isProd
+}

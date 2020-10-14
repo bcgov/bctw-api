@@ -4,17 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.to_pg_str = exports.to_pg_array = exports.pgPool = void 0;
+exports.to_pg_obj = exports.to_pg_str = exports.to_pg_array = exports.pgPool = void 0;
 var pg_1 = __importDefault(require("pg"));
-var isProd = process.env.NODE_ENV === 'production' ? true : false;
+var server_1 = require("./server");
 var devPort = '5432';
 // Set up the database pool
 var pgPool = new pg_1.default.Pool({
     user: process.env.POSTGRES_USER,
     database: process.env.POSTGRES_DB,
     password: process.env.POSTGRES_PASSWORD,
-    host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
-    port: +(isProd ? (_a = process.env.POSTGRES_SERVER_PORT) !== null && _a !== void 0 ? _a : devPort : devPort),
+    host: server_1.isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
+    port: +(server_1.isProd ? (_a = process.env.POSTGRES_SERVER_PORT) !== null && _a !== void 0 ? _a : devPort : devPort),
     max: 10
 });
 exports.pgPool = pgPool;
@@ -28,4 +28,8 @@ var to_pg_str = function (str) {
     return "'" + str + "'";
 };
 exports.to_pg_str = to_pg_str;
+var to_pg_obj = function (obj) {
+    return "'" + JSON.stringify(obj) + "'";
+};
+exports.to_pg_obj = to_pg_obj;
 //# sourceMappingURL=pg.js.map

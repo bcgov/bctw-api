@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.can_view_collar = exports.grantCollarAccess = void 0;
 var pg_1 = require("../pg");
 var collar_1 = require("../types/collar");
-var isProd = process.env.NODE_ENV === 'production' ? true : false;
+var server_1 = require("../server");
 var can_view_collar = [
     collar_1.CollarAccessType.manage,
     collar_1.CollarAccessType.view
@@ -33,7 +33,7 @@ var grantCollarAccess = function (idir, grantToIdir, access_type, collarIds, onD
     // todo: check idir has permissions to grant collar permission
     if (collarIds && collarIds.length) {
         var sql = "with uid AS (SELECT user_id FROM \"user\" WHERE idir = '" + grantToIdir + "'),\n      collars AS (SELECT device_id, make FROM collar WHERE device_id = any(" + pg_1.to_pg_array(collarIds) + ")),\n      insert_row AS (SELECT uid.user_id, collars.device_id, '" + access_type + "'::collar_access_type, collars.make FROM uid, collars)\n    insert INTO user_collar_access \n      (user_id, collar_id, collar_access, collar_vendor)\n      select * from insert_row;\n    ";
-        if (!isProd) {
+        if (!server_1.isProd) {
             sql = "begin;\n" + sql + "\nselect bctw.get_collars('" + idir + "');rollback;";
         }
         return pg_1.pgPool.query(sql, onDone);

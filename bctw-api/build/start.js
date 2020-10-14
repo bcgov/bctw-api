@@ -36,11 +36,11 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.grantCollarAccess = exports.getLastPings = exports.getDBCritters = exports.getUserCollars = exports.getUserRole = exports.addUser = void 0;
+exports.notFound = exports.addCritter = exports.getLastPings = exports.getDBCritters = exports.getUserRole = exports.addUser = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
-var collar_api_1 = require("./apis/collar_api");
-var isProd = process.env.NODE_ENV === 'production' ? true : false;
+var animal_api_1 = require("./apis/animal_api");
+var server_1 = require("./server");
 /* ## getDBCritters
   Request all collars the user has access to.
   @param req {object} Node/Express request object
@@ -126,7 +126,7 @@ var addUser = function (req, res) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
                         }
-                        if (!isProd) {
+                        if (!server_1.isProd) {
                             var results = data.filter(function (obj) { return obj.command === 'SELECT' && obj.rows.length; });
                             var userObj = results[results.length - 1];
                             console.log("user added: " + JSON.stringify(userObj.rows[0]));
@@ -170,40 +170,38 @@ var getUserRole = function (req, res) {
     });
 };
 exports.getUserRole = getUserRole;
-/* ## getCollarAccess
+/* ## getCollarAccess - deprecated
 */
-var getUserCollars = function (req, res) {
-    var _a;
-    return __awaiter(this, void 0, void 0, function () {
-        var idir, done;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    done = function (err, data) {
-                        if (err) {
-                            return res.status(500).send("Failed to query database: " + err);
-                        }
-                        var results = data.rows.map(function (row) { return row['get_collars']; });
-                        if (results && results.length) {
-                            res.send(results[0]);
-                        }
-                    };
-                    return [4 /*yield*/, user_api_1.getUserCollars(idir, done)];
-                case 1:
-                    _b.sent();
-                    return [2 /*return*/];
-            }
-        });
-    });
-};
-exports.getUserCollars = getUserCollars;
+// const getUserCollars = async function (req: Request, res: Response): Promise<void> {
+//   const idir = (req?.query?.idir || '') as string;
+//   const done = function (err, data) {
+//     if (err) {
+//       return res.status(500).send(`Failed to query database: ${err}`);
+//     }
+//     const results = data.rows.map(row => row['get_collars'])
+//     if (results && results.length) {
+//       res.send(results[0]);
+//     }
+//   };
+//   await _getUserCollars(idir, done)
+// }
 /*
-  ## grantCollarAccess
-  todo: make sure user granting has permission to do so?
+  ## grantCollarAccess - deprecated
   returns an array of integers representing all of the collarids the user has access to
 */
-var grantCollarAccess = function (req, res) {
+// const grantCollarAccess = async function (req: Request, res: Response): Promise<void> {
+//   const idir = (req?.query?.idir || '') as string;
+//   const body = req.body;
+//   const done = function (err, data) {
+//     if (err) {
+//       return res.status(500).send(`Failed to query database: ${err}`);
+//     }
+//     const results = data?.find(obj => obj.command === 'SELECT')?.rows[0];
+//     res.send(results?.['get_collars'] ?? []);
+//   };
+//   await _grantCollarAccess(idir, body.grantToIdir, body.accessType, body.collarIds, done)
+// }
+var addCritter = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
         var idir, body, done;
@@ -213,14 +211,14 @@ var grantCollarAccess = function (req, res) {
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     body = req.body;
                     done = function (err, data) {
-                        var _a, _b;
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
                         }
-                        var results = (_a = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; })) === null || _a === void 0 ? void 0 : _a.rows[0];
-                        res.send((_b = results === null || results === void 0 ? void 0 : results['get_collars']) !== null && _b !== void 0 ? _b : []);
+                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
+                        var row = results.rows[0];
+                        res.send(row);
                     };
-                    return [4 /*yield*/, collar_api_1.grantCollarAccess(idir, body.grantToIdir, body.accessType, body.collarIds, done)];
+                    return [4 /*yield*/, animal_api_1.addCritter(idir, body.animal, body.deviceId, done)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];
@@ -228,5 +226,5 @@ var grantCollarAccess = function (req, res) {
         });
     });
 };
-exports.grantCollarAccess = grantCollarAccess;
+exports.addCritter = addCritter;
 //# sourceMappingURL=start.js.map

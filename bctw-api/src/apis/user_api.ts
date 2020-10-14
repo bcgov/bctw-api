@@ -1,7 +1,6 @@
 import { pgPool, to_pg_str, QueryResultCbFn } from '../pg';
 import { User, UserRole } from '../types/user'
-
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
+import { isProd } from '../server';
 
 const addUser = function(user: User, userRole: UserRole, onDone: QueryResultCbFn): void {
   let sql = `select * from bctw.add_user('${JSON.stringify(user)}', ${to_pg_str(userRole)});`;

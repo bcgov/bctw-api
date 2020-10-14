@@ -25,7 +25,8 @@ type Animal = {
   sex: string,
   species: string,
   trans_location: boolean,
-  wlh_id: string
+  wlh_id: string,
+  nickname: string
 }
 
 export {

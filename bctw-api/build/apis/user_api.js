@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserCollars = exports.getUserRole = exports.addUser = void 0;
 var pg_1 = require("../pg");
-var isProd = process.env.NODE_ENV === 'production' ? true : false;
+var server_1 = require("../server");
 var addUser = function (user, userRole, onDone) {
     var sql = "select * from bctw.add_user('" + JSON.stringify(user) + "', " + pg_1.to_pg_str(userRole) + ");";
-    if (!isProd) {
+    if (!server_1.isProd) {
         sql = "begin;\n " + sql + "\n select * from bctw.user where idir=" + pg_1.to_pg_str(user.idir) + "; rollback;";
     }
     return pg_1.pgPool.query(sql, onDone);

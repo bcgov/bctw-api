@@ -1,7 +1,6 @@
 import { pgPool, QueryResultCbFn, to_pg_array, to_pg_str } from '../pg';
 import { CollarAccessType } from '../types/collar';
-
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
+import { isProd } from '../server';
 
 const can_view_collar = [
   CollarAccessType.manage,
