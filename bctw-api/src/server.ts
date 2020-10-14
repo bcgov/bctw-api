@@ -10,20 +10,31 @@ import { testxml } from './import/xml';
   Run the server.
  */
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
+const transactionify = (sql: string): string => {
+  return isProd ? sql : `begin;\n${sql};\nrollback;`;
+} 
 
 const app = express()
   .use(helmet())
   .use(cors())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
+  // .get('/user-collars', api.getUserCollars)
   // .post('/grant-collars', api.grantCollarAccess)
-  .post('/add-user', api.addUser)
+  
+  // critters
   .get('/get-critters',api.getDBCritters)
   .get('/get-last-pings',api.getLastPings)
-  .get('/role',api.getUserRole)
-  // .get('/user-collars', api.getUserCollars)
-  .get('/xml', testxml)
   .post('/add-critter', api.addCritter)
+  // collars
+  .post('/add-collar', api.addCollar)
+  .post('/assign-critter-collar', api.assignCollarToCritter)
+  // users
+  .get('/role',api.getUserRole)
+  .post('/add-user', api.addUser)
+  .post('/assign-critter-to-user', api.assignCritterToUser)
+  // test
+  .get('/xml', testxml)
   .get('*', api.notFound);
 
   
@@ -32,5 +43,6 @@ http.createServer(app).listen(3000, () => {
 });
 
 export {
-  isProd
+  isProd,
+  transactionify
 }

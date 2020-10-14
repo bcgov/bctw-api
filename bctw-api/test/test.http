@@ -1,76 +1,10 @@
 http://localhost:3000/get-last-pings
 
 ###
-
 http://localhost:3000/get-critters?idir=jcraven
 
 ###
-
 http://localhost:3000/
-
-###
-
-http://localhost:3000/role
-
-###
-
-http://localhost:3000/role?idir=stuff
-
-###
-
-http://localhost:3000/role?idir=jcraven
-
-###
-
-http://localhost:3000/user-collars?idir=jcraven
-
-###
-
-POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
-content-type: application/json
-
-{
-  "grantToIdir": "jrpopkin",
-  "accessType": "view",
-  "collarIds":[101583, 101775, 101827]
-}
-
-### 
-
-# should fail, no collar ids supplied
-POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
-content-type: application/json
-
-{
-  "idir": 
-  "accessType": "view",
-  "collarIds":[]
-}
-
-###
-POST http://localhost:3000/add-user HTTP/1.1
-content-type: application/json
-
-{
-  "user": {
-    "idir": "vchongvv",
-    "email": "vchong@qt.com"
-  },
-  "role": "administrator"
-}
-
-###
-
-POST http://localhost:3000/add-user HTTP/1.1
-content-type: application/json
-
-{
-  "user": {
-    "idir": "vchongv",
-    "email": "vchong@qt.com"
-  },
-  "role": "administrat"
-}
 
 ###
 http://localhost:3000/xml
@@ -95,7 +29,6 @@ content-type: application/json
 
 ###
 # should work
-
 POST http://localhost:3000/add-critter?idir='jcraven' HTTP/1.1
 content-type: application/json
 
@@ -106,8 +39,49 @@ content-type: application/json
     "calf_at_heel": true,
     "species": "unicorn",
     "sex": "M",
-    "wl_id": "abc123",
+    "wlh_id": "abc123",
     "nickname": "shimmer"
   },
   "deviceId": 21512
+}
+
+###
+# adding a collar
+POST http://localhost:3000/add-collar?idir='jcraven' HTTP/1.1
+content-type: application/json
+
+{
+  "collar": {
+    "device_id": 99999,
+    "make": "vectronics",
+    "model": "deercollar9000"
+  }
+}
+
+###
+# no device id - should fail
+POST http://localhost:3000/add-collar?idir='jcraven' HTTP/1.1
+content-type: application/json
+
+{
+  "collar": {
+    "make": "vectronics",
+    "model": "deercollar9000"
+  }
+}
+
+###
+
+# upsert - should update collar 21511
+POST http://localhost:3000/add-collar?idir='jcraven' HTTP/1.1
+content-type: application/json
+
+{
+  "collar": {
+    "device_id": 21511,
+    "make": "Disney",
+    "deactivated": true,
+    "model": "deercollar9000",
+    "radio_frequency": 291
+  }
 }

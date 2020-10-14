@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserCollars = exports.getUserRole = exports.addUser = void 0;
+exports.assignCritterToUser = exports.getUserRole = exports.addUser = void 0;
 var pg_1 = require("../pg");
 var server_1 = require("../server");
 var addUser = function (user, userRole, onDone) {
@@ -11,16 +11,6 @@ var addUser = function (user, userRole, onDone) {
     return pg_1.pgPool.query(sql, onDone);
 };
 exports.addUser = addUser;
-// const updateUser = function() {}
-// const logout = function() {}
-/*
-  for updating a user's system role. ex granting another user admin
-*/
-// const updateSystemUserPermission = function() {}
-/*
-  - needs to have admin role?
-*/
-// const deleteUser = function() {}
 var getUserRole = function (idir, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'), null);
@@ -29,12 +19,19 @@ var getUserRole = function (idir, onDone) {
     return pg_1.pgPool.query(sql, onDone);
 };
 exports.getUserRole = getUserRole;
-var getUserCollars = function (idir, onDone) {
+// const getUserCollars = function(idir: string, onDone: QueryResultCbFn): void {
+//   if (!idir) {
+//     return onDone(Error('IDIR must be supplied'), null);
+//   }
+//   const sql = `select bctw.get_collars('${idir}');`
+//   return pgPool.query(sql, onDone);
+// }
+var assignCritterToUser = function (idir, animalid, start, end, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'), null);
     }
-    var sql = "select bctw.get_collars('" + idir + "');";
+    var sql = server_1.transactionify("select bctw.link_animal_to_user(" + idir + ", " + animalid + ", " + end + ", " + start + ")");
     return pg_1.pgPool.query(sql, onDone);
 };
-exports.getUserCollars = getUserCollars;
+exports.assignCritterToUser = assignCritterToUser;
 //# sourceMappingURL=user_api.js.map

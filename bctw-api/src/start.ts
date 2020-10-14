@@ -1,12 +1,12 @@
-import {pgPool, to_pg_array} from './pg';
+import { pgPool } from './pg';
 import {
   addUser as _addUser,
-  getUserCollars as _getUserCollars, 
+  assignCritterToUser as _assignCritterToUser,
   getUserRole as _getUserRole
 } from './apis/user_api';
 import {
-  grantCollarAccess as _grantCollarAccess,
-  can_view_collar
+  addCollar as _addCollar,
+  assignCollarToCritter as _assignCollarToCritter,
 } from './apis/collar_api';
 import {
   addCritter as _addCritter
@@ -26,18 +26,6 @@ const getDBCritters = function (req: Request, res: Response, next: NextFunction)
   const idir = req.query.idir;
   const interval = req.query.time || '1 days';
 
-  // deprecating this - move to animal based access
-  // const sql = `
-  //   with collar_ids as (
-  //     select collar_id from bctw.user_collar_access uca
-  //     join bctw.user u on u.user_id = uca.user_id
-  //     where u.idir = '${idir}'
-  //     and uca.collar_access = any(${to_pg_array(can_view_collar)})
-  //   )
-  //   select geojson from vendor_merge_view 
-  //   where device_id = any(select * from collar_ids)
-  //   and date_recorded > (current_date - INTERVAL '${interval}');
-  // `;
   const sql = `
     select geojson from vendor_merge_view 
     where date_recorded > (current_date - INTERVAL '${interval}');
@@ -180,14 +168,78 @@ const addCritter = async function (req: Request, res:Response): Promise<void> {
   await _addCritter(idir, body.animal, body.deviceId, done)
 }
 
+const addCollar = async function(req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const body = req.body;
+  const done = function (err, data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data?.find(obj => obj.command === 'SELECT');
+    const row = results.rows[0];
+    res.send(row);
+  };
+  await _addCollar(idir, body.collar, done);
+}
+
+const assignCollarToCritter = async function(req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const body = req.body;
+  const done = function (err, data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data?.find(obj => obj.command === 'SELECT');
+    const row = results.rows[0];
+    res.send(row);
+  };
+  await _assignCollarToCritter(
+    idir,
+    body.deviceId,
+    body.animalId,
+    body.startDate,
+    body.endDate,
+    done
+  )
+}
+
+const assignCritterToUser = async function(req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const body = req.body;
+  const done = function (err, data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data?.find(obj => obj.command === 'SELECT');
+    const row = results.rows[0];
+    res.send(row);
+  };
+  await _assignCritterToUser(
+    idir,
+    body.animalId,
+    body.startDate,
+    body.endDate,
+    done
+  )
+}
 
 export {
+  addCollar,
+  addCritter,
   addUser,
-  getUserRole,
-  // getUserCollars,
+  assignCollarToCritter,
+  assignCritterToUser,
   getDBCritters,
   getLastPings,
-  // grantCollarAccess,
-  addCritter,
+  getUserRole,
   notFound
 }
+
+/* 
+todo:
+- critter mortality?
+- edit critter
+- delete critter/collar,
+- code tables / api
+- return user in addUser
+*/

@@ -36,9 +36,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.addCritter = exports.getLastPings = exports.getDBCritters = exports.getUserRole = exports.addUser = void 0;
+exports.notFound = exports.getUserRole = exports.getLastPings = exports.getDBCritters = exports.assignCritterToUser = exports.assignCollarToCritter = exports.addUser = exports.addCritter = exports.addCollar = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
+var collar_api_1 = require("./apis/collar_api");
 var animal_api_1 = require("./apis/animal_api");
 var server_1 = require("./server");
 /* ## getDBCritters
@@ -50,18 +51,6 @@ var server_1 = require("./server");
 var getDBCritters = function (req, res, next) {
     var idir = req.query.idir;
     var interval = req.query.time || '1 days';
-    // deprecating this - move to animal based access
-    // const sql = `
-    //   with collar_ids as (
-    //     select collar_id from bctw.user_collar_access uca
-    //     join bctw.user u on u.user_id = uca.user_id
-    //     where u.idir = '${idir}'
-    //     and uca.collar_access = any(${to_pg_array(can_view_collar)})
-    //   )
-    //   select geojson from vendor_merge_view 
-    //   where device_id = any(select * from collar_ids)
-    //   and date_recorded > (current_date - INTERVAL '${interval}');
-    // `;
     var sql = "\n    select geojson from vendor_merge_view \n    where date_recorded > (current_date - INTERVAL '" + interval + "');\n  ";
     var done = function (err, data) {
         if (err) {
@@ -227,4 +216,90 @@ var addCritter = function (req, res) {
     });
 };
 exports.addCritter = addCritter;
+var addCollar = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, body, done;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    body = req.body;
+                    done = function (err, data) {
+                        if (err) {
+                            return res.status(500).send("Failed to query database: " + err);
+                        }
+                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
+                        var row = results.rows[0];
+                        res.send(row);
+                    };
+                    return [4 /*yield*/, collar_api_1.addCollar(idir, body.collar, done)];
+                case 1:
+                    _b.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+};
+exports.addCollar = addCollar;
+var assignCollarToCritter = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, body, done;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    body = req.body;
+                    done = function (err, data) {
+                        if (err) {
+                            return res.status(500).send("Failed to query database: " + err);
+                        }
+                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
+                        var row = results.rows[0];
+                        res.send(row);
+                    };
+                    return [4 /*yield*/, collar_api_1.assignCollarToCritter(idir, body.deviceId, body.animalId, body.startDate, body.endDate, done)];
+                case 1:
+                    _b.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+};
+exports.assignCollarToCritter = assignCollarToCritter;
+var assignCritterToUser = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, body, done;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    body = req.body;
+                    done = function (err, data) {
+                        if (err) {
+                            return res.status(500).send("Failed to query database: " + err);
+                        }
+                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
+                        var row = results.rows[0];
+                        res.send(row);
+                    };
+                    return [4 /*yield*/, user_api_1.assignCritterToUser(idir, body.animalId, body.startDate, body.endDate, done)];
+                case 1:
+                    _b.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+};
+exports.assignCritterToUser = assignCritterToUser;
+/*
+todo:
+- critter mortality?
+- edit critter
+- delete critter/collar,
+- code tables / api
+- return user in addUser
+*/ 
 //# sourceMappingURL=start.js.map

@@ -1,0 +1,24 @@
+# http://localhost:3000/user-collars?idir=jcraven
+
+###
+
+# POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
+# content-type: application/json
+
+# {
+#   "grantToIdir": "jrpopkin",
+#   "accessType": "view",
+#   "collarIds":[101583, 101775, 101827]
+# }
+
+### 
+
+# should fail, no collar ids supplied
+# POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
+# content-type: application/json
+
+# {
+#   "idir": 
+#   "accessType": "view",
+#   "collarIds":[]
+# }
