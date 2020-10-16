@@ -13,6 +13,15 @@ const pgPool = new pg.Pool({
   max: 10
 });
 
+// XXX Debugging database connection
+console.log("POSTGRES_USER: ",process.env.POSTGRES_USER);
+console.log("POSTGRES_DB: ",process.env.POSTGRES_DB);
+console.log("POSTGRES_PASSWORD: ",process.env.POSTGRES_PASSWORD);
+console.log("POSTGRES_HOST: ",process.env.POSTGRES_HOST);
+console.log("Other host: ",isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost');
+console.log("isProd: ",isProd);
+console.log("port: ",+(isProd ? process.env.POSTGRES_SERVER_PORT ?? devPort : devPort));
+
 // converts a javascript array to the postgresql format ex. ['abc','def'] => '{abc, def}'
 const to_pg_array = (arr: number[] | string[]): string => `'{${arr.join(',')}}'`
 
