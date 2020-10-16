@@ -7,6 +7,8 @@ import {
 import {
   addCollar as _addCollar,
   assignCollarToCritter as _assignCollarToCritter,
+  getAvailableCollars as _getAvailableCollars,
+  getAssignedCollars as _getAssignedCollars
 } from './apis/collar_api';
 import {
   addCritter as _addCritter
@@ -53,7 +55,6 @@ const getDBCritters = function (req: Request, res: Response, next: NextFunction)
   @param next {function} Node/Express function for flow control
  */
 const getLastPings = function (req:Request, res:Response, next:NextFunction): void {
-  console.log('hi im relaoding')
   const sql = `
     select * from last_critter_pings_view
   `;
@@ -203,6 +204,31 @@ const assignCollarToCritter = async function(req: Request, res:Response): Promis
   )
 }
 
+const getAvailableCollars = async function(req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const done = function (err, data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data?.rows;
+    res.send(results);
+  };
+  await _getAvailableCollars(idir, done);
+}
+
+const getAssignedCollars = async function(req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const done = function (err, data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data?.rows;
+    res.send(results);
+  };
+  await _getAssignedCollars(idir, done);
+}
+
+
 const assignCritterToUser = async function(req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body;
@@ -229,6 +255,8 @@ export {
   addUser,
   assignCollarToCritter,
   assignCritterToUser,
+  getAssignedCollars,
+  getAvailableCollars,
   getDBCritters,
   getLastPings,
   getUserRole,

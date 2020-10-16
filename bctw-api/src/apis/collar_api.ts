@@ -90,7 +90,8 @@ const getAvailableCollars = function ( idir: string, onDone: QueryResultCbFn): v
   join vendor_merge_view vmv on 
   vmv.device_id = c.device_id
   where vmv.animal_id is null
-  group by c.device_id;`
+  group by c.device_id
+  limit 10;`
   return pgPool.query(sql, onDone);
 }
 
@@ -110,7 +111,8 @@ const getAssignedCollars = function (idir: string, onDone: QueryResultCbFn): voi
   on c.device_id = caa.device_id
   join vendor_merge_view vmv on 
   vmv.device_id = caa.device_id
-  group by caa.animal_id, c.device_id;`
+  group by caa.animal_id, c.device_id
+  limit 5;`
   return pgPool.query(sql, onDone);
 }
 

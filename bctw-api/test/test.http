@@ -85,3 +85,6 @@ content-type: application/json
     "radio_frequency": 291
   }
 }
+
+###
+http://localhost:3000/get-available-collars?idir=jcraven

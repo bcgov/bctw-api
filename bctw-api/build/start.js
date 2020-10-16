@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.getUserRole = exports.getLastPings = exports.getDBCritters = exports.assignCritterToUser = exports.assignCollarToCritter = exports.addUser = exports.addCritter = exports.addCollar = void 0;
+exports.notFound = exports.getUserRole = exports.getLastPings = exports.getDBCritters = exports.getAvailableCollars = exports.getAssignedCollars = exports.assignCritterToUser = exports.assignCollarToCritter = exports.addUser = exports.addCritter = exports.addCollar = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
 var collar_api_1 = require("./apis/collar_api");
@@ -73,7 +73,6 @@ exports.getDBCritters = getDBCritters;
   @param next {function} Node/Express function for flow control
  */
 var getLastPings = function (req, res, next) {
-    console.log('hi im relaoding');
     var sql = "\n    select * from last_critter_pings_view\n  ";
     var done = function (err, data) {
         if (err) {
@@ -268,6 +267,54 @@ var assignCollarToCritter = function (req, res) {
     });
 };
 exports.assignCollarToCritter = assignCollarToCritter;
+var getAvailableCollars = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, done;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    done = function (err, data) {
+                        if (err) {
+                            return res.status(500).send("Failed to query database: " + err);
+                        }
+                        var results = data === null || data === void 0 ? void 0 : data.rows;
+                        res.send(results);
+                    };
+                    return [4 /*yield*/, collar_api_1.getAvailableCollars(idir, done)];
+                case 1:
+                    _b.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+};
+exports.getAvailableCollars = getAvailableCollars;
+var getAssignedCollars = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, done;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    done = function (err, data) {
+                        if (err) {
+                            return res.status(500).send("Failed to query database: " + err);
+                        }
+                        var results = data === null || data === void 0 ? void 0 : data.rows;
+                        res.send(results);
+                    };
+                    return [4 /*yield*/, collar_api_1.getAssignedCollars(idir, done)];
+                case 1:
+                    _b.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+};
+exports.getAssignedCollars = getAssignedCollars;
 var assignCritterToUser = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {

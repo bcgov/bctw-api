@@ -27,6 +27,8 @@ const app = express()
   .get('/get-last-pings',api.getLastPings)
   .post('/add-critter', api.addCritter)
   // collars
+  .get('/get-assigned-collars', api.getAssignedCollars)
+  .get('/get-available-collars', api.getAvailableCollars)
   .post('/add-collar', api.addCollar)
   .post('/assign-critter-collar', api.assignCollarToCritter)
   // users
