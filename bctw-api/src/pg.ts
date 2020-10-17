@@ -1,5 +1,10 @@
 import pg, { QueryResult } from 'pg';
-import { isProd } from './server';
+// import { isProd } from './server';
+
+const isProd = process.env.NODE_ENV === 'production' ? true : false;
+const test = process.env.NODE_ENV;
+console.log("typeof test: ",typeof test)
+console.log("comparison: ",process.env.NODE_ENV === 'production')
 
 const devPort = '5432';
 
