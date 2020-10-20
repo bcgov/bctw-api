@@ -26,6 +26,7 @@ import { isProd } from './server';
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req: Request, res: Response, next: NextFunction): void {
+  console.log('Getting DB Critters');
   const idir = req.query.idir;
   const interval = req.query.time || '1 days';
 
@@ -33,6 +34,7 @@ const getDBCritters = function (req: Request, res: Response, next: NextFunction)
     select geojson from vendor_merge_view 
     where date_recorded > (current_date - INTERVAL '${interval}');
   `;
+  console.log('SQL: ',sql);
 
   const done = function (err,data) {
     if (err) {
