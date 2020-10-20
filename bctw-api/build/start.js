@@ -49,9 +49,11 @@ var server_1 = require("./server");
   @param next {function} Node/Express function for flow control
  */
 var getDBCritters = function (req, res, next) {
+    console.log('Getting DB Critters');
     var idir = req.query.idir;
     var interval = req.query.time || '1 days';
     var sql = "\n    select geojson from vendor_merge_view \n    where date_recorded > (current_date - INTERVAL '" + interval + "');\n  ";
+    console.log('SQL: ', sql);
     var done = function (err, data) {
         if (err) {
             return res.status(500).send("Failed to query database: " + err);
