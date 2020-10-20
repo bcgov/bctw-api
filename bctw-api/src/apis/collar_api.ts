@@ -99,7 +99,7 @@ const getAvailableCollars = function ( idir: string, onDone: QueryResultCbFn): v
 const getAssignedCollars = function (idir: string, onDone: QueryResultCbFn): void {
   const sql = 
   `select
-    caa.animal_id as "Critter",
+    caa.animal_id as "Individual ID",
     c.device_id as "Device ID",
     c.collar_status as "Collar Status",
     max(vmv.date_recorded) as "Last Contact",

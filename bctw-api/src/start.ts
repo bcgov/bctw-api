@@ -11,7 +11,8 @@ import {
   getAssignedCollars as _getAssignedCollars
 } from './apis/collar_api';
 import {
-  addCritter as _addCritter
+  addCritter as _addCritter,
+  getAnimals as _getAnimals
 } from './apis/animal_api';
 import { NextFunction, Request, Response } from 'express';
 import { User, UserRole } from './types/user';
@@ -228,6 +229,17 @@ const getAssignedCollars = async function(req: Request, res:Response): Promise<v
   await _getAssignedCollars(idir, done);
 }
 
+const getAnimals = async function(req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const done = function (err, data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data?.rows;
+    res.send(results);
+  };
+  await _getAnimals(idir, done);
+}
 
 const assignCritterToUser = async function(req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
@@ -255,6 +267,7 @@ export {
   addUser,
   assignCollarToCritter,
   assignCritterToUser,
+  getAnimals,
   getAssignedCollars,
   getAvailableCollars,
   getDBCritters,

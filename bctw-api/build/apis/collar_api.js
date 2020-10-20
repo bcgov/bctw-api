@@ -72,7 +72,7 @@ var getAvailableCollars = function (idir, onDone) {
 exports.getAvailableCollars = getAvailableCollars;
 // animal_id, device_id, collar_status, last_contact, make, sat_net, next_update
 var getAssignedCollars = function (idir, onDone) {
-    var sql = "select\n    caa.animal_id as \"Critter\",\n    c.device_id as \"Device ID\",\n    c.collar_status as \"Collar Status\",\n    max(vmv.date_recorded) as \"Last Contact\",\n    c.make as \"GPS Vendor\",\n    c.satellite_network as \"Satellite Network\",\n    'unknown' as \"Next Update\"\n  from collar c \n  join collar_animal_assignment caa\n  on c.device_id = caa.device_id\n  join vendor_merge_view vmv on \n  vmv.device_id = caa.device_id\n  group by caa.animal_id, c.device_id\n  limit 5;";
+    var sql = "select\n    caa.animal_id as \"Individual ID\",\n    c.device_id as \"Device ID\",\n    c.collar_status as \"Collar Status\",\n    max(vmv.date_recorded) as \"Last Contact\",\n    c.make as \"GPS Vendor\",\n    c.satellite_network as \"Satellite Network\",\n    'unknown' as \"Next Update\"\n  from collar c \n  join collar_animal_assignment caa\n  on c.device_id = caa.device_id\n  join vendor_merge_view vmv on \n  vmv.device_id = caa.device_id\n  group by caa.animal_id, c.device_id\n  limit 5;";
     return pg_1.pgPool.query(sql, onDone);
 };
 exports.getAssignedCollars = getAssignedCollars;

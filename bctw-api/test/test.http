@@ -88,3 +88,6 @@ content-type: application/json
 
 ###
 http://localhost:3000/get-available-collars?idir=jcraven
+
+###
+http://localhost:3000/get-animals?idir=jcraven

@@ -29,7 +29,7 @@ var http_1 = __importDefault(require("http"));
 var helmet_1 = __importDefault(require("helmet"));
 var express_1 = __importDefault(require("express"));
 var api = __importStar(require("./start"));
-var xml_1 = require("./import/xml");
+// import { testxml } from './import/xml';
 /* ## Server
   Run the server.
  */
@@ -47,6 +47,7 @@ var app = express_1.default()
     // .get('/user-collars', api.getUserCollars)
     // .post('/grant-collars', api.grantCollarAccess)
     // critters
+    .get('/get-animals', api.getAnimals)
     .get('/get-critters', api.getDBCritters)
     .get('/get-last-pings', api.getLastPings)
     .post('/add-critter', api.addCritter)
@@ -60,7 +61,7 @@ var app = express_1.default()
     .post('/add-user', api.addUser)
     .post('/assign-critter-to-user', api.assignCritterToUser)
     // test
-    .get('/xml', xml_1.testxml)
+    // .post('/xml', testxml)
     .get('*', api.notFound);
 http_1.default.createServer(app).listen(3000, function () {
     console.log("listening on port 3000");

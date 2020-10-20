@@ -4,7 +4,7 @@ import http from 'http';
 import helmet from 'helmet';
 import express from 'express';
 import * as api from './start';
-import { testxml } from './import/xml';
+// import { testxml } from './import/xml';
 
 /* ## Server
   Run the server.
@@ -23,6 +23,7 @@ const app = express()
   // .post('/grant-collars', api.grantCollarAccess)
   
   // critters
+  .get('/get-animals', api.getAnimals)
   .get('/get-critters',api.getDBCritters)
   .get('/get-last-pings',api.getLastPings)
   .post('/add-critter', api.addCritter)
@@ -36,7 +37,7 @@ const app = express()
   .post('/add-user', api.addUser)
   .post('/assign-critter-to-user', api.assignCritterToUser)
   // test
-  .get('/xml', testxml)
+  // .post('/xml', testxml)
   .get('*', api.notFound);
 
   
