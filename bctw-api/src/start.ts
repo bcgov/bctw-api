@@ -7,11 +7,12 @@ import {
 import {
   addCollar as _addCollar,
   assignCollarToCritter as _assignCollarToCritter,
+  unassignCollarToCritter as _unassignCollarToCritter,
   getAvailableCollars as _getAvailableCollars,
   getAssignedCollars as _getAssignedCollars
 } from './apis/collar_api';
 import {
-  addCritter as _addCritter,
+  addAnimal as _addAnimal,
   getAnimals as _getAnimals
 } from './apis/animal_api';
 import { NextFunction, Request, Response } from 'express';
@@ -125,40 +126,7 @@ const getUserRole = async function (req: Request, res: Response): Promise<void> 
   await _getUserRole(idir, done)
 }
 
-/* ## getCollarAccess - deprecated
-*/
-// const getUserCollars = async function (req: Request, res: Response): Promise<void> {
-//   const idir = (req?.query?.idir || '') as string;
-//   const done = function (err, data) {
-//     if (err) {
-//       return res.status(500).send(`Failed to query database: ${err}`);
-//     }
-//     const results = data.rows.map(row => row['get_collars'])
-//     if (results && results.length) {
-//       res.send(results[0]);
-//     }
-//   };
-//   await _getUserCollars(idir, done)
-// }
-
-/*
-  ## grantCollarAccess - deprecated
-  returns an array of integers representing all of the collarids the user has access to
-*/
-// const grantCollarAccess = async function (req: Request, res: Response): Promise<void> {
-//   const idir = (req?.query?.idir || '') as string;
-//   const body = req.body;
-//   const done = function (err, data) {
-//     if (err) {
-//       return res.status(500).send(`Failed to query database: ${err}`);
-//     }
-//     const results = data?.find(obj => obj.command === 'SELECT')?.rows[0];
-//     res.send(results?.['get_collars'] ?? []);
-//   };
-//   await _grantCollarAccess(idir, body.grantToIdir, body.accessType, body.collarIds, done)
-// }
-
-const addCritter = async function (req: Request, res:Response): Promise<void> {
+const addAnimal = async function (req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body;
   const done = function (err, data) {
@@ -169,7 +137,7 @@ const addCritter = async function (req: Request, res:Response): Promise<void> {
     const row = results.rows[0];
     res.send(row);
   };
-  await _addCritter(idir, body.animal, body.deviceId, done)
+  await _addAnimal(idir, body, done)
 }
 
 const addCollar = async function(req: Request, res:Response): Promise<void> {
@@ -183,7 +151,7 @@ const addCollar = async function(req: Request, res:Response): Promise<void> {
     const row = results.rows[0];
     res.send(row);
   };
-  await _addCollar(idir, body.collar, done);
+  await _addCollar(idir, body, done);
 }
 
 const assignCollarToCritter = async function(req: Request, res:Response): Promise<void> {
@@ -202,6 +170,26 @@ const assignCollarToCritter = async function(req: Request, res:Response): Promis
     body.deviceId,
     body.animalId,
     body.startDate,
+    body.endDate,
+    done
+  )
+}
+
+const unassignCollarFromCritter = async function(req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const body = req.body;
+  const done = function (err, data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data?.find(obj => obj.command === 'SELECT');
+    const row = results.rows[0];
+    res.send(row);
+  };
+  await _unassignCollarToCritter(
+    idir,
+    body.deviceId,
+    body.animalId,
     body.endDate,
     done
   )
@@ -265,9 +253,10 @@ const assignCritterToUser = async function(req: Request, res:Response): Promise<
 
 export {
   addCollar,
-  addCritter,
+  addAnimal,
   addUser,
   assignCollarToCritter,
+  unassignCollarFromCritter,
   assignCritterToUser,
   getAnimals,
   getAssignedCollars,
@@ -277,12 +266,3 @@ export {
   getUserRole,
   notFound
 }
-
-/* 
-todo:
-- critter mortality?
-- edit critter
-- delete critter/collar,
-- code tables / api
-- return user in addUser
-*/

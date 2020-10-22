@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.getUserRole = exports.getLastPings = exports.getDBCritters = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.assignCollarToCritter = exports.addUser = exports.addCritter = exports.addCollar = void 0;
+exports.notFound = exports.getUserRole = exports.getLastPings = exports.getDBCritters = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
 var collar_api_1 = require("./apis/collar_api");
@@ -160,38 +160,7 @@ var getUserRole = function (req, res) {
     });
 };
 exports.getUserRole = getUserRole;
-/* ## getCollarAccess - deprecated
-*/
-// const getUserCollars = async function (req: Request, res: Response): Promise<void> {
-//   const idir = (req?.query?.idir || '') as string;
-//   const done = function (err, data) {
-//     if (err) {
-//       return res.status(500).send(`Failed to query database: ${err}`);
-//     }
-//     const results = data.rows.map(row => row['get_collars'])
-//     if (results && results.length) {
-//       res.send(results[0]);
-//     }
-//   };
-//   await _getUserCollars(idir, done)
-// }
-/*
-  ## grantCollarAccess - deprecated
-  returns an array of integers representing all of the collarids the user has access to
-*/
-// const grantCollarAccess = async function (req: Request, res: Response): Promise<void> {
-//   const idir = (req?.query?.idir || '') as string;
-//   const body = req.body;
-//   const done = function (err, data) {
-//     if (err) {
-//       return res.status(500).send(`Failed to query database: ${err}`);
-//     }
-//     const results = data?.find(obj => obj.command === 'SELECT')?.rows[0];
-//     res.send(results?.['get_collars'] ?? []);
-//   };
-//   await _grantCollarAccess(idir, body.grantToIdir, body.accessType, body.collarIds, done)
-// }
-var addCritter = function (req, res) {
+var addAnimal = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
         var idir, body, done;
@@ -208,7 +177,7 @@ var addCritter = function (req, res) {
                         var row = results.rows[0];
                         res.send(row);
                     };
-                    return [4 /*yield*/, animal_api_1.addCritter(idir, body.animal, body.deviceId, done)];
+                    return [4 /*yield*/, animal_api_1.addAnimal(idir, body, done)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];
@@ -216,7 +185,7 @@ var addCritter = function (req, res) {
         });
     });
 };
-exports.addCritter = addCritter;
+exports.addAnimal = addAnimal;
 var addCollar = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
@@ -234,7 +203,7 @@ var addCollar = function (req, res) {
                         var row = results.rows[0];
                         res.send(row);
                     };
-                    return [4 /*yield*/, collar_api_1.addCollar(idir, body.collar, done)];
+                    return [4 /*yield*/, collar_api_1.addCollar(idir, body, done)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];
@@ -269,6 +238,32 @@ var assignCollarToCritter = function (req, res) {
     });
 };
 exports.assignCollarToCritter = assignCollarToCritter;
+var unassignCollarFromCritter = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, body, done;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    body = req.body;
+                    done = function (err, data) {
+                        if (err) {
+                            return res.status(500).send("Failed to query database: " + err);
+                        }
+                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
+                        var row = results.rows[0];
+                        res.send(row);
+                    };
+                    return [4 /*yield*/, collar_api_1.unassignCollarToCritter(idir, body.deviceId, body.animalId, body.endDate, done)];
+                case 1:
+                    _b.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+};
+exports.unassignCollarFromCritter = unassignCollarFromCritter;
 var getAvailableCollars = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
@@ -367,12 +362,4 @@ var assignCritterToUser = function (req, res) {
     });
 };
 exports.assignCritterToUser = assignCritterToUser;
-/*
-todo:
-- critter mortality?
-- edit critter
-- delete critter/collar,
-- code tables / api
-- return user in addUser
-*/ 
 //# sourceMappingURL=start.js.map

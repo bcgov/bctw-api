@@ -22,3 +22,38 @@
 #   "accessType": "view",
 #   "collarIds":[]
 # }
+
+# invalid device id
+POST http://localhost:3000/add-critter?idir='jcraven' HTTP/1.1
+content-type: application/json
+
+{
+  "animal": {
+    "animal_id": "test123",
+    "animal_status": "Alive",
+    "calf_at_heel": true,
+    "species": "unicorn",
+    "sex": "M",
+    "wl_id": "abc123",
+    "nickname": "shimmer"
+  },
+  "deviceId": 12333
+}
+
+###
+# should work
+POST http://localhost:3000/add-critter?idir='jcraven' HTTP/1.1
+content-type: application/json
+
+{
+  "animal": {
+    "animal_id": "test123",
+    "animal_status": "Alive",
+    "calf_at_heel": true,
+    "species": "unicorn",
+    "sex": "M",
+    "wlh_id": "abc123",
+    "nickname": "shimmer"
+  },
+  "deviceId": 21512
+}

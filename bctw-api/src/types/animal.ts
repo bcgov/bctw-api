@@ -18,7 +18,7 @@ type Animal = {
   mortality_utm_easting: number,
   mortality_utm_northing: number,
   project: string,
-  re_captur: boolean,
+  re_capture: boolean,
   region: string,
   regional_contact: string,
   release_date: Date,
