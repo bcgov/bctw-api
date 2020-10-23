@@ -1,0 +1,18 @@
+##### add animal
+###
+POST http://localhost:3000/add-animal?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "animal_id": "test123",
+  "animal_status": "Alive",
+  "calf_at_heel": true,
+  "species": "unicorn",
+  "sex": "M",
+  "wlh_id": "abc123",
+  "nickname": "shimmer"
+}
+
+##### get animals
+###
+http://localhost:3000/get-animals?idir=jcraven

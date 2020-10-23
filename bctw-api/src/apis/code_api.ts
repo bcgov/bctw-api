@@ -1,4 +1,4 @@
-import { pgPool, QueryResultCbFn, obj_to_pg_array, to_pg_str } from '../pg';
+import { pgPool, QueryResultCbFn, to_pg_function_query } from '../pg';
 import { ICode, ICodeInput, ICodeHeaderInput } from '../types/code';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
@@ -11,7 +11,7 @@ const _getCode = function (
   codeHeader: string,
   onDone: QueryResultCbFn
 ): void {
-  const sql = transactionify(`select bctw.get_code(${to_pg_str(idir)}, ${to_pg_str(codeHeader)}, '{}')`)
+  const sql = transactionify(to_pg_function_query('get_code', [idir, codeHeader, {}]));
   return pgPool.query(sql, onDone);
 }
 
@@ -27,7 +27,7 @@ const _addCodeHeader = function (
   headers: ICodeHeaderInput | ICodeHeaderInput[],
   onDone: QueryResultCbFn
 ): void {
-  const sql = transactionify(`select bctw.add_code_header(${to_pg_str(idir)}, ${obj_to_pg_array(headers)})`)
+  const sql = transactionify(to_pg_function_query('add_code_header', [idir, headers], true))
   return pgPool.query(sql, onDone);
 }
 
@@ -44,7 +44,7 @@ const _addCode = function (
   codes: ICode | ICodeInput[],
   onDone: QueryResultCbFn
 ) {
-  const sql = transactionify(`select bctw.add_code(${to_pg_str(idir)}, ${to_pg_str(codeHeader)}, ${obj_to_pg_array(codes)})`)
+  const sql = transactionify(to_pg_function_query('add_code', [idir, codeHeader, codes], true));
   return pgPool.query(sql, onDone);
 }
 

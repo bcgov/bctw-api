@@ -7,104 +7,18 @@ http://localhost:3000/get-critters?idir=jcraven
 http://localhost:3000/
 
 ###
-# http://localhost:3000/xml
-
-###
-POST http://localhost:3000/add-animal?idir=jcraven HTTP/1.1
+POST http://localhost:3000/assign-critter-to-user?idir=jcraven HTTP/1.1
 content-type: application/json
 
 {
-  "animal_id": "test123",
-  "animal_status": "Alive",
-  "calf_at_heel": true,
-  "species": "unicorn",
-  "sex": "M",
-  "wlh_id": "abc123",
-  "nickname": "shimmer"
+   "animalId": "16-8090",
+   "start": "2020-10-10",
+   "end": "2021-10-20"
 }
 
 ###
-# adding a collar
-POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
+# animalid dne, should fail
+POST http://localhost:3000/assign-critter-to-user?idir=jcraven HTTP/1.1
 content-type: application/json
 
-{
-  "device_id": 99999,
-  "make": "vectronics",
-  "model": "deercollar9000"
-}
-
-###
-# no device id - should fail
-POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
-content-type: application/json
-
-{
-  "make": "vectronics",
-  "model": "deercollar9000"
-}
-
-###
-
-# upsert - should update collar 21511
-POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
-content-type: application/json
-
-{
-  "device_id": 21511,
-  "make": "Disney",
-  "deactivated": true,
-  "model": "deercollar9000",
-  "radio_frequency": 291
-}
-
-###
-http://localhost:3000/get-available-collars?idir=jcraven
-
-###
-http://localhost:3000/get-animals?idir=jcraven
-
-###
-POST http://localhost:3000/add-code-header?idir=jcraven HTTP/1.1
-content-type: application/json
-
-{
-  "code_header_name":"sex",
-  "code_header_title":"Gender"
-}
-
-###
-POST http://localhost:3000/add-code-header?idir=jcraven HTTP/1.1
-content-type: application/json
-
-[
-    {"code_header_name":"pop_unit","code_header_title":"population unit"},
-    {"code_header_name":"sex","code_header_title":"Gender"}
-]
-
-###
-POST http://localhost:3000/add-code?idir=jcraven HTTP/1.1
-content-type: application/json
-
-{
-  "codeHeader":"region",
-  "codes": [
-    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0}
-  ]
-}
-
-###
-# should fail - header dne
-POST http://localhost:3000/add-code?idir=jcraven HTTP/1.1
-content-type: application/json
-
-{
-  "codeHeader":"regxxion",
-  "codes": [
-    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0}
-  ]
-}
-
-
-###
-GET http://localhost:3000/get-code?codeHeader=region&idir=jcraven HTTP/1.1
+{ "animalId": "16-80900000" }

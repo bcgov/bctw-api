@@ -1,0 +1,97 @@
+##### add collar
+##### 
+# no device id - should fail
+POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "make": "vectronics",
+  "model": "deercollar9000"
+}
+
+###  adding a new collar should work
+POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "device_id": 99999,
+  "make": "vectronics",
+  "model": "deercollar9000"
+}
+
+### upsert - should update collar 21511
+POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "device_id": 21511,
+  "make": "Disney",
+  "deactivated": true,
+  "model": "deercollar9000",
+  "radio_frequency": 291
+}
+
+##### linking collar to animal
+#####
+# should fail - animal asigned
+POST http://localhost:3000/link-animal-collar?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "deviceId": 21511,
+   "animalId": "16-8090",
+   "end": "2021-10-20"
+}
+
+### should work
+POST http://localhost:3000/link-animal-collar?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "deviceId": 41265,
+   "animalId": "16-8090",
+   "end": "2021-10-20"
+}
+
+##### unlinking collar
+##### 
+### should fail because 21511 is assigned to TWC1009
+POST http://localhost:3000/unlink-animal-collar?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "deviceId": 21511,
+   "animalId": "16-8090"
+}
+
+### should work, will end assignment today because endDate is not provided
+POST http://localhost:3000/unlink-animal-collar?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "deviceId": 21511,
+   "animalId": "TWC1009"
+}
+
+### should work
+POST http://localhost:3000/unlink-animal-collar?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "deviceId": 21511,
+  "animalId": "TWC1009",
+  "endDate": "2021-12-01"
+}
+
+######
+### get unassigned collars
+http://localhost:3000/get-available-collars?idir=jcraven
+
+######
+### get assigned collars
+http://localhost:3000/get-assigned-collars?idir=jcraven
+
+
+
+
+

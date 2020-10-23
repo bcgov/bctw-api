@@ -43,7 +43,7 @@ var pg_2 = require("../pg");
 /*
 */
 var _getCode = function (idir, codeHeader, onDone) {
-    var sql = pg_2.transactionify("select bctw.get_code(" + pg_1.to_pg_str(idir) + ", " + pg_1.to_pg_str(codeHeader) + ", '{}')");
+    var sql = pg_2.transactionify(pg_1.to_pg_function_query('get_code', [idir, codeHeader, {}]));
     return pg_1.pgPool.query(sql, onDone);
 };
 /*
@@ -54,7 +54,7 @@ var _getCode = function (idir, codeHeader, onDone) {
   }
 */
 var _addCodeHeader = function (idir, headers, onDone) {
-    var sql = pg_2.transactionify("select bctw.add_code_header(" + pg_1.to_pg_str(idir) + ", " + pg_1.obj_to_pg_array(headers) + ")");
+    var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, headers], true));
     return pg_1.pgPool.query(sql, onDone);
 };
 /*
@@ -65,7 +65,7 @@ var _addCodeHeader = function (idir, headers, onDone) {
    }
 */
 var _addCode = function (idir, codeHeader, codes, onDone) {
-    var sql = pg_2.transactionify("select bctw.add_code(" + pg_1.to_pg_str(idir) + ", " + pg_1.to_pg_str(codeHeader) + ", " + pg_1.obj_to_pg_array(codes) + ")");
+    var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codeHeader, codes], true));
     return pg_1.pgPool.query(sql, onDone);
 };
 var addCodeHeader = function (req, res) {
