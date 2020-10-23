@@ -1,6 +1,6 @@
 import { pgPool, to_pg_str, QueryResultCbFn } from '../pg';
 import { User, UserRole } from '../types/user'
-import { transactionify, isProd } from '../server';
+import { transactionify, isProd } from '../pg';
 
 const addUser = function(user: User, userRole: UserRole, onDone: QueryResultCbFn): void {
   let sql = `select * from bctw.add_user('${JSON.stringify(user)}', ${to_pg_str(userRole)});`;
@@ -26,6 +26,7 @@ const getUserRole = function(idir: string, onDone: QueryResultCbFn): void {
 //   return pgPool.query(sql, onDone);
 // }
 
+// todo: test this
 const assignCritterToUser = function(
   idir: string,
   animalid: string,
@@ -36,7 +37,7 @@ const assignCritterToUser = function(
   if (!idir) {
     return onDone(Error('IDIR must be supplied'), null);
   }
-  const sql = transactionify(`select bctw.link_animal_to_user(${idir}, ${animalid}, ${end}, ${start})`);
+  const sql = transactionify(`select bctw.link_animal_to_user(${to_pg_str(idir)}, ${to_pg_str(animalid)}, ${end}, ${start})`);
   return pgPool.query(sql, onDone);
 }
 

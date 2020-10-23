@@ -36,12 +36,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.getUserRole = exports.getLastPings = exports.getDBCritters = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = void 0;
+exports.notFound = exports.getUserRole = exports.getLastPings = exports.getDBCritters = exports.getCode = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
 var collar_api_1 = require("./apis/collar_api");
 var animal_api_1 = require("./apis/animal_api");
-var server_1 = require("./server");
+var code_api_1 = require("./apis/code_api");
+Object.defineProperty(exports, "addCode", { enumerable: true, get: function () { return code_api_1.addCode; } });
+Object.defineProperty(exports, "addCodeHeader", { enumerable: true, get: function () { return code_api_1.addCodeHeader; } });
+Object.defineProperty(exports, "getCode", { enumerable: true, get: function () { return code_api_1.getCode; } });
+var pg_2 = require("./pg");
 /* ## getDBCritters
   Request all collars the user has access to.
   @param req {object} Node/Express request object
@@ -116,7 +120,7 @@ var addUser = function (req, res) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
                         }
-                        if (!server_1.isProd) {
+                        if (!pg_2.isProd) {
                             var results = data.filter(function (obj) { return obj.command === 'SELECT' && obj.rows.length; });
                             var userObj = results[results.length - 1];
                             console.log("user added: " + JSON.stringify(userObj.rows[0]));

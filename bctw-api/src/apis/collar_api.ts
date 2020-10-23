@@ -1,6 +1,6 @@
-import { pgPool, QueryResultCbFn, to_pg_obj } from '../pg';
+import { pgPool, QueryResultCbFn, to_pg_obj, to_pg_str } from '../pg';
 import { Collar } from '../types/collar';
-import { transactionify } from '../server';
+import { transactionify } from '../pg';
 
 const addCollar = function (
   idir: string,
@@ -10,7 +10,7 @@ const addCollar = function (
   if (!idir) {
     return onDone(Error('IDIR must be supplied'), null);
   }
-  const sql = transactionify(`select bctw.add_collar(${idir}, ${to_pg_obj(collar)})`);
+  const sql = transactionify(`select bctw.add_collar(${to_pg_str(idir)}, ${to_pg_obj(collar)})`);
   return pgPool.query(sql, onDone);
 }
 

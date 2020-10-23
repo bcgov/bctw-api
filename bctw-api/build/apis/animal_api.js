@@ -2,12 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAnimals = exports.addAnimal = void 0;
 var pg_1 = require("../pg");
-var server_1 = require("../server");
+var pg_2 = require("../pg");
 var addAnimal = function (idir, animal, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'), null);
     }
-    var sql = server_1.transactionify("select bctw.add_animal(" + idir + ", " + pg_1.to_pg_obj(animal) + ")");
+    var sql = pg_2.transactionify("select bctw.add_animal(" + pg_1.to_pg_str(idir) + ", " + pg_1.to_pg_obj(animal) + ")");
     // console.log(`adding critter: ${JSON.stringify(animal)}`);
     return pg_1.pgPool.query(sql, onDone);
 };

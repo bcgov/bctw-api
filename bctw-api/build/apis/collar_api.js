@@ -2,12 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAvailableCollars = exports.getAssignedCollars = exports.unassignCollarToCritter = exports.assignCollarToCritter = exports.addCollar = void 0;
 var pg_1 = require("../pg");
-var server_1 = require("../server");
+var pg_2 = require("../pg");
 var addCollar = function (idir, collar, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'), null);
     }
-    var sql = server_1.transactionify("select bctw.add_collar(" + idir + ", " + pg_1.to_pg_obj(collar) + ")");
+    var sql = pg_2.transactionify("select bctw.add_collar(" + pg_1.to_pg_str(idir) + ", " + pg_1.to_pg_obj(collar) + ")");
     return pg_1.pgPool.query(sql, onDone);
 };
 exports.addCollar = addCollar;
@@ -15,7 +15,7 @@ var assignCollarToCritter = function (idir, deviceId, animalid, startDate, endDa
     if (!idir) {
         return onDone(Error('IDIR must be supplied'), null);
     }
-    var sql = server_1.transactionify("select bctw.link_collar_to_animal(" + idir + ", " + deviceId + ", " + animalid + ", " + endDate + ", " + startDate + ")");
+    var sql = pg_2.transactionify("select bctw.link_collar_to_animal(" + idir + ", " + deviceId + ", " + animalid + ", " + endDate + ", " + startDate + ")");
     return pg_1.pgPool.query(sql, onDone);
 };
 exports.assignCollarToCritter = assignCollarToCritter;
@@ -23,7 +23,7 @@ var unassignCollarToCritter = function (idir, deviceId, animalId, endDate, onDon
     if (!idir) {
         return onDone(Error('IDIR must be supplied'), null);
     }
-    var sql = server_1.transactionify("select bctw.unlink_collar_to_animal(" + idir + ", " + deviceId + ", " + animalId + ", " + endDate + ")");
+    var sql = pg_2.transactionify("select bctw.unlink_collar_to_animal(" + idir + ", " + deviceId + ", " + animalId + ", " + endDate + ")");
     return pg_1.pgPool.query(sql, onDone);
 };
 exports.unassignCollarToCritter = unassignCollarToCritter;

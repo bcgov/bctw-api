@@ -15,9 +15,14 @@ import {
   addAnimal as _addAnimal,
   getAnimals as _getAnimals
 } from './apis/animal_api';
+import {
+  addCode,
+  addCodeHeader,
+  getCode
+} from './apis/code_api';
 import { NextFunction, Request, Response } from 'express';
 import { User, UserRole } from './types/user';
-import { isProd } from './server';
+import { isProd } from './pg';
 
 
 /* ## getDBCritters
@@ -252,6 +257,8 @@ const assignCritterToUser = async function(req: Request, res:Response): Promise<
 }
 
 export {
+  addCode,
+  addCodeHeader,
   addCollar,
   addAnimal,
   addUser,
@@ -261,6 +268,7 @@ export {
   getAnimals,
   getAssignedCollars,
   getAvailableCollars,
+  getCode,
   getDBCritters,
   getLastPings,
   getUserRole,

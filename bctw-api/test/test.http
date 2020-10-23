@@ -10,7 +10,7 @@ http://localhost:3000/
 # http://localhost:3000/xml
 
 ###
-POST http://localhost:3000/add-animal?idir='jcraven' HTTP/1.1
+POST http://localhost:3000/add-animal?idir=jcraven HTTP/1.1
 content-type: application/json
 
 {
@@ -25,7 +25,7 @@ content-type: application/json
 
 ###
 # adding a collar
-POST http://localhost:3000/add-collar?idir='jcraven' HTTP/1.1
+POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
 content-type: application/json
 
 {
@@ -36,7 +36,7 @@ content-type: application/json
 
 ###
 # no device id - should fail
-POST http://localhost:3000/add-collar?idir='jcraven' HTTP/1.1
+POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
 content-type: application/json
 
 {
@@ -47,7 +47,7 @@ content-type: application/json
 ###
 
 # upsert - should update collar 21511
-POST http://localhost:3000/add-collar?idir='jcraven' HTTP/1.1
+POST http://localhost:3000/add-collar?idir=jcraven HTTP/1.1
 content-type: application/json
 
 {
@@ -63,3 +63,48 @@ http://localhost:3000/get-available-collars?idir=jcraven
 
 ###
 http://localhost:3000/get-animals?idir=jcraven
+
+###
+POST http://localhost:3000/add-code-header?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "code_header_name":"sex",
+  "code_header_title":"Gender"
+}
+
+###
+POST http://localhost:3000/add-code-header?idir=jcraven HTTP/1.1
+content-type: application/json
+
+[
+    {"code_header_name":"pop_unit","code_header_title":"population unit"},
+    {"code_header_name":"sex","code_header_title":"Gender"}
+]
+
+###
+POST http://localhost:3000/add-code?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "codeHeader":"region",
+  "codes": [
+    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0}
+  ]
+}
+
+###
+# should fail - header dne
+POST http://localhost:3000/add-code?idir=jcraven HTTP/1.1
+content-type: application/json
+
+{
+  "codeHeader":"regxxion",
+  "codes": [
+    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0}
+  ]
+}
+
+
+###
+GET http://localhost:3000/get-code?codeHeader=region&idir=jcraven HTTP/1.1

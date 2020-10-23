@@ -22,23 +22,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.transactionify = exports.isProd = void 0;
 var cors_1 = __importDefault(require("cors"));
 var body_parser_1 = __importDefault(require("body-parser"));
 var http_1 = __importDefault(require("http"));
 var helmet_1 = __importDefault(require("helmet"));
 var express_1 = __importDefault(require("express"));
 var api = __importStar(require("./start"));
-// import { testxml } from './import/xml';
 /* ## Server
   Run the server.
  */
-var isProd = process.env.NODE_ENV === 'production' ? true : false;
-exports.isProd = isProd;
-var transactionify = function (sql) {
-    return isProd ? sql : "begin;\n" + sql + ";\nrollback;";
-};
-exports.transactionify = transactionify;
 var app = express_1.default()
     .use(helmet_1.default())
     .use(cors_1.default())
@@ -61,8 +53,10 @@ var app = express_1.default()
     .get('/role', api.getUserRole)
     .post('/add-user', api.addUser)
     .post('/assign-critter-to-user', api.assignCritterToUser)
-    // test
-    // .post('/xml', testxml)
+    // codes
+    .get('/get-code', api.getCode)
+    .post('/add-code', api.addCode)
+    .post('/add-code-header', api.addCodeHeader)
     .get('*', api.notFound);
 http_1.default.createServer(app).listen(3000, function () {
     console.log("listening on port 3000");
