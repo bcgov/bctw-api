@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.getUserRole = exports.getLastPings = exports.getDBCritters = exports.getCode = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
+exports.notFound = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getDBCritters = exports.getCode = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
 var collar_api_1 = require("./apis/collar_api");
@@ -53,7 +53,6 @@ var pg_2 = require("./pg");
   @param next {function} Node/Express function for flow control
  */
 var getDBCritters = function (req, res, next) {
-    console.log('Getting DB Critters');
     var idir = req.query.idir;
     var interval = req.query.time || '1 days';
     var sql = "\n    select geojson from vendor_merge_view \n    where date_recorded > (current_date - INTERVAL '" + interval + "');\n  ";
@@ -72,6 +71,23 @@ var getDBCritters = function (req, res, next) {
     pg_1.pgPool.query(sql, done);
 };
 exports.getDBCritters = getDBCritters;
+/* ## getPingExtent
+  Request the min and max dates of available collar pings
+  @param req {object} Node/Express request object
+  @param res {object} Node/Express response object
+  @param next {function} Node/Express function for flow control
+ */
+var getPingExtent = function (req, res, next) {
+    var sql = "\n    select\n      max(date_recorded) \"max\",\n      min(date_recorded) \"min\"\n    from\n      vendor_merge_view\n  ";
+    var done = function (err, data) {
+        if (err) {
+            return res.status(500).send("Failed to query database: " + err);
+        }
+        res.send(data.rows[0]);
+    };
+    pg_1.pgPool.query(sql, done);
+};
+exports.getPingExtent = getPingExtent;
 /* ## getLastPings
   Get the last know location of every collar ever deployed.
   @param req {object} Node/Express request object

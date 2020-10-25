@@ -71,13 +71,12 @@ const getPingExtent = function (req: Request, res: Response, next: NextFunction)
       vendor_merge_view
   `;
 
-  console.log(sql);
 
   const done = function (err,data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    res.send(data.rows[1]);
+    res.send(data.rows[0]);
   };
 
   pgPool.query(sql,done);
