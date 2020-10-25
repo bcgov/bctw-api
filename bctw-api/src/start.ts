@@ -32,7 +32,6 @@ import { isProd } from './pg';
   @param next {function} Node/Express function for flow control
  */
 const getDBCritters = function (req: Request, res: Response, next: NextFunction): void {
-  console.log('Getting DB Critters');
   const idir = req.query.idir;
   const interval = req.query.time || '1 days';
 
@@ -54,6 +53,33 @@ const getDBCritters = function (req: Request, res: Response, next: NextFunction)
 
     res.send(featureCollection);
   };
+  pgPool.query(sql,done);
+};
+
+/* ## getPingExtent
+  Request the min and max dates of available collar pings
+  @param req {object} Node/Express request object
+  @param res {object} Node/Express response object
+  @param next {function} Node/Express function for flow control
+ */
+const getPingExtent = function (req: Request, res: Response, next: NextFunction): void {
+  const sql = `
+    select
+      max(date_recorded) "max",
+      min(date_recorded) "min"
+    from
+      vendor_merge_view
+  `;
+
+  console.log(sql);
+
+  const done = function (err,data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    res.send(data.rows[1]);
+  };
+
   pgPool.query(sql,done);
 };
 
@@ -270,6 +296,7 @@ export {
   getAvailableCollars,
   getCode,
   getDBCritters,
+  getPingExtent,
   getLastPings,
   getUserRole,
   notFound
