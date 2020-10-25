@@ -1,13 +1,13 @@
 http://localhost:3000/get-last-pings
 
 ###
-http://localhost:3000/get-critters?idir=jcraven
+http://localhost:3000/get-critters?idir={{idir}}
 
 ###
 http://localhost:3000/
 
 ###
-POST http://localhost:3000/assign-critter-to-user?idir=jcraven HTTP/1.1
+POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
@@ -18,7 +18,7 @@ content-type: application/json
 
 ###
 # animalid dne, should fail
-POST http://localhost:3000/assign-critter-to-user?idir=jcraven HTTP/1.1
+POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 { "animalId": "16-80900000" }

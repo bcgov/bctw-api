@@ -1,6 +1,6 @@
 ##### add animal
 ###
-POST http://localhost:3000/add-animal?idir=jcraven HTTP/1.1
+POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
@@ -15,4 +15,4 @@ content-type: application/json
 
 ##### get animals
 ###
-http://localhost:3000/get-animals?idir=jcraven
+http://localhost:3000/get-animals?idir={{idir}}

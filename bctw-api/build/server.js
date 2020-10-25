@@ -27,17 +27,19 @@ var body_parser_1 = __importDefault(require("body-parser"));
 var http_1 = __importDefault(require("http"));
 var helmet_1 = __importDefault(require("helmet"));
 var express_1 = __importDefault(require("express"));
+var multer_1 = __importDefault(require("multer"));
 var api = __importStar(require("./start"));
+var csv_1 = require("./import/csv");
+var pg_1 = require("./pg");
 /* ## Server
   Run the server.
- */
+*/
+var upload = multer_1.default({ dest: 'bctw-api/build/uploads' });
 var app = express_1.default()
     .use(helmet_1.default())
     .use(cors_1.default())
     .use(body_parser_1.default.urlencoded({ extended: true }))
     .use(body_parser_1.default.json())
-    // .get('/user-collars', api.getUserCollars)
-    // .post('/grant-collars', api.grantCollarAccess)
     // critters
     .get('/get-animals', api.getAnimals)
     .get('/get-critters', api.getDBCritters)
@@ -55,10 +57,22 @@ var app = express_1.default()
     .post('/assign-critter-to-user', api.assignCritterToUser)
     // codes
     .get('/get-code', api.getCode)
-    .post('/add-code', api.addCode)
-    .post('/add-code-header', api.addCodeHeader)
+    // .post('/add-code', api.addCode)
+    // .post('/add-code-header', api.addCodeHeader)
+    // import
+    .post('/import', upload.single('file'), csv_1.importCsv)
     .get('*', api.notFound);
 http_1.default.createServer(app).listen(3000, function () {
     console.log("listening on port 3000");
+    pg_1.pgPool.connect(function (err, client) {
+        var _a, _b;
+        var server = ((_a = process.env.POSTGRES_SERVER_HOST) !== null && _a !== void 0 ? _a : 'localhost') + ":" + ((_b = process.env.POSTGRES_SERVER_PORT) !== null && _b !== void 0 ? _b : 5432);
+        if (err) {
+            console.log("error connecting to postgresql server host at " + server + ":\n\t" + err);
+        }
+        else
+            console.log("postgres server successfully connected at " + server);
+        client.release();
+    });
 });
 //# sourceMappingURL=server.js.map

@@ -1,12 +1,11 @@
 import moment from 'moment';
-import pg, { Query, QueryResult, QueryResultBase, QueryResultRow } from 'pg';
-// import { isProd } from './server';
+import pg, { Client, PoolClient, Query, QueryResult, QueryResultBase, QueryResultRow } from 'pg';
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 const test = process.env.NODE_ENV;
 console.log("typeof test: ", test)
-console.log("comparison: ",process.env.NODE_ENV === 'production')
+console.log("comparison: ", process.env.NODE_ENV === 'production')
 
 const devPort = '5432';
 
@@ -18,16 +17,27 @@ const pgPool = new pg.Pool({
   host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
   port: +(isProd ? process.env.POSTGRES_SERVER_PORT ?? devPort : devPort),
   max: 10
+})
+
+
+pgPool.on('error', (err:Error, client:PoolClient): void => {
+  console.log(`postgresql error: ${err}`);
+});
+pgPool.on('acquire', (client: PoolClient): void => {
+  // console.log(`postgresql client acquired`);
+});
+pgPool.on('connect', (client: PoolClient): void => {
+  // console.log(`postgresql client connected`);
 });
 
 // XXX Debugging database connection
-console.log("POSTGRES_USER: ",process.env.POSTGRES_USER);
-console.log("POSTGRES_DB: ",process.env.POSTGRES_DB);
-console.log("POSTGRES_PASSWORD: ",process.env.POSTGRES_PASSWORD);
-console.log("POSTGRES_SERVER_HOST: ",process.env.POSTGRES_SERVER_HOST);
-console.log("Other host: ",isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost');
-console.log("isProd: ",isProd);
-console.log("port: ",+(isProd ? process.env.POSTGRES_SERVER_PORT ?? devPort : devPort));
+// console.log("POSTGRES_USER: ",process.env.POSTGRES_USER);
+// console.log("POSTGRES_DB: ",process.env.POSTGRES_DB);
+// console.log("POSTGRES_PASSWORD: ",process.env.POSTGRES_PASSWORD);
+// console.log("POSTGRES_SERVER_HOST: ",process.env.POSTGRES_SERVER_HOST);
+// console.log("Other host: ",isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost');
+// console.log("isProd: ",isProd);
+// console.log("port: ",+(isProd ? process.env.POSTGRES_SERVER_PORT ?? devPort : devPort));
 
 // make dev api calls that persist data into transactions that rollback
 const transactionify = (sql: string): string => {
@@ -101,11 +111,6 @@ const to_pg_date = (date: Date): string | null => {
 
 export {
   pgPool,
-  obj_to_pg_array,
-  to_pg_array,
-  to_pg_date,
-  to_pg_str,
-  to_pg_obj,
   to_pg_function_query,
   QueryResultCbFn,
   transactionify, 

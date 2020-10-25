@@ -1,4 +1,4 @@
-import { pgPool, QueryResultCbFn, to_pg_function_query } from '../pg';
+import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query } from '../pg';
 import { ICode, ICodeInput, ICodeHeaderInput } from '../types/code';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
@@ -43,7 +43,7 @@ const _addCode = function (
   codeHeader: string,
   codes: ICode | ICodeInput[],
   onDone: QueryResultCbFn
-) {
+): void {
   const sql = transactionify(to_pg_function_query('add_code', [idir, codeHeader, codes], true));
   return pgPool.query(sql, onDone);
 }
@@ -55,11 +55,8 @@ const addCodeHeader = async function (req: Request, res:Response): Promise<void>
     if (err) {
       return res.status(500).send(`Failed to add code headers: ${err}`);
     }
-    const results = data?.find(obj => obj.command === 'SELECT');
-    if (results && results.rows) {
-      const r = results.rows.map(m => m['add_code_header'])
-      res.send(r)
-    }
+    const results = getRowResults(data, 'add_code_header');
+    res.send(results);
   };
   await _addCodeHeader(idir, body, done)
 }
@@ -71,11 +68,8 @@ const addCode = async function (req: Request, res:Response): Promise<void> {
     if (err) {
       return res.status(500).send(`Failed to add codes: ${err}`);
     }
-    const results = data?.find(obj => obj.command === 'SELECT');
-    if (results && results.rows) {
-      const r = results.rows.map(m => m['add_code'])
-      res.send(r)
-    }
+    const results = getRowResults(data, 'add_code');
+    res.send(results);
   };
   await _addCode(idir, body.codeHeader, body.codes, done)
 }
@@ -99,6 +93,8 @@ const getCode = async function (req: Request, res:Response): Promise<void> {
 
 export {
   getCode,
+  _addCode,
+  _addCodeHeader,
   addCode,
   addCodeHeader
 }

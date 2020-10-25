@@ -1,12 +1,12 @@
 ##### add code header
 ### should work
-POST http://localhost:3000/add-code-header?idir=jcraven HTTP/1.1
+POST http://localhost:3000/add-code-header?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 { "code_header_name":"sex", "code_header_title":"Gender" }
 
 ### add multiple should work
-POST http://localhost:3000/add-code-header?idir=jcraven HTTP/1.1
+POST http://localhost:3000/add-code-header?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 [
@@ -16,7 +16,7 @@ content-type: application/json
 
 ##### add code
 ###
-POST http://localhost:3000/add-code?idir=jcraven HTTP/1.1
+POST http://localhost:3000/add-code?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
@@ -27,7 +27,7 @@ content-type: application/json
 }
 
 ### code add should fail - header dne
-POST http://localhost:3000/add-code?idir=jcraven HTTP/1.1
+POST http://localhost:3000/add-code?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
@@ -39,4 +39,4 @@ content-type: application/json
 
 ###### get code
 ###
-GET http://localhost:3000/get-code?codeHeader=region&idir=jcraven HTTP/1.1
+GET http://localhost:3000/get-code?codeHeader=region&idir={{idir}} HTTP/1.1

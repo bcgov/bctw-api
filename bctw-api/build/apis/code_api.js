@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addCodeHeader = exports.addCode = exports.getCode = void 0;
+exports.addCodeHeader = exports.addCode = exports._addCodeHeader = exports._addCode = exports.getCode = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 // todo: add filters for get, convert db functions to return json
@@ -57,6 +57,7 @@ var _addCodeHeader = function (idir, headers, onDone) {
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, headers], true));
     return pg_1.pgPool.query(sql, onDone);
 };
+exports._addCodeHeader = _addCodeHeader;
 /*
   - accepts json[] in format
    {
@@ -68,6 +69,7 @@ var _addCode = function (idir, codeHeader, codes, onDone) {
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codeHeader, codes], true));
     return pg_1.pgPool.query(sql, onDone);
 };
+exports._addCode = _addCode;
 var addCodeHeader = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
@@ -81,11 +83,8 @@ var addCodeHeader = function (req, res) {
                         if (err) {
                             return res.status(500).send("Failed to add code headers: " + err);
                         }
-                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
-                        if (results && results.rows) {
-                            var r = results.rows.map(function (m) { return m['add_code_header']; });
-                            res.send(r);
-                        }
+                        var results = pg_1.getRowResults(data, 'add_code_header');
+                        res.send(results);
                     };
                     return [4 /*yield*/, _addCodeHeader(idir, body, done)];
                 case 1:
@@ -109,11 +108,8 @@ var addCode = function (req, res) {
                         if (err) {
                             return res.status(500).send("Failed to add codes: " + err);
                         }
-                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
-                        if (results && results.rows) {
-                            var r = results.rows.map(function (m) { return m['add_code']; });
-                            res.send(r);
-                        }
+                        var results = pg_1.getRowResults(data, 'add_code');
+                        res.send(results);
                     };
                     return [4 /*yield*/, _addCode(idir, body.codeHeader, body.codes, done)];
                 case 1:

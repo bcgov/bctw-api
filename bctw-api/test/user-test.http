@@ -4,7 +4,7 @@ http://localhost:3000/role
 http://localhost:3000/role?idir=stuff
 
 ###
-http://localhost:3000/role?idir=jcraven
+http://localhost:3000/role?idir={{idir}}
 
 ###
 POST http://localhost:3000/add-user HTTP/1.1
@@ -12,8 +12,8 @@ content-type: application/json
 
 {
   "user": {
-    "idir": "vchongvv",
-    "email": "vchong@qt.com"
+    "idir": "someguy",
+    "email": "someguy@qt.com"
   },
   "role": "administrator"
 }
@@ -24,8 +24,8 @@ content-type: application/json
 
 {
   "user": {
-    "idir": "vchongv",
-    "email": "vchong@qt.com"
+    "idir": "someguy",
+    "email": "someguy@qt.com"
   },
   "role": "administrat"
 }

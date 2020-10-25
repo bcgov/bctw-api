@@ -3,20 +3,22 @@ import bodyParser from 'body-parser';
 import http from 'http';
 import helmet from 'helmet';
 import express from 'express';
+import multer from 'multer';
 import * as api from './start';
+import {importCsv} from './import/csv';
+import { pgPool } from './pg';
 
 /* ## Server
   Run the server.
- */
+*/
+
+const upload = multer({dest: 'bctw-api/build/uploads'})
 
 const app = express()
   .use(helmet())
   .use(cors())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
-  // .get('/user-collars', api.getUserCollars)
-  // .post('/grant-collars', api.grantCollarAccess)
-  
   // critters
   .get('/get-animals', api.getAnimals)
   .get('/get-critters',api.getDBCritters)
@@ -34,12 +36,20 @@ const app = express()
   .post('/assign-critter-to-user', api.assignCritterToUser)
   // codes
   .get('/get-code', api.getCode)
-  .post('/add-code', api.addCode)
-  .post('/add-code-header', api.addCodeHeader)
-
+  // .post('/add-code', api.addCode)
+  // .post('/add-code-header', api.addCodeHeader)
+  // import
+  .post('/import', upload.single('file'), importCsv)
   .get('*', api.notFound);
 
   
 http.createServer(app).listen(3000, () => {
   console.log(`listening on port 3000`)
+  pgPool.connect((err, client) => {
+    const server = `${process.env.POSTGRES_SERVER_HOST ?? 'localhost'}:${process.env.POSTGRES_SERVER_PORT ?? 5432}`;
+    if (err) {
+      console.log(`error connecting to postgresql server host at ${server}:\n\t${err}`);
+    } else console.log(`postgres server successfully connected at ${server}`);
+    client.release();
+  });
 });
