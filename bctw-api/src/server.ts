@@ -23,6 +23,7 @@ const app = express()
   .get('/get-animals', api.getAnimals)
   .get('/get-critters',api.getDBCritters)
   .get('/get-last-pings',api.getLastPings)
+  .get('/get-ping-extent',api.getPingExtent)
   .post('/add-animal', api.addAnimal)
   // collars
   .get('/get-assigned-collars', api.getAssignedCollars)
