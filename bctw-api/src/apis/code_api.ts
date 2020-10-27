@@ -1,7 +1,8 @@
-import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query } from '../pg';
+import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query, queryAsync } from '../pg';
 import { ICode, ICodeInput, ICodeHeaderInput } from '../types/code';
 import { transactionify } from '../pg';
-import { Request, Response } from 'express';
+import { query, Request, Response } from 'express';
+import { Query, QueryResult } from 'pg';
 // todo: add filters for get, convert db functions to return json
 
 /*
@@ -22,13 +23,13 @@ const _getCode = function (
     code_header_description: '', valid_from: Date, valid_to: Date,
   }
 */
-const _addCodeHeader = function (
+const _addCodeHeader = async function (
   idir: string,
   headers: ICodeHeaderInput | ICodeHeaderInput[],
-  onDone: QueryResultCbFn
-): void {
+): Promise<QueryResult> {
   const sql = transactionify(to_pg_function_query('add_code_header', [idir, headers], true))
-  return pgPool.query(sql, onDone);
+  const result = await queryAsync(sql);
+  return result;
 }
 
 /*
@@ -38,14 +39,14 @@ const _addCodeHeader = function (
      "valid_from": Date, "valid_to": Date
    }
 */
-const _addCode = function (
+const _addCode = async function (
   idir: string,
   codeHeader: string,
-  codes: ICode | ICodeInput[],
-  onDone: QueryResultCbFn
-): void {
+  codes: ICode | ICodeInput[]
+): Promise<QueryResult> {
   const sql = transactionify(to_pg_function_query('add_code', [idir, codeHeader, codes], true));
-  return pgPool.query(sql, onDone);
+  const result = await queryAsync(sql);
+  return result;
 }
 
 const addCodeHeader = async function (req: Request, res:Response): Promise<void> {
@@ -58,7 +59,7 @@ const addCodeHeader = async function (req: Request, res:Response): Promise<void>
     const results = getRowResults(data, 'add_code_header');
     res.send(results);
   };
-  await _addCodeHeader(idir, body, done)
+  await _addCodeHeader(idir, body)
 }
 
 const addCode = async function (req: Request, res:Response): Promise<void> {
@@ -71,7 +72,7 @@ const addCode = async function (req: Request, res:Response): Promise<void> {
     const results = getRowResults(data, 'add_code');
     res.send(results);
   };
-  await _addCode(idir, body.codeHeader, body.codes, done)
+  await _addCode(idir, body.codeHeader, body.codes)
 }
 
 const getCode = async function (req: Request, res:Response): Promise<void> {

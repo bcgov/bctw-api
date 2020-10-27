@@ -7,7 +7,7 @@ POST http://localhost:3000/import?idir={{idir}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="file"; filename="data.csv"
+Content-Disposition: form-data; name="csv"; filename="data.csv"
 Content-Type: text/csv
 
 <@ {{csv}}

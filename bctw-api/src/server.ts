@@ -40,7 +40,7 @@ const app = express()
   // .post('/add-code', api.addCode)
   // .post('/add-code-header', api.addCodeHeader)
   // import
-  .post('/import', upload.single('file'), importCsv)
+  .post('/import', upload.single('csv'), importCsv)
   .get('*', api.notFound);
 
   

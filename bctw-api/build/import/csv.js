@@ -72,80 +72,96 @@ var _clearUploadDir = function (path) { return __awaiter(void 0, void 0, void 0,
                 console.log("unabled to remove uploaded csv: " + err);
             }
             else
-                console.log("csv upload file removed: " + path);
+                console.log("uploaded csv file removed: " + path);
         });
         return [2 /*return*/];
     });
 }); };
-var _handleParsedRows = function (idir, parsedObj, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var data, crows, onDoneCodes, cresult, hrows, onDoneHeaders, hresult;
+var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, void 0, function () {
+    var codes, headers, ret;
     return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                data = {};
-                crows = parsedObj.codes.rows;
-                if (!crows.length) return [3 /*break*/, 2];
-                onDoneCodes = function (err, data) {
-                    if (err) {
-                        return res.status(500).send("Failed to add codes: " + err);
-                    }
-                    res.send(pg_1.getRowResults(data, 'add_code'));
-                };
-                return [4 /*yield*/, code_api_1._addCode(idir, crows[0].code_header, crows, onDoneCodes)];
-            case 1:
-                cresult = _a.sent();
-                _a.label = 2;
-            case 2:
-                hrows = parsedObj.headers.rows;
-                if (!hrows.length) return [3 /*break*/, 4];
-                onDoneHeaders = function (err, data) {
-                    if (err) {
-                        return res.status(500).send("Failed to add codes: " + err);
-                    }
-                    res.send(pg_1.getRowResults(data, 'add_code_header'));
-                };
-                return [4 /*yield*/, code_api_1._addCodeHeader(idir, hrows, onDoneHeaders)];
-            case 3:
-                hresult = _a.sent();
-                _a.label = 4;
-            case 4: return [2 /*return*/, data];
-        }
+        codes = { rows: [] };
+        headers = { rows: [] };
+        ret = { codes: codes.rows, headers: headers.rows };
+        fs.createReadStream(file.path).pipe(csv_parser_1.default({
+            mapHeaders: function (_a) {
+                var header = _a.header;
+                return _mapCsvHeader(header);
+            }
+        }))
+            .on('data', function (row) {
+            if (code_1.isCodeHeader(row))
+                headers.rows.push(row);
+            else if (code_1.isCode(row))
+                codes.rows.push(row);
+        })
+            .on('end', function () { return __awaiter(void 0, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        console.log("CSV file " + file.path + " processed\n  codes: " + codes.rows.length + "\n  headers: " + headers.rows.length);
+                        return [4 /*yield*/, callback(ret)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        return [2 /*return*/];
     });
 }); };
-var _parseCsv = function (file, callback) {
-    var codes = { rows: [] };
-    var headers = { rows: [] };
-    fs.createReadStream(file.path).pipe(csv_parser_1.default({
-        mapHeaders: function (_a) {
-            var header = _a.header;
-            return _mapCsvHeader(header);
-        }
-    }))
-        .on('data', function (row) {
-        if (code_1.isCodeHeader(row))
-            headers.rows.push(row);
-        else if (code_1.isCode(row))
-            codes.rows.push(row);
-    })
-        .on('end', function () {
-        console.log("CSV file " + file.path + " processed\n  codes: " + codes.rows.length + "\n  headers: " + headers.rows.length);
-        callback({ codes: codes, headers: headers });
-    });
-};
 var importCsv = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, file;
+        var idir, file, headerResults, codeResults, onFinishedParsing;
+        var _this = this;
         return __generator(this, function (_b) {
-            idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-            if (!idir)
-                res.status(500).send('must supply idir');
-            file = req.file;
-            if (!file)
-                res.status(500).send('failed: csv file not found');
-            _parseCsv(file, function (rows) { return _handleParsedRows(idir, rows, res)
-                .then(function () { return _clearUploadDir(file.path); }); });
-            return [2 /*return*/];
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    if (!idir) {
+                        res.status(500).send('must supply idir');
+                    }
+                    file = req.file;
+                    if (!file) {
+                        res.status(500).send('failed: csv file not found');
+                    }
+                    onFinishedParsing = function (rows) { return __awaiter(_this, void 0, void 0, function () {
+                        var codes, headers;
+                        var _a, _b;
+                        return __generator(this, function (_c) {
+                            switch (_c.label) {
+                                case 0:
+                                    codes = rows.codes;
+                                    headers = rows.headers;
+                                    if (!codes.length) return [3 /*break*/, 2];
+                                    return [4 /*yield*/, code_api_1._addCode(idir, codes[0].code_header, codes)];
+                                case 1:
+                                    codeResults = _c.sent();
+                                    return [3 /*break*/, 4];
+                                case 2:
+                                    if (!headers.length) return [3 /*break*/, 4];
+                                    return [4 /*yield*/, code_api_1._addCodeHeader(idir, headers)];
+                                case 3:
+                                    headerResults = _c.sent();
+                                    _c.label = 4;
+                                case 4:
+                                    _clearUploadDir(file.path);
+                                    if ((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) {
+                                        res.send(pg_1.getRowResults(headerResults, 'add_code_header'));
+                                    }
+                                    else if ((_b = codeResults) === null || _b === void 0 ? void 0 : _b.length) {
+                                        res.send(pg_1.getRowResults(codeResults, 'add_code'));
+                                    }
+                                    return [2 /*return*/];
+                            }
+                        });
+                    }); };
+                    return [4 /*yield*/, _parseCsv(file, onFinishedParsing)];
+                case 1:
+                    _b.sent();
+                    return [2 /*return*/];
+            }
         });
     });
 };

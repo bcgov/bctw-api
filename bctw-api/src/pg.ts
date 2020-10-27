@@ -109,11 +109,27 @@ const to_pg_date = (date: Date): string | null => {
   return `'${moment(date).format('YYYY-MM-DD')}'::Date`;
 }
 
+const queryAsync = async (sql: string): Promise<QueryResult> => {
+  const client = await pgPool.connect()
+  let res: QueryResult;
+  try {
+    res = await client.query(sql);
+    await client.query('commit');
+  } catch (err) {
+    await client.query('rollback')
+    throw err;
+  } finally {
+    client.release();
+  }
+  return res;
+}
+
 export {
   pgPool,
   to_pg_function_query,
   QueryResultCbFn,
   transactionify, 
   isProd,
-  getRowResults
+  getRowResults,
+  queryAsync
 }

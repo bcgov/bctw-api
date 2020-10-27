@@ -50,7 +50,7 @@ interface ICode {
 
 interface ICodeRow { rows: ICodeInput[] }
 interface ICodeHeaderRow { rows: ICodeHeaderInput[]}
-interface ParsedRows { codes: ICodeRow, headers: ICodeHeaderRow }
+interface ParsedRows { codes: ICodeInput[], headers: ICodeHeaderInput[] }
 
 export {
   ICode,

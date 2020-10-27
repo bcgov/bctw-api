@@ -53,9 +53,20 @@ var _getCode = function (idir, codeHeader, onDone) {
     code_header_description: '', valid_from: Date, valid_to: Date,
   }
 */
-var _addCodeHeader = function (idir, headers, onDone) {
-    var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, headers], true));
-    return pg_1.pgPool.query(sql, onDone);
+var _addCodeHeader = function (idir, headers) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, headers], true));
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
 };
 exports._addCodeHeader = _addCodeHeader;
 /*
@@ -65,9 +76,20 @@ exports._addCodeHeader = _addCodeHeader;
      "valid_from": Date, "valid_to": Date
    }
 */
-var _addCode = function (idir, codeHeader, codes, onDone) {
-    var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codeHeader, codes], true));
-    return pg_1.pgPool.query(sql, onDone);
+var _addCode = function (idir, codeHeader, codes) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codeHeader, codes], true));
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
 };
 exports._addCode = _addCode;
 var addCodeHeader = function (req, res) {
@@ -86,7 +108,7 @@ var addCodeHeader = function (req, res) {
                         var results = pg_1.getRowResults(data, 'add_code_header');
                         res.send(results);
                     };
-                    return [4 /*yield*/, _addCodeHeader(idir, body, done)];
+                    return [4 /*yield*/, _addCodeHeader(idir, body)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];
@@ -111,7 +133,7 @@ var addCode = function (req, res) {
                         var results = pg_1.getRowResults(data, 'add_code');
                         res.send(results);
                     };
-                    return [4 /*yield*/, _addCode(idir, body.codeHeader, body.codes, done)];
+                    return [4 /*yield*/, _addCode(idir, body.codeHeader, body.codes)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];

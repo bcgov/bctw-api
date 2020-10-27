@@ -61,7 +61,7 @@ var app = express_1.default()
     // .post('/add-code', api.addCode)
     // .post('/add-code-header', api.addCodeHeader)
     // import
-    .post('/import', upload.single('file'), csv_1.importCsv)
+    .post('/import', upload.single('csv'), csv_1.importCsv)
     .get('*', api.notFound);
 http_1.default.createServer(app).listen(3000, function () {
     console.log("listening on port 3000");
