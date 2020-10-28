@@ -1,13 +1,10 @@
-import { pgPool, to_pg_str, QueryResultCbFn, to_pg_date, getRowResults } from '../pg';
+import { pgPool, QueryResultCbFn, getRowResults, to_pg_function_query } from '../pg';
 import { User, UserRole } from '../types/user'
 import { transactionify, isProd } from '../pg';
 import { Request, Response } from 'express';
 
 const _addUser = function(user: User, userRole: UserRole, onDone: QueryResultCbFn): void {
-  let sql = `select * from bctw.add_user('${JSON.stringify(user)}', ${to_pg_str(userRole)});`;
-  if (!isProd) {
-    sql = `begin;\n ${sql}\n select * from bctw.user where idir=${to_pg_str(user.idir)}; rollback;`
-  }
+  const sql = transactionify(to_pg_function_query('add_user', [user, userRole]))
   return pgPool.query(sql, onDone);
 }
 
@@ -69,12 +66,7 @@ const _assignCritterToUser = function(
   if (!idir) {
     return onDone(Error('IDIR must be supplied'), null);
   }
-  const sql = transactionify(`select bctw.link_animal_to_user(
-    ${to_pg_str(idir)},
-    ${to_pg_str(animalId)},
-    ${to_pg_date(end)},
-    ${to_pg_date(start)}
-  )`);
+  const sql = transactionify(to_pg_function_query('link_animal_to_user', [idir, animalId, end, start]));
   return pgPool.query(sql, onDone);
 }
 

@@ -58,8 +58,9 @@ var app = express_1.default()
     .post('/assign-critter-to-user', api.assignCritterToUser)
     // codes
     .get('/get-code', api.getCode)
+    .get('/get-code-headers', api.getCodeHeaders)
     // .post('/add-code', api.addCode)
-    // .post('/add-code-header', api.addCodeHeader)
+    .post('/add-code-header', api.addCodeHeader)
     // import
     .post('/import', upload.single('csv'), csv_1.importCsv)
     .get('*', api.notFound);

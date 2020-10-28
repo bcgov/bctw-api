@@ -1,8 +1,8 @@
 import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query, queryAsync } from '../pg';
 import { ICode, ICodeInput, ICodeHeaderInput } from '../types/code';
 import { transactionify } from '../pg';
-import { query, Request, Response } from 'express';
-import { Query, QueryResult } from 'pg';
+import { Request, Response } from 'express';
+import { QueryResult } from 'pg';
 // todo: add filters for get, convert db functions to return json
 
 /*
@@ -14,6 +14,14 @@ const _getCode = function (
 ): void {
   const sql = transactionify(to_pg_function_query('get_code', [idir, codeHeader, {}]));
   return pgPool.query(sql, onDone);
+}
+
+const _getCodeHeaders = function (idir: string, onDone: QueryResultCbFn, onlyType?: string): void {
+  let sql = `select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_description as description from bctw.code_header ch `
+  if (onlyType) {
+    sql += `where ch.code_header_name = '${onlyType}';`
+  }
+  return pgPool.query(sql, onDone)
 }
 
 /* 
@@ -42,37 +50,35 @@ const _addCodeHeader = async function (
 const _addCode = async function (
   idir: string,
   codeHeader: string,
-  codes: ICode | ICodeInput[]
+  codes: ICodeInput[]
 ): Promise<QueryResult> {
   const sql = transactionify(to_pg_function_query('add_code', [idir, codeHeader, codes], true));
   const result = await queryAsync(sql);
   return result;
 }
 
-const addCodeHeader = async function (req: Request, res:Response): Promise<void> {
+const addCodeHeader = async function (req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to add code headers: ${err}`);
-    }
-    const results = getRowResults(data, 'add_code_header');
-    res.send(results);
-  };
-  await _addCodeHeader(idir, body)
+  let data: QueryResult;
+  try {
+    data = await _addCodeHeader(idir, body);
+  } catch (e) {
+    return res.status(500).send(`Failed to add code headers: ${e}`);
+  }
+  return res.send(getRowResults(data, 'add_code_header'));
 }
 
-const addCode = async function (req: Request, res:Response): Promise<void> {
+const addCode = async function (req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to add codes: ${err}`);
-    }
-    const results = getRowResults(data, 'add_code');
-    res.send(results);
-  };
-  await _addCode(idir, body.codeHeader, body.codes)
+  let data: QueryResult;
+  try {
+    data = await _addCode(idir, body.codeHeader, body.codes)
+  } catch (e) {
+    return res.status(500).send(`Failed to add codes: ${e}`);
+  }
+  return res.send(getRowResults(data, 'add_code'));
 }
 
 const getCode = async function (req: Request, res:Response): Promise<void> {
@@ -82,21 +88,29 @@ const getCode = async function (req: Request, res:Response): Promise<void> {
     if (err) {
       return res.status(500).send(`Failed to retrieve codes: ${err}`);
     }
-    const results = data?.find(obj => obj.command === 'SELECT');
-    if (results && results.rows) {
-      const r = results.rows.map(m => m['get_code'])
-      res.send(r)
-    }
+    const results = getRowResults(data, 'get_code')
+    res.send(results);
   };
   await _getCode(idir, codeHeader, done);
 }
 
+const getCodeHeaders = async function (req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const codeType = (req.query.codeType || '') as string;
+  const done = function (err, data: QueryResult) {
+    if (err) {
+      return res.status(500).send(`Failed to retrieve code headers: ${err}`);
+    }
+    res.send(data?.rows ?? []);
+  }
+  await _getCodeHeaders(idir, done, codeType);
+}
 
 export {
   getCode,
+  getCodeHeaders,
   _addCode,
   _addCodeHeader,
   addCode,
   addCodeHeader
 }
-

@@ -40,3 +40,9 @@ content-type: application/json
 ###### get code
 ###
 GET http://localhost:3000/get-code?codeHeader=region&idir={{idir}} HTTP/1.1
+
+###### get code headers
+###
+GET http://localhost:3000/get-code-headers?idir={{idir}} HTTP/1.1
+###
+GET http://localhost:3000/get-code-headers?idir={{idir}}&codeType=region HTTP/1.1

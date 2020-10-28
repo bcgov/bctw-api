@@ -1,5 +1,7 @@
 import moment from 'moment';
-import pg, { Client, PoolClient, Query, QueryResult, QueryResultBase, QueryResultRow } from 'pg';
+import pg, { PoolClient, QueryResult, QueryResultBase, QueryResultRow } from 'pg';
+
+// todo: add generic getter w/ where etc.
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 

@@ -37,8 +37,9 @@ const app = express()
   .post('/assign-critter-to-user', api.assignCritterToUser)
   // codes
   .get('/get-code', api.getCode)
+  .get('/get-code-headers', api.getCodeHeaders)
   // .post('/add-code', api.addCode)
-  // .post('/add-code-header', api.addCodeHeader)
+  .post('/add-code-header', api.addCodeHeader)
   // import
   .post('/import', upload.single('csv'), importCsv)
   .get('*', api.notFound);

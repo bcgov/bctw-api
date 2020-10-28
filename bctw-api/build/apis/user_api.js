@@ -40,10 +40,7 @@ exports.assignCritterToUser = exports.getUserRole = exports.addUser = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var _addUser = function (user, userRole, onDone) {
-    var sql = "select * from bctw.add_user('" + JSON.stringify(user) + "', " + pg_1.to_pg_str(userRole) + ");";
-    if (!pg_2.isProd) {
-        sql = "begin;\n " + sql + "\n select * from bctw.user where idir=" + pg_1.to_pg_str(user.idir) + "; rollback;";
-    }
+    var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_user', [user, userRole]));
     return pg_1.pgPool.query(sql, onDone);
 };
 /* ## addUser
@@ -119,7 +116,7 @@ var _assignCritterToUser = function (idir, animalId, start, end, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'), null);
     }
-    var sql = pg_2.transactionify("select bctw.link_animal_to_user(\n    " + pg_1.to_pg_str(idir) + ",\n    " + pg_1.to_pg_str(animalId) + ",\n    " + pg_1.to_pg_date(end) + ",\n    " + pg_1.to_pg_date(start) + "\n  )");
+    var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_animal_to_user', [idir, animalId, end, start]));
     return pg_1.pgPool.query(sql, onDone);
 };
 var assignCritterToUser = function (req, res) {

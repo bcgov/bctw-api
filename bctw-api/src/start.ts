@@ -8,7 +8,7 @@ import {
   getAssignedCollars
 } from './apis/collar_api';
 import { addAnimal, getAnimals } from './apis/animal_api';
-import { addCode, addCodeHeader, getCode } from './apis/code_api';
+import { addCode, addCodeHeader, getCode, getCodeHeaders} from './apis/code_api';
 import { NextFunction, Request, Response } from 'express';
 
 /* ## getDBCritters
@@ -116,6 +116,7 @@ export {
   getAssignedCollars,
   getAvailableCollars,
   getCode,
+  getCodeHeaders,
   getDBCritters,
   getPingExtent,
   getLastPings,

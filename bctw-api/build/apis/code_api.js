@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addCodeHeader = exports.addCode = exports._addCodeHeader = exports._addCode = exports.getCode = void 0;
+exports.addCodeHeader = exports.addCode = exports._addCodeHeader = exports._addCode = exports.getCodeHeaders = exports.getCode = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 // todo: add filters for get, convert db functions to return json
@@ -44,6 +44,13 @@ var pg_2 = require("../pg");
 */
 var _getCode = function (idir, codeHeader, onDone) {
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('get_code', [idir, codeHeader, {}]));
+    return pg_1.pgPool.query(sql, onDone);
+};
+var _getCodeHeaders = function (idir, onDone, onlyType) {
+    var sql = "select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_description as description from bctw.code_header ch ";
+    if (onlyType) {
+        sql += "where ch.code_header_name = '" + onlyType + "';";
+    }
     return pg_1.pgPool.query(sql, onDone);
 };
 /*
@@ -95,23 +102,23 @@ exports._addCode = _addCode;
 var addCodeHeader = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, done;
+        var idir, body, data, e_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     body = req.body;
-                    done = function (err, data) {
-                        if (err) {
-                            return res.status(500).send("Failed to add code headers: " + err);
-                        }
-                        var results = pg_1.getRowResults(data, 'add_code_header');
-                        res.send(results);
-                    };
-                    return [4 /*yield*/, _addCodeHeader(idir, body)];
+                    _b.label = 1;
                 case 1:
-                    _b.sent();
-                    return [2 /*return*/];
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, _addCodeHeader(idir, body)];
+                case 2:
+                    data = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_1 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to add code headers: " + e_1)];
+                case 4: return [2 /*return*/, res.send(pg_1.getRowResults(data, 'add_code_header'))];
             }
         });
     });
@@ -120,23 +127,23 @@ exports.addCodeHeader = addCodeHeader;
 var addCode = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, done;
+        var idir, body, data, e_2;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     body = req.body;
-                    done = function (err, data) {
-                        if (err) {
-                            return res.status(500).send("Failed to add codes: " + err);
-                        }
-                        var results = pg_1.getRowResults(data, 'add_code');
-                        res.send(results);
-                    };
-                    return [4 /*yield*/, _addCode(idir, body.codeHeader, body.codes)];
+                    _b.label = 1;
                 case 1:
-                    _b.sent();
-                    return [2 /*return*/];
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, _addCode(idir, body.codeHeader, body.codes)];
+                case 2:
+                    data = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_2 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to add codes: " + e_2)];
+                case 4: return [2 /*return*/, res.send(pg_1.getRowResults(data, 'add_code'))];
             }
         });
     });
@@ -155,11 +162,8 @@ var getCode = function (req, res) {
                         if (err) {
                             return res.status(500).send("Failed to retrieve codes: " + err);
                         }
-                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
-                        if (results && results.rows) {
-                            var r = results.rows.map(function (m) { return m['get_code']; });
-                            res.send(r);
-                        }
+                        var results = pg_1.getRowResults(data, 'get_code');
+                        res.send(results);
                     };
                     return [4 /*yield*/, _getCode(idir, codeHeader, done)];
                 case 1:
@@ -170,4 +174,29 @@ var getCode = function (req, res) {
     });
 };
 exports.getCode = getCode;
+var getCodeHeaders = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, codeType, done;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    codeType = (req.query.codeType || '');
+                    done = function (err, data) {
+                        var _a;
+                        if (err) {
+                            return res.status(500).send("Failed to retrieve code headers: " + err);
+                        }
+                        res.send((_a = data === null || data === void 0 ? void 0 : data.rows) !== null && _a !== void 0 ? _a : []);
+                    };
+                    return [4 /*yield*/, _getCodeHeaders(idir, done, codeType)];
+                case 1:
+                    _b.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+};
+exports.getCodeHeaders = getCodeHeaders;
 //# sourceMappingURL=code_api.js.map

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getDBCritters = exports.getCode = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
+exports.notFound = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
 Object.defineProperty(exports, "addUser", { enumerable: true, get: function () { return user_api_1.addUser; } });
@@ -19,6 +19,7 @@ var code_api_1 = require("./apis/code_api");
 Object.defineProperty(exports, "addCode", { enumerable: true, get: function () { return code_api_1.addCode; } });
 Object.defineProperty(exports, "addCodeHeader", { enumerable: true, get: function () { return code_api_1.addCodeHeader; } });
 Object.defineProperty(exports, "getCode", { enumerable: true, get: function () { return code_api_1.getCode; } });
+Object.defineProperty(exports, "getCodeHeaders", { enumerable: true, get: function () { return code_api_1.getCodeHeaders; } });
 /* ## getDBCritters
   Request all collars the user has access to.
   @param req {object} Node/Express request object

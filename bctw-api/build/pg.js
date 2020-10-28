@@ -43,6 +43,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.queryAsync = exports.getRowResults = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
 var moment_1 = __importDefault(require("moment"));
 var pg_1 = __importDefault(require("pg"));
+// todo: add generic getter w/ where etc.
 var isProd = process.env.NODE_ENV === 'production' ? true : false;
 exports.isProd = isProd;
 var test = process.env.NODE_ENV;

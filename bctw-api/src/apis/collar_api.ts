@@ -1,4 +1,4 @@
-import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query, to_pg_obj, to_pg_str } from '../pg';
+import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query } from '../pg';
 import { Collar } from '../types/collar';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
