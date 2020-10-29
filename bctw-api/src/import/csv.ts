@@ -6,9 +6,10 @@ import { _addCode, _addCodeHeader } from '../apis/code_api';
 import { getRowResults } from '../pg';
 import { ICodeInput, ICodeHeaderInput, isCode, isCodeHeader, ICodeHeaderRow, ICodeRow, ParsedRows } from '../types/code';
 
-const _mapCsvHeader = (header: string) => header.includes('valid_') ? header : `code_${header}`;
+// const _mapCsvHeader = (header: string) => header.includes('valid_') ? header : `code_${header}`;
+const _mapCsvHeader = (header: string) => header === 'code_type' ? 'code_header' : header;
 
-const _clearUploadDir = async (path: string) => {
+const _removeUploadedFile = async (path: string) => {
   fs.unlink(path, (err) => {
     if (err) {
       console.log(`unabled to remove uploaded csv: ${err}`)
@@ -53,16 +54,25 @@ const importCsv = async function (req: Request, res:Response): Promise<void> {
   const onFinishedParsing = async (rows: ParsedRows) => {
     const codes = rows.codes;
     const headers = rows.headers;
-    if (codes.length) {
-      codeResults = await _addCode(idir, codes[0].code_header, codes);
-    } else if (headers.length) {
-      headerResults = await _addCodeHeader(idir, headers);
+    try {
+      if (codes.length) {
+        codeResults = await _addCode(idir, codes[0].code_header, codes);
+      } else if (headers.length) {
+        headerResults = await _addCodeHeader(idir, headers);
+      }
+      _removeUploadedFile(file.path);
+    } catch (e) {
+      res.status(500).send(e.message);
     }
-    _clearUploadDir(file.path);
-    if ((headerResults as QueryResult[])?.length) {
-      res.send(getRowResults(headerResults, 'add_code_header'));
-    } else if ((codeResults as QueryResult[])?.length) {
-      res.send(getRowResults(codeResults, 'add_code'))
+    try {
+      if ((headerResults as QueryResult[])?.length || (headerResults as QueryResult)?.rows.length) {
+        res.send(getRowResults(headerResults, 'add_code_header'));
+      } else if ((codeResults as QueryResult[])?.length || (codeResults as QueryResult)?.rows.length) {
+        res.send(getRowResults(codeResults, 'add_code'))
+      }
+    } catch(e) {
+      console.log(`error parsing add_code or add_code_header results: ${e}`)
+      res.status(500).send(`csv rows were uploaded but there was an error while parsing results from db api`);
     }
   }
   await _parseCsv(file, onFinishedParsing);

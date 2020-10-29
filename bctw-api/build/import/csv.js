@@ -64,8 +64,9 @@ var fs = __importStar(require("fs"));
 var code_api_1 = require("../apis/code_api");
 var pg_1 = require("../pg");
 var code_1 = require("../types/code");
-var _mapCsvHeader = function (header) { return header.includes('valid_') ? header : "code_" + header; };
-var _clearUploadDir = function (path) { return __awaiter(void 0, void 0, void 0, function () {
+// const _mapCsvHeader = (header: string) => header.includes('valid_') ? header : `code_${header}`;
+var _mapCsvHeader = function (header) { return header === 'code_type' ? 'code_header' : header; };
+var _removeUploadedFile = function (path) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         fs.unlink(path, function (err) {
             if (err) {
@@ -127,31 +128,46 @@ var importCsv = function (req, res) {
                         res.status(500).send('failed: csv file not found');
                     }
                     onFinishedParsing = function (rows) { return __awaiter(_this, void 0, void 0, function () {
-                        var codes, headers;
-                        var _a, _b;
-                        return __generator(this, function (_c) {
-                            switch (_c.label) {
+                        var codes, headers, e_1;
+                        var _a, _b, _c, _d;
+                        return __generator(this, function (_e) {
+                            switch (_e.label) {
                                 case 0:
                                     codes = rows.codes;
                                     headers = rows.headers;
-                                    if (!codes.length) return [3 /*break*/, 2];
-                                    return [4 /*yield*/, code_api_1._addCode(idir, codes[0].code_header, codes)];
+                                    _e.label = 1;
                                 case 1:
-                                    codeResults = _c.sent();
-                                    return [3 /*break*/, 4];
+                                    _e.trys.push([1, 6, , 7]);
+                                    if (!codes.length) return [3 /*break*/, 3];
+                                    return [4 /*yield*/, code_api_1._addCode(idir, codes[0].code_header, codes)];
                                 case 2:
-                                    if (!headers.length) return [3 /*break*/, 4];
-                                    return [4 /*yield*/, code_api_1._addCodeHeader(idir, headers)];
+                                    codeResults = _e.sent();
+                                    return [3 /*break*/, 5];
                                 case 3:
-                                    headerResults = _c.sent();
-                                    _c.label = 4;
+                                    if (!headers.length) return [3 /*break*/, 5];
+                                    return [4 /*yield*/, code_api_1._addCodeHeader(idir, headers)];
                                 case 4:
-                                    _clearUploadDir(file.path);
-                                    if ((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) {
-                                        res.send(pg_1.getRowResults(headerResults, 'add_code_header'));
+                                    headerResults = _e.sent();
+                                    _e.label = 5;
+                                case 5:
+                                    _removeUploadedFile(file.path);
+                                    return [3 /*break*/, 7];
+                                case 6:
+                                    e_1 = _e.sent();
+                                    res.status(500).send(e_1.message);
+                                    return [3 /*break*/, 7];
+                                case 7:
+                                    try {
+                                        if (((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) || ((_b = headerResults) === null || _b === void 0 ? void 0 : _b.rows.length)) {
+                                            res.send(pg_1.getRowResults(headerResults, 'add_code_header'));
+                                        }
+                                        else if (((_c = codeResults) === null || _c === void 0 ? void 0 : _c.length) || ((_d = codeResults) === null || _d === void 0 ? void 0 : _d.rows.length)) {
+                                            res.send(pg_1.getRowResults(codeResults, 'add_code'));
+                                        }
                                     }
-                                    else if ((_b = codeResults) === null || _b === void 0 ? void 0 : _b.length) {
-                                        res.send(pg_1.getRowResults(codeResults, 'add_code'));
+                                    catch (e) {
+                                        console.log("error parsing add_code or add_code_header results: " + e);
+                                        res.status(500).send("csv rows were uploaded but there was an error while parsing results from db api");
                                     }
                                     return [2 /*return*/];
                             }

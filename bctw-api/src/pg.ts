@@ -91,12 +91,13 @@ type QueryResultCbFn = (err: Error, result: QueryResult ) => void
 */
 const getRowResults = (data: QueryResult | QueryResultBase[], functionName: string): QueryResultRow[] => {
   return isProd ? 
-    _getRowReslts(<QueryResult>data, functionName) : 
+    _getRowResults(<QueryResult>data, functionName) : 
     _getRowResultsDev(<QueryResult[]>data, functionName)
 }
 
-const _getRowReslts = (data: QueryResult, dbFunctionName: string): QueryResultRow[] => {
- return data.rows.map((row: QueryResultRow) => row[dbFunctionName]);
+const _getRowResults = (data: QueryResult, dbFunctionName: string): QueryResultRow[] => {
+  const results = data.rows.map((row: QueryResultRow) => row[dbFunctionName]);
+  return results;
 }
 const _getRowResultsDev = (data: QueryResult[], dbFunctionName: string): QueryResultRow[] => {
   const rows = data.find(result => result.command === 'SELECT')?.rows;

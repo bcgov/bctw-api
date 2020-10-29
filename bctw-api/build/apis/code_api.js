@@ -39,116 +39,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.addCodeHeader = exports.addCode = exports._addCodeHeader = exports._addCode = exports.getCodeHeaders = exports.getCode = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
-// todo: add filters for get, convert db functions to return json
 /*
 */
 var _getCode = function (idir, codeHeader, onDone) {
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('get_code', [idir, codeHeader, {}]));
     return pg_1.pgPool.query(sql, onDone);
 };
-var _getCodeHeaders = function (idir, onDone, onlyType) {
-    var sql = "select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_description as description from bctw.code_header ch ";
-    if (onlyType) {
-        sql += "where ch.code_header_name = '" + onlyType + "';";
-    }
-    return pg_1.pgPool.query(sql, onDone);
-};
-/*
-  - accepts json[] in the format:
-  {
-    code_header_name: '', code_header_title: '',
-    code_header_description: '', valid_from: Date, valid_to: Date,
-  }
-*/
-var _addCodeHeader = function (idir, headers) {
-    return __awaiter(this, void 0, void 0, function () {
-        var sql, result;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, headers], true));
-                    return [4 /*yield*/, pg_1.queryAsync(sql)];
-                case 1:
-                    result = _a.sent();
-                    return [2 /*return*/, result];
-            }
-        });
-    });
-};
-exports._addCodeHeader = _addCodeHeader;
-/*
-  - accepts json[] in format
-   {
-     "code_name":'', "code_description":'', "code_sort_order: number,
-     "valid_from": Date, "valid_to": Date
-   }
-*/
-var _addCode = function (idir, codeHeader, codes) {
-    return __awaiter(this, void 0, void 0, function () {
-        var sql, result;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codeHeader, codes], true));
-                    return [4 /*yield*/, pg_1.queryAsync(sql)];
-                case 1:
-                    result = _a.sent();
-                    return [2 /*return*/, result];
-            }
-        });
-    });
-};
-exports._addCode = _addCode;
-var addCodeHeader = function (req, res) {
-    var _a;
-    return __awaiter(this, void 0, void 0, function () {
-        var idir, body, data, e_1;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    body = req.body;
-                    _b.label = 1;
-                case 1:
-                    _b.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, _addCodeHeader(idir, body)];
-                case 2:
-                    data = _b.sent();
-                    return [3 /*break*/, 4];
-                case 3:
-                    e_1 = _b.sent();
-                    return [2 /*return*/, res.status(500).send("Failed to add code headers: " + e_1)];
-                case 4: return [2 /*return*/, res.send(pg_1.getRowResults(data, 'add_code_header'))];
-            }
-        });
-    });
-};
-exports.addCodeHeader = addCodeHeader;
-var addCode = function (req, res) {
-    var _a;
-    return __awaiter(this, void 0, void 0, function () {
-        var idir, body, data, e_2;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    body = req.body;
-                    _b.label = 1;
-                case 1:
-                    _b.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, _addCode(idir, body.codeHeader, body.codes)];
-                case 2:
-                    data = _b.sent();
-                    return [3 /*break*/, 4];
-                case 3:
-                    e_2 = _b.sent();
-                    return [2 /*return*/, res.status(500).send("Failed to add codes: " + e_2)];
-                case 4: return [2 /*return*/, res.send(pg_1.getRowResults(data, 'add_code'))];
-            }
-        });
-    });
-};
-exports.addCode = addCode;
 var getCode = function (req, res) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
@@ -174,6 +70,16 @@ var getCode = function (req, res) {
     });
 };
 exports.getCode = getCode;
+/*
+  gets all code headers unless [onlyType] param supplied
+*/
+var _getCodeHeaders = function (idir, onDone, onlyType) {
+    var sql = "select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_description as description from bctw.code_header ch ";
+    if (onlyType) {
+        sql += "where ch.code_header_name = '" + onlyType + "';";
+    }
+    return pg_1.pgPool.query(sql, onDone);
+};
 var getCodeHeaders = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
@@ -199,4 +105,98 @@ var getCodeHeaders = function (req, res) {
     });
 };
 exports.getCodeHeaders = getCodeHeaders;
+/*
+  - accepts json[] in the format:
+  {
+    code_header_name: '', code_header_title: '', code_header_description: '', valid_from: Date, valid_to: Date,
+  }
+*/
+var _addCodeHeader = function (idir, headers) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, headers], true));
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
+};
+exports._addCodeHeader = _addCodeHeader;
+var addCodeHeader = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, body, data, e_1;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    body = req.body;
+                    _b.label = 1;
+                case 1:
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, _addCodeHeader(idir, body)];
+                case 2:
+                    data = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_1 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to add code headers: " + e_1)];
+                case 4: return [2 /*return*/, res.send(pg_1.getRowResults(data, 'add_code_header'))];
+            }
+        });
+    });
+};
+exports.addCodeHeader = addCodeHeader;
+/*
+  - accepts json[] in format
+   {
+     "code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
+   }
+*/
+var _addCode = function (idir, codeHeader, codes) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codeHeader, codes], true));
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
+};
+exports._addCode = _addCode;
+var addCode = function (req, res) {
+    var _a;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, body, data, e_2;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    body = req.body;
+                    _b.label = 1;
+                case 1:
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, _addCode(idir, body.codeHeader, body.codes)];
+                case 2:
+                    data = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_2 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to add codes: " + e_2)];
+                case 4: return [2 /*return*/, res.send(pg_1.getRowResults(data, 'add_code'))];
+            }
+        });
+    });
+};
+exports.addCode = addCode;
 //# sourceMappingURL=code_api.js.map

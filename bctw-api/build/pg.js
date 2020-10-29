@@ -129,12 +129,13 @@ var to_pg_obj = function (obj) {
 */
 var getRowResults = function (data, functionName) {
     return isProd ?
-        _getRowReslts(data, functionName) :
+        _getRowResults(data, functionName) :
         _getRowResultsDev(data, functionName);
 };
 exports.getRowResults = getRowResults;
-var _getRowReslts = function (data, dbFunctionName) {
-    return data.rows.map(function (row) { return row[dbFunctionName]; });
+var _getRowResults = function (data, dbFunctionName) {
+    var results = data.rows.map(function (row) { return row[dbFunctionName]; });
+    return results;
 };
 var _getRowResultsDev = function (data, dbFunctionName) {
     var _a;
