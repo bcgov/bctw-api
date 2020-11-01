@@ -1,8 +1,8 @@
-import { pgPool, QueryResultCbFn, obj_to_pg_array, to_pg_str } from '../pg';
-import { ICode, ICodeInput, ICodeHeaderInput } from '../types/code';
+import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query, queryAsync, isProd } from '../pg';
+import { ICodeInput, ICodeHeaderInput } from '../types/code';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
-// todo: add filters for get, convert db functions to return json
+import { QueryResult } from 'pg';
 
 /*
 */
@@ -11,73 +11,8 @@ const _getCode = function (
   codeHeader: string,
   onDone: QueryResultCbFn
 ): void {
-  const sql = transactionify(`select bctw.get_code(${to_pg_str(idir)}, ${to_pg_str(codeHeader)}, '{}')`)
+  const sql = transactionify(to_pg_function_query('get_code', [idir, codeHeader, {}]));
   return pgPool.query(sql, onDone);
-}
-
-/* 
-  - accepts json[] in the format:
-  {
-    code_header_name: '', code_header_title: '',
-    code_header_description: '', valid_from: Date, valid_to: Date,
-  }
-*/
-const _addCodeHeader = function (
-  idir: string,
-  headers: ICodeHeaderInput | ICodeHeaderInput[],
-  onDone: QueryResultCbFn
-): void {
-  const sql = transactionify(`select bctw.add_code_header(${to_pg_str(idir)}, ${obj_to_pg_array(headers)})`)
-  return pgPool.query(sql, onDone);
-}
-
-/*
-  - accepts json[] in format
-   {
-     "code_name":'', "code_description":'', "code_sort_order: number,
-     "valid_from": Date, "valid_to": Date
-   }
-*/
-const _addCode = function (
-  idir: string,
-  codeHeader: string,
-  codes: ICode | ICodeInput[],
-  onDone: QueryResultCbFn
-) {
-  const sql = transactionify(`select bctw.add_code(${to_pg_str(idir)}, ${to_pg_str(codeHeader)}, ${obj_to_pg_array(codes)})`)
-  return pgPool.query(sql, onDone);
-}
-
-const addCodeHeader = async function (req: Request, res:Response): Promise<void> {
-  const idir = (req?.query?.idir || '') as string;
-  const body = req.body;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to add code headers: ${err}`);
-    }
-    const results = data?.find(obj => obj.command === 'SELECT');
-    if (results && results.rows) {
-      const r = results.rows.map(m => m['add_code_header'])
-      res.send(r)
-    }
-  };
-  await _addCodeHeader(idir, body, done)
-}
-
-const addCode = async function (req: Request, res:Response): Promise<void> {
-  const idir = (req?.query?.idir || '') as string;
-  const body = req.body;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to add codes: ${err}`);
-    }
-    const results = data?.find(obj => obj.command === 'SELECT');
-    if (results && results.rows) {
-      const r = results.rows.map(m => m['add_code'])
-      res.send(r)
-    }
-  };
-  await _addCode(idir, body.codeHeader, body.codes, done)
 }
 
 const getCode = async function (req: Request, res:Response): Promise<void> {
@@ -87,19 +22,99 @@ const getCode = async function (req: Request, res:Response): Promise<void> {
     if (err) {
       return res.status(500).send(`Failed to retrieve codes: ${err}`);
     }
-    const results = data?.find(obj => obj.command === 'SELECT');
-    if (results && results.rows) {
-      const r = results.rows.map(m => m['get_code'])
-      res.send(r)
-    }
+    const results = getRowResults(data, 'get_code')
+    res.send(results);
   };
   await _getCode(idir, codeHeader, done);
 }
 
+/*
+  gets all code headers unless [onlyType] param supplied
+*/
+const _getCodeHeaders = function (
+  idir: string,
+  onDone: QueryResultCbFn,
+  onlyType?: string
+): void {
+  let sql = `select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_description as description from bctw.code_header ch `
+  if (onlyType) {
+    sql += `where ch.code_header_name = '${onlyType}';`
+  }
+  return pgPool.query(sql, onDone)
+}
+
+const getCodeHeaders = async function (req: Request, res:Response): Promise<void> {
+  const idir = (req?.query?.idir || '') as string;
+  const codeType = (req.query.codeType || '') as string;
+  const done = function (err, data: QueryResult) {
+    if (err) {
+      return res.status(500).send(`Failed to retrieve code headers: ${err}`);
+    }
+    res.send(data?.rows ?? []);
+  }
+  await _getCodeHeaders(idir, done, codeType);
+}
+
+/* 
+  - accepts json[] in the format:
+  {
+    code_header_name: '', code_header_title: '', code_header_description: '', valid_from: Date, valid_to: Date,
+  }
+*/
+const _addCodeHeader = async function (
+  idir: string,
+  headers: ICodeHeaderInput | ICodeHeaderInput[],
+): Promise<QueryResult> {
+  const sql = transactionify(to_pg_function_query('add_code_header', [idir, headers], true))
+  const result = await queryAsync(sql);
+  return result;
+}
+
+const addCodeHeader = async function (req: Request, res:Response): Promise<Response> {
+  const idir = (req?.query?.idir || '') as string;
+  const body = req.body;
+  let data: QueryResult;
+  try {
+    data = await _addCodeHeader(idir, body);
+  } catch (e) {
+    return res.status(500).send(`Failed to add code headers: ${e}`);
+  }
+  return res.send(getRowResults(data, 'add_code_header'));
+}
+
+/*
+  - accepts json[] in format
+   {
+     "code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
+   }
+*/
+const _addCode = async function (
+  idir: string,
+  codeHeader: string,
+  codes: ICodeInput[]
+): Promise<QueryResult> {
+  const sql = transactionify(to_pg_function_query('add_code', [idir, codeHeader, codes], true));
+  const result = await queryAsync(sql);
+  return result;
+}
+
+const addCode = async function (req: Request, res:Response): Promise<Response> {
+  const idir = (req?.query?.idir || '') as string;
+  const body = req.body;
+  let data: QueryResult;
+  try {
+    data = await _addCode(idir, body.codeHeader, body.codes)
+  } catch (e) {
+    return res.status(500).send(`Failed to add codes: ${e}`);
+  }
+  return res.send(getRowResults(data, 'add_code'));
+}
 
 export {
   getCode,
+  getCodeHeaders,
+  _addCode,
+  _addCodeHeader,
   addCode,
   addCodeHeader
 }
-

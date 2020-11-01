@@ -1,0 +1,14 @@
+# this test uses the environment variable {{csv}}
+# configured at {workspaceFolder}/.vscode/settings.json
+# info @
+# https://marketplace.visualstudio.com/items?itemName=humao.rest-client&ssr=false#user-content-environment-variables
+
+POST http://localhost:3000/import?idir={{idir}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="csv"; filename="data.csv"
+Content-Type: text/csv
+
+<@ {{csv}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

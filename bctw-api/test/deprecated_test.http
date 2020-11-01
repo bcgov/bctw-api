@@ -1,8 +1,8 @@
-# http://localhost:3000/user-collars?idir=jcraven
+# http://localhost:3000/user-collars?idir={{idir}}
 
 ###
 
-# POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
+# POST http://localhost:3000/grant-collars?idir={{{idir}} HTTP/1.1
 # content-type: application/json
 
 # {
@@ -14,7 +14,7 @@
 ### 
 
 # should fail, no collar ids supplied
-# POST http://localhost:3000/grant-collars?idir=jcraven HTTP/1.1
+# POST http://localhost:3000/grant-collars?idir={{idir}} HTTP/1.1
 # content-type: application/json
 
 # {
@@ -24,7 +24,7 @@
 # }
 
 # invalid device id
-POST http://localhost:3000/add-critter?idir='jcraven' HTTP/1.1
+POST http://localhost:3000/add-critter?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
@@ -42,7 +42,7 @@ content-type: application/json
 
 ###
 # should work
-POST http://localhost:3000/add-critter?idir='jcraven' HTTP/1.1
+POST http://localhost:3000/add-critter?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {

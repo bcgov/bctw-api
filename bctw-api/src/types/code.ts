@@ -1,31 +1,45 @@
 // database code header table structure
-interface ICodeHeaderInput {
+
+interface IInput {
+  // created_at: Date;
+  // updated_at: Date;
+  // created_by_user_id: number;
+  // updated_by_user_id: number;
+  valid_from?: Date;
+  valid_to?: Date;
+}
+interface ICodeHeaderInput extends IInput {
   // code_header_id: number;
   // code_category_id: number;
   code_header_name: string;
   code_header_title: string;
-  code_header_description: string;
-  valid_from: Date;
-  valid_to: Date;
-  // created_at: Date;
-  // updated_at: Date;
-  created_by_user_id: number;
-  // updated_by_user_id: number;
+  code_header_description?: string;
+}
+
+const isCodeHeader = (row: any): row is ICodeHeaderInput => {
+  const r = row as ICodeHeaderInput;
+  if (r.code_header_name &&
+      r.code_header_description &&
+      r.code_header_title &&
+      r.code_header_name
+    ) { return true } return false;
 }
 
 // database code header table structure
-interface ICodeInput {
+interface ICodeInput extends IInput {
+  code_header: string; // name of code header
   // code_id: number;
   code_header_id: number;
   code_name: string;
-  code_description: string;
-  code_sort_order: number;
-  valid_from: Date;
-  valid_to: Date;
-  // created_at: Date;
-  // updated_at: Date;
-  created_by_user_id: number;
-  // updated_by_user_id: number;
+  code_description?: string;
+  code_sort_order?: number;
+}
+
+const isCode = (row: any): row is ICodeInput => {
+  const r = row as ICodeInput;
+  if (r.code_name) {
+    return true;
+  } return false;
 }
 
 interface ICode {
@@ -34,8 +48,17 @@ interface ICode {
   description: string;
 }
 
+interface ICodeRow { rows: ICodeInput[] }
+interface ICodeHeaderRow { rows: ICodeHeaderInput[]}
+interface ParsedRows { codes: ICodeInput[], headers: ICodeHeaderInput[] }
+
 export {
   ICode,
   ICodeInput,
-  ICodeHeaderInput
+  ICodeHeaderInput,
+  isCode,
+  isCodeHeader,
+  ICodeRow,
+  ICodeHeaderRow,
+  ParsedRows
 }
