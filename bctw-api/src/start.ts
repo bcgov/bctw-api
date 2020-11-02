@@ -19,12 +19,13 @@ import { NextFunction, Request, Response } from 'express';
  */
 const getDBCritters = function (req: Request, res: Response, next: NextFunction): void {
   const idir = req.query.idir;
+  console.log(req.query);
   const start = req.query.start;
   const end = req.query.end;
 
   const sql = `
     select geojson from vendor_merge_view 
-    where date_recorded between ${start} and ${end};
+    where date_recorded between '${start}' and '${end}';
   `;
   console.log('SQL: ',sql);
 
