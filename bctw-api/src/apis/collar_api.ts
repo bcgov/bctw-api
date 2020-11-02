@@ -34,8 +34,8 @@ const addCollar = async function(req: Request, res:Response): Promise<void> {
 */
 const _assignCollarToCritter = function (
   idir: string,
-  deviceId: number,
-  animalid: string,
+  device_id: number,
+  animal_id: string,
   startDate: Date,
   endDate: Date,
   onDone: QueryResultCbFn
@@ -43,14 +43,17 @@ const _assignCollarToCritter = function (
   if (!idir) {
     return onDone(Error('IDIR must be supplied'), null);
   }
+  if (!device_id || !animal_id) {
+    return onDone(Error('device_id and animal_id must be supplied'), null);
+  }
   const sql = transactionify(
-    to_pg_function_query('link_collar_to_animal', [idir, deviceId, animalid, endDate, startDate]));
+    to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, endDate, startDate]));
   return pgPool.query(sql, onDone);
 }
 
 const assignCollarToCritter = async function(req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
-  const body = req.body;
+  const body = req.body.data;
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
@@ -61,10 +64,10 @@ const assignCollarToCritter = async function(req: Request, res:Response): Promis
   };
   await _assignCollarToCritter(
     idir,
-    body.deviceId,
-    body.animalId,
-    body.startDate,
-    body.endDate,
+    body.device_id,
+    body.animal_id,
+    body.start_Date,
+    body.end_Date,
     done
   )
 }

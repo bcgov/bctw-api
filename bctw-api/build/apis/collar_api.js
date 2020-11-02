@@ -75,11 +75,14 @@ var addCollar = function (req, res) {
 exports.addCollar = addCollar;
 /*
 */
-var _assignCollarToCritter = function (idir, deviceId, animalid, startDate, endDate, onDone) {
+var _assignCollarToCritter = function (idir, device_id, animal_id, startDate, endDate, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'), null);
     }
-    var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, deviceId, animalid, endDate, startDate]));
+    if (!device_id || !animal_id) {
+        return onDone(Error('device_id and animal_id must be supplied'), null);
+    }
+    var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, endDate, startDate]));
     return pg_1.pgPool.query(sql, onDone);
 };
 var assignCollarToCritter = function (req, res) {
@@ -90,7 +93,7 @@ var assignCollarToCritter = function (req, res) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    body = req.body;
+                    body = req.body.data;
                     done = function (err, data) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
@@ -99,7 +102,7 @@ var assignCollarToCritter = function (req, res) {
                         var row = results.rows[0];
                         res.send(row);
                     };
-                    return [4 /*yield*/, _assignCollarToCritter(idir, body.deviceId, body.animalId, body.startDate, body.endDate, done)];
+                    return [4 /*yield*/, _assignCollarToCritter(idir, body.device_id, body.animal_id, body.start_Date, body.end_Date, done)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];

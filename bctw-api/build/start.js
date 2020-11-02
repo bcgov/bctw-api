@@ -28,8 +28,9 @@ Object.defineProperty(exports, "getCodeHeaders", { enumerable: true, get: functi
  */
 var getDBCritters = function (req, res, next) {
     var idir = req.query.idir;
-    var interval = req.query.time || '1 days';
-    var sql = "\n    select geojson from vendor_merge_view \n    where date_recorded > (current_date - INTERVAL '" + interval + "');\n  ";
+    var start = req.query.start;
+    var end = req.query.end;
+    var sql = "\n    select geojson from vendor_merge_view \n    where date_recorded between " + start + " and " + end + ";\n  ";
     console.log('SQL: ', sql);
     var done = function (err, data) {
         if (err) {
