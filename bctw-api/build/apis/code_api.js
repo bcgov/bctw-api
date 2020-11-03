@@ -74,7 +74,7 @@ exports.getCode = getCode;
   gets all code headers unless [onlyType] param supplied
 */
 var _getCodeHeaders = function (idir, onDone, onlyType) {
-    var sql = "select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_description as description from bctw.code_header ch ";
+    var sql = "select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_title as title, ch.code_header_description as description from bctw.code_header ch";
     if (onlyType) {
         sql += "where ch.code_header_name = '" + onlyType + "';";
     }
