@@ -28,11 +28,8 @@ const addAnimal = async function (req: Request, res:Response): Promise<void> {
 const _getAnimals = function(idir: string, onDone: QueryResultCbFn) {
   const sql = 
   `select 
-  a.nickname,
-  a.animal_id,
-  a.wlh_id,
-  a.animal_status,
-  ca.device_id
+  a.nickname, a.animal_id, a.wlh_id, a.animal_status, a.region,
+  a.species, a.population_unit, a.calf_at_heel, ca.device_id
   from bctw.animal a
   join bctw.collar_animal_assignment ca
   on a.animal_id = ca.animal_id

@@ -72,7 +72,7 @@ var addAnimal = function (req, res) {
 };
 exports.addAnimal = addAnimal;
 var _getAnimals = function (idir, onDone) {
-    var sql = "select \n  a.nickname,\n  a.animal_id,\n  a.wlh_id,\n  a.animal_status,\n  ca.device_id\n  from bctw.animal a\n  join bctw.collar_animal_assignment ca\n  on a.animal_id = ca.animal_id\n  limit 15;";
+    var sql = "select \n  a.nickname, a.animal_id, a.wlh_id, a.animal_status, a.region,\n  a.species, a.population_unit, a.calf_at_heel, ca.device_id\n  from bctw.animal a\n  join bctw.collar_animal_assignment ca\n  on a.animal_id = ca.animal_id\n  limit 15;";
     return pg_1.pgPool.query(sql, onDone);
 };
 var getAnimals = function (req, res) {

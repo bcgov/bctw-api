@@ -131,7 +131,7 @@ var unassignCollarFromCritter = function (req, res) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    body = req.body;
+                    body = req.body.data;
                     done = function (err, data) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
@@ -140,7 +140,7 @@ var unassignCollarFromCritter = function (req, res) {
                         var row = results.rows[0];
                         res.send(row);
                     };
-                    return [4 /*yield*/, _unassignCollarToCritter(idir, body.deviceId, body.animalId, body.endDate, done)];
+                    return [4 /*yield*/, _unassignCollarToCritter(idir, body.device_id, body.animal_id, body.end_date, done)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];

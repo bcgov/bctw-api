@@ -93,7 +93,7 @@ can a user unlink a collar from whatever it is attached to?
 */
 const unassignCollarFromCritter = async function(req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
-  const body = req.body;
+  const body = req.body.data;
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
@@ -104,9 +104,9 @@ const unassignCollarFromCritter = async function(req: Request, res:Response): Pr
   };
   await _unassignCollarToCritter(
     idir,
-    body.deviceId,
-    body.animalId,
-    body.endDate,
+    body.device_id,
+    body.animal_id,
+    body.end_date,
     done
   )
 }
