@@ -79,7 +79,7 @@ var addUser = function (req, res) {
 exports.addUser = addUser;
 var _getUserRole = function (idir, onDone) {
     if (!idir) {
-        return onDone(Error('IDIR must be supplied'), null);
+        return onDone(Error('IDIR must be supplied'));
     }
     var sql = "select bctw.get_user_role('" + idir + "');";
     return pg_1.pgPool.query(sql, onDone);
@@ -114,7 +114,7 @@ var getUserRole = function (req, res) {
 exports.getUserRole = getUserRole;
 var _assignCritterToUser = function (idir, animalId, start, end, onDone) {
     if (!idir) {
-        return onDone(Error('IDIR must be supplied'), null);
+        return onDone(Error('IDIR must be supplied'));
     }
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_animal_to_user', [idir, animalId, end, start]));
     return pg_1.pgPool.query(sql, onDone);

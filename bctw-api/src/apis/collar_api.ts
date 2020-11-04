@@ -11,7 +11,7 @@ const _addCollar = function (
   onDone: QueryResultCbFn
 ): void {
   if (!idir) {
-    return onDone(Error('IDIR must be supplied'), null);
+    return onDone(Error('IDIR must be supplied'));
   }
   const sql = transactionify(to_pg_function_query('add_collar', [idir, collar]));
   return pgPool.query(sql, onDone);
@@ -41,10 +41,10 @@ const _assignCollarToCritter = function (
   onDone: QueryResultCbFn
 ): void {
   if (!idir) {
-    return onDone(Error('IDIR must be supplied'), null);
+    return onDone(Error('IDIR must be supplied'));
   }
   if (!device_id || !animal_id) {
-    return onDone(Error('device_id and animal_id must be supplied'), null);
+    return onDone(Error('device_id and animal_id must be supplied'));
   }
   const sql = transactionify(
     to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, endDate, startDate]));
@@ -82,7 +82,7 @@ const _unassignCollarToCritter = function (
   onDone: QueryResultCbFn
 ): void {
   if (!idir) {
-    return onDone(Error('IDIR must be supplied'), null);
+    return onDone(Error('IDIR must be supplied'));
   }
   const sql = transactionify(to_pg_function_query('unlink_collar_to_animal', [idir, deviceId, animalId, endDate ]));
   return pgPool.query(sql, onDone);

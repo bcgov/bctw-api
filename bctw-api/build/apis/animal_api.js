@@ -41,7 +41,7 @@ var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var _addAnimal = function (idir, animal, onDone) {
     if (!idir) {
-        return onDone(Error('IDIR must be supplied'), null);
+        return onDone(Error('IDIR must be supplied'));
     }
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_animal', [idir, animal]));
     return pg_1.pgPool.query(sql, onDone);
@@ -55,11 +55,11 @@ var addAnimal = function (req, res) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     body = req.body;
-                    done = function (err, data) {
+                    done = function (err, result) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
                         }
-                        var results = pg_1.getRowResults(data, 'add_animal');
+                        var results = pg_1.getRowResults(result, 'add_animal');
                         res.send(results);
                     };
                     return [4 /*yield*/, _addAnimal(idir, body, done)];

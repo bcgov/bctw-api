@@ -2,11 +2,10 @@ import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query } from '..
 import { Animal } from '../types/animal';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
-import { QueryResult } from 'pg';
 
 const _addAnimal = function(idir: string, animal: Animal, onDone: QueryResultCbFn): void {
   if (!idir) {
-    return onDone(Error('IDIR must be supplied'), null);
+    return onDone(Error('IDIR must be supplied'));
   }
   const sql = transactionify(to_pg_function_query('add_animal', [idir, animal]));
   return pgPool.query(sql, onDone);
@@ -15,11 +14,11 @@ const _addAnimal = function(idir: string, animal: Animal, onDone: QueryResultCbF
 const addAnimal = async function (req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body;
-  const done = function (err: Error, data: QueryResult) {
+  const done = (err: Error, result) => {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    const results = getRowResults(data, 'add_animal');
+    const results = getRowResults(result, 'add_animal');
     res.send(results);
   };
   await _addAnimal(idir, body, done)

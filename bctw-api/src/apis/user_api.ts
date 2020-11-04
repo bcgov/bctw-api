@@ -34,7 +34,7 @@ const addUser = async function(req: Request, res: Response): Promise<void> {
 
 const _getUserRole = function(idir: string, onDone: QueryResultCbFn): void {
   if (!idir) {
-    return onDone(Error('IDIR must be supplied'), null);
+    return onDone(Error('IDIR must be supplied'));
   }
   const sql = `select bctw.get_user_role('${idir}');`
   return pgPool.query(sql, onDone);
@@ -64,7 +64,7 @@ const _assignCritterToUser = function(
   onDone: QueryResultCbFn
 ): void {
   if (!idir) {
-    return onDone(Error('IDIR must be supplied'), null);
+    return onDone(Error('IDIR must be supplied'));
   }
   const sql = transactionify(to_pg_function_query('link_animal_to_user', [idir, animalId, end, start]));
   return pgPool.query(sql, onDone);

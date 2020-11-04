@@ -83,7 +83,7 @@ const to_pg_obj = (obj: any): string => {
   return `'${JSON.stringify(obj)}'`
 }
 // define a callback function type for queries
-type QueryResultCbFn = (err: Error, result: QueryResult ) => void
+type QueryResultCbFn = (err: Error, result?: QueryResult) => void
 
 /*
  <transactionify> function will add multiple row types to the query result. 

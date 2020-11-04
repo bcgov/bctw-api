@@ -1,4 +1,4 @@
-import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query, queryAsync, isProd } from '../pg';
+import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query, queryAsync } from '../pg';
 import { ICodeInput, ICodeHeaderInput } from '../types/code';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
@@ -46,7 +46,7 @@ const _getCodeHeaders = function (
 const getCodeHeaders = async function (req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   const codeType = (req.query.codeType || '') as string;
-  const done = function (err, data: QueryResult) {
+  const done = function (err: Error, data) {
     if (err) {
       return res.status(500).send(`Failed to retrieve code headers: ${err}`);
     }

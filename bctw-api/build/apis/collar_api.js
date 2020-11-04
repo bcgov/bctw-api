@@ -43,7 +43,7 @@ var pg_2 = require("../pg");
 */
 var _addCollar = function (idir, collar, onDone) {
     if (!idir) {
-        return onDone(Error('IDIR must be supplied'), null);
+        return onDone(Error('IDIR must be supplied'));
     }
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_collar', [idir, collar]));
     return pg_1.pgPool.query(sql, onDone);
@@ -77,10 +77,10 @@ exports.addCollar = addCollar;
 */
 var _assignCollarToCritter = function (idir, device_id, animal_id, startDate, endDate, onDone) {
     if (!idir) {
-        return onDone(Error('IDIR must be supplied'), null);
+        return onDone(Error('IDIR must be supplied'));
     }
     if (!device_id || !animal_id) {
-        return onDone(Error('device_id and animal_id must be supplied'), null);
+        return onDone(Error('device_id and animal_id must be supplied'));
     }
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, endDate, startDate]));
     return pg_1.pgPool.query(sql, onDone);
@@ -115,7 +115,7 @@ exports.assignCollarToCritter = assignCollarToCritter;
 */
 var _unassignCollarToCritter = function (idir, deviceId, animalId, endDate, onDone) {
     if (!idir) {
-        return onDone(Error('IDIR must be supplied'), null);
+        return onDone(Error('IDIR must be supplied'));
     }
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('unlink_collar_to_animal', [idir, deviceId, animalId, endDate]));
     return pg_1.pgPool.query(sql, onDone);
