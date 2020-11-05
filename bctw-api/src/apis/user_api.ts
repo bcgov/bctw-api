@@ -58,7 +58,7 @@ const getUserRole = async function (req: Request, res: Response): Promise<void> 
 
 const _assignCritterToUser = function(
   idir: string,
-  animalId: string,
+  animalId: number,
   start: Date,
   end: Date,
   onDone: QueryResultCbFn
@@ -66,7 +66,7 @@ const _assignCritterToUser = function(
   if (!idir) {
     return onDone(Error('IDIR must be supplied'));
   }
-  const sql = transactionify(to_pg_function_query('link_animal_to_user', [idir, animalId, end, start]));
+  const sql = transactionify(to_pg_function_query('link_animal_to_user', [idir, animalId, start, end]));
   return pgPool.query(sql, onDone);
 }
 

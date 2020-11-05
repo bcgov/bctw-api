@@ -5,11 +5,13 @@ import {
   assignCollarToCritter,
   unassignCollarFromCritter,
   getAvailableCollars,
-  getAssignedCollars
+  getAssignedCollars,
+  getCollar
 } from './apis/collar_api';
 import { addAnimal, getAnimals } from './apis/animal_api';
 import { addCode, addCodeHeader, getCode, getCodeHeaders} from './apis/code_api';
 import { NextFunction, Request, Response } from 'express';
+import { TelemetryTypes } from './types/pg';
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -105,6 +107,18 @@ const notFound = function (req: Request, res: Response): Response {
   return res.status(404).json({error: "Sorry you must be lost :("});
 };
 
+const getType = function(req: Request, res:Response): Promise<void> {
+  const params = req.params;
+  switch (params.type) {
+    case TelemetryTypes.animal:
+      return getAnimals(req, res);
+    case TelemetryTypes.collar:
+      return getCollar(req, res);
+    default:
+      return new Promise(() =>  null);
+  }
+}
+
 export {
   addCode,
   addCodeHeader,
@@ -122,6 +136,7 @@ export {
   getDBCritters,
   getPingExtent,
   getLastPings,
+  getType,
   getUserRole,
   notFound
 }

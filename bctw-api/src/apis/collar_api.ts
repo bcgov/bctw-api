@@ -1,7 +1,8 @@
-import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query } from '../pg';
+import { appendSqlFilter, constructGetQuery, getRowResults, paginate, pgPool, QueryResultCbFn, to_pg_function_query } from '../pg';
 import { Collar } from '../types/collar';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
+import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
 
 /*
 */
@@ -35,9 +36,9 @@ const addCollar = async function(req: Request, res:Response): Promise<void> {
 const _assignCollarToCritter = function (
   idir: string,
   device_id: number,
-  animal_id: string,
-  startDate: Date,
-  endDate: Date,
+  animal_id: number,
+  start: Date,
+  end: Date,
   onDone: QueryResultCbFn
 ): void {
   if (!idir) {
@@ -47,7 +48,7 @@ const _assignCollarToCritter = function (
     return onDone(Error('device_id and animal_id must be supplied'));
   }
   const sql = transactionify(
-    to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, endDate, startDate]));
+    to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, start, end]));
   return pgPool.query(sql, onDone);
 }
 
@@ -66,8 +67,8 @@ const assignCollarToCritter = async function(req: Request, res:Response): Promis
     idir,
     body.device_id,
     body.animal_id,
-    body.start_Date,
-    body.end_Date,
+    body.start_date,
+    body.end_date,
     done
   )
 }
@@ -112,26 +113,22 @@ const unassignCollarFromCritter = async function(req: Request, res:Response): Pr
 }
 
 // todo: consider bctw.collar_animal_assignment table
-const _getAvailableCollars = function ( idir: string, onDone: QueryResultCbFn): void {
-  const sql = 
-  `select
-    c.device_id,
-    c.collar_status,
-    max(vmv.date_recorded) as "max_transmission_date",
-    c.make,
-    c.satellite_network,
-    'unknown' as "interval"
+const _getAvailableCollars = function ( idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number): void {
+  const base = `select c.device_id, c.collar_status, max(vmv.date_recorded) as "max_transmission_date",
+    c.make, c.satellite_network, 'unknown' as "interval"
   from collar c 
   join vendor_merge_view vmv on 
   vmv.device_id = c.device_id
-  where vmv.animal_id is null
-  group by c.device_id
-  limit 10;`
+  where vmv.animal_id is null`
+  const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
+  const strPage = page ? paginate(page) : '';
+  const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage});
   return pgPool.query(sql, onDone);
 }
 
 const getAvailableCollars = async function(req: Request, res:Response): Promise<void> {
-  const idir = (req?.query?.idir || '') as string;
+  const idir = (req.query?.idir || '') as string;
+  const page = (req.query?.page || 1) as number;
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
@@ -139,33 +136,28 @@ const getAvailableCollars = async function(req: Request, res:Response): Promise<
     const results = data?.rows;
     res.send(results);
   };
-  await _getAvailableCollars(idir, done);
+  await _getAvailableCollars(idir, done, filterFromRequestParams(req), page);
 }
 
 // todo: link bctw.collar_animal_assignment table
 // instead of merge_view
-const _getAssignedCollars = function (idir: string, onDone: QueryResultCbFn): void {
-  const sql = 
-  `select
-    caa.animal_id,
-    c.device_id,
-    c.collar_status,
-    max(vmv.date_recorded) as "max_transmission_date",
-    c.make,
-    c.satellite_network,
-    'unknown' as "interval"
-  from collar c 
+const _getAssignedCollars = function (idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number): void {
+  const base = 
+  `select caa.animal_id, c.device_id, c.collar_status, max(vmv.date_recorded) as "max_transmission_date",
+    c.make, c.satellite_network, 'unknown' as "interval" from collar c 
   join collar_animal_assignment caa
   on c.device_id = caa.device_id
   join vendor_merge_view vmv on 
-  vmv.device_id = caa.device_id
-  group by caa.animal_id, c.device_id
-  limit 5;`
+  vmv.device_id = caa.device_id`
+  const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
+  const strPage = page ? paginate(page) : '';
+  const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id', page: strPage});
   return pgPool.query(sql, onDone);
 }
 
 const getAssignedCollars = async function(req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
+  const page = (req.query?.page || 1) as number;
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
@@ -173,7 +165,23 @@ const getAssignedCollars = async function(req: Request, res:Response): Promise<v
     const results = data?.rows;
     res.send(results);
   };
-  await _getAssignedCollars(idir, done);
+  await _getAssignedCollars(idir, done, filterFromRequestParams(req), page);
+}
+
+const getCollar = async function(req: Request, res:Response): Promise<void> {
+  // const idir = (req?.query?.idir || '') as string;
+  const filter = filterFromRequestParams(req);
+  const done = function (err, data) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const results = data?.rows;
+    res.send(results);
+  };
+  const base = `select * from bctw.collar`;
+  const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar);
+  const sql = constructGetQuery({base: base , filter: strFilter});
+  return pgPool.query(sql, done);
 }
 
 export {
@@ -181,5 +189,6 @@ export {
   assignCollarToCritter,
   unassignCollarFromCritter,
   getAssignedCollars,
-  getAvailableCollars
+  getAvailableCollars,
+  getCollar,
 } 

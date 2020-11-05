@@ -42,6 +42,8 @@ const app = express()
   .post('/add-code-header', api.addCodeHeader)
   // import
   .post('/import', upload.single('csv'), importCsv)
+  // generic getter for multiple types
+  .get('/:type/:id', api.getType)
   .get('*', api.notFound);
 
   

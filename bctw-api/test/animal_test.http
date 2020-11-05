@@ -1,4 +1,4 @@
-##### add animal
+##### add a new animal
 ###
 POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
@@ -13,6 +13,29 @@ content-type: application/json
   "nickname": "shimmer"
 }
 
+### add existing animal, species should remain "wolf", sex "M"
+POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "animal_id": "test123",
+  "animal_status": "Alive",
+  "calf_at_heel": true,
+  "sex": "M",
+  "wlh_id": "abc123",
+  "nickname": "shimmer",
+  "id": 2
+}
+
 ##### get animals
 ###
 http://localhost:3000/get-animals?idir={{idir}}
+
+### get specific id
+http://localhost:3000/animal/3
+
+### get page 1
+http://localhost:3000/get-animals?idir={{idir}}&page=1
+
+### page 2
+http://localhost:3000/get-animals?idir={{idir}}&page=2

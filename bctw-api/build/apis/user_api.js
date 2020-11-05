@@ -116,7 +116,7 @@ var _assignCritterToUser = function (idir, animalId, start, end, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'));
     }
-    var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_animal_to_user', [idir, animalId, end, start]));
+    var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_animal_to_user', [idir, animalId, start, end]));
     return pg_1.pgPool.query(sql, onDone);
 };
 var assignCritterToUser = function (req, res) {

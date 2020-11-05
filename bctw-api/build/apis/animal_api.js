@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAnimals = exports.addAnimal = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
+var pg_3 = require("../types/pg");
 var _addAnimal = function (idir, animal, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'));
@@ -71,18 +72,22 @@ var addAnimal = function (req, res) {
     });
 };
 exports.addAnimal = addAnimal;
-var _getAnimals = function (idir, onDone) {
-    var sql = "select \n  a.nickname, a.animal_id, a.wlh_id, a.animal_status, a.region,\n  a.species, a.population_unit, a.calf_at_heel, ca.device_id\n  from bctw.animal a\n  join bctw.collar_animal_assignment ca\n  on a.animal_id = ca.animal_id\n  limit 15;";
+var _getAnimals = function (idir, onDone, filter, page) {
+    var base = "select a.id, a.nickname, a.animal_id, a.wlh_id, a.animal_status, a.region,\n   a.species, a.population_unit, a.calf_at_heel, ca.device_id\n  from bctw.animal a join bctw.collar_animal_assignment ca\n  on a.id = ca.animal_id";
+    var strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
+    var strPage = page ? pg_1.paginate(page) : '';
+    var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
     return pg_1.pgPool.query(sql, onDone);
 };
 var getAnimals = function (req, res) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, done;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var idir, page, done;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
                     done = function (err, data) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
@@ -90,9 +95,9 @@ var getAnimals = function (req, res) {
                         var results = data === null || data === void 0 ? void 0 : data.rows;
                         res.send(results);
                     };
-                    return [4 /*yield*/, _getAnimals(idir, done)];
+                    return [4 /*yield*/, _getAnimals(idir, done, pg_3.filterFromRequestParams(req), page)];
                 case 1:
-                    _b.sent();
+                    _c.sent();
                     return [2 /*return*/];
             }
         });

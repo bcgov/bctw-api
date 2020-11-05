@@ -63,6 +63,8 @@ var app = express_1.default()
     .post('/add-code-header', api.addCodeHeader)
     // import
     .post('/import', upload.single('csv'), csv_1.importCsv)
+    // generic getter for multiple types
+    .get('/:type/:id', api.getType)
     .get('*', api.notFound);
 http_1.default.createServer(app).listen(3000, function () {
     console.log("listening on port 3000");

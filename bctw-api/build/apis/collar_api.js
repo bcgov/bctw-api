@@ -36,9 +36,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAvailableCollars = exports.getAssignedCollars = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addCollar = void 0;
+exports.getCollar = exports.getAvailableCollars = exports.getAssignedCollars = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addCollar = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
+var pg_3 = require("../types/pg");
 /*
 */
 var _addCollar = function (idir, collar, onDone) {
@@ -75,14 +76,14 @@ var addCollar = function (req, res) {
 exports.addCollar = addCollar;
 /*
 */
-var _assignCollarToCritter = function (idir, device_id, animal_id, startDate, endDate, onDone) {
+var _assignCollarToCritter = function (idir, device_id, animal_id, start, end, onDone) {
     if (!idir) {
         return onDone(Error('IDIR must be supplied'));
     }
     if (!device_id || !animal_id) {
         return onDone(Error('device_id and animal_id must be supplied'));
     }
-    var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, endDate, startDate]));
+    var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, start, end]));
     return pg_1.pgPool.query(sql, onDone);
 };
 var assignCollarToCritter = function (req, res) {
@@ -102,7 +103,7 @@ var assignCollarToCritter = function (req, res) {
                         var row = results.rows[0];
                         res.send(row);
                     };
-                    return [4 /*yield*/, _assignCollarToCritter(idir, body.device_id, body.animal_id, body.start_Date, body.end_Date, done)];
+                    return [4 /*yield*/, _assignCollarToCritter(idir, body.device_id, body.animal_id, body.start_date, body.end_date, done)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];
@@ -150,18 +151,22 @@ var unassignCollarFromCritter = function (req, res) {
 };
 exports.unassignCollarFromCritter = unassignCollarFromCritter;
 // todo: consider bctw.collar_animal_assignment table
-var _getAvailableCollars = function (idir, onDone) {
-    var sql = "select\n    c.device_id,\n    c.collar_status,\n    max(vmv.date_recorded) as \"max_transmission_date\",\n    c.make,\n    c.satellite_network,\n    'unknown' as \"interval\"\n  from collar c \n  join vendor_merge_view vmv on \n  vmv.device_id = c.device_id\n  where vmv.animal_id is null\n  group by c.device_id\n  limit 10;";
+var _getAvailableCollars = function (idir, onDone, filter, page) {
+    var base = "select c.device_id, c.collar_status, max(vmv.date_recorded) as \"max_transmission_date\",\n    c.make, c.satellite_network, 'unknown' as \"interval\"\n  from collar c \n  join vendor_merge_view vmv on \n  vmv.device_id = c.device_id\n  where vmv.animal_id is null";
+    var strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c', true);
+    var strPage = page ? pg_1.paginate(page) : '';
+    var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage });
     return pg_1.pgPool.query(sql, onDone);
 };
 var getAvailableCollars = function (req, res) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, done;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var idir, page, done;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
                     done = function (err, data) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
@@ -169,9 +174,9 @@ var getAvailableCollars = function (req, res) {
                         var results = data === null || data === void 0 ? void 0 : data.rows;
                         res.send(results);
                     };
-                    return [4 /*yield*/, _getAvailableCollars(idir, done)];
+                    return [4 /*yield*/, _getAvailableCollars(idir, done, pg_3.filterFromRequestParams(req), page)];
                 case 1:
-                    _b.sent();
+                    _c.sent();
                     return [2 /*return*/];
             }
         });
@@ -180,18 +185,22 @@ var getAvailableCollars = function (req, res) {
 exports.getAvailableCollars = getAvailableCollars;
 // todo: link bctw.collar_animal_assignment table
 // instead of merge_view
-var _getAssignedCollars = function (idir, onDone) {
-    var sql = "select\n    caa.animal_id,\n    c.device_id,\n    c.collar_status,\n    max(vmv.date_recorded) as \"max_transmission_date\",\n    c.make,\n    c.satellite_network,\n    'unknown' as \"interval\"\n  from collar c \n  join collar_animal_assignment caa\n  on c.device_id = caa.device_id\n  join vendor_merge_view vmv on \n  vmv.device_id = caa.device_id\n  group by caa.animal_id, c.device_id\n  limit 5;";
+var _getAssignedCollars = function (idir, onDone, filter, page) {
+    var base = "select caa.animal_id, c.device_id, c.collar_status, max(vmv.date_recorded) as \"max_transmission_date\",\n    c.make, c.satellite_network, 'unknown' as \"interval\" from collar c \n  join collar_animal_assignment caa\n  on c.device_id = caa.device_id\n  join vendor_merge_view vmv on \n  vmv.device_id = caa.device_id";
+    var strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c');
+    var strPage = page ? pg_1.paginate(page) : '';
+    var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id', page: strPage });
     return pg_1.pgPool.query(sql, onDone);
 };
 var getAssignedCollars = function (req, res) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, done;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var idir, page, done;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
                     done = function (err, data) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
@@ -199,13 +208,33 @@ var getAssignedCollars = function (req, res) {
                         var results = data === null || data === void 0 ? void 0 : data.rows;
                         res.send(results);
                     };
-                    return [4 /*yield*/, _getAssignedCollars(idir, done)];
+                    return [4 /*yield*/, _getAssignedCollars(idir, done, pg_3.filterFromRequestParams(req), page)];
                 case 1:
-                    _b.sent();
+                    _c.sent();
                     return [2 /*return*/];
             }
         });
     });
 };
 exports.getAssignedCollars = getAssignedCollars;
+var getCollar = function (req, res) {
+    return __awaiter(this, void 0, void 0, function () {
+        var filter, done, base, strFilter, sql;
+        return __generator(this, function (_a) {
+            filter = pg_3.filterFromRequestParams(req);
+            done = function (err, data) {
+                if (err) {
+                    return res.status(500).send("Failed to query database: " + err);
+                }
+                var results = data === null || data === void 0 ? void 0 : data.rows;
+                res.send(results);
+            };
+            base = "select * from bctw.collar";
+            strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar);
+            sql = pg_1.constructGetQuery({ base: base, filter: strFilter });
+            return [2 /*return*/, pg_1.pgPool.query(sql, done)];
+        });
+    });
+};
+exports.getCollar = getCollar;
 //# sourceMappingURL=collar_api.js.map

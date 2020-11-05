@@ -36,7 +36,7 @@ const _getCodeHeaders = function (
   onDone: QueryResultCbFn,
   onlyType?: string
 ): void {
-  let sql = `select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_title as title, ch.code_header_description as description from bctw.code_header ch`
+  let sql = `select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_title as title, ch.code_header_description as description from bctw.code_header ch `
   if (onlyType) {
     sql += `where ch.code_header_name = '${onlyType}';`
   }

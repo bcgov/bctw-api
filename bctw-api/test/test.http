@@ -11,9 +11,7 @@ POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-   "animalId": "16-8090",
-   "start": "2020-10-10",
-   "end": "2021-10-20"
+   "animalId": 4
 }
 
 ###
@@ -22,3 +20,6 @@ POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 { "animalId": "16-80900000" }
+
+###
+GET http://localhost:3000/animal/1234

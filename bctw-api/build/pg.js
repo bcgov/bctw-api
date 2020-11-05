@@ -40,10 +40,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.queryAsync = exports.getRowResults = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
-var moment_1 = __importDefault(require("moment"));
+exports.constructGetQuery = exports.paginate = exports.queryAsync = exports.getRowResults = exports.appendSqlFilter = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
 var pg_1 = __importDefault(require("pg"));
-// todo: add generic getter w/ where etc.
+var pg_2 = require("./types/pg");
 var isProd = process.env.NODE_ENV === 'production' ? true : false;
 exports.isProd = isProd;
 var test = process.env.NODE_ENV;
@@ -82,6 +81,22 @@ var transactionify = function (sql) {
     return isProd ? sql : "begin;\n" + sql + ";\nrollback;";
 };
 exports.transactionify = transactionify;
+// enforce named parameters by making the object param type of IConstruct..
+var constructGetQuery = function (_a) {
+    var base = _a.base, filter = _a.filter, order = _a.order, group = _a.group, page = _a.page;
+    var sql = base + " " + filter + " ";
+    if (group) {
+        sql += "group by " + group + " ";
+    }
+    if (order) {
+        sql += "order by " + order + " ";
+    }
+    if (page) {
+        sql += page;
+    }
+    return sql;
+};
+exports.constructGetQuery = constructGetQuery;
 var to_pg_function_query = function (fnName, params, expectsObjAsArray) {
     if (expectsObjAsArray === void 0) { expectsObjAsArray = false; }
     var newParams = [];
@@ -93,7 +108,7 @@ var to_pg_function_query = function (fnName, params, expectsObjAsArray) {
         else if (typeof p === 'number')
             newParams.push(p);
         else if (typeof p.getMonth === 'function')
-            newParams.push(to_pg_date(p));
+            newParams.push(to_pg_timestamp(p));
         else if (typeof p === 'object' && expectsObjAsArray)
             newParams.push(obj_to_pg_array(p));
         else if (Array.isArray(p))
@@ -106,6 +121,7 @@ var to_pg_function_query = function (fnName, params, expectsObjAsArray) {
 exports.to_pg_function_query = to_pg_function_query;
 // converts a javascript array to the postgresql format ex. ['abc','def'] => '{abc, def}'
 var to_pg_array = function (arr) { return "'{" + arr.join(',') + "}'"; };
+var to_pg_timestamp = function (date) { return "to_timestamp(" + date + " / 1000)"; };
 // db code insert/update functions expect a json array
 // obj_to_pg_array accepts an object or an array of objects 
 // and outputs a psql friendly json array
@@ -124,7 +140,7 @@ var to_pg_obj = function (obj) {
     return "'" + JSON.stringify(obj) + "'";
 };
 /*
- <transactionify> function will add multiple row types to the query result.
+ the <transactionify> function will add multiple row types to the query result.
  this function handles dev and prod query result parsing
 */
 var getRowResults = function (data, functionName) {
@@ -145,11 +161,10 @@ var _getRowResultsDev = function (data, dbFunctionName) {
     }
     return [];
 };
-var to_pg_date = function (date) {
-    if (!date)
-        return null;
-    return "'" + moment_1.default(date).format('YYYY-MM-DD') + "'::Date";
-};
+// const to_pg_date = (date: Date): string | null => {
+//   if (!date) return null;
+//   return `'${moment(date).format('YYYY-MM-DD')}'::Date`;
+// }
 var queryAsync = function (sql) { return __awaiter(void 0, void 0, void 0, function () {
     var client, res, err_1;
     return __generator(this, function (_a) {
@@ -181,4 +196,38 @@ var queryAsync = function (sql) { return __awaiter(void 0, void 0, void 0, funct
     });
 }); };
 exports.queryAsync = queryAsync;
+// hardcoded primary key getter given a table name
+var _getPrimaryKey = function (table) {
+    switch (table) {
+        case pg_2.TelemetryTypes.animal:
+            return 'id';
+        case pg_2.TelemetryTypes.collar:
+            return 'device_id';
+        default:
+            return '';
+    }
+};
+/// given a page number, return a string with the limit offset
+var paginate = function (pageNumber) {
+    var limit = 10;
+    var offset = (limit * pageNumber) - limit;
+    return "limit " + limit + " offset " + offset + ";";
+};
+exports.paginate = paginate;
+var appendSqlFilter = function (filter, table, tableAlias, containsWhere) {
+    if (containsWhere === void 0) { containsWhere = false; }
+    if (!Object.keys(filter).length) {
+        return '';
+    }
+    var sql = (containsWhere ? 'and' : 'where') + " " + (tableAlias !== null && tableAlias !== void 0 ? tableAlias : table) + ".";
+    if (filter.id) {
+        sql += _getPrimaryKey(table) + " = " + filter.id;
+    }
+    // else if (filter.search) {
+    //   const search = filter.search;
+    //   sql += `${search.column} = ${search.value}`;
+    // }
+    return sql;
+};
+exports.appendSqlFilter = appendSqlFilter;
 //# sourceMappingURL=pg.js.map
