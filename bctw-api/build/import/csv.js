@@ -61,10 +61,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.importCsv = void 0;
 var csv_parser_1 = __importDefault(require("csv-parser"));
 var fs = __importStar(require("fs"));
+var animal_api_1 = require("../apis/animal_api");
 var code_api_1 = require("../apis/code_api");
 var pg_1 = require("../pg");
 var code_1 = require("../types/code");
 // const _mapCsvHeader = (header: string) => header.includes('valid_') ? header : `code_${header}`;
+// todo: map animal header once csv received
 var _mapCsvHeader = function (header) { return header === 'code_type' ? 'code_header' : header; };
 var _removeUploadedFile = function (path) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
@@ -79,11 +81,12 @@ var _removeUploadedFile = function (path) { return __awaiter(void 0, void 0, voi
     });
 }); };
 var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, void 0, function () {
-    var codes, headers, ret;
+    var codes, headers, animals, ret;
     return __generator(this, function (_a) {
         codes = { rows: [] };
         headers = { rows: [] };
-        ret = { codes: codes.rows, headers: headers.rows };
+        animals = { rows: [] };
+        ret = { codes: codes.rows, headers: headers.rows, animals: animals.rows };
         fs.createReadStream(file.path).pipe(csv_parser_1.default({
             mapHeaders: function (_a) {
                 var header = _a.header;
@@ -114,7 +117,7 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
 var importCsv = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, file, headerResults, codeResults, onFinishedParsing;
+        var idir, file, headerResults, codeResults, animalResults, onFinishedParsing;
         var _this = this;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -128,41 +131,51 @@ var importCsv = function (req, res) {
                         res.status(500).send('failed: csv file not found');
                     }
                     onFinishedParsing = function (rows) { return __awaiter(_this, void 0, void 0, function () {
-                        var codes, headers, e_1;
-                        var _a, _b, _c, _d;
-                        return __generator(this, function (_e) {
-                            switch (_e.label) {
+                        var codes, headers, animals, e_1;
+                        var _a, _b, _c, _d, _e, _f;
+                        return __generator(this, function (_g) {
+                            switch (_g.label) {
                                 case 0:
                                     codes = rows.codes;
                                     headers = rows.headers;
-                                    _e.label = 1;
+                                    animals = rows.animals;
+                                    _g.label = 1;
                                 case 1:
-                                    _e.trys.push([1, 6, , 7]);
+                                    _g.trys.push([1, 8, , 9]);
                                     if (!codes.length) return [3 /*break*/, 3];
                                     return [4 /*yield*/, code_api_1._addCode(idir, codes[0].code_header, codes)];
                                 case 2:
-                                    codeResults = _e.sent();
-                                    return [3 /*break*/, 5];
+                                    codeResults = _g.sent();
+                                    return [3 /*break*/, 7];
                                 case 3:
                                     if (!headers.length) return [3 /*break*/, 5];
                                     return [4 /*yield*/, code_api_1._addCodeHeader(idir, headers)];
                                 case 4:
-                                    headerResults = _e.sent();
-                                    _e.label = 5;
+                                    headerResults = _g.sent();
+                                    return [3 /*break*/, 7];
                                 case 5:
-                                    _removeUploadedFile(file.path);
-                                    return [3 /*break*/, 7];
+                                    if (!animals.length) return [3 /*break*/, 7];
+                                    return [4 /*yield*/, animal_api_1._addAnimal(idir, animals)];
                                 case 6:
-                                    e_1 = _e.sent();
-                                    res.status(500).send(e_1.message);
-                                    return [3 /*break*/, 7];
+                                    animalResults = _g.sent();
+                                    _g.label = 7;
                                 case 7:
+                                    _removeUploadedFile(file.path);
+                                    return [3 /*break*/, 9];
+                                case 8:
+                                    e_1 = _g.sent();
+                                    res.status(500).send(e_1.message);
+                                    return [3 /*break*/, 9];
+                                case 9:
                                     try {
                                         if (((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) || ((_b = headerResults) === null || _b === void 0 ? void 0 : _b.rows.length)) {
                                             res.send(pg_1.getRowResults(headerResults, 'add_code_header'));
                                         }
                                         else if (((_c = codeResults) === null || _c === void 0 ? void 0 : _c.length) || ((_d = codeResults) === null || _d === void 0 ? void 0 : _d.rows.length)) {
                                             res.send(pg_1.getRowResults(codeResults, 'add_code'));
+                                        }
+                                        else if (((_e = animalResults) === null || _e === void 0 ? void 0 : _e.length) || ((_f = animalResults) === null || _f === void 0 ? void 0 : _f.rows.length)) {
+                                            res.send(pg_1.getRowResults(animalResults, 'add_animal'));
                                         }
                                     }
                                     catch (e) {

@@ -36,58 +36,101 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAnimals = exports.addAnimal = void 0;
+exports.getCollarAssignmentHistory = exports.getAnimals = exports.addAnimal = exports._addAnimal = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var pg_3 = require("../types/pg");
-var _addAnimal = function (idir, animal, onDone) {
-    if (!idir) {
-        return onDone(Error('IDIR must be supplied'));
-    }
-    var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_animal', [idir, animal]));
-    return pg_1.pgPool.query(sql, onDone);
+var _addAnimal = function (idir, animal) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_animal', [idir, animal], true));
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
 };
+exports._addAnimal = _addAnimal;
+// handles upsert. body can be single or array of Animals
 var addAnimal = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, done;
+        var idir, animals, data, e_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    body = req.body;
-                    done = function (err, result) {
-                        if (err) {
-                            return res.status(500).send("Failed to query database: " + err);
-                        }
-                        var results = pg_1.getRowResults(result, 'add_animal');
-                        res.send(results);
-                    };
-                    return [4 /*yield*/, _addAnimal(idir, body, done)];
+                    if (!idir) {
+                        return [2 /*return*/, res.status(500).send("must supply idir")];
+                    }
+                    animals = !Array.isArray(req.body) ? [req.body] : req.body;
+                    _b.label = 1;
                 case 1:
-                    _b.sent();
-                    return [2 /*return*/];
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, _addAnimal(idir, animals)];
+                case 2:
+                    data = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_1 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to add animals : " + e_1)];
+                case 4: return [2 /*return*/, res.send(pg_1.getRowResults(data, 'add_animal'))];
             }
         });
     });
 };
 exports.addAnimal = addAnimal;
-var _getAnimals = function (idir, onDone, filter, page) {
-    var base = "select a.id, a.nickname, a.animal_id, a.wlh_id, a.animal_status, a.region,\n   a.species, a.population_unit, a.calf_at_heel, ca.device_id\n  from bctw.animal a join bctw.collar_animal_assignment ca\n  on a.id = ca.animal_id";
+var _selectAnimals = 'select a.id, a.nickname, a.animal_id, a.wlh_id, a.animal_status, a.region, a.species, a.population_unit, a.calf_at_heel';
+var _getAnimalsAssigned = function (idir, onDone, filter, page) {
+    var base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)";
+    var strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
+    var strPage = page ? pg_1.paginate(page) : '';
+    var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
+    return pg_1.pgPool.query(sql, onDone);
+};
+var _getAnimalsUnassigned = function (idir, onDone, filter, page) {
+    var base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where not now() <@ tstzrange(ca.start_time, ca.end_time)\n  and a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  group by a.id";
+    // or ca.start_time is null and ca.end_time is null` // remove as these shouldnt exist anyway
     var strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
     return pg_1.pgPool.query(sql, onDone);
 };
 var getAnimals = function (req, res) {
+    var _a, _b, _c;
+    return __awaiter(this, void 0, void 0, function () {
+        var idir, page, bGetAssigned, done;
+        return __generator(this, function (_d) {
+            idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+            page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
+            bGetAssigned = (((_c = req.query) === null || _c === void 0 ? void 0 : _c.assigned) === 'true');
+            done = function (err, data) {
+                if (err) {
+                    return res.status(500).send("Failed to query database: " + err);
+                }
+                var results = data === null || data === void 0 ? void 0 : data.rows;
+                res.send(results);
+            };
+            bGetAssigned ? _getAnimalsAssigned(idir, done, pg_3.filterFromRequestParams(req), page) : _getAnimalsUnassigned(idir, done, pg_3.filterFromRequestParams(req), page);
+            return [2 /*return*/];
+        });
+    });
+};
+exports.getAnimals = getAnimals;
+var getCollarAssignmentHistory = function (req, res) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, page, done;
+        var idir, id, done, base, sql;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
                     idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
+                    id = ((_b = req.params) === null || _b === void 0 ? void 0 : _b.animal_id);
                     done = function (err, data) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
@@ -95,7 +138,9 @@ var getAnimals = function (req, res) {
                         var results = data === null || data === void 0 ? void 0 : data.rows;
                         res.send(results);
                     };
-                    return [4 /*yield*/, _getAnimals(idir, done, pg_3.filterFromRequestParams(req), page)];
+                    base = "\n  select ca.device_id, c.make, c.radio_frequency,\n  ca.start_time, ca.end_time\n  from bctw.collar_animal_assignment ca \n  join bctw.collar c on ca.device_id = c.device_id \n  where ca.animal_id = " + id;
+                    sql = pg_1.constructGetQuery({ base: base, filter: '', order: 'ca.end_time desc' });
+                    return [4 /*yield*/, pg_1.pgPool.query(sql, done)];
                 case 1:
                     _c.sent();
                     return [2 /*return*/];
@@ -103,5 +148,5 @@ var getAnimals = function (req, res) {
         });
     });
 };
-exports.getAnimals = getAnimals;
+exports.getCollarAssignmentHistory = getCollarAssignmentHistory;
 //# sourceMappingURL=animal_api.js.map

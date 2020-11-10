@@ -27,6 +27,31 @@ content-type: application/json
   "id": 2
 }
 
+### add multiple animals
+POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+[
+  {
+  "animal_id": "test123",
+  "animal_status": "Alive",
+  "calf_at_heel": true,
+  "sex": "M",
+  "wlh_id": "abc123",
+  "nickname": "shimmer",
+  "id": 2
+},
+{
+  "animal_id": "test123",
+  "animal_status": "Alive",
+  "calf_at_heel": true,
+  "species": "unicorn",
+  "sex": "M",
+  "wlh_id": "abc123",
+  "nickname": "shimmer"
+}
+]
+
 ##### get animals
 ###
 http://localhost:3000/get-animals?idir={{idir}}
@@ -34,8 +59,14 @@ http://localhost:3000/get-animals?idir={{idir}}
 ### get specific id
 http://localhost:3000/animal/3
 
+### get unassigned
+http://localhost:3000/get-animals?idir={{idir}}&assigned=false&page=1
+
 ### get page 1
-http://localhost:3000/get-animals?idir={{idir}}&page=1
+http://localhost:3000/get-animals?idir={{idir}}&page=1&assigned=true
 
 ### page 2
-http://localhost:3000/get-animals?idir={{idir}}&page=2
+http://localhost:3000/get-animals?idir={{idir}}&page=2&assigned=true
+
+### assignmenthistory
+http://localhost:3000/get-assignment-history/3?idir={{idir}}

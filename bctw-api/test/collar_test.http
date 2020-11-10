@@ -100,6 +100,12 @@ content-type: application/json
 ### get available collars
 http://localhost:3000/get-available-collars?idir={{idir}}
 
+### get paged available collars - start device id 37876
+http://localhost:3000/get-available-collars?idir={{idir}}&page=1
+
+### get paged available collars - start device id 4214xxx
+http://localhost:3000/get-available-collars?idir={{idir}}&page=2
+
 ### specific collar
 http://localhost:3000/get-available-collars?idir={{idir}}&id=37876
 
@@ -107,5 +113,10 @@ http://localhost:3000/get-available-collars?idir={{idir}}&id=37876
 ### get assigned collars
 http://localhost:3000/get-assigned-collars?idir={{idir}}
 
+### get assigned collars page 1
+http://localhost:3000/get-assigned-collars?idir={{idir}}&page=1
+
+### get assigned collars page 3
+http://localhost:3000/get-assigned-collars?idir={{idir}}&page=3
 ### get one collar
 http://localhost:3000/collar/37876?idir={{idir}}

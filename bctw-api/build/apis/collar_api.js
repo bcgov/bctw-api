@@ -99,9 +99,8 @@ var assignCollarToCritter = function (req, res) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
                         }
-                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
-                        var row = results.rows[0];
-                        res.send(row);
+                        var rows = pg_1.getRowResults(data, 'link_collar_to_animal');
+                        res.send(rows);
                     };
                     return [4 /*yield*/, _assignCollarToCritter(idir, body.device_id, body.animal_id, body.start_date, body.end_date, done)];
                 case 1:
@@ -137,9 +136,8 @@ var unassignCollarFromCritter = function (req, res) {
                         if (err) {
                             return res.status(500).send("Failed to query database: " + err);
                         }
-                        var results = data === null || data === void 0 ? void 0 : data.find(function (obj) { return obj.command === 'SELECT'; });
-                        var row = results.rows[0];
-                        res.send(row);
+                        var rows = pg_1.getRowResults(data, 'unlink_collar_to_animal');
+                        return res.send(rows);
                     };
                     return [4 /*yield*/, _unassignCollarToCritter(idir, body.device_id, body.animal_id, body.end_date, done)];
                 case 1:
@@ -152,7 +150,7 @@ var unassignCollarFromCritter = function (req, res) {
 exports.unassignCollarFromCritter = unassignCollarFromCritter;
 // todo: consider bctw.collar_animal_assignment table
 var _getAvailableCollars = function (idir, onDone, filter, page) {
-    var base = "select c.device_id, c.collar_status, max(vmv.date_recorded) as \"max_transmission_date\",\n    c.make, c.satellite_network, 'unknown' as \"interval\"\n  from collar c \n  join vendor_merge_view vmv on \n  vmv.device_id = c.device_id\n  where vmv.animal_id is null";
+    var base = "\n    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n    from collar c \n    where c.device_id not in (\n      select device_id from collar_animal_assignment caa\n      where now() <@ tstzrange(caa.start_time, caa.end_time)\n    )";
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c', true);
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage });
@@ -183,13 +181,11 @@ var getAvailableCollars = function (req, res) {
     });
 };
 exports.getAvailableCollars = getAvailableCollars;
-// todo: link bctw.collar_animal_assignment table
-// instead of merge_view
 var _getAssignedCollars = function (idir, onDone, filter, page) {
-    var base = "select caa.animal_id, c.device_id, c.collar_status, max(vmv.date_recorded) as \"max_transmission_date\",\n    c.make, c.satellite_network, 'unknown' as \"interval\" from collar c \n  join collar_animal_assignment caa\n  on c.device_id = caa.device_id\n  join vendor_merge_view vmv on \n  vmv.device_id = caa.device_id";
+    var base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id";
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c');
     var strPage = page ? pg_1.paginate(page) : '';
-    var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id', page: strPage });
+    var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage });
     return pg_1.pgPool.query(sql, onDone);
 };
 var getAssignedCollars = function (req, res) {

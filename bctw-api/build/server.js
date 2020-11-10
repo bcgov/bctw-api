@@ -49,6 +49,7 @@ var app = express_1.default()
     // collars
     .get('/get-assigned-collars', api.getAssignedCollars)
     .get('/get-available-collars', api.getAvailableCollars)
+    .get('/get-assignment-history/:animal_id', api.getCollarAssignmentHistory)
     .post('/add-collar', api.addCollar)
     .post('/link-animal-collar', api.assignCollarToCritter)
     .post('/unlink-animal-collar', api.unassignCollarFromCritter)
@@ -59,7 +60,7 @@ var app = express_1.default()
     // codes
     .get('/get-code', api.getCode)
     .get('/get-code-headers', api.getCodeHeaders)
-    // .post('/add-code', api.addCode)
+    .post('/add-code', api.addCode)
     .post('/add-code-header', api.addCodeHeader)
     // import
     .post('/import', upload.single('csv'), csv_1.importCsv)

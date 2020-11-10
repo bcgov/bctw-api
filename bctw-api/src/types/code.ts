@@ -1,5 +1,7 @@
 // database code header table structure
 
+import { Animal } from "./animal";
+
 interface IInput {
   // created_at: Date;
   // updated_at: Date;
@@ -50,7 +52,8 @@ interface ICode {
 
 interface ICodeRow { rows: ICodeInput[] }
 interface ICodeHeaderRow { rows: ICodeHeaderInput[]}
-interface ParsedRows { codes: ICodeInput[], headers: ICodeHeaderInput[] }
+interface IAnimalRow { rows: Animal[]}
+interface ParsedRows { codes: ICodeInput[], headers: ICodeHeaderInput[], animals: Animal[]}
 
 export {
   ICode,
@@ -58,6 +61,7 @@ export {
   ICodeHeaderInput,
   isCode,
   isCodeHeader,
+  IAnimalRow,
   ICodeRow,
   ICodeHeaderRow,
   ParsedRows

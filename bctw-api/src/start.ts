@@ -8,7 +8,7 @@ import {
   getAssignedCollars,
   getCollar
 } from './apis/collar_api';
-import { addAnimal, getAnimals } from './apis/animal_api';
+import { addAnimal, getAnimals, getCollarAssignmentHistory } from './apis/animal_api';
 import { addCode, addCodeHeader, getCode, getCodeHeaders} from './apis/code_api';
 import { NextFunction, Request, Response } from 'express';
 import { TelemetryTypes } from './types/pg';
@@ -131,6 +131,7 @@ export {
   getAnimals,
   getAssignedCollars,
   getAvailableCollars,
+  getCollarAssignmentHistory,
   getCode,
   getCodeHeaders,
   getDBCritters,

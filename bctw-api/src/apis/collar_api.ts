@@ -59,9 +59,8 @@ const assignCollarToCritter = async function(req: Request, res:Response): Promis
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    const results = data?.find(obj => obj.command === 'SELECT');
-    const row = results.rows[0];
-    res.send(row);
+    const rows = getRowResults(data, 'link_collar_to_animal');
+    res.send(rows);
   };
   await _assignCollarToCritter(
     idir,
@@ -99,9 +98,8 @@ const unassignCollarFromCritter = async function(req: Request, res:Response): Pr
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    const results = data?.find(obj => obj.command === 'SELECT');
-    const row = results.rows[0];
-    res.send(row);
+    const rows = getRowResults(data, 'unlink_collar_to_animal');
+    return res.send(rows)
   };
   await _unassignCollarToCritter(
     idir,
@@ -114,12 +112,13 @@ const unassignCollarFromCritter = async function(req: Request, res:Response): Pr
 
 // todo: consider bctw.collar_animal_assignment table
 const _getAvailableCollars = function ( idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number): void {
-  const base = `select c.device_id, c.collar_status, max(vmv.date_recorded) as "max_transmission_date",
-    c.make, c.satellite_network, 'unknown' as "interval"
-  from collar c 
-  join vendor_merge_view vmv on 
-  vmv.device_id = c.device_id
-  where vmv.animal_id is null`
+  const base = `
+    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency
+    from collar c 
+    where c.device_id not in (
+      select device_id from collar_animal_assignment caa
+      where now() <@ tstzrange(caa.start_time, caa.end_time)
+    )`
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage});
@@ -139,19 +138,14 @@ const getAvailableCollars = async function(req: Request, res:Response): Promise<
   await _getAvailableCollars(idir, done, filterFromRequestParams(req), page);
 }
 
-// todo: link bctw.collar_animal_assignment table
-// instead of merge_view
 const _getAssignedCollars = function (idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number): void {
   const base = 
-  `select caa.animal_id, c.device_id, c.collar_status, max(vmv.date_recorded) as "max_transmission_date",
-    c.make, c.satellite_network, 'unknown' as "interval" from collar c 
-  join collar_animal_assignment caa
-  on c.device_id = caa.device_id
-  join vendor_merge_view vmv on 
-  vmv.device_id = caa.device_id`
+  `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency
+  from collar c inner join collar_animal_assignment caa 
+  on c.device_id = caa.device_id`
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
   const strPage = page ? paginate(page) : '';
-  const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id', page: strPage});
+  const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage});
   return pgPool.query(sql, onDone);
 }
 

@@ -2,11 +2,13 @@ import csv from 'csv-parser';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
 import { QueryResult } from 'pg';
+import { _addAnimal } from '../apis/animal_api';
 import { _addCode, _addCodeHeader } from '../apis/code_api';
 import { getRowResults } from '../pg';
-import { ICodeInput, ICodeHeaderInput, isCode, isCodeHeader, ICodeHeaderRow, ICodeRow, ParsedRows } from '../types/code';
+import { ICodeInput, ICodeHeaderInput, isCode, isCodeHeader, ICodeHeaderRow, ICodeRow, ParsedRows, IAnimalRow } from '../types/code';
 
 // const _mapCsvHeader = (header: string) => header.includes('valid_') ? header : `code_${header}`;
+// todo: map animal header once csv received
 const _mapCsvHeader = (header: string) => header === 'code_type' ? 'code_header' : header;
 
 const _removeUploadedFile = async (path: string) => {
@@ -23,7 +25,8 @@ const _parseCsv = async (
   ) => {
     const codes: ICodeRow = {rows: []};
     const headers: ICodeHeaderRow = {rows: []};
-    const ret: ParsedRows = {codes: codes.rows, headers: headers.rows};
+    const animals: IAnimalRow = {rows: []};
+    const ret: ParsedRows = {codes: codes.rows, headers: headers.rows, animals: animals.rows};
 
     fs.createReadStream(file.path).pipe(csv({
       mapHeaders: ({ header }) => _mapCsvHeader(header)
@@ -50,15 +53,19 @@ const importCsv = async function (req: Request, res:Response): Promise<void> {
 
   let headerResults;
   let codeResults;
+  let animalResults;
 
   const onFinishedParsing = async (rows: ParsedRows) => {
     const codes = rows.codes;
     const headers = rows.headers;
+    const animals = rows.animals;
     try {
       if (codes.length) {
         codeResults = await _addCode(idir, codes[0].code_header, codes);
       } else if (headers.length) {
         headerResults = await _addCodeHeader(idir, headers);
+      } else if (animals.length) {
+        animalResults = await _addAnimal(idir, animals);
       }
       _removeUploadedFile(file.path);
     } catch (e) {
@@ -69,6 +76,8 @@ const importCsv = async function (req: Request, res:Response): Promise<void> {
         res.send(getRowResults(headerResults, 'add_code_header'));
       } else if ((codeResults as QueryResult[])?.length || (codeResults as QueryResult)?.rows.length) {
         res.send(getRowResults(codeResults, 'add_code'))
+      } else if ((animalResults as QueryResult[])?.length || (animalResults as QueryResult)?.rows.length) {
+        res.send(getRowResults(animalResults, 'add_animal'))
       }
     } catch(e) {
       console.log(`error parsing add_code or add_code_header results: ${e}`)
