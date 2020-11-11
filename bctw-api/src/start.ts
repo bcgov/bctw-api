@@ -1,4 +1,4 @@
-import { pgPool } from './pg';
+import { pgPool, queryAsync } from './pg';
 import { addUser, assignCritterToUser, getUserRole } from './apis/user_api';
 import {
   addCollar,
@@ -10,7 +10,7 @@ import {
 } from './apis/collar_api';
 import { addAnimal, getAnimals, getCollarAssignmentHistory } from './apis/animal_api';
 import { addCode, addCodeHeader, getCode, getCodeHeaders} from './apis/code_api';
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { TelemetryTypes } from './types/pg';
 
 /* ## getDBCritters
@@ -19,7 +19,7 @@ import { TelemetryTypes } from './types/pg';
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getDBCritters = function (req: Request, res: Response, next: NextFunction): void {
+const getDBCritters = function (req: Request, res: Response): void {
   const idir = req.query.idir;
   console.log(req.query);
   const start = req.query.start;
@@ -52,7 +52,7 @@ const getDBCritters = function (req: Request, res: Response, next: NextFunction)
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getPingExtent = function (req: Request, res: Response, next: NextFunction): void {
+const getPingExtent = function (req: Request, res: Response): void {
   const sql = `
     select
       max(date_recorded) "max",
@@ -78,7 +78,7 @@ const getPingExtent = function (req: Request, res: Response, next: NextFunction)
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getLastPings = function (req:Request, res:Response, next:NextFunction): void {
+const getLastPings = function (req:Request, res:Response): void {
   const sql = `
     select * from last_critter_pings_view
   `;
@@ -119,6 +119,33 @@ const getType = function(req: Request, res:Response): Promise<void> {
   }
 }
 
+const _deletableTypes = ['collar', 'animal', 'user'];
+const deleteType = async function(req: Request, res:Response): Promise<Response> {
+  const params = req.params;
+  const {type, id} = params;
+  if (!type || !id) {
+    return res.status(404).json({error: 'must supply id and type'});
+  }
+  if (!_deletableTypes.includes(type)) {
+    return res.status(404).json({error: `cannot delete type ${type}`});
+  }
+  let pk = '';
+  if (type === 'collar') pk = 'device_id';
+  else if (type === 'animal') pk = 'id';
+
+  const sql = `
+  update bctw.${type} 
+    set deleted_at = now(),
+    deleted = true 
+  where ${pk} = ${id}`;
+  try {
+    await queryAsync(sql);
+  } catch(e) {
+    return res.status(500).send(`Failed to delete type: ${e}`);
+  }
+  return res.send(true);
+}
+
 export {
   addCode,
   addCodeHeader,
@@ -139,5 +166,6 @@ export {
   getLastPings,
   getType,
   getUserRole,
+  deleteType,
   notFound
 }

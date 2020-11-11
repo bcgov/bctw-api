@@ -1,4 +1,5 @@
 type Animal = {
+  id: number,
   animal_id: string,
   animal_status: string,
   calf_at_heel: string,
@@ -26,9 +27,11 @@ type Animal = {
   species: string,
   trans_location: boolean,
   wlh_id: string,
-  nickname: string
+  nickname: string,
+  // adding device_id for enabling bulk import of critters
+  device_id: string,
 }
 
 export {
-  Animal
+  Animal,
 }

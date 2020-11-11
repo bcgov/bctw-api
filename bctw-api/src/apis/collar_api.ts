@@ -37,8 +37,8 @@ const _assignCollarToCritter = function (
   idir: string,
   device_id: number,
   animal_id: number,
-  start: Date,
-  end: Date,
+  start: Date | string,
+  end: Date | null,
   onDone: QueryResultCbFn
 ): void {
   if (!idir) {
@@ -118,7 +118,8 @@ const _getAvailableCollars = function ( idir: string, onDone: QueryResultCbFn, f
     where c.device_id not in (
       select device_id from collar_animal_assignment caa
       where now() <@ tstzrange(caa.start_time, caa.end_time)
-    )`
+    )
+    and c.deleted is false`
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage});
@@ -142,7 +143,8 @@ const _getAssignedCollars = function (idir: string, onDone: QueryResultCbFn, fil
   const base = 
   `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency
   from collar c inner join collar_animal_assignment caa 
-  on c.device_id = caa.device_id`
+  on c.device_id = caa.device_id
+  where c.deleted is false`
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage});
@@ -185,4 +187,5 @@ export {
   getAssignedCollars,
   getAvailableCollars,
   getCollar,
+  _assignCollarToCritter
 } 

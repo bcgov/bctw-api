@@ -87,14 +87,14 @@ var addAnimal = function (req, res) {
 exports.addAnimal = addAnimal;
 var _selectAnimals = 'select a.id, a.nickname, a.animal_id, a.wlh_id, a.animal_status, a.region, a.species, a.population_unit, a.calf_at_heel';
 var _getAnimalsAssigned = function (idir, onDone, filter, page) {
-    var base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)";
+    var base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)\n  and deleted is false";
     var strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
     return pg_1.pgPool.query(sql, onDone);
 };
 var _getAnimalsUnassigned = function (idir, onDone, filter, page) {
-    var base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where not now() <@ tstzrange(ca.start_time, ca.end_time)\n  and a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  group by a.id";
+    var base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where not now() <@ tstzrange(ca.start_time, ca.end_time)\n  and a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  and deleted is false\n  group by a.id";
     // or ca.start_time is null and ca.end_time is null` // remove as these shouldnt exist anyway
     var strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
     var strPage = page ? pg_1.paginate(page) : '';

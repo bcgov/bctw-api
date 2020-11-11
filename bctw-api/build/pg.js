@@ -40,7 +40,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.constructGetQuery = exports.paginate = exports.queryAsync = exports.getRowResults = exports.appendSqlFilter = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
+exports.momentNow = exports.constructGetQuery = exports.paginate = exports.queryAsync = exports.getRowResults = exports.appendSqlFilter = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
+var moment_1 = __importDefault(require("moment"));
 var pg_1 = __importDefault(require("pg"));
 var pg_2 = require("./types/pg");
 var isProd = process.env.NODE_ENV === 'production' ? true : false;
@@ -122,6 +123,8 @@ exports.to_pg_function_query = to_pg_function_query;
 // converts a javascript array to the postgresql format ex. ['abc','def'] => '{abc, def}'
 var to_pg_array = function (arr) { return "'{" + arr.join(',') + "}'"; };
 var to_pg_timestamp = function (date) { return "to_timestamp(" + date + " / 1000)"; };
+var momentNow = function () { return moment_1.default().format('DD-MM-YYYY HH:mm:ss'); };
+exports.momentNow = momentNow;
 // db code insert/update functions expect a json array
 // obj_to_pg_array accepts an object or an array of objects 
 // and outputs a psql friendly json array

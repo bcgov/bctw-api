@@ -1,3 +1,4 @@
+import moment from 'moment';
 import pg, { PoolClient, QueryResult, QueryResultBase, QueryResultRow } from 'pg';
 import { IConstructQueryParameters, IFilter, QueryResultCbFn, TelemetryTypes } from './types/pg';
 
@@ -77,6 +78,8 @@ const to_pg_function_query = (fnName: string, params: any[], expectsObjAsArray =
 const to_pg_array = (arr: number[] | string[]): string => `'{${arr.join(',')}}'`
 
 const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
+
+const momentNow = () => moment().format('DD-MM-YYYY HH:mm:ss');
 
 // db code insert/update functions expect a json array
 // obj_to_pg_array accepts an object or an array of objects 
@@ -183,5 +186,6 @@ export {
   getRowResults,
   queryAsync,
   paginate,
-  constructGetQuery
+  constructGetQuery,
+  momentNow
 }

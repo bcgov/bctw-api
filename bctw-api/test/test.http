@@ -23,3 +23,6 @@ content-type: application/json
 
 ###
 GET http://localhost:3000/animal/1234
+
+###
+DELETE http://localhost:3000/animal/149

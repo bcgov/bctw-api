@@ -44,6 +44,13 @@ const isCode = (row: any): row is ICodeInput => {
   } return false;
 }
 
+const isAnimal = (row: any):row is Animal => {
+  const r = row as Animal;
+  if (r.animal_id) {
+    return true;
+  } return false;
+}
+
 interface ICode {
   id: number;
   code: string;
@@ -61,6 +68,7 @@ export {
   ICodeHeaderInput,
   isCode,
   isCodeHeader,
+  isAnimal,
   IAnimalRow,
   ICodeRow,
   ICodeHeaderRow,

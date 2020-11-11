@@ -35,7 +35,8 @@ const _selectAnimals = 'select a.id, a.nickname, a.animal_id, a.wlh_id, a.animal
 const _getAnimalsAssigned = function(idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number) {
   const base = `${_selectAnimals}, ca.device_id 
   from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id
-  where now() <@ tstzrange(ca.start_time, ca.end_time)`;
+  where now() <@ tstzrange(ca.start_time, ca.end_time)
+  and deleted is false`;
   const strFilter = filter ? appendSqlFilter(filter, TelemetryTypes.animal, 'a') : '';
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({base, filter: strFilter, order: 'a.id', page: strPage});
@@ -47,6 +48,7 @@ const _getAnimalsUnassigned = function(idir: string, onDone: QueryResultCbFn, fi
   from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id
   where not now() <@ tstzrange(ca.start_time, ca.end_time)
   and a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))
+  and deleted is false
   group by a.id`;
   // or ca.start_time is null and ca.end_time is null` // remove as these shouldnt exist anyway
   const strFilter = filter ? appendSqlFilter(filter, TelemetryTypes.animal, 'a') : '';

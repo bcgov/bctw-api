@@ -63,11 +63,10 @@ var csv_parser_1 = __importDefault(require("csv-parser"));
 var fs = __importStar(require("fs"));
 var animal_api_1 = require("../apis/animal_api");
 var code_api_1 = require("../apis/code_api");
+var collar_api_1 = require("../apis/collar_api");
 var pg_1 = require("../pg");
 var code_1 = require("../types/code");
-// const _mapCsvHeader = (header: string) => header.includes('valid_') ? header : `code_${header}`;
-// todo: map animal header once csv received
-var _mapCsvHeader = function (header) { return header === 'code_type' ? 'code_header' : header; };
+var to_header_1 = require("./to_header");
 var _removeUploadedFile = function (path) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         fs.unlink(path, function (err) {
@@ -90,7 +89,7 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
         fs.createReadStream(file.path).pipe(csv_parser_1.default({
             mapHeaders: function (_a) {
                 var header = _a.header;
-                return _mapCsvHeader(header);
+                return to_header_1.mapCsvImportAnimal(header);
             }
         }))
             .on('data', function (row) {
@@ -98,6 +97,8 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
                 headers.rows.push(row);
             else if (code_1.isCode(row))
                 codes.rows.push(row);
+            else if (code_1.isAnimal(row))
+                animals.rows.push(row);
         })
             .on('end', function () { return __awaiter(void 0, void 0, void 0, function () {
             return __generator(this, function (_a) {
@@ -107,6 +108,37 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
                         return [4 /*yield*/, callback(ret)];
                     case 1:
                         _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        }); });
+        return [2 /*return*/];
+    });
+}); };
+var _handleCollarLink = function (idir, rows, resultRows) { return __awaiter(void 0, void 0, void 0, function () {
+    var animalsWithCollars;
+    return __generator(this, function (_a) {
+        animalsWithCollars = rows.filter(function (a) { return a.device_id; });
+        animalsWithCollars.forEach(function (a) { return __awaiter(void 0, void 0, void 0, function () {
+            var aid;
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        aid = (_a = resultRows.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
+                        if (!aid) {
+                            return [2 /*return*/];
+                        }
+                        return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, +a.device_id, aid, pg_1.momentNow(), null, function (err, data) {
+                                if (err) {
+                                    console.log("unable to link collar to critter " + aid + " from bulk critter upload: " + err);
+                                }
+                                else {
+                                    console.log("linked collar " + a.device_id + " to critter " + aid + " from bulk critter upload");
+                                }
+                            })];
+                    case 1:
+                        _b.sent();
                         return [2 /*return*/];
                 }
             });
@@ -131,7 +163,7 @@ var importCsv = function (req, res) {
                         res.status(500).send('failed: csv file not found');
                     }
                     onFinishedParsing = function (rows) { return __awaiter(_this, void 0, void 0, function () {
-                        var codes, headers, animals, e_1;
+                        var results, codes, headers, animals, e_1;
                         var _a, _b, _c, _d, _e, _f;
                         return __generator(this, function (_g) {
                             switch (_g.label) {
@@ -141,32 +173,45 @@ var importCsv = function (req, res) {
                                     animals = rows.animals;
                                     _g.label = 1;
                                 case 1:
-                                    _g.trys.push([1, 8, , 9]);
+                                    _g.trys.push([1, 9, , 10]);
                                     if (!codes.length) return [3 /*break*/, 3];
                                     return [4 /*yield*/, code_api_1._addCode(idir, codes[0].code_header, codes)];
                                 case 2:
                                     codeResults = _g.sent();
-                                    return [3 /*break*/, 7];
+                                    return [3 /*break*/, 8];
                                 case 3:
                                     if (!headers.length) return [3 /*break*/, 5];
                                     return [4 /*yield*/, code_api_1._addCodeHeader(idir, headers)];
                                 case 4:
                                     headerResults = _g.sent();
-                                    return [3 /*break*/, 7];
+                                    return [3 /*break*/, 8];
                                 case 5:
-                                    if (!animals.length) return [3 /*break*/, 7];
+                                    if (!animals.length) return [3 /*break*/, 8];
                                     return [4 /*yield*/, animal_api_1._addAnimal(idir, animals)];
                                 case 6:
                                     animalResults = _g.sent();
-                                    _g.label = 7;
+                                    return [4 /*yield*/, animal_api_1._addAnimal(idir, animals).then(function (r) {
+                                            results = pg_1.getRowResults(r, 'add_animal');
+                                        })];
                                 case 7:
-                                    _removeUploadedFile(file.path);
-                                    return [3 /*break*/, 9];
+                                    _g.sent();
+                                    if (results.length) {
+                                        try {
+                                            _handleCollarLink(idir, animals, results[0]);
+                                        }
+                                        catch (e2) {
+                                            res.status(500).send("unable to link bulk upload critter to device: " + e2.message);
+                                        }
+                                    }
+                                    _g.label = 8;
                                 case 8:
+                                    _removeUploadedFile(file.path);
+                                    return [3 /*break*/, 10];
+                                case 9:
                                     e_1 = _g.sent();
                                     res.status(500).send(e_1.message);
-                                    return [3 /*break*/, 9];
-                                case 9:
+                                    return [3 /*break*/, 10];
+                                case 10:
                                     try {
                                         if (((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) || ((_b = headerResults) === null || _b === void 0 ? void 0 : _b.rows.length)) {
                                             res.send(pg_1.getRowResults(headerResults, 'add_code_header'));

@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCollar = exports.getAvailableCollars = exports.getAssignedCollars = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addCollar = void 0;
+exports._assignCollarToCritter = exports.getCollar = exports.getAvailableCollars = exports.getAssignedCollars = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addCollar = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var pg_3 = require("../types/pg");
@@ -86,6 +86,7 @@ var _assignCollarToCritter = function (idir, device_id, animal_id, start, end, o
     var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, start, end]));
     return pg_1.pgPool.query(sql, onDone);
 };
+exports._assignCollarToCritter = _assignCollarToCritter;
 var assignCollarToCritter = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
@@ -150,7 +151,7 @@ var unassignCollarFromCritter = function (req, res) {
 exports.unassignCollarFromCritter = unassignCollarFromCritter;
 // todo: consider bctw.collar_animal_assignment table
 var _getAvailableCollars = function (idir, onDone, filter, page) {
-    var base = "\n    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n    from collar c \n    where c.device_id not in (\n      select device_id from collar_animal_assignment caa\n      where now() <@ tstzrange(caa.start_time, caa.end_time)\n    )";
+    var base = "\n    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n    from collar c \n    where c.device_id not in (\n      select device_id from collar_animal_assignment caa\n      where now() <@ tstzrange(caa.start_time, caa.end_time)\n    )\n    and c.deleted is false";
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c', true);
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage });
@@ -182,7 +183,7 @@ var getAvailableCollars = function (req, res) {
 };
 exports.getAvailableCollars = getAvailableCollars;
 var _getAssignedCollars = function (idir, onDone, filter, page) {
-    var base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id";
+    var base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id\n  where c.deleted is false";
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c');
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage });
