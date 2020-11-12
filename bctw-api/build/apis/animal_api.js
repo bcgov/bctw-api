@@ -104,20 +104,33 @@ var _getAnimalsUnassigned = function (idir, onDone, filter, page) {
 var getAnimals = function (req, res) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, page, bGetAssigned, done;
-        return __generator(this, function (_d) {
-            idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-            page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
-            bGetAssigned = (((_c = req.query) === null || _c === void 0 ? void 0 : _c.assigned) === 'true');
-            done = function (err, data) {
-                if (err) {
-                    return res.status(500).send("Failed to query database: " + err);
-                }
-                var results = data === null || data === void 0 ? void 0 : data.rows;
-                res.send(results);
-            };
-            bGetAssigned ? _getAnimalsAssigned(idir, done, pg_3.filterFromRequestParams(req), page) : _getAnimalsUnassigned(idir, done, pg_3.filterFromRequestParams(req), page);
-            return [2 /*return*/];
+        var idir, page, bGetAssigned, done, _d;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
+                case 0:
+                    idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
+                    bGetAssigned = (((_c = req.query) === null || _c === void 0 ? void 0 : _c.assigned) === 'true');
+                    done = function (err, data) {
+                        if (err) {
+                            return res.status(500).send("Failed to query database: " + err);
+                        }
+                        var results = data === null || data === void 0 ? void 0 : data.rows;
+                        res.send(results);
+                    };
+                    if (!bGetAssigned) return [3 /*break*/, 2];
+                    return [4 /*yield*/, _getAnimalsAssigned(idir, done, pg_3.filterFromRequestParams(req), page)];
+                case 1:
+                    _d = _e.sent();
+                    return [3 /*break*/, 4];
+                case 2: return [4 /*yield*/, _getAnimalsUnassigned(idir, done, pg_3.filterFromRequestParams(req), page)];
+                case 3:
+                    _d = _e.sent();
+                    _e.label = 4;
+                case 4:
+                    _d;
+                    return [2 /*return*/];
+            }
         });
     });
 };

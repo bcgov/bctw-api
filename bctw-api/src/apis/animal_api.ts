@@ -71,7 +71,9 @@ const getAnimals = async function(req: Request, res:Response): Promise<void> {
     const results = data?.rows;
     res.send(results);
   };
-  bGetAssigned ? _getAnimalsAssigned(idir, done, filterFromRequestParams(req), page) : _getAnimalsUnassigned(idir, done, filterFromRequestParams(req), page);
+  bGetAssigned 
+    ? await _getAnimalsAssigned(idir, done, filterFromRequestParams(req), page)
+    : await _getAnimalsUnassigned(idir, done, filterFromRequestParams(req), page);
 }
 
 const getCollarAssignmentHistory = async function(req: Request, res:Response): Promise<void> {
