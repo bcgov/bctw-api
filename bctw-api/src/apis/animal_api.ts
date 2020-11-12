@@ -1,4 +1,4 @@
-import { appendSqlFilter, constructGetQuery, getRowResults, paginate, pgPool, queryAsync, QueryResultCbFn, to_pg_function_query } from '../pg';
+import { appendSqlFilter, constructGetQuery, getRowResults, paginate, pgPool, queryAsync, to_pg_function_query } from '../pg';
 import { Animal } from '../types/animal';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
@@ -35,7 +35,7 @@ a.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.e
 a.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,
 a.trans_location, a.wlh_id, a.nickname`;
 
-const _getAnimalsAssigned = function(idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number) {
+const _getAnimalsAssigned = async function(idir: string, filter?: IFilter, page?: number) {
   const base = `${_selectAnimals}, ca.device_id 
   from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id
   where now() <@ tstzrange(ca.start_time, ca.end_time)
@@ -43,10 +43,11 @@ const _getAnimalsAssigned = function(idir: string, onDone: QueryResultCbFn, filt
   const strFilter = filter ? appendSqlFilter(filter, TelemetryTypes.animal, 'a') : '';
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({base, filter: strFilter, order: 'a.id', page: strPage});
-  return pgPool.query(sql, onDone);
+  const result = await queryAsync(sql);
+  return result;
 }
 
-const _getAnimalsUnassigned = function(idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number) {
+const _getAnimalsUnassigned = async function(idir: string, filter?: IFilter, page?: number) {
   const base = `${_selectAnimals}
   from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id
   where not now() <@ tstzrange(ca.start_time, ca.end_time)
@@ -57,23 +58,26 @@ const _getAnimalsUnassigned = function(idir: string, onDone: QueryResultCbFn, fi
   const strFilter = filter ? appendSqlFilter(filter, TelemetryTypes.animal, 'a') : '';
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({base, filter: strFilter, order: 'a.id', page: strPage});
-  return pgPool.query(sql, onDone);
+  const result = await queryAsync(sql);
+  return result;
 }
 
-const getAnimals = async function(req: Request, res:Response): Promise<void> {
+const getAnimals = async function(req: Request, res:Response): Promise<Response> {
   const idir = (req.query?.idir || '') as string;
   const page = (req.query?.page || 1) as number;
   const bGetAssigned = (req.query?.assigned === 'true') as boolean;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const results = data?.rows;
-    res.send(results);
-  };
-  bGetAssigned 
-    ? await _getAnimalsAssigned(idir, done, filterFromRequestParams(req), page)
-    : await _getAnimalsUnassigned(idir, done, filterFromRequestParams(req), page);
+  if (!idir) {
+    return res.status(500).send('must supply idir');
+  }
+  let data: QueryResult;
+  try {
+    data = bGetAssigned 
+      ? await _getAnimalsAssigned(idir, filterFromRequestParams(req), page)
+      : await _getAnimalsUnassigned(idir, filterFromRequestParams(req), page);
+  } catch (e) {
+    return res.status(500).send(`Failed to query database: ${e}`);
+  }
+  return res.send(data.rows)
 }
 
 const getCollarAssignmentHistory = async function(req: Request, res:Response): Promise<void> {

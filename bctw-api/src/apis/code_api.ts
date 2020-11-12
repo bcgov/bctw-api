@@ -1,4 +1,4 @@
-import { getRowResults, pgPool, QueryResultCbFn, to_pg_function_query, queryAsync } from '../pg';
+import { getRowResults, to_pg_function_query, queryAsync } from '../pg';
 import { ICodeInput, ICodeHeaderInput } from '../types/code';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
@@ -6,53 +6,46 @@ import { QueryResult } from 'pg';
 
 /*
 */
-const _getCode = function (
-  idir: string,
-  codeHeader: string,
-  onDone: QueryResultCbFn
-): void {
-  const sql = transactionify(to_pg_function_query('get_code', [idir, codeHeader, {}]));
-  return pgPool.query(sql, onDone);
+const _getCode = async function (idir: string, codeHeader: string,): Promise<QueryResult> {
+  const sql = transactionify(to_pg_function_query('get_code', [idir ?? '', codeHeader, {}]));
+  const results = await queryAsync(sql);
+  return results;
 }
 
-const getCode = async function (req: Request, res:Response): Promise<void> {
+const getCode = async function (req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const codeHeader = (req?.query?.codeHeader || '') as string;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to retrieve codes: ${err}`);
-    }
-    const results = getRowResults(data, 'get_code')
-    res.send(results);
-  };
-  await _getCode(idir, codeHeader, done);
+  let data: QueryResult;
+  try {
+    data = await _getCode(idir, codeHeader);
+  } catch (err) {
+    return res.status(500).send(`Failed to retrieve codes: ${err}`);
+  }
+  const results = getRowResults(data, 'get_code')
+  return res.send(results);
 }
 
 /*
   gets all code headers unless [onlyType] param supplied
 */
-const _getCodeHeaders = function (
-  idir: string,
-  onDone: QueryResultCbFn,
-  onlyType?: string
-): void {
+const _getCodeHeaders = async function (onlyType?: string): Promise<QueryResult> {
   let sql = `select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_title as title, ch.code_header_description as description from bctw.code_header ch `
   if (onlyType) {
     sql += `where ch.code_header_name = '${onlyType}';`
   }
-  return pgPool.query(sql, onDone)
+  const results = await queryAsync(sql);
+  return results;
 }
 
-const getCodeHeaders = async function (req: Request, res:Response): Promise<void> {
-  const idir = (req?.query?.idir || '') as string;
+const getCodeHeaders = async function (req: Request, res:Response): Promise<Response> {
   const codeType = (req.query.codeType || '') as string;
-  const done = function (err: Error, data) {
-    if (err) {
-      return res.status(500).send(`Failed to retrieve code headers: ${err}`);
-    }
-    res.send(data?.rows ?? []);
+  let data: QueryResult;
+  try {
+    data = await _getCodeHeaders(codeType);
+  } catch (err) {
+    return res.status(500).send(`Failed to retrieve code headers: ${err}`);
   }
-  await _getCodeHeaders(idir, done, codeType);
+  return res.send(data.rows ?? []);
 }
 
 /* 
@@ -72,6 +65,9 @@ const _addCodeHeader = async function (
 
 const addCodeHeader = async function (req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
+  if (!idir) {
+    return res.status(500).send('must supply idir');
+  }
   const body = req.body;
   let data: QueryResult;
   try {

@@ -91,7 +91,7 @@ const obj_to_pg_array = (objOrArray: any): string => {
 
 // converts an empty string to null, otherwise returns the string
 const to_pg_str = (str: string): string | null => {
-  if (!str) return null;
+  if (!str) return "''";
   return `'${str}'`;
 }
 

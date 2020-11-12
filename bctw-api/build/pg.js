@@ -135,7 +135,7 @@ var obj_to_pg_array = function (objOrArray) {
 // converts an empty string to null, otherwise returns the string
 var to_pg_str = function (str) {
     if (!str)
-        return null;
+        return "''";
     return "'" + str + "'";
 };
 /// returns object in psql format '{}' 

@@ -86,50 +86,74 @@ var addAnimal = function (req, res) {
 };
 exports.addAnimal = addAnimal;
 var _selectAnimals = "select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, \na.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,\na.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,\na.trans_location, a.wlh_id, a.nickname";
-var _getAnimalsAssigned = function (idir, onDone, filter, page) {
-    var base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)\n  and deleted is false";
-    var strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
-    var strPage = page ? pg_1.paginate(page) : '';
-    var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
-    return pg_1.pgPool.query(sql, onDone);
+var _getAnimalsAssigned = function (idir, filter, page) {
+    return __awaiter(this, void 0, void 0, function () {
+        var base, strFilter, strPage, sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)\n  and deleted is false";
+                    strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
+                    strPage = page ? pg_1.paginate(page) : '';
+                    sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
 };
-var _getAnimalsUnassigned = function (idir, onDone, filter, page) {
-    var base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where not now() <@ tstzrange(ca.start_time, ca.end_time)\n  and a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  and deleted is false\n  group by a.id";
-    // or ca.start_time is null and ca.end_time is null` // remove as these shouldnt exist anyway
-    var strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
-    var strPage = page ? pg_1.paginate(page) : '';
-    var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
-    return pg_1.pgPool.query(sql, onDone);
+var _getAnimalsUnassigned = function (idir, filter, page) {
+    return __awaiter(this, void 0, void 0, function () {
+        var base, strFilter, strPage, sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where not now() <@ tstzrange(ca.start_time, ca.end_time)\n  and a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  and deleted is false\n  group by a.id";
+                    strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
+                    strPage = page ? pg_1.paginate(page) : '';
+                    sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
 };
 var getAnimals = function (req, res) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, page, bGetAssigned, done, _d;
+        var idir, page, bGetAssigned, data, _d, e_2;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
                     idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
                     bGetAssigned = (((_c = req.query) === null || _c === void 0 ? void 0 : _c.assigned) === 'true');
-                    done = function (err, data) {
-                        if (err) {
-                            return res.status(500).send("Failed to query database: " + err);
-                        }
-                        var results = data === null || data === void 0 ? void 0 : data.rows;
-                        res.send(results);
-                    };
-                    if (!bGetAssigned) return [3 /*break*/, 2];
-                    return [4 /*yield*/, _getAnimalsAssigned(idir, done, pg_3.filterFromRequestParams(req), page)];
+                    if (!idir) {
+                        return [2 /*return*/, res.status(500).send('must supply idir')];
+                    }
+                    _e.label = 1;
                 case 1:
+                    _e.trys.push([1, 6, , 7]);
+                    if (!bGetAssigned) return [3 /*break*/, 3];
+                    return [4 /*yield*/, _getAnimalsAssigned(idir, pg_3.filterFromRequestParams(req), page)];
+                case 2:
                     _d = _e.sent();
-                    return [3 /*break*/, 4];
-                case 2: return [4 /*yield*/, _getAnimalsUnassigned(idir, done, pg_3.filterFromRequestParams(req), page)];
-                case 3:
-                    _d = _e.sent();
-                    _e.label = 4;
+                    return [3 /*break*/, 5];
+                case 3: return [4 /*yield*/, _getAnimalsUnassigned(idir, pg_3.filterFromRequestParams(req), page)];
                 case 4:
-                    _d;
-                    return [2 /*return*/];
+                    _d = _e.sent();
+                    _e.label = 5;
+                case 5:
+                    data = _d;
+                    return [3 /*break*/, 7];
+                case 6:
+                    e_2 = _e.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to query database: " + e_2)];
+                case 7: return [2 /*return*/, res.send(data.rows)];
             }
         });
     });
