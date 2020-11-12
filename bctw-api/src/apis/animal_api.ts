@@ -30,7 +30,10 @@ const addAnimal = async function (req: Request, res:Response): Promise<Response>
   return res.send(getRowResults(data, 'add_animal'));
 }
 
-const _selectAnimals = 'select a.id, a.nickname, a.animal_id, a.wlh_id, a.animal_status, a.region, a.species, a.population_unit, a.calf_at_heel';
+const _selectAnimals = `select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, 
+a.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,
+a.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,
+a.trans_location, a.wlh_id, a.nickname`;
 
 const _getAnimalsAssigned = function(idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number) {
   const base = `${_selectAnimals}, ca.device_id 
