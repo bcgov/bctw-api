@@ -129,6 +129,7 @@ var getAnimals = function (req, res) {
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
+                    console.log("getAnimals query", req.query);
                     idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
                     bGetAssigned = (((_c = req.query) === null || _c === void 0 ? void 0 : _c.assigned) === 'true');

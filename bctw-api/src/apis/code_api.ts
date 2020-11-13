@@ -13,6 +13,7 @@ const _getCode = async function (idir: string, codeHeader: string,): Promise<Que
 }
 
 const getCode = async function (req: Request, res:Response): Promise<Response> {
+  console.log(`getCode query`, req.query)
   const idir = (req?.query?.idir || '') as string;
   const codeHeader = (req?.query?.codeHeader || '') as string;
   let data: QueryResult;

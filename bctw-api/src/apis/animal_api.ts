@@ -63,6 +63,7 @@ const _getAnimalsUnassigned = async function(idir: string, filter?: IFilter, pag
 }
 
 const getAnimals = async function(req: Request, res:Response): Promise<Response> {
+  console.log(`getAnimals query`, req.query)
   const idir = (req.query?.idir || '') as string;
   const page = (req.query?.page || 1) as number;
   const bGetAssigned = (req.query?.assigned === 'true') as boolean;
