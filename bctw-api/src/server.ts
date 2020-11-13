@@ -44,7 +44,7 @@ const app = express()
   // import
   .post('/import', upload.single('csv'), importCsv)
   // generic getter for multiple types
-  .get('/:type/:id', api.getType)
+  // .get('/:type/:id', api.getType)
   .delete('/:type/:id', api.deleteType)
   .get('*', api.notFound);
 

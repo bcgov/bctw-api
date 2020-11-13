@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.deleteType = exports.getUserRole = exports.getType = exports.getLastPings = exports.getPingExtent = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getCollarAssignmentHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
+exports.notFound = exports.deleteType = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getCollarAssignmentHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
 Object.defineProperty(exports, "addUser", { enumerable: true, get: function () { return user_api_1.addUser; } });
@@ -57,7 +57,6 @@ Object.defineProperty(exports, "addCode", { enumerable: true, get: function () {
 Object.defineProperty(exports, "addCodeHeader", { enumerable: true, get: function () { return code_api_1.addCodeHeader; } });
 Object.defineProperty(exports, "getCode", { enumerable: true, get: function () { return code_api_1.getCode; } });
 Object.defineProperty(exports, "getCodeHeaders", { enumerable: true, get: function () { return code_api_1.getCodeHeaders; } });
-var pg_2 = require("./types/pg");
 /* ## getDBCritters
   Request all collars the user has access to.
   @param req {object} Node/Express request object
@@ -133,18 +132,17 @@ var notFound = function (req, res) {
     return res.status(404).json({ error: "Sorry you must be lost :(" });
 };
 exports.notFound = notFound;
-var getType = function (req, res) {
-    var params = req.params;
-    switch (params.type) {
-        case pg_2.TelemetryTypes.animal:
-            return animal_api_1.getAnimals(req, res);
-        case pg_2.TelemetryTypes.collar:
-            return collar_api_1.getCollar(req, res);
-        default:
-            return new Promise(function () { return null; });
-    }
-};
-exports.getType = getType;
+// const getType = function(req: Request, res:Response): Promise<void> {
+//   const params = req.params;
+//   switch (params.type) {
+// case TelemetryTypes.animal:
+//   return getAnimals(req, res);
+// case TelemetryTypes.collar:
+//   return getCollar(req, res);
+// default:
+// return new Promise(() =>  null);
+// }
+// }
 var _deletableTypes = ['collar', 'animal', 'user'];
 var deleteType = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {

@@ -107,17 +107,17 @@ const notFound = function (req: Request, res: Response): Response {
   return res.status(404).json({error: "Sorry you must be lost :("});
 };
 
-const getType = function(req: Request, res:Response): Promise<void> {
-  const params = req.params;
-  switch (params.type) {
-    case TelemetryTypes.animal:
-      return getAnimals(req, res);
-    case TelemetryTypes.collar:
-      return getCollar(req, res);
-    default:
-      return new Promise(() =>  null);
-  }
-}
+// const getType = function(req: Request, res:Response): Promise<void> {
+//   const params = req.params;
+//   switch (params.type) {
+    // case TelemetryTypes.animal:
+    //   return getAnimals(req, res);
+    // case TelemetryTypes.collar:
+    //   return getCollar(req, res);
+    // default:
+      // return new Promise(() =>  null);
+  // }
+// }
 
 const _deletableTypes = ['collar', 'animal', 'user'];
 const deleteType = async function(req: Request, res:Response): Promise<Response> {
@@ -164,7 +164,7 @@ export {
   getDBCritters,
   getPingExtent,
   getLastPings,
-  getType,
+  // getType,
   getUserRole,
   deleteType,
   notFound
