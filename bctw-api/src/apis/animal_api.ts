@@ -63,7 +63,6 @@ const _getAnimalsUnassigned = async function(idir: string, filter?: IFilter, pag
 }
 
 const getAnimals = async function(req: Request, res:Response): Promise<Response> {
-  console.log(`getAnimals query`, req.query)
   const idir = (req.query?.idir || '') as string;
   const page = (req.query?.page || 1) as number;
   const bGetAssigned = (req.query?.assigned === 'true') as boolean;
@@ -81,24 +80,25 @@ const getAnimals = async function(req: Request, res:Response): Promise<Response>
   return res.send(data.rows)
 }
 
-const getCollarAssignmentHistory = async function(req: Request, res:Response): Promise<void> {
+const getCollarAssignmentHistory = async function(req: Request, res:Response): Promise<Response> {
   const idir = (req.query?.idir || '') as string;
-  const id = (req.params?.animal_id) as string;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const results = data?.rows;
-    res.send(results);
-  };
+  const id = (req.params.animal_id) as string;
+  if (!id) {
+    return res.status(500).send('must supply animal id to retrieve collar history');
+  }
   const base = `
-  select ca.device_id, c.make, c.radio_frequency,
-  ca.start_time, ca.end_time
+  select ca.device_id, c.make, c.radio_frequency, ca.start_time, ca.end_time
   from bctw.collar_animal_assignment ca 
-  join bctw.collar c on ca.device_id = c.device_id 
-  where ca.animal_id = ${id}`;
+  join bctw.collar c on ca.device_id = c.device_id where ca.animal_id = ${id}`;
   const sql = constructGetQuery({base, filter:'', order: 'ca.end_time desc'});
-  await pgPool.query(sql, done);
+  let data: QueryResult;
+  try {
+    data = await queryAsync(sql)
+  } catch (e) {
+    return res.status(500).send(`Failed to query critter collar history: ${e}`);
+  }
+  const results = data.rows;
+  return res.send(results);
 }
 
 export {

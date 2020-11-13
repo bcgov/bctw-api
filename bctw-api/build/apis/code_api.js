@@ -63,7 +63,6 @@ var getCode = function (req, res) {
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    console.log("getCode query", req.query);
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     codeHeader = (((_b = req === null || req === void 0 ? void 0 : req.query) === null || _b === void 0 ? void 0 : _b.codeHeader) || '');
                     _c.label = 1;

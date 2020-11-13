@@ -129,7 +129,6 @@ var getAnimals = function (req, res) {
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
-                    console.log("getAnimals query", req.query);
                     idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
                     bGetAssigned = (((_c = req.query) === null || _c === void 0 ? void 0 : _c.assigned) === 'true');
@@ -161,27 +160,32 @@ var getAnimals = function (req, res) {
 };
 exports.getAnimals = getAnimals;
 var getCollarAssignmentHistory = function (req, res) {
-    var _a, _b;
+    var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, id, done, base, sql;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
+        var idir, id, base, sql, data, e_3, results;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0:
                     idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    id = ((_b = req.params) === null || _b === void 0 ? void 0 : _b.animal_id);
-                    done = function (err, data) {
-                        if (err) {
-                            return res.status(500).send("Failed to query database: " + err);
-                        }
-                        var results = data === null || data === void 0 ? void 0 : data.rows;
-                        res.send(results);
-                    };
-                    base = "\n  select ca.device_id, c.make, c.radio_frequency,\n  ca.start_time, ca.end_time\n  from bctw.collar_animal_assignment ca \n  join bctw.collar c on ca.device_id = c.device_id \n  where ca.animal_id = " + id;
+                    id = (req.params.animal_id);
+                    if (!id) {
+                        return [2 /*return*/, res.status(500).send('must supply animal id to retrieve collar history')];
+                    }
+                    base = "\n  select ca.device_id, c.make, c.radio_frequency, ca.start_time, ca.end_time\n  from bctw.collar_animal_assignment ca \n  join bctw.collar c on ca.device_id = c.device_id where ca.animal_id = " + id;
                     sql = pg_1.constructGetQuery({ base: base, filter: '', order: 'ca.end_time desc' });
-                    return [4 /*yield*/, pg_1.pgPool.query(sql, done)];
+                    _b.label = 1;
                 case 1:
-                    _c.sent();
-                    return [2 /*return*/];
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 2:
+                    data = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_3 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to query critter collar history: " + e_3)];
+                case 4:
+                    results = data.rows;
+                    return [2 /*return*/, res.send(results)];
             }
         });
     });
