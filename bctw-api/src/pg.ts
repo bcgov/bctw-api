@@ -126,8 +126,18 @@ const _getRowResultsDev = (data: QueryResult[], dbFunctionName: string): QueryRe
 //   if (!date) return null;
 //   return `'${moment(date).format('YYYY-MM-DD')}'::Date`;
 // }
+const queryAsync = async(sql: string): Promise<QueryResult> => {
+  const client = await pgPool.connect()
+  let res: QueryResult;
+  try {
+    res = await client.query(sql);
+  } finally {
+    client.release();
+  }
+  return res;
+}
 
-const queryAsync = async (sql: string): Promise<QueryResult> => {
+const queryAsyncTransaction = async (sql: string): Promise<QueryResult> => {
   const client = await pgPool.connect()
   let res: QueryResult;
   try {
@@ -185,6 +195,7 @@ export {
   appendSqlFilter,
   getRowResults,
   queryAsync,
+  queryAsyncTransaction,
   paginate,
   constructGetQuery,
   momentNow

@@ -1,4 +1,4 @@
-import { appendSqlFilter, constructGetQuery, getRowResults, paginate, pgPool, queryAsync, to_pg_function_query } from '../pg';
+import { appendSqlFilter, constructGetQuery, getRowResults, paginate, pgPool, queryAsync, queryAsyncTransaction, to_pg_function_query } from '../pg';
 import { Animal } from '../types/animal';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
@@ -10,7 +10,7 @@ const _addAnimal = async function(
   animal: Animal[],
 ): Promise<QueryResult> {
   const sql = transactionify(to_pg_function_query('add_animal', [idir, animal], true));
-  const result = await queryAsync(sql);
+  const result = await queryAsyncTransaction(sql);
   return result;
 }
 

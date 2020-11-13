@@ -1,4 +1,4 @@
-import { getRowResults, to_pg_function_query, queryAsync } from '../pg';
+import { getRowResults, to_pg_function_query, queryAsync, queryAsyncTransaction } from '../pg';
 import { ICodeInput, ICodeHeaderInput } from '../types/code';
 import { transactionify } from '../pg';
 import { Request, Response } from 'express';
@@ -60,7 +60,7 @@ const _addCodeHeader = async function (
   headers: ICodeHeaderInput | ICodeHeaderInput[],
 ): Promise<QueryResult> {
   const sql = transactionify(to_pg_function_query('add_code_header', [idir, headers], true))
-  const result = await queryAsync(sql);
+  const result = await queryAsyncTransaction(sql);
   return result;
 }
 
@@ -91,7 +91,7 @@ const _addCode = async function (
   codes: ICodeInput[]
 ): Promise<QueryResult> {
   const sql = transactionify(to_pg_function_query('add_code', [idir, codeHeader, codes], true));
-  const result = await queryAsync(sql);
+  const result = await queryAsyncTransaction(sql);
   return result;
 }
 

@@ -142,7 +142,7 @@ var _addCodeHeader = function (idir, headers) {
             switch (_a.label) {
                 case 0:
                     sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, headers], true));
-                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                 case 1:
                     result = _a.sent();
                     return [2 /*return*/, result];
@@ -192,7 +192,7 @@ var _addCode = function (idir, codeHeader, codes) {
             switch (_a.label) {
                 case 0:
                     sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codeHeader, codes], true));
-                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                 case 1:
                     result = _a.sent();
                     return [2 /*return*/, result];

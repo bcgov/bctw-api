@@ -40,7 +40,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.momentNow = exports.constructGetQuery = exports.paginate = exports.queryAsync = exports.getRowResults = exports.appendSqlFilter = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
+exports.momentNow = exports.constructGetQuery = exports.paginate = exports.queryAsyncTransaction = exports.queryAsync = exports.getRowResults = exports.appendSqlFilter = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
 var moment_1 = __importDefault(require("moment"));
 var pg_1 = __importDefault(require("pg"));
 var pg_2 = require("./types/pg");
@@ -169,6 +169,28 @@ var _getRowResultsDev = function (data, dbFunctionName) {
 //   return `'${moment(date).format('YYYY-MM-DD')}'::Date`;
 // }
 var queryAsync = function (sql) { return __awaiter(void 0, void 0, void 0, function () {
+    var client, res;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, pgPool.connect()];
+            case 1:
+                client = _a.sent();
+                _a.label = 2;
+            case 2:
+                _a.trys.push([2, , 4, 5]);
+                return [4 /*yield*/, client.query(sql)];
+            case 3:
+                res = _a.sent();
+                return [3 /*break*/, 5];
+            case 4:
+                client.release();
+                return [7 /*endfinally*/];
+            case 5: return [2 /*return*/, res];
+        }
+    });
+}); };
+exports.queryAsync = queryAsync;
+var queryAsyncTransaction = function (sql) { return __awaiter(void 0, void 0, void 0, function () {
     var client, res, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -198,7 +220,7 @@ var queryAsync = function (sql) { return __awaiter(void 0, void 0, void 0, funct
         }
     });
 }); };
-exports.queryAsync = queryAsync;
+exports.queryAsyncTransaction = queryAsyncTransaction;
 // hardcoded primary key getter given a table name
 var _getPrimaryKey = function (table) {
     switch (table) {

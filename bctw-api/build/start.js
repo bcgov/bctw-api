@@ -167,7 +167,7 @@ var deleteType = function (req, res) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                 case 2:
                     _a.sent();
                     return [3 /*break*/, 4];

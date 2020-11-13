@@ -47,7 +47,7 @@ var _addAnimal = function (idir, animal) {
             switch (_a.label) {
                 case 0:
                     sql = pg_2.transactionify(pg_1.to_pg_function_query('add_animal', [idir, animal], true));
-                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                 case 1:
                     result = _a.sent();
                     return [2 /*return*/, result];

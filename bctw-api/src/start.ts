@@ -1,4 +1,4 @@
-import { pgPool, queryAsync } from './pg';
+import { pgPool, queryAsyncTransaction } from './pg';
 import { addUser, assignCritterToUser, getUserRole } from './apis/user_api';
 import {
   addCollar,
@@ -11,7 +11,6 @@ import {
 import { addAnimal, getAnimals, getCollarAssignmentHistory } from './apis/animal_api';
 import { addCode, addCodeHeader, getCode, getCodeHeaders} from './apis/code_api';
 import { Request, Response } from 'express';
-import { TelemetryTypes } from './types/pg';
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -139,7 +138,7 @@ const deleteType = async function(req: Request, res:Response): Promise<Response>
     deleted = true 
   where ${pk} = ${id}`;
   try {
-    await queryAsync(sql);
+    await queryAsyncTransaction(sql);
   } catch(e) {
     return res.status(500).send(`Failed to delete type: ${e}`);
   }
