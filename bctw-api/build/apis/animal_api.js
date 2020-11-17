@@ -40,6 +40,12 @@ exports.getCollarAssignmentHistory = exports.getAnimals = exports.addAnimal = ex
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var pg_3 = require("../types/pg");
+/// limits retrieved critters to only those contained in user_animal_assignment table
+var _accessControlQuery = function (alias, idir) {
+    return "and " + alias + ".id = any((" + pg_1.to_pg_function_query('get_user_critter_access', [idir]) + ")::integer[])";
+};
+/// select all animal table properties other than created/deleted etc.
+var _selectAnimals = "select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, \na.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,\na.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,\na.trans_location, a.wlh_id, a.nickname";
 var _addAnimal = function (idir, animal) {
     return __awaiter(this, void 0, void 0, function () {
         var sql, result;
@@ -56,7 +62,9 @@ var _addAnimal = function (idir, animal) {
     });
 };
 exports._addAnimal = _addAnimal;
-// handles upsert. body can be single or array of Animals
+/*
+  handles upsert. body can be single or array of Animals
+*/
 var addAnimal = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
@@ -85,14 +93,14 @@ var addAnimal = function (req, res) {
     });
 };
 exports.addAnimal = addAnimal;
-var _selectAnimals = "select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, \na.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,\na.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,\na.trans_location, a.wlh_id, a.nickname";
+/// get critters that are assigned to a collar (ie have a valid row in collar_animal_assignment table)
 var _getAnimalsAssigned = function (idir, filter, page) {
     return __awaiter(this, void 0, void 0, function () {
         var base, strFilter, strPage, sql, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)\n  and deleted is false";
+                    base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)\n  and deleted is false " + _accessControlQuery('a', idir);
                     strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
                     strPage = page ? pg_1.paginate(page) : '';
                     sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
@@ -104,13 +112,14 @@ var _getAnimalsAssigned = function (idir, filter, page) {
         });
     });
 };
+/// get critters that aren't currently assigned to a collar
 var _getAnimalsUnassigned = function (idir, filter, page) {
     return __awaiter(this, void 0, void 0, function () {
         var base, strFilter, strPage, sql, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where not now() <@ tstzrange(ca.start_time, ca.end_time)\n  and a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  and deleted is false\n  group by a.id";
+                    base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  and deleted is false " + _accessControlQuery('a', idir) + "\n  group by a.id";
                     strFilter = filter ? pg_1.appendSqlFilter(filter, pg_3.TelemetryTypes.animal, 'a') : '';
                     strPage = page ? pg_1.paginate(page) : '';
                     sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'a.id', page: strPage });
@@ -122,6 +131,10 @@ var _getAnimalsUnassigned = function (idir, filter, page) {
         });
     });
 };
+/*
+  params:
+    isAssigned (boolean) - defaults to false
+*/
 var getAnimals = function (req, res) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
@@ -159,6 +172,10 @@ var getAnimals = function (req, res) {
     });
 };
 exports.getAnimals = getAnimals;
+/*
+  params - id (an animal id)
+  for the given animal id, retrieves current and past collars assigned to it.
+*/
 var getCollarAssignmentHistory = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {

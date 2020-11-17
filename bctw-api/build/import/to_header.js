@@ -55,6 +55,8 @@ var mapCsvImportAnimal = function (header) {
             return 'release_date';
         case 'Animal Status':
             return 'animal_status';
+        case 'Nickname':
+            return 'nickname';
         default:
             return header;
     }

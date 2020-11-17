@@ -115,41 +115,61 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
         return [2 /*return*/];
     });
 }); };
-var _handleCollarLink = function (idir, rows, resultRows) { return __awaiter(void 0, void 0, void 0, function () {
-    var animalsWithCollars;
-    return __generator(this, function (_a) {
-        animalsWithCollars = rows.filter(function (a) { return a.device_id; });
-        animalsWithCollars.forEach(function (a) { return __awaiter(void 0, void 0, void 0, function () {
-            var aid;
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        aid = (_a = resultRows.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
-                        if (!aid) {
-                            return [2 /*return*/];
-                        }
-                        return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, +a.device_id, aid, pg_1.momentNow(), null, function (err, data) {
-                                if (err) {
-                                    console.log("unable to link collar to critter " + aid + " from bulk critter upload: " + err);
-                                }
-                                else {
-                                    console.log("linked collar " + a.device_id + " to critter " + aid + " from bulk critter upload");
-                                }
-                            })];
-                    case 1:
-                        _b.sent();
-                        return [2 /*return*/];
+var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
+    var animalsWithCollars, error, insertResults, results, e_1, promises, successMsg;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                animalsWithCollars = rows.filter(function (a) { return a.device_id; });
+                error = '';
+                _b.label = 1;
+            case 1:
+                _b.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, animal_api_1._addAnimal(idir, rows)];
+            case 2:
+                results = _b.sent();
+                insertResults = (_a = pg_1.getRowResults(results, 'add_animal')[0]) !== null && _a !== void 0 ? _a : [];
+                if (!animalsWithCollars.length) {
+                    return [2 /*return*/, res.send(insertResults)];
                 }
-            });
-        }); });
-        return [2 /*return*/];
+                return [3 /*break*/, 4];
+            case 3:
+                e_1 = _b.sent();
+                return [2 /*return*/, res.status(500).send("error adding animal: " + e_1)];
+            case 4:
+                promises = rows.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
+                    var aid;
+                    var _a;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                aid = (_a = insertResults.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
+                                if (!aid) return [3 /*break*/, 2];
+                                return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, +a.device_id, aid, pg_1.momentNow(), null)];
+                            case 1: return [2 /*return*/, _b.sent()];
+                            case 2: return [2 /*return*/];
+                        }
+                    });
+                }); });
+                return [4 /*yield*/, Promise.all(promises.map(function (p, i) { return p.catch(function (e) {
+                        var critter = rows[i];
+                        error = "exception caught linking animal with animal ID " + critter.animal_id + " to collar " + critter.device_id + " " + e;
+                    }); }))];
+            case 5:
+                _b.sent();
+                if (error) {
+                    return [2 /*return*/, res.status(500).send(error)];
+                }
+                successMsg = insertResults.length + " critters added, " + animalsWithCollars.length + " with collars attached";
+                return [2 /*return*/, res.send(successMsg)];
+        }
     });
 }); };
 var importCsv = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, file, headerResults, codeResults, animalResults, onFinishedParsing;
+        var idir, file, headerResults, codeResults, onFinishedParsing;
         var _this = this;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -163,64 +183,47 @@ var importCsv = function (req, res) {
                         res.status(500).send('failed: csv file not found');
                     }
                     onFinishedParsing = function (rows) { return __awaiter(_this, void 0, void 0, function () {
-                        var results, codes, headers, animals, e_1;
-                        var _a, _b, _c, _d, _e, _f;
-                        return __generator(this, function (_g) {
-                            switch (_g.label) {
+                        var codes, headers, animals, e_2;
+                        var _a, _b, _c, _d;
+                        return __generator(this, function (_e) {
+                            switch (_e.label) {
                                 case 0:
                                     codes = rows.codes;
                                     headers = rows.headers;
                                     animals = rows.animals;
-                                    _g.label = 1;
+                                    _e.label = 1;
                                 case 1:
-                                    _g.trys.push([1, 9, , 10]);
+                                    _e.trys.push([1, 7, , 8]);
                                     if (!codes.length) return [3 /*break*/, 3];
                                     return [4 /*yield*/, code_api_1._addCode(idir, codes[0].code_header, codes)];
                                 case 2:
-                                    codeResults = _g.sent();
-                                    return [3 /*break*/, 8];
+                                    codeResults = _e.sent();
+                                    return [3 /*break*/, 6];
                                 case 3:
                                     if (!headers.length) return [3 /*break*/, 5];
                                     return [4 /*yield*/, code_api_1._addCodeHeader(idir, headers)];
                                 case 4:
-                                    headerResults = _g.sent();
-                                    return [3 /*break*/, 8];
+                                    headerResults = _e.sent();
+                                    return [3 /*break*/, 6];
                                 case 5:
-                                    if (!animals.length) return [3 /*break*/, 8];
-                                    return [4 /*yield*/, animal_api_1._addAnimal(idir, animals)];
-                                case 6:
-                                    animalResults = _g.sent();
-                                    return [4 /*yield*/, animal_api_1._addAnimal(idir, animals).then(function (r) {
-                                            results = pg_1.getRowResults(r, 'add_animal');
-                                        })];
-                                case 7:
-                                    _g.sent();
-                                    if (results.length) {
-                                        try {
-                                            _handleCollarLink(idir, animals, results[0]);
-                                        }
-                                        catch (e2) {
-                                            res.status(500).send("unable to link bulk upload critter to device: " + e2.message);
-                                        }
+                                    if (animals.length) {
+                                        _handleCritterInsert(res, idir, animals);
                                     }
-                                    _g.label = 8;
-                                case 8:
+                                    _e.label = 6;
+                                case 6:
                                     _removeUploadedFile(file.path);
-                                    return [3 /*break*/, 10];
-                                case 9:
-                                    e_1 = _g.sent();
-                                    res.status(500).send(e_1.message);
-                                    return [3 /*break*/, 10];
-                                case 10:
+                                    return [3 /*break*/, 8];
+                                case 7:
+                                    e_2 = _e.sent();
+                                    res.status(500).send(e_2.message);
+                                    return [3 /*break*/, 8];
+                                case 8:
                                     try {
                                         if (((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) || ((_b = headerResults) === null || _b === void 0 ? void 0 : _b.rows.length)) {
                                             res.send(pg_1.getRowResults(headerResults, 'add_code_header'));
                                         }
                                         else if (((_c = codeResults) === null || _c === void 0 ? void 0 : _c.length) || ((_d = codeResults) === null || _d === void 0 ? void 0 : _d.rows.length)) {
                                             res.send(pg_1.getRowResults(codeResults, 'add_code'));
-                                        }
-                                        else if (((_e = animalResults) === null || _e === void 0 ? void 0 : _e.length) || ((_f = animalResults) === null || _f === void 0 ? void 0 : _f.rows.length)) {
-                                            res.send(pg_1.getRowResults(animalResults, 'add_animal'));
                                         }
                                     }
                                     catch (e) {

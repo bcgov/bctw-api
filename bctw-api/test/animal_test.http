@@ -55,6 +55,8 @@ content-type: application/json
 ##### get animals
 ###
 http://localhost:3000/get-animals?idir={{idir}}
+###
+http://localhost:3000/get-animals?idir={{idir}}&testUser=test1
 
 ### get specific id
 http://localhost:3000/animal/3
@@ -62,11 +64,17 @@ http://localhost:3000/animal/3
 ### get unassigned
 http://localhost:3000/get-animals?idir={{idir}}&assigned=false&page=1
 
-### get page 1
-http://localhost:3000/get-animals?idir={{idir}}&page=1&assigned=true
+###
+http://localhost:3000/get-animals?idir={{idir}}&page=1
+
+###
+http://localhost:3000/get-animals?idir={{idir}}&page=1&assigned=true&testUser=test3
 
 ### page 2
 http://localhost:3000/get-animals?idir={{idir}}&page=2&assigned=true
 
 ### assignmenthistory
 http://localhost:3000/get-assignment-history/3?idir={{idir}}
+
+###
+http://localhost:3000/get-animals?idir={{idir}}&page=1&assigned=false

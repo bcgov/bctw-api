@@ -43,21 +43,36 @@ const _parseCsv = async (
     });
 }
 
-const _handleCollarLink = async (idir: string, rows: Animal[], resultRows: Animal[]) => {
+const _handleCritterInsert = async (res: Response, idir: string, rows: Animal[]): Promise<Response> => {
   const animalsWithCollars = rows.filter((a) => a.device_id);
-  animalsWithCollars.forEach(async (a: Animal) => {
-    const aid = resultRows.find((row: Animal) => row.animal_id === a.animal_id)?.id;
-    if (!aid) {
-      return;
+  let error = '';
+  let insertResults;
+  try {
+    const results = await _addAnimal(idir, rows);
+    insertResults = getRowResults(results, 'add_animal')[0] ?? [];
+    if (!animalsWithCollars.length) {
+      return res.send(insertResults);
+    } 
+  } catch (e) {
+    return res.status(500).send(`error adding animal: ${e}`);
+  }
+  // iterate critters from .csv that have a device_id
+  const promises = rows.map(async (a:Animal) => {
+    const aid = insertResults.find((row: Animal) => row.animal_id === a.animal_id)?.id;
+    if (aid) {
+      return await _assignCollarToCritter(idir, +a.device_id, aid, momentNow(), null);
     }
-    await _assignCollarToCritter(idir, +a.device_id, aid, momentNow(), null, (err, data) => {
-      if (err) {
-        console.log(`unable to link collar to critter ${aid} from bulk critter upload: ${err}`);
-      } else {
-        console.log(`linked collar ${a.device_id} to critter ${aid} from bulk critter upload`);
-      }
-    });
-  });
+  })
+  await Promise.all(promises.map((p, i) => p.catch(e => {
+    const critter = rows[i];
+    error = `exception caught linking animal with animal ID ${critter.animal_id} to collar ${critter.device_id} ${e}`;
+  }
+  ))); 
+  if (error) {
+    return res.status(500).send(error)
+  }
+  const successMsg = `${insertResults.length} critters added, ${animalsWithCollars.length} with collars attached`;
+  return res.send(successMsg);
 }
 
 const importCsv = async function (req: Request, res:Response): Promise<void> {
@@ -72,10 +87,8 @@ const importCsv = async function (req: Request, res:Response): Promise<void> {
 
   let headerResults;
   let codeResults;
-  let animalResults;
 
   const onFinishedParsing = async (rows: ParsedRows) => {
-    let results;
     const codes = rows.codes;
     const headers = rows.headers;
     const animals = rows.animals;
@@ -85,17 +98,7 @@ const importCsv = async function (req: Request, res:Response): Promise<void> {
       } else if (headers.length) {
         headerResults = await _addCodeHeader(idir, headers);
       } else if (animals.length) {
-        animalResults = await _addAnimal(idir, animals);
-        await _addAnimal(idir, animals).then(r => {
-          results = getRowResults(r, 'add_animal');
-        });
-        if (results.length) {
-          try {
-            _handleCollarLink(idir, animals, results[0]);
-          } catch (e2) {
-            res.status(500).send(`unable to link bulk upload critter to device: ${e2.message}`);
-          }
-        }
+        _handleCritterInsert(res, idir, animals);
       }
       _removeUploadedFile(file.path);
     } catch (e) {
@@ -106,9 +109,7 @@ const importCsv = async function (req: Request, res:Response): Promise<void> {
         res.send(getRowResults(headerResults, 'add_code_header'));
       } else if ((codeResults as QueryResult[])?.length || (codeResults as QueryResult)?.rows.length) {
         res.send(getRowResults(codeResults, 'add_code'))
-      } else if ((animalResults as QueryResult[])?.length || (animalResults as QueryResult)?.rows.length) {
-        res.send(getRowResults(animalResults, 'add_animal'))
-      }
+      } 
     } catch(e) {
       console.log(`error parsing add_code or add_code_header results: ${e}`)
       res.status(500).send(`csv rows were uploaded but there was an error while parsing results from db api`);

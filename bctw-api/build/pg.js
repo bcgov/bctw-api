@@ -123,7 +123,7 @@ exports.to_pg_function_query = to_pg_function_query;
 // converts a javascript array to the postgresql format ex. ['abc','def'] => '{abc, def}'
 var to_pg_array = function (arr) { return "'{" + arr.join(',') + "}'"; };
 var to_pg_timestamp = function (date) { return "to_timestamp(" + date + " / 1000)"; };
-var momentNow = function () { return moment_1.default().format('DD-MM-YYYY HH:mm:ss'); };
+var momentNow = function () { return moment_1.default().format('YYYY-MM-DD HH:mm:ss'); };
 exports.momentNow = momentNow;
 // db code insert/update functions expect a json array
 // obj_to_pg_array accepts an object or an array of objects 

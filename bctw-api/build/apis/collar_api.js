@@ -40,6 +40,9 @@ exports._assignCollarToCritter = exports.getCollar = exports.getAvailableCollars
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var pg_3 = require("../types/pg");
+var _accessCollarControl = function (alias, idir) {
+    return "and " + alias + ".device_id = any((" + pg_1.to_pg_function_query('get_user_collar_access', [idir]) + ")::integer[])";
+};
 /*
 */
 var _addCollar = function (idir, collar, onDone) {
@@ -76,37 +79,50 @@ var addCollar = function (req, res) {
 exports.addCollar = addCollar;
 /*
 */
-var _assignCollarToCritter = function (idir, device_id, animal_id, start, end, onDone) {
-    if (!idir) {
-        return onDone(Error('IDIR must be supplied'));
-    }
-    if (!device_id || !animal_id) {
-        return onDone(Error('device_id and animal_id must be supplied'));
-    }
-    var sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, start, end]));
-    return pg_1.pgPool.query(sql, onDone);
+var _assignCollarToCritter = function (idir, device_id, animal_id, start, end) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (!idir) {
+                        throw (Error('IDIR must be supplied'));
+                    }
+                    if (!device_id || !animal_id) {
+                        throw (Error('device_id and animal_id must be supplied'));
+                    }
+                    sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, start, end]));
+                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
 };
 exports._assignCollarToCritter = _assignCollarToCritter;
 var assignCollarToCritter = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, done;
+        var idir, body, data, e_1, results;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     body = req.body.data;
-                    done = function (err, data) {
-                        if (err) {
-                            return res.status(500).send("Failed to query database: " + err);
-                        }
-                        var rows = pg_1.getRowResults(data, 'link_collar_to_animal');
-                        res.send(rows);
-                    };
-                    return [4 /*yield*/, _assignCollarToCritter(idir, body.device_id, body.animal_id, body.start_date, body.end_date, done)];
+                    _b.label = 1;
                 case 1:
-                    _b.sent();
-                    return [2 /*return*/];
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, _assignCollarToCritter(idir, body.device_id, body.animal_id, body.start_date, body.end_date)];
+                case 2:
+                    data = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_1 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to attach device to critter: " + e_1)];
+                case 4:
+                    results = pg_1.getRowResults(data, 'link_collar_to_animal');
+                    return [2 /*return*/, res.send(results)];
             }
         });
     });
@@ -151,7 +167,7 @@ var unassignCollarFromCritter = function (req, res) {
 exports.unassignCollarFromCritter = unassignCollarFromCritter;
 // todo: consider bctw.collar_animal_assignment table
 var _getAvailableCollars = function (idir, onDone, filter, page) {
-    var base = "\n    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n    from collar c \n    where c.device_id not in (\n      select device_id from collar_animal_assignment caa\n      where now() <@ tstzrange(caa.start_time, caa.end_time)\n    )\n    and c.deleted is false";
+    var base = "\n    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n    from collar c \n    where c.device_id not in (\n      select device_id from collar_animal_assignment caa\n      where now() <@ tstzrange(caa.start_time, caa.end_time)\n    )\n    and c.deleted is false " + _accessCollarControl('c', idir);
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c', true);
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage });
@@ -183,7 +199,7 @@ var getAvailableCollars = function (req, res) {
 };
 exports.getAvailableCollars = getAvailableCollars;
 var _getAssignedCollars = function (idir, onDone, filter, page) {
-    var base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id\n  where c.deleted is false";
+    var base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id\n  where c.deleted is false " + _accessCollarControl('c', idir);
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c');
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage });

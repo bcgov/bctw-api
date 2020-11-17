@@ -39,7 +39,18 @@ var app = express_1.default()
     .use(helmet_1.default())
     .use(cors_1.default())
     .use(body_parser_1.default.urlencoded({ extended: true }))
-    .use(body_parser_1.default.json())
+    .use(body_parser_1.default.json());
+app.all('*', function (req, res, next) {
+    var isUserSwapTest = process.env.TESTING_USERS;
+    if (!isUserSwapTest) {
+        next();
+    }
+    var query = req.query;
+    if (query.idir && query.testUser) {
+        req.query = Object.assign({}, { idir: query.testUser });
+    }
+    next();
+})
     // critters
     .get('/get-animals', api.getAnimals)
     .get('/get-critters', api.getDBCritters)

@@ -79,7 +79,7 @@ const to_pg_array = (arr: number[] | string[]): string => `'{${arr.join(',')}}'`
 
 const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
 
-const momentNow = () => moment().format('DD-MM-YYYY HH:mm:ss');
+const momentNow = () => moment().format('YYYY-MM-DD HH:mm:ss');
 
 // db code insert/update functions expect a json array
 // obj_to_pg_array accepts an object or an array of objects 

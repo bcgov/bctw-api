@@ -19,6 +19,17 @@ const app = express()
   .use(cors())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
+  app.all('*', function (req, res, next) {
+    const isUserSwapTest = process.env.TESTING_USERS;
+    if (!isUserSwapTest) {
+      next()
+    }
+    const query = req.query;
+    if (query.idir && query.testUser) {
+      req.query = Object.assign({}, {idir: query.testUser})
+    }
+  next() 
+  })
   // critters
   .get('/get-animals', api.getAnimals)
   .get('/get-critters',api.getDBCritters)
