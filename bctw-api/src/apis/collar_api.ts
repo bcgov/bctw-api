@@ -71,44 +71,41 @@ const assignCollarToCritter = async function(req: Request, res:Response): Promis
 
 /*
 */
-const _unassignCollarToCritter = function (
+const _unassignCollarToCritter = async function (
   idir: string,
   deviceId: number,
   animalId: string,
-  endDate: Date,
-  onDone: QueryResultCbFn
-): void {
+  endDate: Date): Promise<QueryResult> {
   if (!idir) {
-    return onDone(Error('IDIR must be supplied'));
+    throw(Error('IDIR must be supplied'));
   }
   const sql = transactionify(to_pg_function_query('unlink_collar_to_animal', [idir, deviceId, animalId, endDate ]));
-  return pgPool.query(sql, onDone);
+  const result = await queryAsyncTransaction(sql);
+  return result;
 }
 
 /* todo: figure out business requirement if the animal id must be provided.
 can a user unlink a collar from whatever it is attached to?
 */
-const unassignCollarFromCritter = async function(req: Request, res:Response): Promise<void> {
+const unassignCollarFromCritter = async function(req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body.data;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const rows = getRowResults(data, 'unlink_collar_to_animal');
-    return res.send(rows)
-  };
-  await _unassignCollarToCritter(
-    idir,
-    body.device_id,
-    body.animal_id,
-    body.end_date,
-    done
-  )
+  let data: QueryResult;
+  try {
+    data = await _unassignCollarToCritter( idir, body.device_id, body.animal_id, body.end_date);
+  } catch (e) {
+    return res.status(500).send(`Failed to query database: ${e}`);
+  }
+  const results = getRowResults(data, 'unlink_collar_to_animal');
+  return res.send(results);
 }
 
 // todo: consider bctw.collar_animal_assignment table
-const _getAvailableCollars = function ( idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number): void {
+const _getAvailableCollars = async function (
+    idir: string,
+    filter?: IFilter,
+    page?: number
+  ): Promise<QueryResult> {
   const base = `
     select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency
     from collar c 
@@ -116,27 +113,29 @@ const _getAvailableCollars = function ( idir: string, onDone: QueryResultCbFn, f
       select device_id from collar_animal_assignment caa
       where now() <@ tstzrange(caa.start_time, caa.end_time)
     )
-    and c.deleted is false ${_accessCollarControl('c', idir)}`
+    and c.deleted is false`; // dont limit access to unassigned collars
+    // and c.deleted is false ${_accessCollarControl('c', idir)}`
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage});
-  return pgPool.query(sql, onDone);
+  const result = await queryAsync(sql);
+  return result;
 }
 
-const getAvailableCollars = async function(req: Request, res:Response): Promise<void> {
+const getAvailableCollars = async function(req: Request, res:Response): Promise<Response> {
   const idir = (req.query?.idir || '') as string;
   const page = (req.query?.page || 1) as number;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const results = data?.rows;
-    res.send(results);
-  };
-  await _getAvailableCollars(idir, done, filterFromRequestParams(req), page);
+  let data: QueryResult;
+  try {
+    data = await _getAvailableCollars(idir, filterFromRequestParams(req), page);
+  } catch (e) {
+    return res.status(500).send(`Failed to query collars: ${e}`);
+  }
+  const results = data?.rows ?? [];
+  return res.send(results);
 }
 
-const _getAssignedCollars = function (idir: string, onDone: QueryResultCbFn, filter?: IFilter, page?: number): void {
+const _getAssignedCollars = async function (idir: string, filter?: IFilter, page?: number): Promise<QueryResult> {
   const base = 
   `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency
   from collar c inner join collar_animal_assignment caa 
@@ -145,20 +144,21 @@ const _getAssignedCollars = function (idir: string, onDone: QueryResultCbFn, fil
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage});
-  return pgPool.query(sql, onDone);
+  const result = await queryAsync(sql);
+  return result;
 }
 
-const getAssignedCollars = async function(req: Request, res:Response): Promise<void> {
+const getAssignedCollars = async function(req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const page = (req.query?.page || 1) as number;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const results = data?.rows;
-    res.send(results);
-  };
-  await _getAssignedCollars(idir, done, filterFromRequestParams(req), page);
+  let data: QueryResult;
+  try {
+    data = await _getAssignedCollars(idir, filterFromRequestParams(req), page);
+  } catch (e) {
+    return res.status(500).send(`Failed to query database: ${e}`);
+  }
+  const results = data?.rows ?? [];
+  return res.send(results);
 }
 
 const getCollar = async function(req: Request, res:Response): Promise<void> {

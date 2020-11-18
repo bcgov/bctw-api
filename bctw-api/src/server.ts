@@ -26,7 +26,7 @@ const app = express()
     }
     const query = req.query;
     if (query.idir && query.testUser) {
-      req.query = Object.assign({}, {idir: query.testUser})
+      req.query = Object.assign(req.query, {idir: query.testUser})
     }
   next() 
   })
