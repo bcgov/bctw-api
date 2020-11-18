@@ -57,7 +57,7 @@ const _handleCritterInsert = async (res: Response, idir: string, rows: Animal[])
     return res.status(500).send(`error adding animal: ${e}`);
   }
   // iterate critters from .csv that have a device_id
-  const promises = rows.map(async (a:Animal) => {
+  const promises = animalsWithCollars.map(async (a:Animal) => {
     const aid = insertResults.find((row: Animal) => row.animal_id === a.animal_id)?.id;
     if (aid) {
       return await _assignCollarToCritter(idir, +a.device_id, aid, momentNow(), null);

@@ -230,7 +230,7 @@ var _getAssignedCollars = function (idir, filter, page) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id\n  where c.deleted is false " + _accessCollarControl('c', idir);
+                    base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id\n  and now() <@ tstzrange(caa.start_time, caa.end_time)\n  where c.deleted is false " + _accessCollarControl('c', idir);
                     strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c');
                     strPage = page ? pg_1.paginate(page) : '';
                     sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage });

@@ -138,7 +138,7 @@ var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0,
                 e_1 = _b.sent();
                 return [2 /*return*/, res.status(500).send("error adding animal: " + e_1)];
             case 4:
-                promises = rows.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
+                promises = animalsWithCollars.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
                     var aid;
                     var _a;
                     return __generator(this, function (_b) {

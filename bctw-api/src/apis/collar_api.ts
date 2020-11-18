@@ -140,6 +140,7 @@ const _getAssignedCollars = async function (idir: string, filter?: IFilter, page
   `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency
   from collar c inner join collar_animal_assignment caa 
   on c.device_id = caa.device_id
+  and now() <@ tstzrange(caa.start_time, caa.end_time)
   where c.deleted is false ${_accessCollarControl('c', idir)}`
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
   const strPage = page ? paginate(page) : '';
