@@ -45,7 +45,7 @@ var _accessControlQuery = function (alias, idir) {
     return "and " + alias + ".id = any((" + pg_1.to_pg_function_query('get_user_critter_access', [idir]) + ")::integer[])";
 };
 /// select all animal table properties other than created/deleted etc.
-var _selectAnimals = "select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, \na.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,\na.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,\na.trans_location, a.wlh_id, a.nickname";
+var _selectAnimals = "select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date_day, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, \na.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,\na.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,\na.trans_location, a.wlh_id, a.nickname";
 var _addAnimal = function (idir, animal) {
     return __awaiter(this, void 0, void 0, function () {
         var sql, result;

@@ -10,7 +10,7 @@ const mapCsvImportAnimal = (header: string): string => {
       return 'species';
     case 'Caribou Ecotype':
       return 'ecotype';
-    case 'Caribou Population':
+    case 'Caribou Population Unit':
       return 'population_unit';
     case 'Management Area':
       return 'management_area';
@@ -34,8 +34,6 @@ const mapCsvImportAnimal = (header: string): string => {
       return 're_capture';
     case 'Translocation':
       return 'trans_location';
-    case 'Capture Date':
-      return 'capture_date';
     case 'Capture Date Year':
       return 'capture_date_year';
     case 'Capture Date Month':
