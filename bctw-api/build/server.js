@@ -42,6 +42,7 @@ var app = express_1.default()
     .use(body_parser_1.default.json());
 app.all('*', function (req, res, next) {
     var isUserSwapTest = process.env.TESTING_USERS;
+    console.log("all route hit, testing users: " + isUserSwapTest);
     if (!isUserSwapTest) {
         next();
     }

@@ -99,6 +99,7 @@ const getAnimals = async function(req: Request, res:Response): Promise<Response>
   for the given animal id, retrieves current and past collars assigned to it. 
 */
 const getCollarAssignmentHistory = async function(req: Request, res:Response): Promise<Response> {
+  console.log(`get collar assignment history route endpoint hit`);
   const idir = (req.query?.idir || '') as string;
   const id = (req.params.animal_id) as string;
   if (!id) {
@@ -111,6 +112,7 @@ const getCollarAssignmentHistory = async function(req: Request, res:Response): P
   const sql = constructGetQuery({base, filter:'', order: 'ca.end_time desc'});
   let data: QueryResult;
   try {
+    console.log(`get collar assignment try catch hit`);
     data = await queryAsync(sql)
   } catch (e) {
     return res.status(500).send(`Failed to query critter collar history: ${e}`);

@@ -21,6 +21,7 @@ const app = express()
   .use(bodyParser.json())
   app.all('*', function (req, res, next) {
     const isUserSwapTest = process.env.TESTING_USERS;
+    console.log(`all route hit, testing users: ${isUserSwapTest}`);
     if (!isUserSwapTest) {
       next()
     }
