@@ -1,4 +1,4 @@
-import { pgPool, queryAsyncTransaction } from './pg';
+import { pgPool, queryAsync, queryAsyncTransaction } from './pg';
 import { addUser, assignCritterToUser, getUserRole } from './apis/user_api';
 import {
   addCollar,
@@ -6,11 +6,11 @@ import {
   unassignCollarFromCritter,
   getAvailableCollars,
   getAssignedCollars,
-  getCollar
 } from './apis/collar_api';
 import { addAnimal, getAnimals, getCollarAssignmentHistory } from './apis/animal_api';
 import { addCode, addCodeHeader, getCode, getCodeHeaders} from './apis/code_api';
 import { Request, Response } from 'express';
+import { QueryResult } from 'pg';
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -51,7 +51,7 @@ const getDBCritters = function (req: Request, res: Response): void {
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getPingExtent = function (req: Request, res: Response): void {
+const getPingExtent = async function (req: Request, res: Response): Promise<Response> {
   const sql = `
     select
       max(date_recorded) "max",
@@ -59,16 +59,13 @@ const getPingExtent = function (req: Request, res: Response): void {
     from
       vendor_merge_view
   `;
-
-
-  const done = function (err,data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    res.send(data.rows[0]);
-  };
-
-  pgPool.query(sql,done);
+  let data: QueryResult;
+  try {
+    data = await queryAsync(sql);
+  } catch (e) {
+    return res.status(500).send(`Failed to query database: ${e}`);
+  }
+  return res.send(data.rows[0])
 };
 
 /* ## getLastPings

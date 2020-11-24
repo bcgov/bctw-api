@@ -91,14 +91,26 @@ exports.getDBCritters = getDBCritters;
   @param next {function} Node/Express function for flow control
  */
 var getPingExtent = function (req, res) {
-    var sql = "\n    select\n      max(date_recorded) \"max\",\n      min(date_recorded) \"min\"\n    from\n      vendor_merge_view\n  ";
-    var done = function (err, data) {
-        if (err) {
-            return res.status(500).send("Failed to query database: " + err);
-        }
-        res.send(data.rows[0]);
-    };
-    pg_1.pgPool.query(sql, done);
+    return __awaiter(this, void 0, void 0, function () {
+        var sql, data, e_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    sql = "\n    select\n      max(date_recorded) \"max\",\n      min(date_recorded) \"min\"\n    from\n      vendor_merge_view\n  ";
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                case 2:
+                    data = _a.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_1 = _a.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to query database: " + e_1)];
+                case 4: return [2 /*return*/, res.send(data.rows[0])];
+            }
+        });
+    });
 };
 exports.getPingExtent = getPingExtent;
 /* ## getLastPings
@@ -146,7 +158,7 @@ exports.notFound = notFound;
 var _deletableTypes = ['collar', 'animal', 'user'];
 var deleteType = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var params, type, id, pk, sql, e_1;
+        var params, type, id, pk, sql, e_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -172,8 +184,8 @@ var deleteType = function (req, res) {
                     _a.sent();
                     return [3 /*break*/, 4];
                 case 3:
-                    e_1 = _a.sent();
-                    return [2 /*return*/, res.status(500).send("Failed to delete type: " + e_1)];
+                    e_2 = _a.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to delete type: " + e_2)];
                 case 4: return [2 /*return*/, res.send(true)];
             }
         });

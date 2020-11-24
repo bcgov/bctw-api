@@ -119,79 +119,151 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
     });
 }); };
 var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var animalsWithCollars, error, insertResults, results, e_1, promises, successMsg;
-    var _a;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var animalsWithCollars, errors, results, assignmentResults, settledHandler, e_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
                 animalsWithCollars = rows.filter(function (a) { return a.device_id; });
-                error = '';
-                _b.label = 1;
+                errors = [];
+                results = [];
+                assignmentResults = [];
+                settledHandler = function (val, i) {
+                    if (val.status === 'rejected') {
+                        errors.push("critter with animal ID " + rows[i].animal_id + " " + val.reason);
+                    }
+                };
+                _a.label = 1;
             case 1:
-                _b.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, animal_api_1._addAnimal(idir, rows)];
+                _a.trys.push([1, 5, , 6]);
+                // use Promise.allSettled to continue if one of the promises rejects
+                return [4 /*yield*/, Promise.allSettled(rows.map(function (row) { return __awaiter(void 0, void 0, void 0, function () {
+                        var r;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0: return [4 /*yield*/, animal_api_1._addAnimal(idir, [row])];
+                                case 1:
+                                    r = _a.sent();
+                                    results.push(pg_1.getRowResults(r, 'add_animal')[0][0]);
+                                    return [2 /*return*/, r];
+                            }
+                        });
+                    }); })).then(function (values) {
+                        values.forEach(settledHandler);
+                    })];
             case 2:
-                results = _b.sent();
-                insertResults = (_a = pg_1.getRowResults(results, 'add_animal')[0]) !== null && _a !== void 0 ? _a : [];
-                if (!animalsWithCollars.length) {
-                    return [2 /*return*/, res.send(insertResults)];
-                }
+                // use Promise.allSettled to continue if one of the promises rejects
+                _a.sent();
+                if (!animalsWithCollars.length) return [3 /*break*/, 4];
+                return [4 /*yield*/, Promise.allSettled(animalsWithCollars.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
+                        var aid, r;
+                        var _a;
+                        return __generator(this, function (_b) {
+                            switch (_b.label) {
+                                case 0:
+                                    aid = (_a = results.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
+                                    if (!aid) return [3 /*break*/, 2];
+                                    return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, +a.device_id, aid, pg_1.momentNow(), null)];
+                                case 1:
+                                    r = _b.sent();
+                                    assignmentResults.push(r);
+                                    return [2 /*return*/, r];
+                                case 2: return [2 /*return*/];
+                            }
+                        });
+                    }); })).then(function (values) {
+                        values.forEach(settledHandler);
+                    })];
+            case 3:
+                _a.sent();
+                _a.label = 4;
+            case 4: return [3 /*break*/, 6];
+            case 5:
+                e_1 = _a.sent();
+                return [2 /*return*/, res.status(500).send("exception caught bulk inserting critters: " + e_1)];
+            case 6: return [2 /*return*/, res.send({ results: results, errors: errors })];
+        }
+    });
+}); };
+var _handleCodeInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
+    var errors, results, e_2;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                errors = [];
+                results = [];
+                _a.label = 1;
+            case 1:
+                _a.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, Promise.allSettled(rows.map(function (row) { return __awaiter(void 0, void 0, void 0, function () {
+                        var r;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0: return [4 /*yield*/, code_api_1._addCode(idir, row.code_header, [row])];
+                                case 1:
+                                    r = _a.sent();
+                                    results.push(pg_1.getRowResults(r, 'add_code')[0][0]);
+                                    return [2 /*return*/, r];
+                            }
+                        });
+                    }); })).then(function (values) {
+                        values.forEach(function (val, i) {
+                            if (val.status === 'rejected') {
+                                errors.push("could not add code " + rows[i].code_name + " " + val.reason);
+                            }
+                        });
+                    })];
+            case 2:
+                _a.sent();
                 return [3 /*break*/, 4];
             case 3:
-                e_1 = _b.sent();
-                return [2 /*return*/, res.status(500).send("error adding animal: " + e_1)];
-            case 4:
-                promises = animalsWithCollars.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
-                    var aid;
-                    var _a;
-                    return __generator(this, function (_b) {
-                        switch (_b.label) {
-                            case 0:
-                                aid = (_a = insertResults.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
-                                if (!aid) return [3 /*break*/, 2];
-                                return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, +a.device_id, aid, pg_1.momentNow(), null)];
-                            case 1: return [2 /*return*/, _b.sent()];
-                            case 2: return [2 /*return*/];
-                        }
-                    });
-                }); });
-                return [4 /*yield*/, Promise.all(promises.map(function (p, i) { return p.catch(function (e) {
-                        var critter = rows[i];
-                        error = "exception caught linking animal with animal ID " + critter.animal_id + " to collar " + critter.device_id + " " + e;
-                    }); }))];
-            case 5:
-                _b.sent();
-                if (error) {
-                    return [2 /*return*/, res.status(500).send(error)];
-                }
-                successMsg = insertResults.length + " critters added, " + animalsWithCollars.length + " with collars attached";
-                return [2 /*return*/, res.send(successMsg)];
+                e_2 = _a.sent();
+                return [2 /*return*/, res.status(500).send("exception caught bulk upserting codes: " + e_2)];
+            case 4: return [2 /*return*/, res.send({ results: results, errors: errors })];
         }
     });
 }); };
 var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var insertResults, results, e_2;
-    var _a;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var errors, results, e_3;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
-                _b.trys.push([0, 2, , 3]);
-                return [4 /*yield*/, collar_api_1._addCollar(idir, rows)];
+                errors = [];
+                results = [];
+                _a.label = 1;
             case 1:
-                results = _b.sent();
-                insertResults = (_a = pg_1.getRowResults(results, 'add_collar')[0]) !== null && _a !== void 0 ? _a : [];
-                return [2 /*return*/, res.send(insertResults)];
+                _a.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, Promise.allSettled(rows.map(function (row) { return __awaiter(void 0, void 0, void 0, function () {
+                        var r;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0: return [4 /*yield*/, collar_api_1._addCollar(idir, [row])];
+                                case 1:
+                                    r = _a.sent();
+                                    results.push(pg_1.getRowResults(r, 'add_collar')[0][0]);
+                                    return [2 /*return*/, r];
+                            }
+                        });
+                    }); })).then(function (values) {
+                        values.forEach(function (val, i) {
+                            if (val.status === 'rejected') {
+                                errors.push("could not add collar " + rows[i].device_id + " " + val.reason);
+                            }
+                        });
+                    })];
             case 2:
-                e_2 = _b.sent();
-                return [2 /*return*/, res.status(500).send("error adding collars: " + e_2)];
-            case 3: return [2 /*return*/];
+                _a.sent();
+                return [3 /*break*/, 4];
+            case 3:
+                e_3 = _a.sent();
+                return [2 /*return*/, res.status(500).send("exception caught bulk upserting collars: " + e_3)];
+            case 4: return [2 /*return*/, res.send({ results: results, errors: errors })];
         }
     });
 }); };
 var importCsv = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, file, headerResults, codeResults, onFinishedParsing;
+        var idir, file, headerResults, onFinishedParsing;
         var _this = this;
         return __generator(this, function (_b) {
             switch (_b.label) {
@@ -205,56 +277,45 @@ var importCsv = function (req, res) {
                         res.status(500).send('failed: csv file not found');
                     }
                     onFinishedParsing = function (rows) { return __awaiter(_this, void 0, void 0, function () {
-                        var codes, headers, animals, collars, e_3;
-                        var _a, _b, _c, _d;
-                        return __generator(this, function (_e) {
-                            switch (_e.label) {
+                        var codes, headers, animals, collars, e_4;
+                        var _a, _b;
+                        return __generator(this, function (_c) {
+                            switch (_c.label) {
                                 case 0:
                                     codes = rows.codes;
                                     headers = rows.headers;
                                     animals = rows.animals;
                                     collars = rows.collars;
-                                    _e.label = 1;
+                                    _c.label = 1;
                                 case 1:
-                                    _e.trys.push([1, 7, , 8]);
-                                    if (!codes.length) return [3 /*break*/, 3];
-                                    return [4 /*yield*/, code_api_1._addCode(idir, codes[0].code_header, codes)];
+                                    _c.trys.push([1, 6, , 7]);
+                                    if (!codes.length) return [3 /*break*/, 2];
+                                    _handleCodeInsert(res, idir, codes);
+                                    return [3 /*break*/, 5];
                                 case 2:
-                                    codeResults = _e.sent();
-                                    return [3 /*break*/, 6];
-                                case 3:
-                                    if (!headers.length) return [3 /*break*/, 5];
+                                    if (!headers.length) return [3 /*break*/, 4];
                                     return [4 /*yield*/, code_api_1._addCodeHeader(idir, headers)];
+                                case 3:
+                                    headerResults = _c.sent();
+                                    return [3 /*break*/, 5];
                                 case 4:
-                                    headerResults = _e.sent();
-                                    return [3 /*break*/, 6];
-                                case 5:
                                     if (animals.length) {
                                         _handleCritterInsert(res, idir, animals);
                                     }
                                     else if (collars.length) {
                                         _handleCollarInsert(res, idir, collars);
                                     }
-                                    _e.label = 6;
-                                case 6:
+                                    _c.label = 5;
+                                case 5:
                                     _removeUploadedFile(file.path);
-                                    return [3 /*break*/, 8];
+                                    return [3 /*break*/, 7];
+                                case 6:
+                                    e_4 = _c.sent();
+                                    res.status(500).send(e_4.message);
+                                    return [3 /*break*/, 7];
                                 case 7:
-                                    e_3 = _e.sent();
-                                    res.status(500).send(e_3.message);
-                                    return [3 /*break*/, 8];
-                                case 8:
-                                    try {
-                                        if (((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) || ((_b = headerResults) === null || _b === void 0 ? void 0 : _b.rows.length)) {
-                                            res.send(pg_1.getRowResults(headerResults, 'add_code_header'));
-                                        }
-                                        else if (((_c = codeResults) === null || _c === void 0 ? void 0 : _c.length) || ((_d = codeResults) === null || _d === void 0 ? void 0 : _d.rows.length)) {
-                                            res.send(pg_1.getRowResults(codeResults, 'add_code'));
-                                        }
-                                    }
-                                    catch (e) {
-                                        console.log("error parsing add_code or add_code_header results: " + e);
-                                        res.status(500).send("csv rows were uploaded but there was an error while parsing results from db api");
+                                    if (((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) || ((_b = headerResults) === null || _b === void 0 ? void 0 : _b.rows.length)) {
+                                        res.send(pg_1.getRowResults(headerResults, 'add_code_header'));
                                     }
                                     return [2 /*return*/];
                             }
