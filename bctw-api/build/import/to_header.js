@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mapCsvImportAnimal = void 0;
-var mapCsvImportAnimal = function (header) {
+exports.mapCsvImport = void 0;
+var mapCsvImport = function (header) {
     switch (header) {
         case 'Region':
             return 'region';
@@ -55,9 +55,31 @@ var mapCsvImportAnimal = function (header) {
             return 'animal_status';
         case 'Nickname':
             return 'nickname';
+        case 'Collar Make':
+            return 'make';
+        case 'Collar Model':
+            return 'model';
+        case 'Deployment Status':
+            return 'deployment_status';
+        case 'Collar Status':
+            return 'collar_status';
+        case 'Collar Type':
+            return 'collar_type';
+        case 'Radio Frequency':
+            return 'radio_frequency';
+        case 'Malfunction Date':
+            return 'malfunction_date';
+        case 'Max Transmission Date':
+            return 'max_transmission_date';
+        case 'Reg Key':
+            return 'reg_key';
+        case 'Retrieval Date':
+            return 'retreival_date';
+        case 'Satellite Network':
+            return 'satellite_network';
         default:
             return header;
     }
 };
-exports.mapCsvImportAnimal = mapCsvImportAnimal;
+exports.mapCsvImport = mapCsvImport;
 //# sourceMappingURL=to_header.js.map

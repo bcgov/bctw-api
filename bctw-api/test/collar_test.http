@@ -13,11 +13,18 @@ content-type: application/json
 POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
-{
-  "device_id": 99999,
-  "make": "vectronics",
-  "model": "deercollar9000"
-}
+[
+  {
+    "device_id": 99999,
+    "make": "vectronics",
+    "model": "deercollar9000"
+  },
+  {
+    "device_id": 9998,
+    "make": "vectronics",
+    "model": "deercollar9000"
+  }
+]
 
 ### upsert - should update collar 21511
 POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1

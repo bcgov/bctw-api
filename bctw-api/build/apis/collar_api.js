@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports._assignCollarToCritter = exports.getCollar = exports.getAvailableCollars = exports.getAssignedCollars = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addCollar = void 0;
+exports._addCollar = exports._assignCollarToCritter = exports.getCollar = exports.getAvailableCollars = exports.getAssignedCollars = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addCollar = void 0;
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var pg_3 = require("../types/pg");
@@ -45,33 +45,47 @@ var _accessCollarControl = function (alias, idir) {
 };
 /*
 */
-var _addCollar = function (idir, collar, onDone) {
-    if (!idir) {
-        return onDone(Error('IDIR must be supplied'));
-    }
-    var sql = pg_2.transactionify(pg_1.to_pg_function_query('add_collar', [idir, collar]));
-    return pg_1.pgPool.query(sql, onDone);
+var _addCollar = function (idir, collar) {
+    return __awaiter(this, void 0, void 0, function () {
+        var sql, result;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_collar', [idir, collar], true));
+                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
+                case 1:
+                    result = _a.sent();
+                    return [2 /*return*/, result];
+            }
+        });
+    });
 };
+exports._addCollar = _addCollar;
 var addCollar = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, done;
+        var idir, body, data, e_1, results;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     body = req.body;
-                    done = function (err, data) {
-                        if (err) {
-                            return res.status(500).send("Failed to query database: " + err);
-                        }
-                        var results = pg_1.getRowResults(data, 'add_collar');
-                        res.send(results);
-                    };
-                    return [4 /*yield*/, _addCollar(idir, body, done)];
+                    if (!idir) {
+                        return [2 /*return*/, res.status(500).send('must supply idir')];
+                    }
+                    _b.label = 1;
                 case 1:
-                    _b.sent();
-                    return [2 /*return*/];
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, _addCollar(idir, body)];
+                case 2:
+                    data = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    e_1 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to add collar(s): " + e_1)];
+                case 4:
+                    results = pg_1.getRowResults(data, 'add_collar');
+                    return [2 /*return*/, res.send(results)];
             }
         });
     });
@@ -104,7 +118,7 @@ exports._assignCollarToCritter = _assignCollarToCritter;
 var assignCollarToCritter = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, data, e_1, results;
+        var idir, body, data, e_2, results;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -118,8 +132,8 @@ var assignCollarToCritter = function (req, res) {
                     data = _b.sent();
                     return [3 /*break*/, 4];
                 case 3:
-                    e_1 = _b.sent();
-                    return [2 /*return*/, res.status(500).send("Failed to attach device to critter: " + e_1)];
+                    e_2 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to attach device to critter: " + e_2)];
                 case 4:
                     results = pg_1.getRowResults(data, 'link_collar_to_animal');
                     return [2 /*return*/, res.send(results)];
@@ -154,7 +168,7 @@ can a user unlink a collar from whatever it is attached to?
 var unassignCollarFromCritter = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, data, e_2, results;
+        var idir, body, data, e_3, results;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -168,8 +182,8 @@ var unassignCollarFromCritter = function (req, res) {
                     data = _b.sent();
                     return [3 /*break*/, 4];
                 case 3:
-                    e_2 = _b.sent();
-                    return [2 /*return*/, res.status(500).send("Failed to query database: " + e_2)];
+                    e_3 = _b.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to query database: " + e_3)];
                 case 4:
                     results = pg_1.getRowResults(data, 'unlink_collar_to_animal');
                     return [2 /*return*/, res.send(results)];
@@ -200,7 +214,7 @@ var _getAvailableCollars = function (idir, filter, page) {
 var getAvailableCollars = function (req, res) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, page, data, e_3, results;
+        var idir, page, data, e_4, results;
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
@@ -214,8 +228,8 @@ var getAvailableCollars = function (req, res) {
                     data = _d.sent();
                     return [3 /*break*/, 4];
                 case 3:
-                    e_3 = _d.sent();
-                    return [2 /*return*/, res.status(500).send("Failed to query collars: " + e_3)];
+                    e_4 = _d.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to query collars: " + e_4)];
                 case 4:
                     results = (_c = data === null || data === void 0 ? void 0 : data.rows) !== null && _c !== void 0 ? _c : [];
                     return [2 /*return*/, res.send(results)];
@@ -245,7 +259,7 @@ var _getAssignedCollars = function (idir, filter, page) {
 var getAssignedCollars = function (req, res) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, page, data, e_4, results;
+        var idir, page, data, e_5, results;
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
@@ -259,8 +273,8 @@ var getAssignedCollars = function (req, res) {
                     data = _d.sent();
                     return [3 /*break*/, 4];
                 case 3:
-                    e_4 = _d.sent();
-                    return [2 /*return*/, res.status(500).send("Failed to query database: " + e_4)];
+                    e_5 = _d.sent();
+                    return [2 /*return*/, res.status(500).send("Failed to query database: " + e_5)];
                 case 4:
                     results = (_c = data === null || data === void 0 ? void 0 : data.rows) !== null && _c !== void 0 ? _c : [];
                     return [2 /*return*/, res.send(results)];

@@ -11,29 +11,26 @@ const _accessCollarControl = (alias: string, idir: string) => {
 
 /*
 */
-const _addCollar = function (
-  idir: string,
-  collar: Collar,
-  onDone: QueryResultCbFn
-): void {
-  if (!idir) {
-    return onDone(Error('IDIR must be supplied'));
-  }
-  const sql = transactionify(to_pg_function_query('add_collar', [idir, collar]));
-  return pgPool.query(sql, onDone);
+const _addCollar = async function (idir: string, collar: Collar[],): Promise<QueryResult> {
+  const sql = transactionify(to_pg_function_query('add_collar', [idir, collar], true));
+  const result = await queryAsyncTransaction(sql);
+  return result;
 }
 
-const addCollar = async function(req: Request, res:Response): Promise<void> {
+const addCollar = async function(req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body;
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const results = getRowResults(data, 'add_collar');
-    res.send(results);
-  };
-  await _addCollar(idir, body, done);
+  let data: QueryResult;
+  if (!idir) {
+    return res.status(500).send('must supply idir')
+  }
+  try {
+    data = await _addCollar(idir, body);
+  } catch (e) {
+    return res.status(500).send(`Failed to add collar(s): ${e}`);
+  }
+  const results = getRowResults(data, 'add_collar');
+  return res.send(results);
 }
 
 /*
@@ -185,5 +182,6 @@ export {
   getAssignedCollars,
   getAvailableCollars,
   getCollar,
-  _assignCollarToCritter
+  _assignCollarToCritter,
+  _addCollar
 } 

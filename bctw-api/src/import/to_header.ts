@@ -1,4 +1,4 @@
-const mapCsvImportAnimal = (header: string): string => {
+const mapCsvImport = (header: string): string => {
   switch (header) {
     case 'Region':
       return 'region';
@@ -52,11 +52,33 @@ const mapCsvImportAnimal = (header: string): string => {
       return 'animal_status';
     case 'Nickname':
       return 'nickname';
+    case 'Collar Make':
+      return 'make';
+    case 'Collar Model':
+      return 'model';
+    case 'Deployment Status':
+      return 'deployment_status';
+    case 'Collar Status':
+      return 'collar_status';
+    case 'Collar Type': 
+      return 'collar_type';
+    case 'Radio Frequency':
+      return 'radio_frequency';
+    case 'Malfunction Date':
+      return 'malfunction_date';
+    case 'Max Transmission Date':
+      return 'max_transmission_date';
+    case 'Reg Key':
+      return 'reg_key';
+    case 'Retrieval Date':
+      return 'retreival_date';
+    case 'Satellite Network':
+      return 'satellite_network';
     default:
       return header;
   }
 }
 
 export {
-  mapCsvImportAnimal,
+  mapCsvImport,
 }

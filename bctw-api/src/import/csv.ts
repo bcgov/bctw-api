@@ -4,11 +4,12 @@ import * as fs from 'fs';
 import { QueryResult } from 'pg';
 import { _addAnimal } from '../apis/animal_api';
 import { _addCode, _addCodeHeader } from '../apis/code_api';
-import { _assignCollarToCritter } from '../apis/collar_api';
+import { _addCollar, _assignCollarToCritter } from '../apis/collar_api';
 import { getRowResults, momentNow } from '../pg';
 import { Animal } from '../types/animal';
-import { ICodeInput, ICodeHeaderInput, isCode, isCodeHeader, ICodeHeaderRow, ICodeRow, ParsedRows, IAnimalRow, isAnimal } from '../types/code';
-import { mapCsvImportAnimal } from './to_header';
+import { Collar } from '../types/collar';
+import { ICodeHeaderRow, ICollarRow, ICodeRow, IAnimalRow, ParsedRows, isCodeHeader, isAnimal, isCollar, isCode } from '../types/import_types';
+import { mapCsvImport } from './to_header';
 
 const _removeUploadedFile = async (path: string) => {
   fs.unlink(path, (err) => {
@@ -25,20 +26,23 @@ const _parseCsv = async (
     const codes: ICodeRow = {rows: []};
     const headers: ICodeHeaderRow = {rows: []};
     const animals: IAnimalRow = {rows: []};
-    const ret: ParsedRows = {codes: codes.rows, headers: headers.rows, animals: animals.rows};
+    const collars: ICollarRow = {rows: []};
+    const ret: ParsedRows = {codes: codes.rows, headers: headers.rows, animals: animals.rows, collars: collars.rows };
 
     fs.createReadStream(file.path).pipe(csv({
       mapHeaders: ({ header }) => {
-        return mapCsvImportAnimal(header)
+        return mapCsvImport(header)
       }
     }))
-    .on('data', (row: ICodeInput | ICodeHeaderInput) => {
+    .on('data', (row) => {
       if (isCodeHeader(row)) headers.rows.push(row)
       else if (isCode(row)) codes.rows.push(row);
       else if (isAnimal(row)) animals.rows.push(row);
+      else if (isCollar(row)) collars.rows.push(row);
     })
     .on('end', async () => {
-      console.log(`CSV file ${file.path} processed\n  codes: ${codes.rows.length}\n  headers: ${headers.rows.length}`);
+      console.log(`CSV file ${file.path} processed\ncodes: ${codes.rows.length},\nheaders: ${headers.rows.length},
+      critters: ${animals.rows.length}, collars: ${collars.rows.length}`);
       await callback(ret);
     });
 }
@@ -75,6 +79,17 @@ const _handleCritterInsert = async (res: Response, idir: string, rows: Animal[])
   return res.send(successMsg);
 }
 
+const _handleCollarInsert = async (res: Response, idir: string, rows: Collar[]): Promise<Response> => {
+  let insertResults;
+  try {
+    const results = await _addCollar(idir, rows);
+    insertResults = getRowResults(results, 'add_collar')[0] ?? [];
+    return res.send(insertResults);
+  } catch (e) {
+    return res.status(500).send(`error adding collars: ${e}`);
+  }
+}
+
 const importCsv = async function (req: Request, res:Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   if (!idir){
@@ -92,6 +107,7 @@ const importCsv = async function (req: Request, res:Response): Promise<void> {
     const codes = rows.codes;
     const headers = rows.headers;
     const animals = rows.animals;
+    const collars = rows.collars;
     try {
       if (codes.length) {
         codeResults = await _addCode(idir, codes[0].code_header, codes);
@@ -99,6 +115,8 @@ const importCsv = async function (req: Request, res:Response): Promise<void> {
         headerResults = await _addCodeHeader(idir, headers);
       } else if (animals.length) {
         _handleCritterInsert(res, idir, animals);
+      } else if (collars.length) {
+        _handleCollarInsert(res, idir, collars);
       }
       _removeUploadedFile(file.path);
     } catch (e) {
