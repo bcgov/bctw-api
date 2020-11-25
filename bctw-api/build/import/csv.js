@@ -129,7 +129,10 @@ var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0,
                 assignmentResults = [];
                 settledHandler = function (val, i) {
                     if (val.status === 'rejected') {
-                        errors.push("critter with animal ID " + rows[i].animal_id + " " + val.reason);
+                        errors.push({
+                            error: "ROW " + i + ": Critter with animal ID " + rows[i].animal_id + " " + val.reason,
+                            row: import_types_1.rowToCsv(rows[i]),
+                        });
                     }
                 };
                 _a.label = 1;
@@ -208,7 +211,10 @@ var _handleCodeInsert = function (res, idir, rows) { return __awaiter(void 0, vo
                     }); })).then(function (values) {
                         values.forEach(function (val, i) {
                             if (val.status === 'rejected') {
-                                errors.push("could not add code " + rows[i].code_name + " " + val.reason);
+                                errors.push({
+                                    error: "ROW " + i + ": Could not add code " + rows[i].code_name + " " + val.reason,
+                                    row: import_types_1.rowToCsv(rows[i]),
+                                });
                             }
                         });
                     })];
@@ -246,7 +252,10 @@ var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, 
                     }); })).then(function (values) {
                         values.forEach(function (val, i) {
                             if (val.status === 'rejected') {
-                                errors.push("could not add collar " + rows[i].device_id + " " + val.reason);
+                                errors.push({
+                                    error: "ROW " + i + ": Could not add collar " + rows[i].device_id + " " + val.reason,
+                                    row: import_types_1.rowToCsv(rows[i]),
+                                });
                             }
                         });
                     })];

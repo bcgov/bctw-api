@@ -104,7 +104,7 @@ const _getAvailableCollars = async function (
     page?: number
   ): Promise<QueryResult> {
   const base = `
-    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency
+    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
     from collar c 
     where c.device_id not in (
       select device_id from collar_animal_assignment caa
@@ -134,7 +134,7 @@ const getAvailableCollars = async function(req: Request, res:Response): Promise<
 
 const _getAssignedCollars = async function (idir: string, filter?: IFilter, page?: number): Promise<QueryResult> {
   const base = 
-  `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency
+  `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
   from collar c inner join collar_animal_assignment caa 
   on c.device_id = caa.device_id
   and now() <@ tstzrange(caa.start_time, caa.end_time)

@@ -39,6 +39,12 @@ interface ICodeHeaderRow { rows: ICodeHeaderInput[]}
 interface ICollarRow { rows: Collar[]}
 interface ParsedRows { codes: ICodeInput[], headers: ICodeHeaderInput[], animals: Animal[], collars: Collar[] }
 
+const rowToCsv = (row: any): string => Object.values(row).join(',');
+interface IImportError {
+  error: string;
+  row: string;
+}
+
 export {
   isAnimal,
   isCollar,
@@ -48,5 +54,7 @@ export {
   ICodeHeaderRow,
   ICodeRow,
   ICollarRow,
-  ParsedRows
+  ParsedRows,
+  IImportError,
+  rowToCsv
 }

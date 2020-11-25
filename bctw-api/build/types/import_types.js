@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isCode = exports.isCodeHeader = exports.isCollar = exports.isAnimal = void 0;
+exports.rowToCsv = exports.isCode = exports.isCodeHeader = exports.isCollar = exports.isAnimal = void 0;
 var isAnimal = function (row) {
     var r = row;
     if (r.animal_id) {
@@ -36,4 +36,6 @@ var isCodeHeader = function (row) {
     return false;
 };
 exports.isCodeHeader = isCodeHeader;
+var rowToCsv = function (row) { return Object.values(row).join(','); };
+exports.rowToCsv = rowToCsv;
 //# sourceMappingURL=import_types.js.map

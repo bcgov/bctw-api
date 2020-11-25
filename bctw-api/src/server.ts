@@ -21,15 +21,14 @@ const app = express()
   .use(bodyParser.json())
   app.all('*', function (req, res, next) {
     const isUserSwapTest = process.env.TESTING_USERS;
-    console.log(`all route hit, testing users: ${isUserSwapTest}`);
-    if (!isUserSwapTest) {
-      next()
+    if (isUserSwapTest !== 'true') {
+      return next()
     }
     const query = req.query;
     if (query.idir && query.testUser) {
       req.query = Object.assign(req.query, {idir: query.testUser})
     }
-  next() 
+    return next() 
   })
   // critters
   .get('/get-animals', api.getAnimals)

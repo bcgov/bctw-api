@@ -9,7 +9,7 @@ import { getRowResults, momentNow } from '../pg';
 import { Animal } from '../types/animal';
 import { ICodeInput } from '../types/code';
 import { Collar } from '../types/collar';
-import { ICodeHeaderRow, ICollarRow, ICodeRow, IAnimalRow, ParsedRows, isCodeHeader, isAnimal, isCollar, isCode } from '../types/import_types';
+import { ICodeHeaderRow, ICollarRow, ICodeRow, IAnimalRow, ParsedRows, isCodeHeader, isAnimal, isCollar, isCode, IImportError, rowToCsv } from '../types/import_types';
 import { mapCsvImport } from './to_header';
 
 const _removeUploadedFile = async (path: string) => {
@@ -49,12 +49,15 @@ const _parseCsv = async (
 
 const _handleCritterInsert = async (res: Response, idir: string, rows: Animal[]): Promise<Response> => {
   const animalsWithCollars = rows.filter((a) => a.device_id);
-  const errors: string[] = [];
+  const errors: IImportError[] = [];
   const results: Animal[] = [];
   const assignmentResults: QueryResult[]= [];
   const settledHandler = (val, i) => {
     if (val.status === 'rejected') {
-      errors.push(`critter with animal ID ${rows[i].animal_id} ${val.reason}`);
+      errors.push({
+        error :`ROW ${i}: Critter with animal ID ${rows[i].animal_id} ${val.reason}`,
+        row: rowToCsv(rows[i]),
+      });
     }
   }
   try {
@@ -90,7 +93,7 @@ const _handleCritterInsert = async (res: Response, idir: string, rows: Animal[])
 }
 
 const _handleCodeInsert = async (res: Response, idir: string, rows: ICodeInput[]): Promise<Response> => {
-  const errors: string[] = [];
+  const errors: IImportError[] = [];
   const results: Collar[] = [];
   try {
     await Promise.allSettled(
@@ -102,7 +105,10 @@ const _handleCodeInsert = async (res: Response, idir: string, rows: ICodeInput[]
     ).then((values) => {
       values.forEach((val, i) => {
         if (val.status === 'rejected') {
-          errors.push(`could not add code ${rows[i].code_name} ${val.reason}`);
+          errors.push({
+            error: `ROW ${i}: Could not add code ${rows[i].code_name} ${val.reason}`,
+            row: rowToCsv(rows[i]),
+          });
         }
       });
     });
@@ -113,7 +119,7 @@ const _handleCodeInsert = async (res: Response, idir: string, rows: ICodeInput[]
 }
 
 const _handleCollarInsert = async (res: Response, idir: string, rows: Collar[]): Promise<Response> => {
-  const errors: string[] = [];
+  const errors: IImportError[] = [];
   const results: Collar[] = [];
   try {
     await Promise.allSettled(
@@ -125,7 +131,10 @@ const _handleCollarInsert = async (res: Response, idir: string, rows: Collar[]):
     ).then((values) => {
       values.forEach((val, i) => {
         if (val.status === 'rejected') {
-          errors.push(`could not add collar ${rows[i].device_id} ${val.reason}`);
+          errors.push({
+            error: `ROW ${i}: Could not add collar ${rows[i].device_id} ${val.reason}`,
+            row: rowToCsv(rows[i]),
+          });
         }
       });
     });
