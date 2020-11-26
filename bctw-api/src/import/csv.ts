@@ -55,7 +55,7 @@ const _handleCritterInsert = async (res: Response, idir: string, rows: Animal[])
   const settledHandler = (val, i) => {
     if (val.status === 'rejected') {
       errors.push({
-        error :`ROW ${i}: Critter with animal ID ${rows[i].animal_id} ${val.reason}`,
+        error :`ROW ${i}: Critter ID ${rows[i].animal_id} ${val.reason}`,
         row: rowToCsv(rows[i]),
       });
     }

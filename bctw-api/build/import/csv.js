@@ -130,7 +130,7 @@ var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0,
                 settledHandler = function (val, i) {
                     if (val.status === 'rejected') {
                         errors.push({
-                            error: "ROW " + i + ": Critter with animal ID " + rows[i].animal_id + " " + val.reason,
+                            error: "ROW " + i + ": Critter ID " + rows[i].animal_id + " " + val.reason,
                             row: import_types_1.rowToCsv(rows[i]),
                         });
                     }
