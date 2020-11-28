@@ -181,16 +181,16 @@ exports.addCodeHeader = addCodeHeader;
 /*
   - accepts json[] in format
    {
-     "code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
+     "code_type: '', code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
    }
 */
-var _addCode = function (idir, codeHeader, codes) {
+var _addCode = function (idir, codes) {
     return __awaiter(this, void 0, void 0, function () {
         var sql, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codeHeader, codes], true));
+                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_code', [idir, codes], true));
                     return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                 case 1:
                     result = _a.sent();
@@ -212,7 +212,7 @@ var addCode = function (req, res) {
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, _addCode(idir, body.codeHeader, body.codes)];
+                    return [4 /*yield*/, _addCode(idir, body.codes)];
                 case 2:
                     data = _b.sent();
                     return [3 /*break*/, 4];

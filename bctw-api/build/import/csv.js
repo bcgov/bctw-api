@@ -107,7 +107,7 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("CSV file " + file.path + " processed\ncodes: " + codes.rows.length + ",\nheaders: " + headers.rows.length + ",\n      critters: " + animals.rows.length + ", collars: " + collars.rows.length);
+                        console.log("CSV file " + file.path + " processed\ncodes: " + codes.rows.length + ",\nheaders: " + headers.rows.length + ",\ncritters: " + animals.rows.length + ",\ncollars: " + collars.rows.length);
                         return [4 /*yield*/, callback(ret)];
                     case 1:
                         _a.sent();
@@ -118,77 +118,81 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
         return [2 /*return*/];
     });
 }); };
+var _doResultsHaveErrors = function (results) {
+    var found = results.find(function (row) { return Object.keys(row).includes('error'); });
+    return !!found;
+};
 var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var animalsWithCollars, errors, results, assignmentResults, settledHandler, e_1;
+    var animalsWithCollars, errors, results, insertResults, r, e_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 animalsWithCollars = rows.filter(function (a) { return a.device_id; });
                 errors = [];
                 results = [];
-                assignmentResults = [];
-                settledHandler = function (val, i) {
-                    if (val.status === 'rejected') {
-                        errors.push({
-                            error: "ROW " + i + ": Critter ID " + rows[i].animal_id + " " + val.reason,
-                            row: import_types_1.rowToCsv(rows[i]),
-                        });
-                    }
-                };
                 _a.label = 1;
             case 1:
-                _a.trys.push([1, 5, , 6]);
-                // use Promise.allSettled to continue if one of the promises rejects
-                return [4 /*yield*/, Promise.allSettled(rows.map(function (row) { return __awaiter(void 0, void 0, void 0, function () {
-                        var r;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4 /*yield*/, animal_api_1._addAnimal(idir, [row])];
-                                case 1:
-                                    r = _a.sent();
-                                    results.push(pg_1.getRowResults(r, 'add_animal')[0][0]);
-                                    return [2 /*return*/, r];
-                            }
-                        });
-                    }); })).then(function (values) {
-                        values.forEach(settledHandler);
-                    })];
+                _a.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, animal_api_1._addAnimal(idir, rows)];
             case 2:
-                // use Promise.allSettled to continue if one of the promises rejects
-                _a.sent();
-                if (!animalsWithCollars.length) return [3 /*break*/, 4];
-                return [4 /*yield*/, Promise.allSettled(animalsWithCollars.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
-                        var aid, r;
-                        var _a;
-                        return __generator(this, function (_b) {
-                            switch (_b.label) {
-                                case 0:
-                                    aid = (_a = results.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
-                                    if (!aid) return [3 /*break*/, 2];
-                                    return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, +a.device_id, aid, pg_1.momentNow(), null)];
-                                case 1:
-                                    r = _b.sent();
-                                    assignmentResults.push(r);
-                                    return [2 /*return*/, r];
-                                case 2: return [2 /*return*/];
-                            }
-                        });
-                    }); })).then(function (values) {
-                        values.forEach(settledHandler);
-                    })];
+                insertResults = _a.sent();
+                r = pg_1.getRowResults(insertResults, 'add_animal')[0];
+                if (_doResultsHaveErrors(r)) {
+                    errors.push.apply(errors, r);
+                }
+                else {
+                    results.push.apply(results, r);
+                }
+                if (animalsWithCollars.length && errors.length === 0) {
+                    _handleCollarCritterLink(idir, results, animalsWithCollars, errors);
+                }
+                return [3 /*break*/, 4];
             case 3:
-                _a.sent();
-                _a.label = 4;
-            case 4: return [3 /*break*/, 6];
-            case 5:
                 e_1 = _a.sent();
                 return [2 /*return*/, res.status(500).send("exception caught bulk inserting critters: " + e_1)];
-            case 6: return [2 /*return*/, res.send({ results: results, errors: errors })];
+            case 4: return [2 /*return*/, res.send({ results: results, errors: errors })];
+        }
+    });
+}); };
+// called from _handleCritterInsert for animals that have collars attached, 
+// doesnt return results, simply pushes any exceptions caught to errors array param. 
+var _handleCollarCritterLink = function (idir, insertResults, crittersWithCollars, errors) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, Promise.allSettled(crittersWithCollars.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
+                    var aid, r;
+                    var _a;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                aid = (_a = insertResults.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
+                                if (!aid) return [3 /*break*/, 2];
+                                return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, +a.device_id, aid, pg_1.momentNow(), null)];
+                            case 1:
+                                r = _b.sent();
+                                return [2 /*return*/, r];
+                            case 2: return [2 /*return*/];
+                        }
+                    });
+                }); })).then(function (values) {
+                    values.forEach(function (val, i) {
+                        if (val.status === 'rejected') {
+                            errors.push({
+                                rownum: i,
+                                error: "ROW " + i + ": Critter ID " + crittersWithCollars[i].animal_id + " " + val.reason,
+                                row: import_types_1.rowToCsv(crittersWithCollars[i]),
+                            });
+                        }
+                    });
+                })];
+            case 1:
+                _a.sent();
+                return [2 /*return*/];
         }
     });
 }); };
 var _handleCodeInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var errors, results, e_2;
+    var errors, results, insertResults, r, e_2;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -197,29 +201,16 @@ var _handleCodeInsert = function (res, idir, rows) { return __awaiter(void 0, vo
                 _a.label = 1;
             case 1:
                 _a.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, Promise.allSettled(rows.map(function (row) { return __awaiter(void 0, void 0, void 0, function () {
-                        var r;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4 /*yield*/, code_api_1._addCode(idir, row.code_header, [row])];
-                                case 1:
-                                    r = _a.sent();
-                                    results.push(pg_1.getRowResults(r, 'add_code')[0][0]);
-                                    return [2 /*return*/, r];
-                            }
-                        });
-                    }); })).then(function (values) {
-                        values.forEach(function (val, i) {
-                            if (val.status === 'rejected') {
-                                errors.push({
-                                    error: "ROW " + i + ": Could not add code " + rows[i].code_name + " " + val.reason,
-                                    row: import_types_1.rowToCsv(rows[i]),
-                                });
-                            }
-                        });
-                    })];
+                return [4 /*yield*/, code_api_1._addCode(idir, rows)];
             case 2:
-                _a.sent();
+                insertResults = _a.sent();
+                r = pg_1.getRowResults(insertResults, 'add_code')[0];
+                if (_doResultsHaveErrors(r)) {
+                    errors.push.apply(errors, r);
+                }
+                else {
+                    results.push.apply(results, r);
+                }
                 return [3 /*break*/, 4];
             case 3:
                 e_2 = _a.sent();
@@ -229,7 +220,7 @@ var _handleCodeInsert = function (res, idir, rows) { return __awaiter(void 0, vo
     });
 }); };
 var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var errors, results, e_3;
+    var errors, results, insertResults, r, e_3;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -238,29 +229,16 @@ var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, 
                 _a.label = 1;
             case 1:
                 _a.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, Promise.allSettled(rows.map(function (row) { return __awaiter(void 0, void 0, void 0, function () {
-                        var r;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0: return [4 /*yield*/, collar_api_1._addCollar(idir, [row])];
-                                case 1:
-                                    r = _a.sent();
-                                    results.push(pg_1.getRowResults(r, 'add_collar')[0][0]);
-                                    return [2 /*return*/, r];
-                            }
-                        });
-                    }); })).then(function (values) {
-                        values.forEach(function (val, i) {
-                            if (val.status === 'rejected') {
-                                errors.push({
-                                    error: "ROW " + i + ": Could not add collar " + rows[i].device_id + " " + val.reason,
-                                    row: import_types_1.rowToCsv(rows[i]),
-                                });
-                            }
-                        });
-                    })];
+                return [4 /*yield*/, collar_api_1._addCollar(idir, rows)];
             case 2:
-                _a.sent();
+                insertResults = _a.sent();
+                r = pg_1.getRowResults(insertResults, 'add_collar')[0];
+                if (_doResultsHaveErrors(r)) {
+                    errors.push.apply(errors, r);
+                }
+                else {
+                    results.push.apply(results, r);
+                }
                 return [3 /*break*/, 4];
             case 3:
                 e_3 = _a.sent();
@@ -269,6 +247,12 @@ var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, 
         }
     });
 }); };
+/*
+  the main endpoint function. workflow is:
+    1) call _parseCsv function which handles the file parsing
+    2) once finished, pass any parsed rows to their db handler functions and do the upserts
+    3) delete the uploaded csv file
+*/
 var importCsv = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {

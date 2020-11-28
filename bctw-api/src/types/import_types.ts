@@ -43,6 +43,7 @@ const rowToCsv = (row: any): string => Object.values(row).join(',');
 interface IImportError {
   error: string;
   row: string;
+  rownum: number;
 }
 
 export {

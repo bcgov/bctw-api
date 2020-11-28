@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.mapCsvImport = void 0;
 var mapCsvImport = function (header) {
     switch (header) {
+        // critters
         case 'Region':
             return 'region';
         case 'Regional Contact':
@@ -55,6 +56,7 @@ var mapCsvImport = function (header) {
             return 'animal_status';
         case 'Nickname':
             return 'nickname';
+        // collars
         case 'Collar Make':
             return 'make';
         case 'Collar Model':
@@ -77,6 +79,23 @@ var mapCsvImport = function (header) {
             return 'retreival_date';
         case 'Satellite Network':
             return 'satellite_network';
+        // codes & code headers
+        case 'Code Type':
+            return 'code_header';
+        case 'Code Type Name':
+            return 'code_header_name';
+        case 'Code Type Title':
+            return 'code_header_title';
+        case 'Code Type Description':
+            return 'code_header_description';
+        case 'Code Name':
+            return 'code_name';
+        case 'Code Description':
+            return 'code_description';
+        case 'Valid From':
+            return 'valid_from';
+        case 'Valid To':
+            return 'valid_to';
         default:
             return header;
     }

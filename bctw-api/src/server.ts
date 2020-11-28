@@ -19,17 +19,17 @@ const app = express()
   .use(cors())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
-  // app.all('*', function (req, res, next) {
-  //   const isUserSwapTest = process.env.TESTING_USERS;
-  //   if (isUserSwapTest !== 'true') {
-  //     return next()
-  //   }
-  //   const query = req.query;
-  //   if (query.idir && query.testUser) {
-  //     req.query = Object.assign(req.query, {idir: query.testUser})
-  //   }
-  //   return next() 
-  // })
+  app.all('*', function (req, res, next) {
+    const isUserSwapTest = process.env.TESTING_USERS;
+    if (isUserSwapTest !== 'true') {
+      return next()
+    }
+    const query = req.query;
+    if (query.idir && query.testUser) {
+      req.query = Object.assign(req.query, {idir: query.testUser})
+    }
+    return next() 
+  })
   // critters
   .get('/get-animals', api.getAnimals)
   .get('/get-critters',api.getDBCritters)

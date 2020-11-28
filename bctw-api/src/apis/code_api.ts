@@ -81,15 +81,14 @@ const addCodeHeader = async function (req: Request, res:Response): Promise<Respo
 /*
   - accepts json[] in format
    {
-     "code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
+     "code_type: '', code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
    }
 */
 const _addCode = async function (
   idir: string,
-  codeHeader: string,
   codes: ICodeInput[]
 ): Promise<QueryResult> {
-  const sql = transactionify(to_pg_function_query('add_code', [idir, codeHeader, codes], true));
+  const sql = transactionify(to_pg_function_query('add_code', [idir, codes], true));
   const result = await queryAsyncTransaction(sql);
   return result;
 }
@@ -99,7 +98,7 @@ const addCode = async function (req: Request, res:Response): Promise<Response> {
   const body = req.body;
   let data: QueryResult;
   try {
-    data = await _addCode(idir, body.codeHeader, body.codes)
+    data = await _addCode(idir, body.codes)
   } catch (e) {
     return res.status(500).send(`Failed to add codes: ${e}`);
   }
