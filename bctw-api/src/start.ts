@@ -45,6 +45,62 @@ const getDBCritters = function (req: Request, res: Response): void {
   pgPool.query(sql,done);
 };
 
+/* ## getCritterTracks
+  Request all the critter tracks with an date interval
+  These geometries are build on the fly.
+  @param req {object} Node/Express request object
+  @param res {object} Node/Express response object
+  @param next {function} Node/Express function for flow control
+ */
+const getCritterTracks = function (req: Request, res: Response) {
+  const idir = req.query.idir;
+  const start = req.query.start;
+  const end = req.query.end;
+
+  if (!start || !end) {
+    return res.status(404).send('Must have a valid start and end date');
+  }
+
+  const sql = `
+    select
+      jsonb_build_object (
+        'type', 'Feature',
+        'properties', json_build_object(
+          'animal_id', animal_id,
+          'population_unit', population_unit,
+          'species', species
+        ),
+        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
+      ) as "geojson"
+    from
+      vendor_merge_view
+    where
+      date_recorded between '${start}' and '${end}' and
+      animal_id is not null and
+      animal_id <> 'None' and
+      st_asText(geom) <> 'POINT(0 0)'
+    group by
+      animal_id,
+      population_unit,
+      species;`;
+
+  console.log('SQL: ',sql);
+
+  const done = function (err: any,data: any) {
+    if (err) {
+      return res.status(500).send(`Failed to query database: ${err}`);
+    }
+    const features = data.rows.map(row => row.geojson);
+    const featureCollection = {
+      type: "FeatureCollection",
+      features: features
+    };
+
+    res.send(featureCollection);
+  };
+  pgPool.query(sql,done);
+};
+
 /* ## getPingExtent
   Request the min and max dates of available collar pings
   @param req {object} Node/Express request object
@@ -158,6 +214,7 @@ export {
   getCode,
   getCodeHeaders,
   getDBCritters,
+  getCritterTracks,
   getPingExtent,
   getLastPings,
   // getType,

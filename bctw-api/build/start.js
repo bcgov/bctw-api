@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.deleteType = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getCollarAssignmentHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
+exports.notFound = exports.deleteType = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getCritterTracks = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getCollarAssignmentHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
 var pg_1 = require("./pg");
 var user_api_1 = require("./apis/user_api");
 Object.defineProperty(exports, "addUser", { enumerable: true, get: function () { return user_api_1.addUser; } });
@@ -84,6 +84,36 @@ var getDBCritters = function (req, res) {
     pg_1.pgPool.query(sql, done);
 };
 exports.getDBCritters = getDBCritters;
+/* ## getCritterTracks
+  Request all the critter tracks with an date interval
+  These geometries are build on the fly.
+  @param req {object} Node/Express request object
+  @param res {object} Node/Express response object
+  @param next {function} Node/Express function for flow control
+ */
+var getCritterTracks = function (req, res) {
+    var idir = req.query.idir;
+    var start = req.query.start;
+    var end = req.query.end;
+    if (!start || !end) {
+        return res.status(404).send('Must have a valid start and end date');
+    }
+    var sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'animal_id', animal_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      vendor_merge_view\n    where\n      date_recorded between '" + start + "' and '" + end + "' and\n      animal_id is not null and\n      animal_id <> 'None' and\n      st_asText(geom) <> 'POINT(0 0)'\n    group by\n      animal_id,\n      population_unit,\n      species;";
+    console.log('SQL: ', sql);
+    var done = function (err, data) {
+        if (err) {
+            return res.status(500).send("Failed to query database: " + err);
+        }
+        var features = data.rows.map(function (row) { return row.geojson; });
+        var featureCollection = {
+            type: "FeatureCollection",
+            features: features
+        };
+        res.send(featureCollection);
+    };
+    pg_1.pgPool.query(sql, done);
+};
+exports.getCritterTracks = getCritterTracks;
 /* ## getPingExtent
   Request the min and max dates of available collar pings
   @param req {object} Node/Express request object

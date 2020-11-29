@@ -54,6 +54,7 @@ app.all('*', function (req, res, next) {
     // critters
     .get('/get-animals', api.getAnimals)
     .get('/get-critters', api.getDBCritters)
+    .get('/get-critter-tracks', api.getCritterTracks)
     .get('/get-last-pings', api.getLastPings)
     .get('/get-ping-extent', api.getPingExtent)
     .post('/add-animal', api.addAnimal)
