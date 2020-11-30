@@ -42,7 +42,7 @@ var app = express_1.default()
     .use(body_parser_1.default.json());
 app.all('*', function (req, res, next) {
     if (req.method === 'POST') {
-        console.log("post request body " + JSON.stringify(req.body));
+        console.log(req.originalUrl + " post request body " + JSON.stringify(req.body));
     }
     var isUserSwapTest = process.env.TESTING_USERS;
     if (isUserSwapTest !== 'true') {

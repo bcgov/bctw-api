@@ -72,6 +72,7 @@ var addAnimal = function (req, res) {
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
+                    console.log('addanimal endpoint hit');
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     if (!idir) {
                         return [2 /*return*/, res.status(500).send("must supply idir")];
@@ -80,6 +81,7 @@ var addAnimal = function (req, res) {
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 3, , 4]);
+                    console.log("animal try catch hit: body " + JSON.stringify(animals));
                     return [4 /*yield*/, _addAnimal(idir, animals)];
                 case 2:
                     data = _b.sent();
