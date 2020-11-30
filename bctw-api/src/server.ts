@@ -20,6 +20,9 @@ const app = express()
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
   app.all('*', function (req, res, next) {
+    if (req.method === 'POST') {
+      console.log(`post request body ${JSON.stringify(req.body)}`);
+    }
     const isUserSwapTest = process.env.TESTING_USERS;
     if (isUserSwapTest !== 'true') {
       return next()

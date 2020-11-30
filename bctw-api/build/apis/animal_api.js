@@ -183,7 +183,6 @@ var getCollarAssignmentHistory = function (req, res) {
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    console.log("get collar assignment history route endpoint hit");
                     idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     id = (req.params.animal_id);
                     if (!id) {
@@ -194,7 +193,6 @@ var getCollarAssignmentHistory = function (req, res) {
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 3, , 4]);
-                    console.log("get collar assignment try catch hit");
                     return [4 /*yield*/, pg_1.queryAsync(sql)];
                 case 2:
                     data = _b.sent();
