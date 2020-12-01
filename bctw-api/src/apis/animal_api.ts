@@ -29,7 +29,6 @@ const _addAnimal = async function(
   handles upsert. body can be single or array of Animals
 */
 const addAnimal = async function (req: Request, res:Response): Promise<Response> {
-  console.log('addanimal endpoint hit');
   const idir = (req?.query?.idir || '') as string;
   if (!idir) {
     return res.status(500).send(`must supply idir`);
@@ -37,7 +36,6 @@ const addAnimal = async function (req: Request, res:Response): Promise<Response>
   const animals:Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
   let data: QueryResult;
   try {
-    console.log(`animal try catch hit: body ${JSON.stringify(animals)}`);
     data = await _addAnimal(idir, animals);
   } catch (e) {
       return res.status(500).send(`Failed to add animals : ${e}`);
