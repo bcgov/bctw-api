@@ -1,6 +1,6 @@
 ![Lifecycle: Maturing](https://img.shields.io/badge/Lifecycle-Maturing-007EC6)
 
-# BC Telemetry Warehouse (BCTW): GPS Collar API
+# BC Telemetry Warehouse (BCTW): Collar API
 Code to support the aggregation of telemetry information from Vectronic Aerospace and Lotek wireless GPS collars.
 
 # BCTW Architecture overview
