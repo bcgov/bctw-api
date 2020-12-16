@@ -86,11 +86,11 @@ http_1.default.createServer(app).listen(3000, function () {
         var _a, _b;
         var server = ((_a = process.env.POSTGRES_SERVER_HOST) !== null && _a !== void 0 ? _a : 'localhost') + ":" + ((_b = process.env.POSTGRES_SERVER_PORT) !== null && _b !== void 0 ? _b : 5432);
         if (err) {
-            console.log("error connecting to postgresql server host at " + server + ":\n\t" + err);
+            console.log("error connecting to postgresql server host at " + server + ": " + err);
         }
         else
             console.log("postgres server successfully connected at " + server);
-        client.release();
+        client === null || client === void 0 ? void 0 : client.release();
     });
 });
 //# sourceMappingURL=server.js.map

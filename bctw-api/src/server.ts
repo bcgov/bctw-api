@@ -66,8 +66,8 @@ http.createServer(app).listen(3000, () => {
   pgPool.connect((err, client) => {
     const server = `${process.env.POSTGRES_SERVER_HOST ?? 'localhost'}:${process.env.POSTGRES_SERVER_PORT ?? 5432}`;
     if (err) {
-      console.log(`error connecting to postgresql server host at ${server}:\n\t${err}`);
+      console.log(`error connecting to postgresql server host at ${server}: ${err}`);
     } else console.log(`postgres server successfully connected at ${server}`);
-    client.release();
+    client?.release();
   });
 });
