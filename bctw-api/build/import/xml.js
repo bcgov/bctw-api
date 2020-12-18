@@ -55,7 +55,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.testxml = exports.parseKeyx = exports.parseXML = void 0;
+/*
+  not in use
+*/
 var fs_1 = require("fs");
 var parser = __importStar(require("xml2json"));
 var parseXML = function (path) { return __awaiter(void 0, void 0, void 0, function () {
@@ -80,7 +82,6 @@ var parseXML = function (path) { return __awaiter(void 0, void 0, void 0, functi
         }
     });
 }); };
-exports.parseXML = parseXML;
 var parseKeyx = function (json) { return __awaiter(void 0, void 0, void 0, function () {
     var keyobj;
     var _a;
@@ -94,7 +95,6 @@ var parseKeyx = function (json) { return __awaiter(void 0, void 0, void 0, funct
         return [2 /*return*/, keyobj];
     });
 }); };
-exports.parseKeyx = parseKeyx;
 var testxml = function () { return __awaiter(void 0, void 0, void 0, function () {
     var parsed;
     return __generator(this, function (_a) {
@@ -106,5 +106,4 @@ var testxml = function () { return __awaiter(void 0, void 0, void 0, function ()
         }
     });
 }); };
-exports.testxml = testxml;
 //# sourceMappingURL=xml.js.map

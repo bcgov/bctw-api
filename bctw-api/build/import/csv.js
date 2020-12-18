@@ -66,6 +66,7 @@ var code_api_1 = require("../apis/code_api");
 var collar_api_1 = require("../apis/collar_api");
 var pg_1 = require("../pg");
 var import_types_1 = require("../types/import_types");
+var bulk_handlers_1 = require("./bulk_handlers");
 var to_header_1 = require("./to_header");
 var _removeUploadedFile = function (path) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
@@ -118,18 +119,13 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
         return [2 /*return*/];
     });
 }); };
-var _doResultsHaveErrors = function (results) {
-    var found = results.find(function (row) { return Object.keys(row).includes('error'); });
-    return !!found;
-};
 var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var animalsWithCollars, errors, results, insertResults, r, e_1;
+    var animalsWithCollars, results, insertResults, r, e_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 animalsWithCollars = rows.filter(function (a) { return a.device_id; });
-                errors = [];
-                results = [];
+                results = { errors: [], results: [] };
                 _a.label = 1;
             case 1:
                 _a.trys.push([1, 3, , 4]);
@@ -137,20 +133,15 @@ var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0,
             case 2:
                 insertResults = _a.sent();
                 r = pg_1.getRowResults(insertResults, 'add_animal')[0];
-                if (_doResultsHaveErrors(r)) {
-                    errors.push.apply(errors, r);
-                }
-                else {
-                    results.push.apply(results, r);
-                }
-                if (animalsWithCollars.length && errors.length === 0) {
-                    _handleCollarCritterLink(idir, results, animalsWithCollars, errors);
+                bulk_handlers_1.createBulkResponse(results, r);
+                if (animalsWithCollars.length && results.errors.length === 0) {
+                    _handleCollarCritterLink(idir, results.results, animalsWithCollars, results.errors);
                 }
                 return [3 /*break*/, 4];
             case 3:
                 e_1 = _a.sent();
                 return [2 /*return*/, res.status(500).send("exception caught bulk inserting critters: " + e_1)];
-            case 4: return [2 /*return*/, res.send({ results: results, errors: errors })];
+            case 4: return [2 /*return*/, res.send(results)];
         }
     });
 }); };
@@ -192,12 +183,11 @@ var _handleCollarCritterLink = function (idir, insertResults, crittersWithCollar
     });
 }); };
 var _handleCodeInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var errors, results, insertResults, r, e_2;
+    var results, insertResults, r, e_2;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                errors = [];
-                results = [];
+                results = { errors: [], results: [] };
                 _a.label = 1;
             case 1:
                 _a.trys.push([1, 3, , 4]);
@@ -205,27 +195,21 @@ var _handleCodeInsert = function (res, idir, rows) { return __awaiter(void 0, vo
             case 2:
                 insertResults = _a.sent();
                 r = pg_1.getRowResults(insertResults, 'add_code')[0];
-                if (_doResultsHaveErrors(r)) {
-                    errors.push.apply(errors, r);
-                }
-                else {
-                    results.push.apply(results, r);
-                }
+                bulk_handlers_1.createBulkResponse(results, r);
                 return [3 /*break*/, 4];
             case 3:
                 e_2 = _a.sent();
                 return [2 /*return*/, res.status(500).send("exception caught bulk upserting codes: " + e_2)];
-            case 4: return [2 /*return*/, res.send({ results: results, errors: errors })];
+            case 4: return [2 /*return*/, res.send(results)];
         }
     });
 }); };
 var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var errors, results, insertResults, r, e_3;
+    var results, insertResults, r, e_3;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                errors = [];
-                results = [];
+                results = { errors: [], results: [] };
                 _a.label = 1;
             case 1:
                 _a.trys.push([1, 3, , 4]);
@@ -233,17 +217,12 @@ var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, 
             case 2:
                 insertResults = _a.sent();
                 r = pg_1.getRowResults(insertResults, 'add_collar')[0];
-                if (_doResultsHaveErrors(r)) {
-                    errors.push.apply(errors, r);
-                }
-                else {
-                    results.push.apply(results, r);
-                }
+                bulk_handlers_1.createBulkResponse(results, r);
                 return [3 /*break*/, 4];
             case 3:
                 e_3 = _a.sent();
                 return [2 /*return*/, res.status(500).send("exception caught bulk upserting collars: " + e_3)];
-            case 4: return [2 /*return*/, res.send({ results: results, errors: errors })];
+            case 4: return [2 /*return*/, res.send(results)];
         }
     });
 }); };

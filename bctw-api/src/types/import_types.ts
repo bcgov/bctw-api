@@ -1,3 +1,4 @@
+import { QueryResultRow } from "pg";
 import { Animal } from "./animal";
 import { ICodeHeaderInput, ICodeInput } from "./code";
 import { Collar } from "./collar";
@@ -40,10 +41,15 @@ interface ICollarRow { rows: Collar[]}
 interface ParsedRows { codes: ICodeInput[], headers: ICodeHeaderInput[], animals: Animal[], collars: Collar[] }
 
 const rowToCsv = (row: any): string => Object.values(row).join(',');
-interface IImportError {
+export interface IImportError {
   error: string;
   row: string;
   rownum: number;
+}
+
+export interface IBulkResponse {
+  errors: IImportError[],
+  results: QueryResultRow[],
 }
 
 export {
@@ -56,6 +62,5 @@ export {
   ICodeRow,
   ICollarRow,
   ParsedRows,
-  IImportError,
   rowToCsv
 }

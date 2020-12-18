@@ -4,6 +4,8 @@ import { transactionify } from '../pg';
 import { Request, Response } from 'express';
 import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
 import { QueryResult } from 'pg';
+import { IBulkResponse } from '../types/import_types';
+import { createBulkResponse } from '../import/bulk_handlers';
 
 /// limits retrieved critters to only those contained in user_animal_assignment table
 const _accessControlQuery = (alias: string, idir: string) => {
@@ -26,7 +28,8 @@ const _addAnimal = async function(
 }
 
 /* 
-  handles upsert. body can be single or array of Animals
+  handles upsert. body can be single or array of Animals, since
+  db function handles this in a bulk fashion, create the proper bulk response
 */
 const addAnimal = async function (req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
@@ -34,13 +37,19 @@ const addAnimal = async function (req: Request, res:Response): Promise<Response>
     return res.status(500).send(`must supply idir`);
   }
   const animals:Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
+  const bulkResp : IBulkResponse = {errors: [], results: []};
   let data: QueryResult;
   try {
     data = await _addAnimal(idir, animals);
+    createBulkResponse(bulkResp, getRowResults(data, 'add_animal')[0]);
   } catch (e) {
       return res.status(500).send(`Failed to add animals : ${e}`);
   }
-  return res.send(getRowResults(data, 'add_animal'));
+  const { results, errors } = bulkResp;
+  if (errors.length) {
+    return res.status(500).send(errors[0].error);
+  }
+  return res.send(results);
 }
 
 /// get critters that are assigned to a collar (ie have a valid row in collar_animal_assignment table)

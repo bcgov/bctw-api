@@ -1,3 +1,6 @@
+/*
+  not in use
+*/
 import { promises as fs } from 'fs';
 import * as parser from 'xml2json';
 
@@ -35,8 +38,4 @@ type VectronicsKeyCollar = {
   collarType: string;
 }
 
-export {
-  parseXML,
-  parseKeyx,
-  testxml
-}
+export { }

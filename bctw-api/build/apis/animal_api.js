@@ -40,6 +40,7 @@ exports.getCollarAssignmentHistory = exports.getAnimals = exports.addAnimal = ex
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var pg_3 = require("../types/pg");
+var bulk_handlers_1 = require("../import/bulk_handlers");
 /// limits retrieved critters to only those contained in user_animal_assignment table
 var _accessControlQuery = function (alias, idir) {
     return "and " + alias + ".id = any((" + pg_1.to_pg_function_query('get_user_critter_access', [idir]) + ")::integer[])";
@@ -63,12 +64,13 @@ var _addAnimal = function (idir, animal) {
 };
 exports._addAnimal = _addAnimal;
 /*
-  handles upsert. body can be single or array of Animals
+  handles upsert. body can be single or array of Animals, since
+  db function handles this in a bulk fashion, create the proper bulk response
 */
 var addAnimal = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, animals, data, e_1;
+        var idir, animals, bulkResp, data, e_1, results, errors;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -77,17 +79,24 @@ var addAnimal = function (req, res) {
                         return [2 /*return*/, res.status(500).send("must supply idir")];
                     }
                     animals = !Array.isArray(req.body) ? [req.body] : req.body;
+                    bulkResp = { errors: [], results: [] };
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 3, , 4]);
                     return [4 /*yield*/, _addAnimal(idir, animals)];
                 case 2:
                     data = _b.sent();
+                    bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(data, 'add_animal')[0]);
                     return [3 /*break*/, 4];
                 case 3:
                     e_1 = _b.sent();
                     return [2 /*return*/, res.status(500).send("Failed to add animals : " + e_1)];
-                case 4: return [2 /*return*/, res.send(pg_1.getRowResults(data, 'add_animal'))];
+                case 4:
+                    results = bulkResp.results, errors = bulkResp.errors;
+                    if (errors.length) {
+                        return [2 /*return*/, res.status(500).send(errors[0].error)];
+                    }
+                    return [2 /*return*/, res.send(results)];
             }
         });
     });

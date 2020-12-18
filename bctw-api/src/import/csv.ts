@@ -1,15 +1,16 @@
 import csv from 'csv-parser';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
-import { QueryResult, QueryResultRow } from 'pg';
+import { QueryResult } from 'pg';
 import { _addAnimal } from '../apis/animal_api';
 import { _addCode, _addCodeHeader } from '../apis/code_api';
 import { _addCollar, _assignCollarToCritter } from '../apis/collar_api';
 import { getRowResults, momentNow } from '../pg';
 import { Animal } from '../types/animal';
-import { ICode, ICodeInput } from '../types/code';
+import { ICodeInput } from '../types/code';
 import { Collar } from '../types/collar';
-import { ICodeHeaderRow, ICollarRow, ICodeRow, IAnimalRow, ParsedRows, isCodeHeader, isAnimal, isCollar, isCode, IImportError, rowToCsv } from '../types/import_types';
+import { ICodeHeaderRow, ICollarRow, ICodeRow, IAnimalRow, ParsedRows, isCodeHeader, isAnimal, isCollar, isCode, IImportError, rowToCsv, IBulkResponse } from '../types/import_types';
+import { createBulkResponse } from './bulk_handlers';
 import { mapCsvImport } from './to_header';
 
 const _removeUploadedFile = async (path: string) => {
@@ -46,30 +47,21 @@ const _parseCsv = async (
     });
 }
 
-const _doResultsHaveErrors = (results): boolean => {
-  const found = results.find((row) => Object.keys(row).includes('error'));
-  return !!found;
-}
-
 const _handleCritterInsert = async (res: Response, idir: string, rows: Animal[]): Promise<Response> => {
   const animalsWithCollars = rows.filter((a) => a.device_id);
-  const errors: IImportError[] = [];
-  const results: QueryResultRow[] = [];
+  const results: IBulkResponse = {errors: [], results: []};
   try {
     const insertResults = await _addAnimal(idir, rows);
     const r = getRowResults(insertResults, 'add_animal')[0];
-    if (_doResultsHaveErrors(r)) {
-      errors.push(...(r as IImportError[]));
-    } else {
-      results.push(...(r as QueryResultRow[]));
-    }
-    if (animalsWithCollars.length && errors.length === 0) {
-      _handleCollarCritterLink(idir, results as Animal[], animalsWithCollars, errors);
+    createBulkResponse(results, r);
+
+    if (animalsWithCollars.length && results.errors.length === 0) {
+      _handleCollarCritterLink(idir, results.results as Animal[], animalsWithCollars, results.errors);
     }
   } catch (e) {
     return res.status(500).send(`exception caught bulk inserting critters: ${e}`);
   }
-  return res.send({results, errors});
+  return res.send(results);
 }
 
 // called from _handleCritterInsert for animals that have collars attached, 
@@ -97,37 +89,27 @@ const _handleCollarCritterLink = async (idir: string, insertResults: Animal[], c
 }
 
 const _handleCodeInsert = async (res: Response, idir: string, rows: ICodeInput[]): Promise<Response> => {
-  const errors: IImportError[] = [];
-  const results: ICode[] = [];
+  const results: IBulkResponse = {errors: [], results: []};
   try {
     const insertResults = await _addCode(idir, rows);
     const r = getRowResults(insertResults, 'add_code')[0];
-    if (_doResultsHaveErrors(r)) {
-      errors.push(...(r as IImportError[]));
-    } else {
-      results.push(...(r as ICode[]));
-    }
+    createBulkResponse(results, r);
   } catch (e) {
     return res.status(500).send(`exception caught bulk upserting codes: ${e}`);
   }
-  return res.send({results, errors});
+  return res.send(results);
 }
 
 const _handleCollarInsert = async (res: Response, idir: string, rows: Collar[]): Promise<Response> => {
-  const errors: IImportError[] = [];
-  const results: QueryResultRow[] = [];
+  const results: IBulkResponse = {errors: [], results: []};
   try {
     const insertResults = await _addCollar(idir, rows);
     const r = getRowResults(insertResults, 'add_collar')[0];
-    if (_doResultsHaveErrors(r)) {
-      errors.push(...(r as IImportError[]));
-    } else {
-      results.push(...(r as QueryResultRow[]));
-    }
+    createBulkResponse(results, r);
   } catch (e) {
     return res.status(500).send(`exception caught bulk upserting collars: ${e}`);
   }
-  return res.send({results, errors});
+  return res.send(results);
 }
 
 /*
