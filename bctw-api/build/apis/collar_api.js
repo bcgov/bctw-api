@@ -40,6 +40,7 @@ exports._addCollar = exports._assignCollarToCritter = exports.getCollar = export
 var pg_1 = require("../pg");
 var pg_2 = require("../pg");
 var pg_3 = require("../types/pg");
+var bulk_handlers_1 = require("../import/bulk_handlers");
 var _accessCollarControl = function (alias, idir) {
     return "and " + alias + ".device_id = any((" + pg_1.to_pg_function_query('get_user_collar_access', [idir]) + ")::integer[])";
 };
@@ -64,27 +65,32 @@ exports._addCollar = _addCollar;
 var addCollar = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, data, e_1, results;
+        var idir, collars, bulkResp, data, e_1, results, errors;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
-                    body = req.body;
                     if (!idir) {
                         return [2 /*return*/, res.status(500).send('must supply idir')];
                     }
+                    collars = !Array.isArray(req.body) ? [req.body] : req.body;
+                    bulkResp = { errors: [], results: [] };
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, _addCollar(idir, body)];
+                    return [4 /*yield*/, _addCollar(idir, collars)];
                 case 2:
                     data = _b.sent();
+                    bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(data, 'add_collar')[0]);
                     return [3 /*break*/, 4];
                 case 3:
                     e_1 = _b.sent();
                     return [2 /*return*/, res.status(500).send("Failed to add collar(s): " + e_1)];
                 case 4:
-                    results = pg_1.getRowResults(data, 'add_collar');
+                    results = bulkResp.results, errors = bulkResp.errors;
+                    if (errors.length) {
+                        return [2 /*return*/, res.status(500).send(errors[0].error)];
+                    }
                     return [2 /*return*/, res.send(results)];
             }
         });

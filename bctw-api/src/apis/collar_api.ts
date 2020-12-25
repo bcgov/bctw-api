@@ -4,6 +4,8 @@ import { transactionify } from '../pg';
 import { Request, Response } from 'express';
 import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
 import { QueryResult } from 'pg';
+import { IBulkResponse } from '../types/import_types';
+import { createBulkResponse } from '../import/bulk_handlers';
 
 const _accessCollarControl = (alias: string, idir: string) => {
   return `and ${alias}.device_id = any((${to_pg_function_query('get_user_collar_access', [idir])})::integer[])`;
@@ -19,17 +21,23 @@ const _addCollar = async function (idir: string, collar: Collar[],): Promise<Que
 
 const addCollar = async function(req: Request, res:Response): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
-  const body = req.body;
-  let data: QueryResult;
   if (!idir) {
     return res.status(500).send('must supply idir')
   }
+  const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
+  const bulkResp: IBulkResponse = {errors: [], results: []};
+  let data: QueryResult;
+
   try {
-    data = await _addCollar(idir, body);
+    data = await _addCollar(idir, collars);
+    createBulkResponse(bulkResp, getRowResults(data, 'add_collar')[0])
   } catch (e) {
     return res.status(500).send(`Failed to add collar(s): ${e}`);
   }
-  const results = getRowResults(data, 'add_collar');
+  const { results, errors } = bulkResp;
+  if (errors.length) {
+    return res.status(500).send(errors[0].error);
+  }
   return res.send(results);
 }
 
