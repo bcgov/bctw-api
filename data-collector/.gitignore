@@ -4,3 +4,5 @@
 *.tgz
 ~*
 node_modules
+downloads
+cypress

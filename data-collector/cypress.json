@@ -1,0 +1,9 @@
+{
+  "env": { },
+  "pageLoadTimeout": 5000,
+  "video": false,
+  "pluginsFile": "scripts/ats/plugins/index.js",
+  "supportFile": "scripts/ats/support/index.js",
+  "integrationFolder": "scripts/ats/integration",
+  "fixturesFolder": "scripts/ats/fixtures"
+}

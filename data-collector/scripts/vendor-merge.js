@@ -25,7 +25,6 @@ const callback = (err) => {
 
 const sql = `
   refresh materialized view vendor_merge_view;
-  refresh materialized view vender_merge_view2;
   refresh materialized view last_critter_pings_view;
 `;
 
