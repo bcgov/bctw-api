@@ -1,5 +1,5 @@
 // Wait timeout in minutes
-def WAIT_TIMEOUT = 10
+def WAIT_TIMEOUT = 15
 
 // Assumes Builds, Images, and Deployments have the same name(s)
 // If necessary place in the order they need to be deployed.
