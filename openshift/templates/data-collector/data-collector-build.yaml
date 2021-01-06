@@ -27,11 +27,14 @@ objects:
         ref: "${GIT_REF}"
       contextDir: "${SOURCE_CONTEXT_DIR}"
     strategy:
-      type: Source
-      sourceStrategy:
-        from:
-          kind: "${SOURCE_IMAGE_KIND}"
-          name: "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}"
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+    # strategy:
+    #   type: Source
+    #   sourceStrategy:
+    #     from:
+    #       kind: "${SOURCE_IMAGE_KIND}"
+    #       name: "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}"
     output:
       to:
         kind: ImageStreamTag
