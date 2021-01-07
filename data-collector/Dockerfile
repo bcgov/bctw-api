@@ -5,6 +5,9 @@ FROM cypress/base:10
 # USER 10001
 # Create app directory
 # WORKDIR /usr/src/app
+USER node
+ENV CI=1
+RUN npx cypress install
 
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
@@ -18,7 +21,7 @@ RUN npm install
 # Bundle app source
 COPY . .
 
-RUN $(npm bin)/cypress verify
+# RUN $(npm bin)/cypress verify
 
 # EXPOSE 8080
 CMD [ "node", "app.js" ]
