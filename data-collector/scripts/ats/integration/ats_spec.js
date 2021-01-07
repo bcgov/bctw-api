@@ -6,7 +6,7 @@ const submitFormId = '#btt_SignIn';
 
 
 describe('ATS Test', () => {
-  const { ATS_URL, ATS_USERNAME, ATS_URL } = env;
+  const { ATS_URL, ATS_USERNAME, ATS_PASSWORD } = env;
   
   it(`download all data from ATS site: ${ATS_URL}`, () => {
     const dataDownloadBtnId = '#ContentPlaceHolder1_DownloadAll3';
