@@ -11,7 +11,7 @@ const cypress_env = {
 
 fs.readFile('cypress.json', function(err, data) {
     if (err) {
-        console.log('unable to open read cypress.json')
+        console.log(`unable to open read cypress.json: ${err}`)
         return;
     }
     var json = JSON.parse(data);
@@ -19,7 +19,7 @@ fs.readFile('cypress.json', function(err, data) {
     console.log(`updating cypress.json to ${JSON.stringify(json)}`);
     fs.writeFile('cypress.json', JSON.stringify(json), (err, data) => {
         if (err) {
-            console.log('unable to update cypress.json with env variables')
+            console.log(`unable to update cypress.json with env variables: ${err}`)
         }
     });
 })
