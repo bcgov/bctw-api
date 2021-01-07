@@ -18,6 +18,8 @@ RUN ls -la /root
 RUN chmod 755 /root
 # point Cypress at the /root/cache no matter what user account is used
 ENV CYPRESS_CACHE_FOLDER=/root/.cache/Cypress
+# hopefully fix 'failed to get "appData" path' error in OCP environment
+ENV XDG_CONFIG_HOME=/app
 
 RUN chmod 777 /app
 
