@@ -8,7 +8,7 @@
     "vectronics": "node scripts/vectronics.js",
     "lotek": "node scripts/lotek.js",
     "vendor-merge": "node scripts/vendor-merge.js",
-    "ats": "./node_modules/.bin/cypress run --browser chromium --headless"
+    "ats": "node scripts/ats.js"
   },
   "repository": {
     "type": "git",

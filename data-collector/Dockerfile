@@ -39,5 +39,7 @@ USER root
 RUN chmod 777 /app/cypress.json
 
 USER node
+# add Cypress to path
+ENV PATH="/app/node_modules/cypress/bin:${PATH}"
 
 CMD [ "node", "app.js" ]
