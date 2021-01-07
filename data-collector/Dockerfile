@@ -5,9 +5,6 @@ FROM cypress/base:10
 # USER 10001
 # Create app directory
 # WORKDIR /usr/src/app
-USER node
-ENV CI=1
-RUN npx cypress install
 
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
@@ -21,7 +18,17 @@ RUN npm install
 # Bundle app source
 COPY . .
 
-# RUN $(npm bin)/cypress verify
+# "root"
+RUN whoami
+
+# there is a built-in user "node" that comes from the very base Docker Node image
+# move test runner binary folder to the non-root's user home directory
+RUN mv /root/.cache /home/node/.cache
+
+USER node
+# show user effective id and group - it should be non-zero
+# meaning the current user "node" is not root
+RUN id
 
 # EXPOSE 8080
 CMD [ "node", "app.js" ]
