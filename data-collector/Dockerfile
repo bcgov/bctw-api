@@ -1,10 +1,17 @@
 FROM cypress/base:10
 # FROM centos/nodejs-12-centos7
+
 # USER root
 # RUN yum install -y xorg-x11-server-Xvfb gtk2-devel gtk3-devel libnotify-devel GConf2 nss libXScrnSaver alsa-lib
 # USER 10001
+
 # Create app directory
 # WORKDIR /usr/src/app
+
+# "root"
+RUN whoami
+
+USER node
 
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
@@ -18,14 +25,10 @@ RUN npm install
 # Bundle app source
 COPY . .
 
-# "root"
-RUN whoami
-
 # there is a built-in user "node" that comes from the very base Docker Node image
 # move test runner binary folder to the non-root's user home directory
 RUN mv /root/.cache /home/node/.cache
 
-USER node
 # show user effective id and group - it should be non-zero
 # meaning the current user "node" is not root
 RUN id
