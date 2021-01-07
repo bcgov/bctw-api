@@ -7,9 +7,6 @@ const execa = require('execa');
 //
 // You can change the location of this file or turn off loading
 // the plugins file with the 'pluginsFile' configuration option.
-//
-// You can read more here:
-// https://on.cypress.io/plugins-guide
 // ***********************************************************
 
 /**
@@ -17,6 +14,11 @@ const execa = require('execa');
  */
 module.exports = async (on, config) => {
   on('task', downloads(on, config));
+
+  // copy environment variables
+  config.env.ATS_URL = process.env.ATS_URL;
+  config.env.ATS_USERNAME = process.env.ATS_USERNAME;
+  config.env.ATS_PASSWORD = process.env.ATS_PASSWORD;
 
   const hasChromium = config.browsers.some(
     (browser) => browser.name === 'chromium'
