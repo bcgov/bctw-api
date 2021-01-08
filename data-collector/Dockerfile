@@ -36,12 +36,6 @@ RUN ls -la /root/.cache/Cypress/*/Cypress
 # Bundle app source
 COPY . .
 
-# grant write permission to cypress.json to update env variables
-# USER root
-# RUN chmod 777 /app/cypress.json
-# RUN chmod 777 /app/downloads
-
-# USER node
 # add Cypress to path
 ENV PATH="/app/node_modules/cypress/bin:${PATH}"
 
