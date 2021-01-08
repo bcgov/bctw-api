@@ -1,5 +1,4 @@
- const { spawn } = require("child_process");
-//  require('dotenv').config()
+ const { spawn } = require('child_process');
 
 const ATS_URL = process.env.ATS_URL;
 const ATS_PASSWORD = process.env.ATS_PASSWORD;

@@ -18,10 +18,12 @@ RUN ls -la /root
 RUN chmod 755 /root
 # point Cypress at the /root/cache no matter what user account is used
 ENV CYPRESS_CACHE_FOLDER=/root/.cache/Cypress
-# fix "failed to get "appData' path' error in OCP
+# fix for "failed to get "appData' path' Electron error in OCP environment
 ENV XDG_CONFIG_HOME=/app
 
+RUN mkdir /app/downloads
 RUN chmod 777 /app
+RUN chmod 777 /app/downloads
 
 # switch to non-root user "node" that comes from Docker Node image
 USER node
@@ -35,10 +37,11 @@ RUN ls -la /root/.cache/Cypress/*/Cypress
 COPY . .
 
 # grant write permission to cypress.json to update env variables
-USER root
-RUN chmod 777 /app/cypress.json
+# USER root
+# RUN chmod 777 /app/cypress.json
+# RUN chmod 777 /app/downloads
 
-USER node
+# USER node
 # add Cypress to path
 ENV PATH="/app/node_modules/cypress/bin:${PATH}"
 

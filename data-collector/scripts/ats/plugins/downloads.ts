@@ -1,5 +1,4 @@
 import CDP from 'chrome-remote-interface';
-import { Dayjs } from 'dayjs';
 import path from 'path';
 import { promisify } from 'util';
 
@@ -40,8 +39,9 @@ module.exports = (on, config) => {
   }
 
   async function cleanDownloads() {
-    console.log(`cleaning up downloads`);
-    await rimraf(downloadPath);
+    const path = `${downloadPath}/*.txt`;
+    console.log(`cleaning up downloads ${path}`);
+    await rimraf(path); 
     return true;
   }
 

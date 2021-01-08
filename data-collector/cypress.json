@@ -5,5 +5,7 @@
   "pluginsFile": "scripts/ats/plugins/index.js",
   "supportFile": "scripts/ats/support/index.js",
   "integrationFolder": "scripts/ats/integration",
-  "fixturesFolder": "scripts/ats/fixtures"
+  "fixturesFolder": "scripts/ats/fixtures",
+  "trashAssetsBeforeRuns": false, 
+  "screenshotOnRunFailure": false
 }
