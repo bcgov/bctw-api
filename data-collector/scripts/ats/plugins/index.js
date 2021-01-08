@@ -19,12 +19,13 @@ module.exports = async (on, config) => {
     (browser) => browser.name === 'chromium'
   );
 
+  // use the locally installed chromium binary
   if (!hasChromium) {
     const { stdout } = await execa(chromium.path, ['--version']);
     const [version] = /[\d\.]+/.exec(stdout);
     const majorVersion = parseInt(version.split('.')[0]);
 
-    // Note: this extends the global config!
+    // this extends the global config
     return {
       browsers: [
         ...config.browsers,

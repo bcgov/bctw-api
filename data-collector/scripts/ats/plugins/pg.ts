@@ -2,20 +2,20 @@ import { Dayjs } from 'dayjs';
 import pg, { QueryResult } from 'pg';
 import { IATSRow } from '../types';
 const dayjs = require('dayjs')
-const utc = require('dayjs/plugin/utc');
-dayjs.extend(utc);
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 // Set up the database pool
-const pgPool = new pg.Pool({
-  user: process.env.POSTGRES_USER,
-  database: process.env.POSTGRES_DB,
-  password: process.env.POSTGRES_PASSWORD,
-  host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
-  port: isProd ? +(process?.env?.POSTGRES_SERVER_PORT ?? 5432) : 5432,
-  max: 10
-});
+const user = process.env.POSTGRES_USER;
+const database = process.env.POSTGRES_DB;
+const password = process.env.POSTGRES_PASSWORD;
+const host = isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost';
+const port = isProd ? +(process?.env?.POSTGRES_SERVER_PORT ?? 5432) : 5432;
+
+const pool = { user, database, password, host, port, max: 10 };
+
+const pgPool = new pg.Pool(pool);
+console.log(`connecting to postgres: ${JSON.stringify(pool)}`)
 
 // returns null instead of NaN
 const parseIntFromJSON = (val: string) => {
@@ -28,10 +28,10 @@ const parseBoolFromJSON = (val: string) => {
   return val === 'No' ? false : true;
 }
 
-// doesnt commit transaction if not in production
+// dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
 
-const getNow = () => dayjs.utc().format();
+const getNow = () => dayjs.format();
 
 // retrieves the timestamp of the last entered row in the ats_collar_data table
 // if not production, returns now() - 1 day 
@@ -45,7 +45,6 @@ const getLastSuccessfulCollar = async (): Promise<Dayjs> => {
   const data = await client.query(sql);
   // default to 1 day ago if can't find valid date from database
   const result = data.rowCount > 0 ? dayjs(data.rows[0]['date']) : yesterday ;
-  // console.log(result.format())
   return result;
 }
 
@@ -111,7 +110,6 @@ const formatSql = (records: IATSRow[]): string => {
   console.log(`${getNow()} entering ` + values.length + ' records');
   const sqlPostamble = ' on conflict (timeid) do nothing';
   const sql = transactionify(`${sqlPreamble + values.join(',') + sqlPostamble}`);
-  // console.log(sql);
   return sql;
 };
 

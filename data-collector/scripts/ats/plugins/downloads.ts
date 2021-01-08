@@ -14,6 +14,7 @@ let client = null;
 module.exports = (on, config) => {
   const downloadPath = path.resolve(config.projectRoot, './downloads');
 
+  // setup remote debugging port
   function ensureRdpPort(args) {
     const existing = args.find((arg) =>
       arg.startsWith('--remote-debugging-port')
@@ -47,11 +48,8 @@ module.exports = (on, config) => {
 
   async function allowDownloads() {
     await resetCRI();
-
     console.log(`enabling file downloads`);
-
     client = client || (await CDP({ port }));
-
     return (client as any).send('Browser.setDownloadBehavior', {
       behavior: 'allow',
       downloadPath,
@@ -59,16 +57,13 @@ module.exports = (on, config) => {
   }
 
   on('before:browser:launch', (browser, launchOptionsOrArgs) => {
-    debug('browser launch args or options %o', launchOptionsOrArgs);
-
+    // debug('browser launch args or options %o', launchOptionsOrArgs);
     const args = Array.isArray(launchOptionsOrArgs)
       ? launchOptionsOrArgs
       : launchOptionsOrArgs.args;
-
     port = ensureRdpPort(args);
-
-    debug('ensureRdpPort %d', port);
-    debug('Chrome arguments %o', args);
+    // debug('ensureRdpPort %d', port);
+    // debug('Chrome arguments %o', args);
   });
 
   const mergeAndInsert = async (data, tempData) => {
@@ -85,12 +80,12 @@ module.exports = (on, config) => {
       return null;
     }
     const sql = formatSql(newCollarData);
-    // console.log(sql);
     const result = await insertData(sql);
     // console.log(result);
     return null;
   }
 
+  // exported to be called as a cypress test after collar data is downloaded
   async function handleParseAndInsert() {
     const paths = await getPaths(downloadPath);
     console.log(`ATS files available at\n${paths}`)
