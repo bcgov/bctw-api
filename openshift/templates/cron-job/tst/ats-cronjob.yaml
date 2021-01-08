@@ -55,21 +55,21 @@ objects:
                         name: bctw
                   - name: POSTGRES_DB
                     value: bctw
-                  # - name: LOTEK_USER
-                  #   valueFrom:
-                  #     secretKeyRef:
-                  #       key: username
-                  #       name: lotex
-                  # - name: LOTEK_PASSWORD
-                  #   valueFrom:
-                  #     secretKeyRef:
-                  #       key: password
-                  #       name: lotex
                   - name: ATS_URL
                     value: 'https://www.atsidaq.net/Login.aspx'
+                  - name: ATS_PASSWORD
+                    valueFrom: 
+                      secretKeyRef:
+                        key: password
+                        name: ats
+                  - name: ATS_USERNAME
+                    valueFrom:
+                      secretKeyRef:
+                        key: username
+                        name: ats
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
-              activeDeadlineSeconds: 90
+              activeDeadlineSeconds: 180
               dnsPolicy: 'ClusterFirst'
 parameters:
   - name: 'NAMESPACE'

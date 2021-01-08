@@ -55,21 +55,21 @@ objects:
                         name: bctw
                   - name: POSTGRES_DB
                     value: bctw
-                  # - name: LOTEK_USER
-                  #   valueFrom:
-                  #     secretKeyRef:
-                  #       key: username
-                  #       name: lotex
-                  # - name: LOTEK_PASSWORD
-                  #   valueFrom:
-                  #     secretKeyRef:
-                  #       key: password
-                  #       name: lotex
                   - name: ATS_URL
                     value: 'https://www.atsidaq.net/Login.aspx'
+                  - name: ATS_PASSWORD
+                    valueFrom: 
+                      secretKeyRef:
+                        key: password
+                        name: ats
+                  - name: ATS_USERNAME
+                    valueFrom:
+                      secretKeyRef:
+                        key: username
+                        name: ats
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
-              activeDeadlineSeconds: 90
+              activeDeadlineSeconds: 180
               dnsPolicy: 'ClusterFirst'
 parameters:
   - name: 'NAMESPACE'
@@ -95,8 +95,8 @@ parameters:
   - name: 'SCHEDULE'
     displayName: 'Cron Schedule'
     description: 'Cron Schedule to Execute the Job (in UTC)'
-    # value: '0 1 * * *' # at one o'clock
-    value: '*/5 * * * *' #every five minutes  
+    value: '0 1 * * *' # at one o'clock
+    # value: '*/5 * * * *' #every 5 minutes  
     required: true
   - name: 'SUCCESS_JOBS_HISTORY_LIMIT'
     displayName: 'Successful Job History Limit'
