@@ -31,7 +31,7 @@ const parseBoolFromJSON = (val: string) => {
 // dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
 
-const getNow = () => dayjs.format();
+const getNow = () => dayjs().format();
 
 // retrieves the timestamp of the last entered row in the ats_collar_data table
 // if not production, returns now() - 1 day 
