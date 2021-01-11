@@ -18,8 +18,8 @@ const pgPool = new pg.Pool(pool);
 console.log(`connecting to postgres: ${JSON.stringify(pool)}`)
 
 // returns null instead of NaN
-const parseIntFromJSON = (val: string) => {
-  const ret = parseInt(val, 10);
+const parseFloatFromJSON = (val: string) => {
+  const ret = parseFloat(val);
   return isNaN(ret) ? null : ret;
 }
 
@@ -77,8 +77,8 @@ const formatSql = (records: IATSRow[]): string => {
 
   let values: string[] = [];
   for (const p of records) {
-    const lat = parseIntFromJSON(p.Latitude);
-    const long = parseIntFromJSON(p.Longitude);
+    const lat = parseFloatFromJSON(p.Latitude);
+    const long = parseFloatFromJSON(p.Longitude);
     values.push(
       `(
         '${p.CollarSerialNumber}',
@@ -95,7 +95,7 @@ const formatSql = (records: IATSRow[]): string => {
         '${p.Event}',
         ${lat},
         ${long},
-        ${parseIntFromJSON(p.CEPradius_km)},
+        ${parseFloatFromJSON(p.CEPradius_km)},
         st_setSrid(st_point(${long},${lat}),4326),
         '${p.Temperature}',
         '${p.HDOP}',
