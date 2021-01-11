@@ -1,23 +1,24 @@
-interface IATSBase {
-  CollarSerialNumber: string;
-  Date: string;
-  Latitude: string;
-  Longitude: string;
-}
-interface ITemperatureData extends IATSBase{
+// dont extend these interfaces - extended properties may not be parsed correctly using csv-tojson
+interface ITemperatureData {
+  CollarSerialNumber
   Year: string;
   Julianday: string;
   Hour: string;
   Minute: string;
   Activity: string;
   Temperature: string;
+  Latitude: string;
+  Longitude: string;
   HDOP: string;
   NumSats: string;
   FixTime: string;
   '2D/3D': string;
+  Date: string;
 }
 
-interface IData extends IATSBase {
+interface ITransmissionData {
+  CollarSerialNumber: string;
+  Date: string;
   NumberFixes: string;
   BattVoltage: string;
   Mortality: string;
@@ -28,14 +29,12 @@ interface IData extends IATSBase {
   GmtOffset: string;
   LowBatt: string;
   Event: string;
+  Latitude: string;
+  Longitude: string;
   CEPradius_km: string;
-  field16?: string;
-  field17?: string;
-  field18?: string;
-  field19?: string;
 }
 
-interface IATSRow extends IData {
+interface IATSRow extends ITransmissionData {
   Temperature: string;
   Activity: string;
   HDOP: string;
@@ -44,8 +43,7 @@ interface IATSRow extends IData {
 }
 
 export {
-  IATSBase,
   ITemperatureData,
-  IData,
+  ITransmissionData,
   IATSRow,
 }

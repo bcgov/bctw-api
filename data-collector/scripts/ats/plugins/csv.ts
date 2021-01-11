@@ -1,7 +1,7 @@
 import csvtojson from 'csvtojson';
 const fs = require('fs').promises;
 const dayjs = require('dayjs');
-import { IATSBase, IATSRow, IData, ITemperatureData } from '../types';
+import { IATSRow, ITransmissionData, ITemperatureData } from '../types';
 import { getLastSuccessfulCollar } from './pg';
 import { Dayjs } from 'dayjs';
 
@@ -27,15 +27,15 @@ const parseDateFromTempData = (o: ITemperatureData): Dayjs => {
 }
 
 /// filters data with timestamps older than {olderThan}
-const filterData = (data: IATSBase[], olderThan: Dayjs) => {
+const filterData = (data: any[], olderThan: Dayjs) => {
   return data.filter(d => dayjs(d.Date).isAfter(olderThan));
 }
 
 // merges collar and transmission data
 // returns an array of IATSRow.
-const mergeATSData = (data: IData[], tempData: ITemperatureData[]): IATSRow[] => {
+const mergeATSData = (data: ITransmissionData[], tempData: ITemperatureData[]): IATSRow[] => {
   const validEntries: IATSRow[] = [];
-  data.forEach((i: IData ) => {
+  data.forEach((i: ITransmissionData) => {
     let d = dayjs(i.Date);
 
     const match = tempData.find((td: ITemperatureData) => {
@@ -45,11 +45,11 @@ const mergeATSData = (data: IData[], tempData: ITemperatureData[]): IATSRow[] =>
       return same && i.CollarSerialNumber === td.CollarSerialNumber;
     })
     if (match) {
-      const merged = Object.assign(match, i);
+      const merged = Object.assign(i, match);
       validEntries.push(merged);
-      // console.log(merged)
     } 
   })
+  // console.log(JSON.stringify(validEntries, null, 2))
   return validEntries;
 }
 

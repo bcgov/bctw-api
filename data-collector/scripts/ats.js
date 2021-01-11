@@ -9,7 +9,7 @@ const envString = `ATS_URL=${ATS_URL},ATS_PASSWORD=${ATS_PASSWORD},ATS_USERNAME=
 const cypress = spawn('cypress', ['run', '-b', 'chromium', '--headless', '--env', envString]);
 
 cypress.stdout.on("data", data => {
-    console.log(`stdout: ${data}`);
+    console.log(data);
 });
 
 cypress.stderr.on("data", data => {

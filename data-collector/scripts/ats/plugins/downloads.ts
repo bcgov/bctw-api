@@ -1,6 +1,7 @@
 import CDP from 'chrome-remote-interface';
 import path from 'path';
 import { promisify } from 'util';
+import { ITemperatureData, ITransmissionData } from '../types';
 
 import { filterData, getLastSuccessfulCollar, getPaths, mergeATSData, parseCsv } from './csv';
 import { formatSql, insertData } from './pg';
@@ -66,14 +67,15 @@ module.exports = (on, config) => {
     // debug('Chrome arguments %o', args);
   });
 
-  const mergeAndInsert = async (data, tempData) => {
+  const mergeAndInsert = async (data: ITemperatureData[], transmissionData: ITransmissionData[]) => {
     const lastEntry = await getLastSuccessfulCollar();
     console.log(`last successfull insertion to ATS table was ${lastEntry.format()}`);
-    const fData = filterData(data, lastEntry);
-    const fTData = filterData(tempData, lastEntry);
-    console.log(`filtered entries ${fData.length} ${fTData.length}`)
 
-    const newCollarData = mergeATSData((fData as any), (fTData as any));
+    const filteredTempData: ITemperatureData[] = filterData(data, lastEntry);
+    const filteredTransData: ITransmissionData[] = filterData(transmissionData, lastEntry);
+    console.log(`filtered results: data entries: ${filteredTempData.length}, transmission entries: ${filteredTransData.length}`)
+
+    const newCollarData = mergeATSData(filteredTransData, filteredTempData);
 
     if (!newCollarData.length) {
       console.log(`no new entries found after ${lastEntry.format()}, exiting`);
@@ -88,16 +90,19 @@ module.exports = (on, config) => {
   // exported to be called as a cypress test after collar data is downloaded
   async function handleParseAndInsert() {
     const paths = await getPaths(downloadPath);
-    console.log(`ATS files available at\n${paths}`)
+
     if (paths.length !== 2) {
-      console.log('unable to download collar and transmission files');
+      console.log('cypress downloading tests completed but at least one of the transmission or data files are missing. exiting');
       return;
     }
-    const newData = await parseCsv(paths[0]); // tempData
-    const newTransmissions = await parseCsv(paths[1]); // data
-    console.log(`completed parsing files, ${newData.length} temperature data and ${newTransmissions.length} data`)
-    if (newData.length && newTransmissions.length) {
-      await mergeAndInsert(newTransmissions, newData);
+    console.log(`collar/temperature data at ${paths[0]}\ntransmission data at ${paths[1]}`)
+
+    const tempData = await parseCsv(paths[0]) as ITemperatureData[]; // collar data including temperature
+    const transmissionData = await parseCsv(paths[1]) as ITransmissionData[]; // transmission data
+
+    console.log(`completed parsing files downloaded files to JSON, ${tempData.length} temperature data and ${transmissionData.length} transmission data`)
+    if (tempData.length && transmissionData.length) {
+      await mergeAndInsert(tempData, transmissionData);
     }
     return null;
   }
