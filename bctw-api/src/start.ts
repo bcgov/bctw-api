@@ -1,16 +1,25 @@
-import { pgPool, queryAsync, queryAsyncTransaction } from './pg';
-import { addUser, assignCritterToUser, getUserRole } from './apis/user_api';
+import { pgPool, queryAsync, queryAsyncTransaction } from "./pg";
+import { addUser, assignCritterToUser, getUserRole } from "./apis/user_api";
 import {
   addCollar,
   assignCollarToCritter,
   unassignCollarFromCritter,
   getAvailableCollars,
   getAssignedCollars,
-} from './apis/collar_api';
-import { addAnimal, getAnimals, getCollarAssignmentHistory } from './apis/animal_api';
-import { addCode, addCodeHeader, getCode, getCodeHeaders} from './apis/code_api';
-import { Request, Response } from 'express';
-import { QueryResult } from 'pg';
+} from "./apis/collar_api";
+import {
+  addAnimal,
+  getAnimals,
+  getCollarAssignmentHistory,
+} from "./apis/animal_api";
+import {
+  addCode,
+  addCodeHeader,
+  getCode,
+  getCodeHeaders,
+} from "./apis/code_api";
+import { Request, Response } from "express";
+import { QueryResult } from "pg";
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -28,21 +37,21 @@ const getDBCritters = function (req: Request, res: Response): void {
     select geojson from vendor_merge_view 
     where date_recorded between '${start}' and '${end}';
   `;
-  console.log('SQL: ',sql);
+  console.log("SQL: ", sql);
 
-  const done = function (err,data) {
+  const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    const features = data.rows.map(row => row.geojson);
+    const features = data.rows.map((row) => row.geojson);
     const featureCollection = {
       type: "FeatureCollection",
-      features: features
+      features: features,
     };
 
     res.send(featureCollection);
   };
-  pgPool.query(sql,done);
+  pgPool.query(sql, done);
 };
 
 /* ## getCritterTracks
@@ -58,7 +67,7 @@ const getCritterTracks = function (req: Request, res: Response) {
   const end = req.query.end;
 
   if (!start || !end) {
-    return res.status(404).send('Must have a valid start and end date');
+    return res.status(404).send("Must have a valid start and end date");
   }
 
   const sql = `
@@ -84,21 +93,21 @@ const getCritterTracks = function (req: Request, res: Response) {
       population_unit,
       species;`;
 
-  console.log('SQL: ',sql);
+  console.log("SQL: ", sql);
 
-  const done = function (err: any,data: any) {
+  const done = function (err: any, data: any) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    const features = data.rows.map(row => row.geojson);
+    const features = data.rows.map((row) => row.geojson);
     const featureCollection = {
       type: "FeatureCollection",
-      features: features
+      features: features,
     };
 
     res.send(featureCollection);
   };
-  pgPool.query(sql,done);
+  pgPool.query(sql, done);
 };
 
 /* ## getPingExtent
@@ -107,7 +116,10 @@ const getCritterTracks = function (req: Request, res: Response) {
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getPingExtent = async function (req: Request, res: Response): Promise<Response> {
+const getPingExtent = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const sql = `
     select
       max(date_recorded) "max",
@@ -121,7 +133,7 @@ const getPingExtent = async function (req: Request, res: Response): Promise<Resp
   } catch (e) {
     return res.status(500).send(`Failed to query database: ${e}`);
   }
-  return res.send(data.rows[0])
+  return res.send(data.rows[0]);
 };
 
 /* ## getLastPings
@@ -130,24 +142,24 @@ const getPingExtent = async function (req: Request, res: Response): Promise<Resp
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getLastPings = function (req:Request, res:Response): void {
+const getLastPings = function (req: Request, res: Response): void {
   const sql = `
     select * from last_critter_pings_view
   `;
 
-  const done = function (err,data) {
+  const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
-    const features = data.rows.map(row => row.geojson);
+    const features = data.rows.map((row) => row.geojson);
     const featureCollection = {
       type: "FeatureCollection",
-      features: features
+      features: features,
     };
 
     res.send(featureCollection);
   };
-  pgPool.query(sql,done);
+  pgPool.query(sql, done);
 };
 
 /* ## notFound
@@ -156,47 +168,44 @@ const getLastPings = function (req:Request, res:Response): void {
   @param res {object} Node/Express response object
  */
 const notFound = function (req: Request, res: Response): Response {
-  return res.status(404).json({error: "Sorry you must be lost :("});
+  return res.status(404).json({ error: "Sorry you must be lost :(" });
 };
 
-// const getType = function(req: Request, res:Response): Promise<void> {
-//   const params = req.params;
-//   switch (params.type) {
-    // case TelemetryTypes.animal:
-    //   return getAnimals(req, res);
-    // case TelemetryTypes.collar:
-    //   return getCollar(req, res);
-    // default:
-      // return new Promise(() =>  null);
-  // }
-// }
-
-const _deletableTypes = ['collar', 'animal', 'user'];
-const deleteType = async function(req: Request, res:Response): Promise<Response> {
+enum DeletableType {
+  collar = "collar",
+  animal = "animal",
+  user = "user",
+}
+enum TypePk {
+  collar = "device_id",
+  animal = "id",
+  user = "id",
+}
+const deleteType = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const params = req.params;
-  const {type, id} = params;
+  const { type, id } = params;
   if (!type || !id) {
-    return res.status(404).json({error: 'must supply id and type'});
+    return res.status(404).json({ error: "must supply id and type" });
   }
-  if (!_deletableTypes.includes(type)) {
-    return res.status(404).json({error: `cannot delete type ${type}`});
+  if (!(type in DeletableType)) {
+    return res.status(404).json({ error: `cannot delete type ${type}` });
   }
-  let pk = '';
-  if (type === 'collar') pk = 'device_id';
-  else if (type === 'animal') pk = 'id';
 
   const sql = `
   update bctw.${type} 
     set deleted_at = now(),
     deleted = true 
-  where ${pk} = ${id}`;
+  where ${TypePk[type]} = ${id}`;
   try {
     await queryAsyncTransaction(sql);
-  } catch(e) {
+  } catch (e) {
     return res.status(500).send(`Failed to delete type: ${e}`);
   }
   return res.send(true);
-}
+};
 
 export {
   addCode,
@@ -220,5 +229,5 @@ export {
   // getType,
   getUserRole,
   deleteType,
-  notFound
-}
+  notFound,
+};

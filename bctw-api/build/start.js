@@ -69,7 +69,7 @@ var getDBCritters = function (req, res) {
     var start = req.query.start;
     var end = req.query.end;
     var sql = "\n    select geojson from vendor_merge_view \n    where date_recorded between '" + start + "' and '" + end + "';\n  ";
-    console.log('SQL: ', sql);
+    console.log("SQL: ", sql);
     var done = function (err, data) {
         if (err) {
             return res.status(500).send("Failed to query database: " + err);
@@ -77,7 +77,7 @@ var getDBCritters = function (req, res) {
         var features = data.rows.map(function (row) { return row.geojson; });
         var featureCollection = {
             type: "FeatureCollection",
-            features: features
+            features: features,
         };
         res.send(featureCollection);
     };
@@ -96,10 +96,10 @@ var getCritterTracks = function (req, res) {
     var start = req.query.start;
     var end = req.query.end;
     if (!start || !end) {
-        return res.status(404).send('Must have a valid start and end date');
+        return res.status(404).send("Must have a valid start and end date");
     }
     var sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'animal_id', animal_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      vendor_merge_view\n    where\n      date_recorded between '" + start + "' and '" + end + "' and\n      animal_id is not null and\n      animal_id <> 'None' and\n      st_asText(geom) <> 'POINT(0 0)'\n    group by\n      animal_id,\n      population_unit,\n      species;";
-    console.log('SQL: ', sql);
+    console.log("SQL: ", sql);
     var done = function (err, data) {
         if (err) {
             return res.status(500).send("Failed to query database: " + err);
@@ -107,7 +107,7 @@ var getCritterTracks = function (req, res) {
         var features = data.rows.map(function (row) { return row.geojson; });
         var featureCollection = {
             type: "FeatureCollection",
-            features: features
+            features: features,
         };
         res.send(featureCollection);
     };
@@ -158,7 +158,7 @@ var getLastPings = function (req, res) {
         var features = data.rows.map(function (row) { return row.geojson; });
         var featureCollection = {
             type: "FeatureCollection",
-            features: features
+            features: features,
         };
         res.send(featureCollection);
     };
@@ -174,38 +174,33 @@ var notFound = function (req, res) {
     return res.status(404).json({ error: "Sorry you must be lost :(" });
 };
 exports.notFound = notFound;
-// const getType = function(req: Request, res:Response): Promise<void> {
-//   const params = req.params;
-//   switch (params.type) {
-// case TelemetryTypes.animal:
-//   return getAnimals(req, res);
-// case TelemetryTypes.collar:
-//   return getCollar(req, res);
-// default:
-// return new Promise(() =>  null);
-// }
-// }
-var _deletableTypes = ['collar', 'animal', 'user'];
+var DeletableType;
+(function (DeletableType) {
+    DeletableType["collar"] = "collar";
+    DeletableType["animal"] = "animal";
+    DeletableType["user"] = "user";
+})(DeletableType || (DeletableType = {}));
+var TypePk;
+(function (TypePk) {
+    TypePk["collar"] = "device_id";
+    TypePk["animal"] = "id";
+    TypePk["user"] = "id";
+})(TypePk || (TypePk = {}));
 var deleteType = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var params, type, id, pk, sql, e_2;
+        var params, type, id, sql, e_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     params = req.params;
                     type = params.type, id = params.id;
                     if (!type || !id) {
-                        return [2 /*return*/, res.status(404).json({ error: 'must supply id and type' })];
+                        return [2 /*return*/, res.status(404).json({ error: "must supply id and type" })];
                     }
-                    if (!_deletableTypes.includes(type)) {
+                    if (!(type in DeletableType)) {
                         return [2 /*return*/, res.status(404).json({ error: "cannot delete type " + type })];
                     }
-                    pk = '';
-                    if (type === 'collar')
-                        pk = 'device_id';
-                    else if (type === 'animal')
-                        pk = 'id';
-                    sql = "\n  update bctw." + type + " \n    set deleted_at = now(),\n    deleted = true \n  where " + pk + " = " + id;
+                    sql = "\n  update bctw." + type + " \n    set deleted_at = now(),\n    deleted = true \n  where " + TypePk[type] + " = " + id;
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);

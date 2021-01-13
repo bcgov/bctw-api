@@ -29,3 +29,24 @@ content-type: application/json
   },
   "role": "administrat"
 }
+
+###
+# should fail, user with this idir already has access to this critter
+POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "animalId": 3,
+  "start": "2020-12-01",
+  "end": "2021-12-01"
+}
+
+### - should success
+POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "animalId": [1482, 1449],
+  "start": "2020-12-01",
+  "end": "2021-12-01"
+}
