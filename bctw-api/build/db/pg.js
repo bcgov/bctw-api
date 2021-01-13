@@ -43,12 +43,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.momentNow = exports.constructGetQuery = exports.paginate = exports.queryAsyncTransaction = exports.queryAsync = exports.getRowResults = exports.appendSqlFilter = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
 var moment_1 = __importDefault(require("moment"));
 var pg_1 = __importDefault(require("pg"));
-var pg_2 = require("./types/pg");
+var pg_2 = require("../types/pg");
 var isProd = process.env.NODE_ENV === 'production' ? true : false;
 exports.isProd = isProd;
 var test = process.env.NODE_ENV;
-console.log("typeof test: ", test);
-console.log("comparison: ", process.env.NODE_ENV === 'production');
+console.log('typeof test: ', test);
+console.log('comparison: ', process.env.NODE_ENV === 'production');
 var devPort = '5432';
 // Set up the database pool
 var pgPool = new pg_1.default.Pool({
@@ -57,7 +57,7 @@ var pgPool = new pg_1.default.Pool({
     password: process.env.POSTGRES_PASSWORD,
     host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
     port: +(isProd ? (_a = process.env.POSTGRES_SERVER_PORT) !== null && _a !== void 0 ? _a : devPort : devPort),
-    max: 10
+    max: 10,
 });
 exports.pgPool = pgPool;
 pgPool.on('error', function (err, client) {
@@ -121,12 +121,14 @@ var to_pg_function_query = function (fnName, params, expectsObjAsArray) {
 };
 exports.to_pg_function_query = to_pg_function_query;
 // converts a javascript array to the postgresql format ex. ['abc','def'] => '{abc, def}'
-var to_pg_array = function (arr) { return "'{" + arr.join(',') + "}'"; };
+var to_pg_array = function (arr) {
+    return "'{" + arr.join(',') + "}'";
+};
 var to_pg_timestamp = function (date) { return "to_timestamp(" + date + " / 1000)"; };
 var momentNow = function () { return moment_1.default().format('YYYY-MM-DD HH:mm:ss'); };
 exports.momentNow = momentNow;
 // db code insert/update functions expect a json array
-// obj_to_pg_array accepts an object or an array of objects 
+// obj_to_pg_array accepts an object or an array of objects
 // and outputs a psql friendly json array
 var obj_to_pg_array = function (objOrArray) {
     var asArr = Array.isArray(objOrArray) ? objOrArray : [objOrArray];
@@ -138,7 +140,7 @@ var to_pg_str = function (str) {
         return "''";
     return "'" + str + "'";
 };
-/// returns object in psql format '{}' 
+/// returns object in psql format '{}'
 var to_pg_obj = function (obj) {
     return "'" + JSON.stringify(obj) + "'";
 };
@@ -147,9 +149,9 @@ var to_pg_obj = function (obj) {
  this function handles dev and prod query result parsing
 */
 var getRowResults = function (data, functionName) {
-    return isProd ?
-        _getRowResults(data, functionName) :
-        _getRowResultsDev(data, functionName);
+    return isProd
+        ? _getRowResults(data, functionName)
+        : _getRowResultsDev(data, functionName);
 };
 exports.getRowResults = getRowResults;
 var _getRowResults = function (data, dbFunctionName) {
@@ -158,9 +160,14 @@ var _getRowResults = function (data, dbFunctionName) {
 };
 var _getRowResultsDev = function (data, dbFunctionName) {
     var _a;
-    var rows = (_a = data.find(function (result) { return result.command === 'SELECT'; })) === null || _a === void 0 ? void 0 : _a.rows;
-    if (rows && rows.length) {
-        return rows.map(function (row) { return row[dbFunctionName]; });
+    if (Array.isArray(data)) {
+        var rows = (_a = data.find(function (result) { return result.command === 'SELECT'; })) === null || _a === void 0 ? void 0 : _a.rows;
+        if (rows && rows.length) {
+            return rows.map(function (row) { return row[dbFunctionName]; });
+        }
+    }
+    else {
+        return _getRowResults(data, dbFunctionName);
     }
     return [];
 };
@@ -235,7 +242,7 @@ var _getPrimaryKey = function (table) {
 /// given a page number, return a string with the limit offset
 var paginate = function (pageNumber) {
     var limit = 10;
-    var offset = (limit * pageNumber) - limit;
+    var offset = limit * pageNumber - limit;
     return "limit " + limit + " offset " + offset + ";";
 };
 exports.paginate = paginate;

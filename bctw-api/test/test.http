@@ -7,21 +7,6 @@ http://localhost:3000/get-critters?idir={{idir}}
 http://localhost:3000/
 
 ###
-POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-   "animalId": 4
-}
-
-###
-# animalid dne, should fail
-POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{ "animalId": "16-80900000" }
-
-###
 GET http://localhost:3000/animal/1234
 
 ###

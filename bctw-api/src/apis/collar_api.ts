@@ -1,6 +1,15 @@
-import { appendSqlFilter, constructGetQuery, getRowResults, paginate, pgPool, queryAsync, queryAsyncTransaction, QueryResultCbFn, to_pg_function_query } from '../pg';
+import {
+  appendSqlFilter,
+  constructGetQuery,
+  getRowResults,
+  paginate,
+  pgPool,
+  queryAsync,
+  queryAsyncTransaction,
+  to_pg_function_query,
+  transactionify,
+} from '../database/pg';
 import { Collar } from '../types/collar';
-import { transactionify } from '../pg';
 import { Request, Response } from 'express';
 import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
 import { QueryResult } from 'pg';
@@ -8,29 +17,40 @@ import { IBulkResponse } from '../types/import_types';
 import { createBulkResponse } from '../import/bulk_handlers';
 
 const _accessCollarControl = (alias: string, idir: string) => {
-  return `and ${alias}.device_id = any((${to_pg_function_query('get_user_collar_access', [idir])})::integer[])`;
-}
+  return `and ${alias}.device_id = any((${to_pg_function_query(
+    'get_user_collar_access',
+    [idir]
+  )})::integer[])`;
+};
 
 /*
-*/
-const _addCollar = async function (idir: string, collar: Collar[],): Promise<QueryResult> {
-  const sql = transactionify(to_pg_function_query('add_collar', [idir, collar], true));
+ */
+const _addCollar = async function (
+  idir: string,
+  collar: Collar[]
+): Promise<QueryResult> {
+  const sql = transactionify(
+    to_pg_function_query('add_collar', [idir, collar], true)
+  );
   const result = await queryAsyncTransaction(sql);
   return result;
-}
+};
 
-const addCollar = async function(req: Request, res:Response): Promise<Response> {
+const addCollar = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   if (!idir) {
-    return res.status(500).send('must supply idir')
+    return res.status(500).send('must supply idir');
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const bulkResp: IBulkResponse = {errors: [], results: []};
+  const bulkResp: IBulkResponse = { errors: [], results: [] };
   let data: QueryResult;
 
   try {
     data = await _addCollar(idir, collars);
-    createBulkResponse(bulkResp, getRowResults(data, 'add_collar')[0])
+    createBulkResponse(bulkResp, getRowResults(data, 'add_collar')[0]);
   } catch (e) {
     return res.status(500).send(`Failed to add collar(s): ${e}`);
   }
@@ -39,78 +59,111 @@ const addCollar = async function(req: Request, res:Response): Promise<Response> 
     return res.status(500).send(errors[0].error);
   }
   return res.send(results);
-}
+};
 
 /*
-*/
+ */
 const _assignCollarToCritter = async function (
   idir: string,
   device_id: number,
   animal_id: number,
   start: Date | string,
-  end: Date | null,
+  end: Date | null
 ): Promise<QueryResult> {
   if (!idir) {
-    throw(Error('IDIR must be supplied'));
+    throw Error('IDIR must be supplied');
   }
   if (!device_id || !animal_id) {
-    throw(Error('device_id and animal_id must be supplied'));
+    throw Error('device_id and animal_id must be supplied');
   }
-  const sql = transactionify(to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, start, end]));
+  const sql = transactionify(
+    to_pg_function_query('link_collar_to_animal', [
+      idir,
+      device_id,
+      animal_id,
+      start,
+      end,
+    ])
+  );
   const result = await queryAsyncTransaction(sql);
   return result;
-}
+};
 
-const assignCollarToCritter = async function(req: Request, res:Response): Promise<Response> {
+const assignCollarToCritter = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body.data;
   let data: QueryResult;
   try {
-    data = await _assignCollarToCritter(idir, body.device_id, body.animal_id, body.start_date, body.end_date);
+    data = await _assignCollarToCritter(
+      idir,
+      body.device_id,
+      body.animal_id,
+      body.start_date,
+      body.end_date
+    );
   } catch (e) {
     return res.status(500).send(`Failed to attach device to critter: ${e}`);
   }
   const results = getRowResults(data, 'link_collar_to_animal');
   return res.send(results);
-}
+};
 
 /*
-*/
+ */
 const _unassignCollarToCritter = async function (
   idir: string,
   deviceId: number,
   animalId: string,
-  endDate: Date): Promise<QueryResult> {
+  endDate: Date
+): Promise<QueryResult> {
   if (!idir) {
-    throw(Error('IDIR must be supplied'));
+    throw Error('IDIR must be supplied');
   }
-  const sql = transactionify(to_pg_function_query('unlink_collar_to_animal', [idir, deviceId, animalId, endDate ]));
+  const sql = transactionify(
+    to_pg_function_query('unlink_collar_to_animal', [
+      idir,
+      deviceId,
+      animalId,
+      endDate,
+    ])
+  );
   const result = await queryAsyncTransaction(sql);
   return result;
-}
+};
 
 /* todo: figure out business requirement if the animal id must be provided.
 can a user unlink a collar from whatever it is attached to?
 */
-const unassignCollarFromCritter = async function(req: Request, res:Response): Promise<Response> {
+const unassignCollarFromCritter = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const body = req.body.data;
   let data: QueryResult;
   try {
-    data = await _unassignCollarToCritter( idir, body.device_id, body.animal_id, body.end_date);
+    data = await _unassignCollarToCritter(
+      idir,
+      body.device_id,
+      body.animal_id,
+      body.end_date
+    );
   } catch (e) {
     return res.status(500).send(`Failed to query database: ${e}`);
   }
   const results = getRowResults(data, 'unlink_collar_to_animal');
   return res.send(results);
-}
+};
 
 // todo: consider bctw.collar_animal_assignment table
 const _getAvailableCollars = async function (
-    idir: string,
-    filter?: IFilter,
-    page?: number
-  ): Promise<QueryResult> {
+  idir: string,
+  filter?: IFilter,
+  page?: number
+): Promise<QueryResult> {
   const base = `
     select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
     from collar c 
@@ -119,15 +172,29 @@ const _getAvailableCollars = async function (
       where now() <@ tstzrange(caa.start_time, caa.end_time)
     )
     and c.deleted is false`; // dont limit access to unassigned collars
-    // and c.deleted is false ${_accessCollarControl('c', idir)}`
-  const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
+  // and c.deleted is false ${_accessCollarControl('c', idir)}`
+  const strFilter = appendSqlFilter(
+    filter || {},
+    TelemetryTypes.collar,
+    'c',
+    true
+  );
   const strPage = page ? paginate(page) : '';
-  const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage});
+  const sql = constructGetQuery({
+    base: base,
+    filter: strFilter,
+    order: 'c.device_id',
+    group: 'c.device_id',
+    page: strPage,
+  });
   const result = await queryAsync(sql);
   return result;
-}
+};
 
-const getAvailableCollars = async function(req: Request, res:Response): Promise<Response> {
+const getAvailableCollars = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idir = (req.query?.idir || '') as string;
   const page = (req.query?.page || 1) as number;
   let data: QueryResult;
@@ -138,23 +205,35 @@ const getAvailableCollars = async function(req: Request, res:Response): Promise<
   }
   const results = data?.rows ?? [];
   return res.send(results);
-}
+};
 
-const _getAssignedCollars = async function (idir: string, filter?: IFilter, page?: number): Promise<QueryResult> {
-  const base = 
-  `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
+const _getAssignedCollars = async function (
+  idir: string,
+  filter?: IFilter,
+  page?: number
+): Promise<QueryResult> {
+  const base = `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
   from collar c inner join collar_animal_assignment caa 
   on c.device_id = caa.device_id
   and now() <@ tstzrange(caa.start_time, caa.end_time)
-  where c.deleted is false ${_accessCollarControl('c', idir)}`
+  where c.deleted is false ${_accessCollarControl('c', idir)}`;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
   const strPage = page ? paginate(page) : '';
-  const sql = constructGetQuery({base: base , filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage});
+  const sql = constructGetQuery({
+    base: base,
+    filter: strFilter,
+    order: 'c.device_id',
+    group: 'caa.animal_id, c.device_id, caa.start_time',
+    page: strPage,
+  });
   const result = await queryAsync(sql);
   return result;
-}
+};
 
-const getAssignedCollars = async function(req: Request, res:Response): Promise<Response> {
+const getAssignedCollars = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   const page = (req.query?.page || 1) as number;
   let data: QueryResult;
@@ -165,9 +244,9 @@ const getAssignedCollars = async function(req: Request, res:Response): Promise<R
   }
   const results = data?.rows ?? [];
   return res.send(results);
-}
+};
 
-const getCollar = async function(req: Request, res:Response): Promise<void> {
+const getCollar = async function (req: Request, res: Response): Promise<void> {
   // const idir = (req?.query?.idir || '') as string;
   const filter = filterFromRequestParams(req);
   const done = function (err, data) {
@@ -179,9 +258,9 @@ const getCollar = async function(req: Request, res:Response): Promise<void> {
   };
   const base = `select * from bctw.collar`;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar);
-  const sql = constructGetQuery({base: base , filter: strFilter});
+  const sql = constructGetQuery({ base: base, filter: strFilter });
   return pgPool.query(sql, done);
-}
+};
 
 export {
   addCollar,
@@ -191,5 +270,5 @@ export {
   getAvailableCollars,
   getCollar,
   _assignCollarToCritter,
-  _addCollar
-} 
+  _addCollar,
+}

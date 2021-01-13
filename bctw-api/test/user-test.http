@@ -41,7 +41,7 @@ content-type: application/json
   "end": "2021-12-01"
 }
 
-### - should success
+### - should succeed with my idir
 POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
@@ -50,3 +50,10 @@ content-type: application/json
   "start": "2020-12-01",
   "end": "2021-12-01"
 }
+
+### should succeed with my idir
+GET http://localhost:3000/users?idir={{idir}}
+
+### should throw with idirtest2 - not an admin
+GET http://localhost:3000/users?idir={{idirtest2}}
+

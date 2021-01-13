@@ -30,7 +30,7 @@ var express_1 = __importDefault(require("express"));
 var multer_1 = __importDefault(require("multer"));
 var api = __importStar(require("./start"));
 var csv_1 = require("./import/csv");
-var pg_1 = require("./pg");
+var pg_1 = require("./database/pg");
 /* ## Server
   Run the server.
 */
@@ -66,6 +66,7 @@ app.all('*', function (req, res, next) {
     .post('/link-animal-collar', api.assignCollarToCritter)
     .post('/unlink-animal-collar', api.unassignCollarFromCritter)
     // users
+    .get('/users', api.getUsers)
     .get('/role', api.getUserRole)
     .post('/add-user', api.addUser)
     .post('/assign-critter-to-user', api.assignCritterToUser)

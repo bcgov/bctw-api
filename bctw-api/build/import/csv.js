@@ -64,7 +64,7 @@ var fs = __importStar(require("fs"));
 var animal_api_1 = require("../apis/animal_api");
 var code_api_1 = require("../apis/code_api");
 var collar_api_1 = require("../apis/collar_api");
-var pg_1 = require("../pg");
+var pg_1 = require("../database/pg");
 var import_types_1 = require("../types/import_types");
 var bulk_handlers_1 = require("./bulk_handlers");
 var to_header_1 = require("./to_header");
@@ -87,12 +87,18 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
         headers = { rows: [] };
         animals = { rows: [] };
         collars = { rows: [] };
-        ret = { codes: codes.rows, headers: headers.rows, animals: animals.rows, collars: collars.rows };
-        fs.createReadStream(file.path).pipe(csv_parser_1.default({
+        ret = {
+            codes: codes.rows,
+            headers: headers.rows,
+            animals: animals.rows,
+            collars: collars.rows,
+        };
+        fs.createReadStream(file.path)
+            .pipe(csv_parser_1.default({
             mapHeaders: function (_a) {
                 var header = _a.header;
                 return to_header_1.mapCsvImport(header);
-            }
+            },
         }))
             .on('data', function (row) {
             if (import_types_1.isCodeHeader(row))
@@ -140,13 +146,15 @@ var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0,
                 return [3 /*break*/, 4];
             case 3:
                 e_1 = _a.sent();
-                return [2 /*return*/, res.status(500).send("exception caught bulk inserting critters: " + e_1)];
+                return [2 /*return*/, res
+                        .status(500)
+                        .send("exception caught bulk inserting critters: " + e_1)];
             case 4: return [2 /*return*/, res.send(results)];
         }
     });
 }); };
-// called from _handleCritterInsert for animals that have collars attached, 
-// doesnt return results, simply pushes any exceptions caught to errors array param. 
+// called from _handleCritterInsert for animals that have collars attached,
+// doesnt return results, simply pushes any exceptions caught to errors array param.
 var _handleCollarCritterLink = function (idir, insertResults, crittersWithCollars, errors) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -221,7 +229,9 @@ var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, 
                 return [3 /*break*/, 4];
             case 3:
                 e_3 = _a.sent();
-                return [2 /*return*/, res.status(500).send("exception caught bulk upserting collars: " + e_3)];
+                return [2 /*return*/, res
+                        .status(500)
+                        .send("exception caught bulk upserting collars: " + e_3)];
             case 4: return [2 /*return*/, res.send(results)];
         }
     });

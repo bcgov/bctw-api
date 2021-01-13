@@ -1,101 +1,117 @@
 import {
   getRowResults,
   to_pg_function_query,
-  queryAsyncTransaction,
-  queryAsync,
-} from "../pg";
-import { User, UserRole } from "../types/user";
-import { transactionify } from "../pg";
-import { Request, Response } from "express";
-import { QueryResult } from "pg";
+  transactionify,
+} from '../database/pg';
+import { IUserInput, UserRole } from '../types/user';
+import { Request, Response } from 'express';
+import { QResult, query } from './api_helper';
 
-const _addUser = async function (
-  user: User,
-  userRole: UserRole
-): Promise<QueryResult> {
-  const sql = transactionify(
-    to_pg_function_query("add_user", [user, userRole])
-  );
-  const results = queryAsyncTransaction(sql);
-  return results;
-};
-
-/* ## addUser
-  - idir must be unique
-  - todo: user adding must be admin?
-*/
+interface IUserProps {
+  user: IUserInput;
+  role: UserRole;
+}
+/**
+ *
+ * @returns boolean of whether the user was added successfully
+ */
 const addUser = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { user, role } = req.body;
-  let data: QueryResult;
-  try {
-    data = await _addUser(user, role as UserRole);
-  } catch (e) {
-    return res.status(500).send(`Failed to add user: ${e}`);
+  const { user, role }: IUserProps = req.body;
+  const sql = transactionify(to_pg_function_query('add_user', [user, role]));
+  const { result, error, isError } = await query(
+    sql,
+    `failed to add user ${user.idir}`,
+    true
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
   }
-  const results = getRowResults(data, "add_user");
-  return res.send(results[0]);
+  return res.send(getRowResults(result, 'add_user')[0]);
 };
 
-const _getUserRole = async function (idir: string): Promise<QueryResult> {
-  const sql = `select bctw.get_user_role('${idir}');`;
-  const result = await queryAsync(sql);
-  return result;
-};
-
+/**
+ *
+ * @returns
+ */
 const getUserRole = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir || "") as string;
+  const idir = (req?.query?.idir || '') as string;
   if (!idir) {
-    return res.status(500).send("IDIR must be supplied");
+    return res.status(500).send('IDIR must be supplied');
   }
-  let data: QueryResult;
-  try {
-    data = await _getUserRole(idir);
-  } catch (e) {
-    return res.status(500).send(`Failed to query user role: ${e}`);
-  }
-  const results = data.rows.map((row) => row["get_user_role"]);
-  return res.send(results[0]);
-};
-
-const _assignCritterToUser = async function (
-  idir: string,
-  animalId: number | number[],
-  start: Date,
-  end: Date
-): Promise<QueryResult> {
-  const sql = transactionify(
-    to_pg_function_query("link_animal_to_user", [idir, animalId, start, end])
+  const sql = `select bctw.get_user_role('${idir}');`;
+  const { result, error, isError } = await query(
+    sql,
+    'failed to query user role'
   );
-  const result = await queryAsyncTransaction(sql);
-  return result;
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, 'get_user_role')[0]);
 };
 
-// todo: update add_animal db function
+/**
+ *
+ * @returns list of Users, must have admin or exception thrown
+ */
+const getUsers = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const idir = (req?.query?.idir || '') as string;
+  if (!idir) {
+    return res.status(500).send('IDIR must be supplied');
+  }
+  const sql = `select bctw.get_users('${idir}');`;
+  const { result, error, isError }: QResult = await query(
+    sql,
+    'failed to query users'
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, 'get_users'));
+};
+
+interface IAssignCritterToUserProps {
+  animalId: number | number[];
+  start: Date;
+  end: Date;
+}
+
+/**
+ *
+ * @returns list of assignments
+ */
 const assignCritterToUser = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir || "") as string;
+  const idir = (req?.query?.idir || '') as string;
   if (!idir) {
-    return res.status(500).send("IDIR must be supplied");
+    return res.status(500).send('IDIR must be supplied');
   }
-  const { animalId, start, end } = req.body;
+  const { animalId, start, end }: IAssignCritterToUserProps = req.body;
+  // db function takes an array, if request supplies only a single animal add it to an array
   const ids: number[] = Array.isArray(animalId) ? animalId : [animalId];
-  let data: QueryResult;
 
-  try {
-    data = await _assignCritterToUser(idir, ids, start, end);
-  } catch (e) {
-    return res.status(500).send(`Failed to link user to critter(s): ${e}`);
+  const sql = transactionify(
+    to_pg_function_query('link_animal_to_user', [idir, ids, start, end])
+  );
+  const { result, error, isError } = await query(
+    sql,
+    'failed to link user to critter(s)',
+    true
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
   }
-  const results = getRowResults(data, "link_animal_to_user");
-  return res.send(results);
+  return res.send(getRowResults(result, 'link_animal_to_user'));
 };
 
-export { addUser, getUserRole, assignCritterToUser };
+export { addUser, getUserRole, assignCritterToUser, getUsers };

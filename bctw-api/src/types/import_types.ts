@@ -52,6 +52,13 @@ export interface IBulkResponse {
   results: QueryResultRow[],
 }
 
+export interface BctwBaseType {
+  created: Date;
+  expire_date: Date;
+  deleted: boolean;
+  deleted_at: Date;
+}
+
 export {
   isAnimal,
   isCollar,

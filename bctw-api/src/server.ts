@@ -6,7 +6,7 @@ import express from 'express';
 import multer from 'multer';
 import * as api from './start';
 import {importCsv} from './import/csv';
-import { pgPool } from './pg';
+import { pgPool } from './database/pg';
 
 /* ## Server
   Run the server.
@@ -45,6 +45,7 @@ const app = express()
   .post('/link-animal-collar', api.assignCollarToCritter)
   .post('/unlink-animal-collar', api.unassignCollarFromCritter)
   // users
+  .get('/users',api.getUsers)
   .get('/role',api.getUserRole)
   .post('/add-user', api.addUser)
   .post('/assign-critter-to-user', api.assignCritterToUser)

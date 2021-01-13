@@ -20,9 +20,8 @@ POST http://localhost:3000/add-code?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "codeHeader":"region",
   "codes": [
-    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0}
+    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0, "code_header":"region"}
   ]
 }
 
@@ -31,9 +30,8 @@ POST http://localhost:3000/add-code?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "codeHeader":"regxxion",
   "codes": [
-    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0}
+    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0, "code_header":"regxxion"}
   ]
 }
 

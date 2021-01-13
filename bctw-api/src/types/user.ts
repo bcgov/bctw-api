@@ -1,12 +1,13 @@
-type User = {
+import { BctwBaseType } from './import_types';
+
+interface IUserInput {
   user_id: string,
   idir: string,
   bceid: string,
   email: string,
-  expired_date: Date,
-  deleted: boolean,
-  deleted_at: Date
 }
+
+type User = BctwBaseType & IUserInput;
 
 enum UserRole {
   administrator = 'administrator',
@@ -15,6 +16,7 @@ enum UserRole {
 }
 
 export {
+  IUserInput,
   User,
   UserRole
 } 

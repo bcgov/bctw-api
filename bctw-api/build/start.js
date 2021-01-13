@@ -36,12 +36,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.deleteType = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getCritterTracks = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getCollarAssignmentHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
-var pg_1 = require("./pg");
+exports.notFound = exports.deleteType = exports.getUsers = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getCritterTracks = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getCollarAssignmentHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
+var pg_1 = require("./database/pg");
 var user_api_1 = require("./apis/user_api");
 Object.defineProperty(exports, "addUser", { enumerable: true, get: function () { return user_api_1.addUser; } });
 Object.defineProperty(exports, "assignCritterToUser", { enumerable: true, get: function () { return user_api_1.assignCritterToUser; } });
 Object.defineProperty(exports, "getUserRole", { enumerable: true, get: function () { return user_api_1.getUserRole; } });
+Object.defineProperty(exports, "getUsers", { enumerable: true, get: function () { return user_api_1.getUsers; } });
 var collar_api_1 = require("./apis/collar_api");
 Object.defineProperty(exports, "addCollar", { enumerable: true, get: function () { return collar_api_1.addCollar; } });
 Object.defineProperty(exports, "assignCollarToCritter", { enumerable: true, get: function () { return collar_api_1.assignCollarToCritter; } });
@@ -69,14 +70,14 @@ var getDBCritters = function (req, res) {
     var start = req.query.start;
     var end = req.query.end;
     var sql = "\n    select geojson from vendor_merge_view \n    where date_recorded between '" + start + "' and '" + end + "';\n  ";
-    console.log("SQL: ", sql);
+    console.log('SQL: ', sql);
     var done = function (err, data) {
         if (err) {
             return res.status(500).send("Failed to query database: " + err);
         }
         var features = data.rows.map(function (row) { return row.geojson; });
         var featureCollection = {
-            type: "FeatureCollection",
+            type: 'FeatureCollection',
             features: features,
         };
         res.send(featureCollection);
@@ -96,17 +97,17 @@ var getCritterTracks = function (req, res) {
     var start = req.query.start;
     var end = req.query.end;
     if (!start || !end) {
-        return res.status(404).send("Must have a valid start and end date");
+        return res.status(404).send('Must have a valid start and end date');
     }
     var sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'animal_id', animal_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      vendor_merge_view\n    where\n      date_recorded between '" + start + "' and '" + end + "' and\n      animal_id is not null and\n      animal_id <> 'None' and\n      st_asText(geom) <> 'POINT(0 0)'\n    group by\n      animal_id,\n      population_unit,\n      species;";
-    console.log("SQL: ", sql);
+    console.log('SQL: ', sql);
     var done = function (err, data) {
         if (err) {
             return res.status(500).send("Failed to query database: " + err);
         }
         var features = data.rows.map(function (row) { return row.geojson; });
         var featureCollection = {
-            type: "FeatureCollection",
+            type: 'FeatureCollection',
             features: features,
         };
         res.send(featureCollection);
@@ -157,7 +158,7 @@ var getLastPings = function (req, res) {
         }
         var features = data.rows.map(function (row) { return row.geojson; });
         var featureCollection = {
-            type: "FeatureCollection",
+            type: 'FeatureCollection',
             features: features,
         };
         res.send(featureCollection);
@@ -171,7 +172,7 @@ exports.getLastPings = getLastPings;
   @param res {object} Node/Express response object
  */
 var notFound = function (req, res) {
-    return res.status(404).json({ error: "Sorry you must be lost :(" });
+    return res.status(404).json({ error: 'Sorry you must be lost :(' });
 };
 exports.notFound = notFound;
 var DeletableType;
@@ -195,7 +196,7 @@ var deleteType = function (req, res) {
                     params = req.params;
                     type = params.type, id = params.id;
                     if (!type || !id) {
-                        return [2 /*return*/, res.status(404).json({ error: "must supply id and type" })];
+                        return [2 /*return*/, res.status(404).json({ error: 'must supply id and type' })];
                     }
                     if (!(type in DeletableType)) {
                         return [2 /*return*/, res.status(404).json({ error: "cannot delete type " + type })];

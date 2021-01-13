@@ -1,6 +1,6 @@
 import moment from 'moment';
 import pg, { PoolClient, QueryResult, QueryResultBase, QueryResultRow } from 'pg';
-import { IConstructQueryParameters, IFilter, QueryResultCbFn, TelemetryTypes } from './types/pg';
+import { IConstructQueryParameters, IFilter, QueryResultCbFn, TelemetryTypes } from '../types/pg';
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
@@ -115,9 +115,13 @@ const _getRowResults = (data: QueryResult, dbFunctionName: string): QueryResultR
   return results;
 }
 const _getRowResultsDev = (data: QueryResult[], dbFunctionName: string): QueryResultRow[] => {
-  const rows = data.find(result => result.command === 'SELECT')?.rows;
-  if (rows && rows.length) {
-    return rows.map((row: QueryResultRow) => row[dbFunctionName])
+  if (Array.isArray(data)) {
+    const rows = data.find(result => result.command === 'SELECT')?.rows;
+    if (rows && rows.length) {
+      return rows.map((row: QueryResultRow) => row[dbFunctionName])
+    }
+  } else {
+    return _getRowResults(data, dbFunctionName);
   }
   return [];
 }

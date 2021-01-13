@@ -37,22 +37,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports._addCollar = exports._assignCollarToCritter = exports.getCollar = exports.getAvailableCollars = exports.getAssignedCollars = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addCollar = void 0;
-var pg_1 = require("../pg");
-var pg_2 = require("../pg");
-var pg_3 = require("../types/pg");
+var pg_1 = require("../database/pg");
+var pg_2 = require("../types/pg");
 var bulk_handlers_1 = require("../import/bulk_handlers");
 var _accessCollarControl = function (alias, idir) {
     return "and " + alias + ".device_id = any((" + pg_1.to_pg_function_query('get_user_collar_access', [idir]) + ")::integer[])";
 };
 /*
-*/
+ */
 var _addCollar = function (idir, collar) {
     return __awaiter(this, void 0, void 0, function () {
         var sql, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    sql = pg_2.transactionify(pg_1.to_pg_function_query('add_collar', [idir, collar], true));
+                    sql = pg_1.transactionify(pg_1.to_pg_function_query('add_collar', [idir, collar], true));
                     return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                 case 1:
                     result = _a.sent();
@@ -98,7 +97,7 @@ var addCollar = function (req, res) {
 };
 exports.addCollar = addCollar;
 /*
-*/
+ */
 var _assignCollarToCritter = function (idir, device_id, animal_id, start, end) {
     return __awaiter(this, void 0, void 0, function () {
         var sql, result;
@@ -106,12 +105,18 @@ var _assignCollarToCritter = function (idir, device_id, animal_id, start, end) {
             switch (_a.label) {
                 case 0:
                     if (!idir) {
-                        throw (Error('IDIR must be supplied'));
+                        throw Error('IDIR must be supplied');
                     }
                     if (!device_id || !animal_id) {
-                        throw (Error('device_id and animal_id must be supplied'));
+                        throw Error('device_id and animal_id must be supplied');
                     }
-                    sql = pg_2.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [idir, device_id, animal_id, start, end]));
+                    sql = pg_1.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', [
+                        idir,
+                        device_id,
+                        animal_id,
+                        start,
+                        end,
+                    ]));
                     return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                 case 1:
                     result = _a.sent();
@@ -149,7 +154,7 @@ var assignCollarToCritter = function (req, res) {
 };
 exports.assignCollarToCritter = assignCollarToCritter;
 /*
-*/
+ */
 var _unassignCollarToCritter = function (idir, deviceId, animalId, endDate) {
     return __awaiter(this, void 0, void 0, function () {
         var sql, result;
@@ -157,9 +162,14 @@ var _unassignCollarToCritter = function (idir, deviceId, animalId, endDate) {
             switch (_a.label) {
                 case 0:
                     if (!idir) {
-                        throw (Error('IDIR must be supplied'));
+                        throw Error('IDIR must be supplied');
                     }
-                    sql = pg_2.transactionify(pg_1.to_pg_function_query('unlink_collar_to_animal', [idir, deviceId, animalId, endDate]));
+                    sql = pg_1.transactionify(pg_1.to_pg_function_query('unlink_collar_to_animal', [
+                        idir,
+                        deviceId,
+                        animalId,
+                        endDate,
+                    ]));
                     return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                 case 1:
                     result = _a.sent();
@@ -206,9 +216,15 @@ var _getAvailableCollars = function (idir, filter, page) {
             switch (_a.label) {
                 case 0:
                     base = "\n    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type\n    from collar c \n    where c.device_id not in (\n      select device_id from collar_animal_assignment caa\n      where now() <@ tstzrange(caa.start_time, caa.end_time)\n    )\n    and c.deleted is false";
-                    strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c', true);
+                    strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar, 'c', true);
                     strPage = page ? pg_1.paginate(page) : '';
-                    sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'c.device_id', page: strPage });
+                    sql = pg_1.constructGetQuery({
+                        base: base,
+                        filter: strFilter,
+                        order: 'c.device_id',
+                        group: 'c.device_id',
+                        page: strPage,
+                    });
                     return [4 /*yield*/, pg_1.queryAsync(sql)];
                 case 1:
                     result = _a.sent();
@@ -229,7 +245,7 @@ var getAvailableCollars = function (req, res) {
                     _d.label = 1;
                 case 1:
                     _d.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, _getAvailableCollars(idir, pg_3.filterFromRequestParams(req), page)];
+                    return [4 /*yield*/, _getAvailableCollars(idir, pg_2.filterFromRequestParams(req), page)];
                 case 2:
                     data = _d.sent();
                     return [3 /*break*/, 4];
@@ -251,9 +267,15 @@ var _getAssignedCollars = function (idir, filter, page) {
             switch (_a.label) {
                 case 0:
                     base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id\n  and now() <@ tstzrange(caa.start_time, caa.end_time)\n  where c.deleted is false " + _accessCollarControl('c', idir);
-                    strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar, 'c');
+                    strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar, 'c');
                     strPage = page ? pg_1.paginate(page) : '';
-                    sql = pg_1.constructGetQuery({ base: base, filter: strFilter, order: 'c.device_id', group: 'caa.animal_id, c.device_id, caa.start_time', page: strPage });
+                    sql = pg_1.constructGetQuery({
+                        base: base,
+                        filter: strFilter,
+                        order: 'c.device_id',
+                        group: 'caa.animal_id, c.device_id, caa.start_time',
+                        page: strPage,
+                    });
                     return [4 /*yield*/, pg_1.queryAsync(sql)];
                 case 1:
                     result = _a.sent();
@@ -274,7 +296,7 @@ var getAssignedCollars = function (req, res) {
                     _d.label = 1;
                 case 1:
                     _d.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, _getAssignedCollars(idir, pg_3.filterFromRequestParams(req), page)];
+                    return [4 /*yield*/, _getAssignedCollars(idir, pg_2.filterFromRequestParams(req), page)];
                 case 2:
                     data = _d.sent();
                     return [3 /*break*/, 4];
@@ -293,7 +315,7 @@ var getCollar = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var filter, done, base, strFilter, sql;
         return __generator(this, function (_a) {
-            filter = pg_3.filterFromRequestParams(req);
+            filter = pg_2.filterFromRequestParams(req);
             done = function (err, data) {
                 if (err) {
                     return res.status(500).send("Failed to query database: " + err);
@@ -302,7 +324,7 @@ var getCollar = function (req, res) {
                 res.send(results);
             };
             base = "select * from bctw.collar";
-            strFilter = pg_1.appendSqlFilter(filter || {}, pg_3.TelemetryTypes.collar);
+            strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar);
             sql = pg_1.constructGetQuery({ base: base, filter: strFilter });
             return [2 /*return*/, pg_1.pgPool.query(sql, done)];
         });

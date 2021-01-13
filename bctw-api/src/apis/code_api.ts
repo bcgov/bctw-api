@@ -1,52 +1,62 @@
-import { getRowResults, to_pg_function_query, queryAsync, queryAsyncTransaction } from '../pg';
+import {
+  getRowResults,
+  to_pg_function_query,
+  queryAsyncTransaction,
+  transactionify,
+} from '../database/pg';
 import { ICodeInput, ICodeHeaderInput } from '../types/code';
-import { transactionify } from '../pg';
 import { Request, Response } from 'express';
 import { QueryResult } from 'pg';
+import { MISSING_IDIR, query } from './api_helper';
 
-/*
-*/
-const _getCode = async function (idir: string, codeHeader: string,): Promise<QueryResult> {
-  const sql = transactionify(to_pg_function_query('get_code', [idir ?? '', codeHeader, {}]));
-  const results = await queryAsync(sql);
-  return results;
-}
-
-const getCode = async function (req: Request, res:Response): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
-  const codeHeader = (req?.query?.codeHeader || '') as string;
-  let data: QueryResult;
-  try {
-    data = await _getCode(idir, codeHeader);
-  } catch (err) {
-    return res.status(500).send(`Failed to retrieve codes: ${err}`);
+/**
+ *
+ */
+const pg_get_code_fn = 'get_code';
+const getCode = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const { idir, codeHeader } = req.query;
+  if (!idir || !codeHeader) {
+    return res.status(500).send(`${MISSING_IDIR} and codeHeader`);
   }
-  const results = getRowResults(data, 'get_code')
-  return res.send(results);
-}
-
-/*
-  gets all code headers unless [onlyType] param supplied
-*/
-const _getCodeHeaders = async function (onlyType?: string): Promise<QueryResult> {
-  let sql = `select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_title as title, ch.code_header_description as description from bctw.code_header ch `
-  if (onlyType) {
-    sql += `where ch.code_header_name = '${onlyType}';`
+  const sql = transactionify(
+    to_pg_function_query('get_code', [idir, codeHeader, {}])
+  );
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve codes'
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
   }
-  const results = await queryAsync(sql);
-  return results;
-}
+  return res.send(getRowResults(result, pg_get_code_fn));
+};
 
-const getCodeHeaders = async function (req: Request, res:Response): Promise<Response> {
-  const codeType = (req.query.codeType || '') as string;
-  let data: QueryResult;
-  try {
-    data = await _getCodeHeaders(codeType);
-  } catch (err) {
-    return res.status(500).send(`Failed to retrieve code headers: ${err}`);
+/**
+ *
+ * @param codeType name of code header to retrieve
+ * @returns returns all codeHeadrs unless codeType is supplied
+ */
+const getCodeHeaders = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const { codeType } = req.query;
+  let sql = `select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_title as title, ch.code_header_description as description from bctw.code_header ch `;
+  if (codeType) {
+    sql += `where ch.code_header_name = '${codeType}';`;
   }
-  return res.send(data.rows ?? []);
-}
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve code headers'
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows);
+};
 
 /* 
   - accepts json[] in the format:
@@ -54,56 +64,77 @@ const getCodeHeaders = async function (req: Request, res:Response): Promise<Resp
     code_header_name: '', code_header_title: '', code_header_description: '', valid_from: Date, valid_to: Date,
   }
 */
+const pg_add_code_header_fn = 'add_code_header';
 const _addCodeHeader = async function (
   idir: string,
-  headers: ICodeHeaderInput | ICodeHeaderInput[],
+  headers: ICodeHeaderInput | ICodeHeaderInput[]
 ): Promise<QueryResult> {
-  const sql = transactionify(to_pg_function_query('add_code_header', [idir, headers], true))
+  const sql = transactionify(
+    to_pg_function_query(pg_add_code_header_fn, [idir, headers], true)
+  );
   const result = await queryAsyncTransaction(sql);
   return result;
-}
+};
 
-const addCodeHeader = async function (req: Request, res:Response): Promise<Response> {
+const addCodeHeader = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   if (!idir) {
-    return res.status(500).send('must supply idir');
+    return res.status(500).send(MISSING_IDIR);
   }
-  const body = req.body;
-  let data: QueryResult;
-  try {
-    data = await _addCodeHeader(idir, body);
-  } catch (e) {
-    return res.status(500).send(`Failed to add code headers: ${e}`);
+  const sql = transactionify(
+    to_pg_function_query('add_code_header', [idir, req.body], true)
+  );
+  const { result, error, isError } = await query(
+    sql,
+    'failed to add code headers',
+    true
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(data, 'add_code_header'));
-}
+  return res.send(getRowResults(result, pg_add_code_header_fn)[0]);
+};
 
 /*
   - accepts json[] in format
    {
-     "code_type: '', code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
+     "code_header": '', "code_type: '', code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
    }
 */
+const pg_add_code_fn = 'add_code';
 const _addCode = async function (
   idir: string,
   codes: ICodeInput[]
 ): Promise<QueryResult> {
-  const sql = transactionify(to_pg_function_query('add_code', [idir, codes], true));
+  const sql = transactionify(
+    to_pg_function_query(pg_add_code_fn, [idir, codes], true)
+  );
   const result = await queryAsyncTransaction(sql);
   return result;
-}
+};
 
-const addCode = async function (req: Request, res:Response): Promise<Response> {
+const addCode = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
-  const body = req.body;
-  let data: QueryResult;
-  try {
-    data = await _addCode(idir, body.codes)
-  } catch (e) {
-    return res.status(500).send(`Failed to add codes: ${e}`);
+  const { codes } = req.body;
+  const sql = transactionify(
+    to_pg_function_query(pg_add_code_fn, [idir, codes], true)
+  );
+  const { result, error, isError } = await query(
+    sql,
+    'failed to add codes',
+    true
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(data, 'add_code'));
-}
+  return res.send(getRowResults(result, pg_add_code_fn)[0]);
+};
 
 export {
   getCode,
@@ -111,5 +142,5 @@ export {
   _addCode,
   _addCodeHeader,
   addCode,
-  addCodeHeader
-}
+  addCodeHeader,
+};
