@@ -41,10 +41,11 @@ content-type: application/json
 ##### linking collar to animal
 #####
 # should fail - animal asigned
-POST http://localhost:3000/link-animal-collar?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
+  "isLink": true,
   "data": {
     "device_id": 21511,
     "animal_id": 3,
@@ -53,13 +54,14 @@ content-type: application/json
 }
 
 ### should work
-POST http://localhost:3000/link-animal-collar?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
+  "isLink": true,
   "data": {
-    "device_id": 41265,
-    "animal_id": 4,
+    "device_id": 41260,
+    "animal_id": 100,
     "end_date": "2021-10-20"
   }
 }
@@ -67,10 +69,11 @@ content-type: application/json
 ##### unlinking collar
 ##### 
 ### should fail because 21511 is assigned to TWC1009
-POST http://localhost:3000/unlink-animal-collar?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
+  "isLink": false,
   "data": {
     "device_id": 21511,
     "animal_id": 4
@@ -78,25 +81,24 @@ content-type: application/json
 }
 
 ### should work, will end assignment today because endDate is not provided
-POST http://localhost:3000/unlink-animal-collar?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "data": 
-  {
+  "isLink": false,
+  "data": {
     "device_id": 21511,
     "animal_id": 70
   }
 }
 
 ### should work
-### 70 is new id for "TWC1009"
-POST http://localhost:3000/unlink-animal-collar?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "data": 
-  {
+  "isLink": false,
+  "data": {
     "device_id": 21511,
     "animal_id": 70, 
     "end_date": "2021-12-01"
@@ -107,23 +109,17 @@ content-type: application/json
 ### get available collars
 http://localhost:3000/get-available-collars?idir={{idir}}
 
-### get paged available collars - start device id 37876
-http://localhost:3000/get-available-collars?idir={{idir}}&page=1
-
-### get paged available collars - start device id 4214xxx
+### get paged available collars
 http://localhost:3000/get-available-collars?idir={{idir}}&page=2
 
 ### specific collar
 http://localhost:3000/get-available-collars?idir={{idir}}&id=37876
 
-######
 ### get assigned collars
 http://localhost:3000/get-assigned-collars?idir={{idir}}
 
-### get assigned collars page 1
-http://localhost:3000/get-assigned-collars?idir={{idir}}&page=1
+### get assigned collars page 2
+http://localhost:3000/get-assigned-collars?idir={{idir}}&page=2
 
-### get assigned collars page 3
-http://localhost:3000/get-assigned-collars?idir={{idir}}&page=3
 ### get one collar
-http://localhost:3000/collar/37876?idir={{idir}}
+# http://localhost:3000/collar/37876?idir={{idir}}

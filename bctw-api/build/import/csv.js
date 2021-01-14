@@ -159,14 +159,19 @@ var _handleCollarCritterLink = function (idir, insertResults, crittersWithCollar
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, Promise.allSettled(crittersWithCollars.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
-                    var aid, r;
+                    var aid, body, r;
                     var _a;
                     return __generator(this, function (_b) {
                         switch (_b.label) {
                             case 0:
                                 aid = (_a = insertResults.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
                                 if (!aid) return [3 /*break*/, 2];
-                                return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, +a.device_id, aid, pg_1.momentNow(), null)];
+                                body = {
+                                    device_id: +a.device_id,
+                                    animal_id: aid,
+                                    start: pg_1.momentNow(),
+                                };
+                                return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, body)];
                             case 1:
                                 r = _b.sent();
                                 return [2 /*return*/, r];

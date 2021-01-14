@@ -100,7 +100,7 @@ var addAnimal = function (req, res) {
 };
 exports.addAnimal = addAnimal;
 /// get critters that are assigned to a collar (ie have a valid row in collar_animal_assignment table)
-var _getAnimalsAssigned = function (idir, filter, page) {
+var _getAssignedSql = function (idir, filter, page) {
     var base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)\n  and deleted is false " + _accessControlQuery('a', idir);
     var strFilter = filter
         ? pg_1.appendSqlFilter(filter, pg_2.TelemetryTypes.animal, 'a')
@@ -115,7 +115,7 @@ var _getAnimalsAssigned = function (idir, filter, page) {
     return sql;
 };
 /// get critters that aren't currently assigned to a collar
-var _getAnimalsUnassigned = function (idir, filter, page) {
+var _getUnassignedSql = function (idir, filter, page) {
     var base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  and deleted is false " + _accessControlQuery('a', idir) + "\n  group by a.id";
     var strFilter = filter
         ? pg_1.appendSqlFilter(filter, pg_2.TelemetryTypes.animal, 'a')
@@ -147,11 +147,11 @@ var getAnimals = function (req, res) {
                         return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
                     }
                     if (!bGetAssigned) return [3 /*break*/, 2];
-                    return [4 /*yield*/, _getAnimalsAssigned(idir, pg_2.filterFromRequestParams(req), page)];
+                    return [4 /*yield*/, _getAssignedSql(idir, pg_2.filterFromRequestParams(req), page)];
                 case 1:
                     _d = _f.sent();
                     return [3 /*break*/, 4];
-                case 2: return [4 /*yield*/, _getAnimalsUnassigned(idir, pg_2.filterFromRequestParams(req), page)];
+                case 2: return [4 /*yield*/, _getUnassignedSql(idir, pg_2.filterFromRequestParams(req), page)];
                 case 3:
                     _d = _f.sent();
                     _f.label = 4;

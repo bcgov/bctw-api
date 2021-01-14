@@ -7,8 +7,7 @@ import {
 } from './apis/user_api';
 import {
   addCollar,
-  assignCollarToCritter,
-  unassignCollarFromCritter,
+  assignOrUnassignCritterCollar,
   getAvailableCollars,
   getAssignedCollars,
 } from './apis/collar_api';
@@ -218,8 +217,7 @@ export {
   addCollar,
   addAnimal,
   addUser,
-  assignCollarToCritter,
-  unassignCollarFromCritter,
+  assignOrUnassignCritterCollar,
   assignCritterToUser,
   getAnimals,
   getAssignedCollars,

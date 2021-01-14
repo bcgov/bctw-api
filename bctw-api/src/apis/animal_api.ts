@@ -75,7 +75,7 @@ const addAnimal = async function (
 };
 
 /// get critters that are assigned to a collar (ie have a valid row in collar_animal_assignment table)
-const _getAnimalsAssigned = function (
+const _getAssignedSql = function (
   idir: string,
   filter?: IFilter,
   page?: number
@@ -98,7 +98,7 @@ const _getAnimalsAssigned = function (
 };
 
 /// get critters that aren't currently assigned to a collar
-const _getAnimalsUnassigned = function (
+const _getUnassignedSql = function (
   idir: string,
   filter?: IFilter,
   page?: number
@@ -136,8 +136,8 @@ const getAnimals = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const sql = bGetAssigned
-    ? await _getAnimalsAssigned(idir, filterFromRequestParams(req), page)
-    : await _getAnimalsUnassigned(idir, filterFromRequestParams(req), page);
+    ? await _getAssignedSql(idir, filterFromRequestParams(req), page)
+    : await _getUnassignedSql(idir, filterFromRequestParams(req), page);
 
   const { result, error, isError } = await query(
     sql,

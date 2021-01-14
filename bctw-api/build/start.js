@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.notFound = exports.deleteType = exports.getUsers = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getCritterTracks = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getCollarAssignmentHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.unassignCollarFromCritter = exports.assignCollarToCritter = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
+exports.notFound = exports.deleteType = exports.getUsers = exports.getUserRole = exports.getLastPings = exports.getPingExtent = exports.getCritterTracks = exports.getDBCritters = exports.getCodeHeaders = exports.getCode = exports.getCollarAssignmentHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.getAnimals = exports.assignCritterToUser = exports.assignOrUnassignCritterCollar = exports.addUser = exports.addAnimal = exports.addCollar = exports.addCodeHeader = exports.addCode = void 0;
 var pg_1 = require("./database/pg");
 var user_api_1 = require("./apis/user_api");
 Object.defineProperty(exports, "addUser", { enumerable: true, get: function () { return user_api_1.addUser; } });
@@ -45,8 +45,7 @@ Object.defineProperty(exports, "getUserRole", { enumerable: true, get: function 
 Object.defineProperty(exports, "getUsers", { enumerable: true, get: function () { return user_api_1.getUsers; } });
 var collar_api_1 = require("./apis/collar_api");
 Object.defineProperty(exports, "addCollar", { enumerable: true, get: function () { return collar_api_1.addCollar; } });
-Object.defineProperty(exports, "assignCollarToCritter", { enumerable: true, get: function () { return collar_api_1.assignCollarToCritter; } });
-Object.defineProperty(exports, "unassignCollarFromCritter", { enumerable: true, get: function () { return collar_api_1.unassignCollarFromCritter; } });
+Object.defineProperty(exports, "assignOrUnassignCritterCollar", { enumerable: true, get: function () { return collar_api_1.assignOrUnassignCritterCollar; } });
 Object.defineProperty(exports, "getAvailableCollars", { enumerable: true, get: function () { return collar_api_1.getAvailableCollars; } });
 Object.defineProperty(exports, "getAssignedCollars", { enumerable: true, get: function () { return collar_api_1.getAssignedCollars; } });
 var animal_api_1 = require("./apis/animal_api");

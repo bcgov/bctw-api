@@ -63,8 +63,7 @@ app.all('*', function (req, res, next) {
     .get('/get-available-collars', api.getAvailableCollars)
     .get('/get-assignment-history/:animal_id', api.getCollarAssignmentHistory)
     .post('/add-collar', api.addCollar)
-    .post('/link-animal-collar', api.assignCollarToCritter)
-    .post('/unlink-animal-collar', api.unassignCollarFromCritter)
+    .post('/change-animal-collar', api.assignOrUnassignCritterCollar)
     // users
     .get('/users', api.getUsers)
     .get('/role', api.getUserRole)

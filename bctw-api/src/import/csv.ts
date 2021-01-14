@@ -8,7 +8,7 @@ import { _addCollar, _assignCollarToCritter } from '../apis/collar_api';
 import { getRowResults, momentNow } from '../database/pg';
 import { Animal } from '../types/animal';
 import { ICodeInput } from '../types/code';
-import { Collar } from '../types/collar';
+import { ChangeCollarData, Collar } from '../types/collar';
 import {
   ICodeHeaderRow,
   ICollarRow,
@@ -112,13 +112,12 @@ const _handleCollarCritterLink = async (
         (row: Animal) => row.animal_id === a.animal_id
       )?.id;
       if (aid) {
-        const r = await _assignCollarToCritter(
-          idir,
-          +a.device_id,
-          aid,
-          momentNow(),
-          null
-        );
+        const body: ChangeCollarData = {
+          device_id: +a.device_id,
+          animal_id: aid,
+          start: momentNow(),
+        };
+        const r = await _assignCollarToCritter(idir, body);
         return r;
       }
     })

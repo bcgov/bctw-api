@@ -1,21 +1,35 @@
+import { Request, Response } from 'express';
+import { QueryResult } from 'pg';
+
 import {
   appendSqlFilter,
   constructGetQuery,
   getRowResults,
   paginate,
-  pgPool,
-  queryAsync,
   queryAsyncTransaction,
   to_pg_function_query,
   transactionify,
 } from '../database/pg';
-import { Collar } from '../types/collar';
-import { Request, Response } from 'express';
-import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
-import { QueryResult } from 'pg';
-import { IBulkResponse } from '../types/import_types';
 import { createBulkResponse } from '../import/bulk_handlers';
+import {
+  ChangeCollarData,
+  ChangeCritterCollarProps,
+  Collar,
+} from '../types/collar';
+import { IBulkResponse } from '../types/import_types';
+import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
+import { MISSING_IDIR, query } from './api_helper';
 
+const pg_add_collar_fn = 'add_collar';
+const pg_link_collar_fn = 'link_collar_to_animal';
+const pg_unlink_collar_fn = 'unlink_collar_to_animal';
+
+/**
+ * @param alias the collar table alias
+ * @param idir user idir
+ * @returns a list of collars the user has access to. since a user is
+ * associated with a set of critters.
+ */
 const _accessCollarControl = (alias: string, idir: string) => {
   return `and ${alias}.device_id = any((${to_pg_function_query(
     'get_user_collar_access',
@@ -23,14 +37,19 @@ const _accessCollarControl = (alias: string, idir: string) => {
   )})::integer[])`;
 };
 
-/*
+/**
+ *
+ * @param idir user idir
+ * @param collar a list of collars
+ * @returns the result of the insert/upsert
+ * exported as this function is used in the bulk csv import
  */
 const _addCollar = async function (
   idir: string,
   collar: Collar[]
 ): Promise<QueryResult> {
   const sql = transactionify(
-    to_pg_function_query('add_collar', [idir, collar], true)
+    to_pg_function_query(pg_add_collar_fn, [idir, collar], true)
   );
   const result = await queryAsyncTransaction(sql);
   return result;
@@ -42,18 +61,22 @@ const addCollar = async function (
 ): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
   if (!idir) {
-    return res.status(500).send('must supply idir');
+    return res.status(500).send(MISSING_IDIR);
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  let data: QueryResult;
-
-  try {
-    data = await _addCollar(idir, collars);
-    createBulkResponse(bulkResp, getRowResults(data, 'add_collar')[0]);
-  } catch (e) {
-    return res.status(500).send(`Failed to add collar(s): ${e}`);
+  const sql = transactionify(
+    to_pg_function_query(pg_add_collar_fn, [idir, collars], true)
+  );
+  const { result, error, isError } = await query(
+    sql,
+    'failed to add collar(s)',
+    true
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
   }
+  createBulkResponse(bulkResp, getRowResults(result, pg_add_collar_fn)[0]);
   const { results, errors } = bulkResp;
   if (errors.length) {
     return res.status(500).send(errors[0].error);
@@ -61,109 +84,66 @@ const addCollar = async function (
   return res.send(results);
 };
 
-/*
+/**
+ * handles critter collar assignment/unassignment
+ * @returns result of assignment row from the collar_animal_assignment table
  */
 const _assignCollarToCritter = async function (
   idir: string,
-  device_id: number,
-  animal_id: number,
-  start: Date | string,
-  end: Date | null
+  body: ChangeCollarData
 ): Promise<QueryResult> {
+  const { device_id, animal_id, start, end } = body;
+  const params = [idir, device_id, animal_id, start, end];
+  const sql = transactionify(to_pg_function_query(pg_link_collar_fn, params));
+  return await await queryAsyncTransaction(sql);
+};
+
+const assignOrUnassignCritterCollar = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const idir = req?.query?.idir as string;
   if (!idir) {
-    throw Error('IDIR must be supplied');
+    return res.status(500).send(MISSING_IDIR);
   }
+
+  const body: ChangeCritterCollarProps = req.body;
+  const { device_id, animal_id, start, end } = body.data;
+
   if (!device_id || !animal_id) {
-    throw Error('device_id and animal_id must be supplied');
+    return res.status(500).send('device_id & animal_id must be supplied');
   }
-  const sql = transactionify(
-    to_pg_function_query('link_collar_to_animal', [
-      idir,
-      device_id,
-      animal_id,
-      start,
-      end,
-    ])
-  );
-  const result = await queryAsyncTransaction(sql);
-  return result;
+
+  const db_fn_name = body.isLink ? pg_link_collar_fn : pg_unlink_collar_fn;
+  const params = [idir, device_id, animal_id];
+  const errMsg = `failed to ${
+    body.isLink ? 'attach' : 'remove'
+  } device to critter ${animal_id}`;
+
+  const sql = body.isLink
+    ? to_pg_function_query(db_fn_name, [...params, start, end])
+    : to_pg_function_query(pg_unlink_collar_fn, [...params, end]);
+
+  const { result, error, isError } = await query(sql, errMsg, true);
+
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, db_fn_name));
 };
 
-const assignCollarToCritter = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
-  const body = req.body.data;
-  let data: QueryResult;
-  try {
-    data = await _assignCollarToCritter(
-      idir,
-      body.device_id,
-      body.animal_id,
-      body.start_date,
-      body.end_date
-    );
-  } catch (e) {
-    return res.status(500).send(`Failed to attach device to critter: ${e}`);
-  }
-  const results = getRowResults(data, 'link_collar_to_animal');
-  return res.send(results);
-};
-
-/*
+/**
+ * @param idir
+ * @param filte
+ * @param page
+ * @returns a list of collars that do not have a critter attached
+ * currently no access control on these results
  */
-const _unassignCollarToCritter = async function (
-  idir: string,
-  deviceId: number,
-  animalId: string,
-  endDate: Date
-): Promise<QueryResult> {
-  if (!idir) {
-    throw Error('IDIR must be supplied');
-  }
-  const sql = transactionify(
-    to_pg_function_query('unlink_collar_to_animal', [
-      idir,
-      deviceId,
-      animalId,
-      endDate,
-    ])
-  );
-  const result = await queryAsyncTransaction(sql);
-  return result;
-};
-
-/* todo: figure out business requirement if the animal id must be provided.
-can a user unlink a collar from whatever it is attached to?
-*/
-const unassignCollarFromCritter = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
-  const body = req.body.data;
-  let data: QueryResult;
-  try {
-    data = await _unassignCollarToCritter(
-      idir,
-      body.device_id,
-      body.animal_id,
-      body.end_date
-    );
-  } catch (e) {
-    return res.status(500).send(`Failed to query database: ${e}`);
-  }
-  const results = getRowResults(data, 'unlink_collar_to_animal');
-  return res.send(results);
-};
-
-// todo: consider bctw.collar_animal_assignment table
-const _getAvailableCollars = async function (
+const getAvailableCollarSql = function (
   idir: string,
   filter?: IFilter,
   page?: number
-): Promise<QueryResult> {
+): string {
   const base = `
     select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
     from collar c 
@@ -171,8 +151,7 @@ const _getAvailableCollars = async function (
       select device_id from collar_animal_assignment caa
       where now() <@ tstzrange(caa.start_time, caa.end_time)
     )
-    and c.deleted is false`; // dont limit access to unassigned collars
-  // and c.deleted is false ${_accessCollarControl('c', idir)}`
+    and c.deleted is false`;
   const strFilter = appendSqlFilter(
     filter || {},
     TelemetryTypes.collar,
@@ -187,31 +166,39 @@ const _getAvailableCollars = async function (
     group: 'c.device_id',
     page: strPage,
   });
-  const result = await queryAsync(sql);
-  return result;
+  return sql;
 };
 
 const getAvailableCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req.query?.idir || '') as string;
+  const idir = req.query?.idir as string;
   const page = (req.query?.page || 1) as number;
-  let data: QueryResult;
-  try {
-    data = await _getAvailableCollars(idir, filterFromRequestParams(req), page);
-  } catch (e) {
-    return res.status(500).send(`Failed to query collars: ${e}`);
+  const sql = getAvailableCollarSql(idir, filterFromRequestParams(req), page);
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve available collars'
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
   }
-  const results = data?.rows ?? [];
-  return res.send(results);
+  return res.send(result.rows);
 };
 
-const _getAssignedCollars = async function (
+/**
+ * @param idir
+ * @param filter
+ * @param page
+ * @returns a list of collars that have a critter attached.
+ * access control is included, so the user will only see collars that have a critter
+ * that they are allowed to view
+ */
+const getAssignedCollarSql = function (
   idir: string,
   filter?: IFilter,
   page?: number
-): Promise<QueryResult> {
+): string {
   const base = `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
   from collar c inner join collar_animal_assignment caa 
   on c.device_id = caa.device_id
@@ -226,49 +213,48 @@ const _getAssignedCollars = async function (
     group: 'caa.animal_id, c.device_id, caa.start_time',
     page: strPage,
   });
-  const result = await queryAsync(sql);
-  return result;
+  return sql;
 };
 
 const getAssignedCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
+  const idir = req?.query?.idir as string;
   const page = (req.query?.page || 1) as number;
-  let data: QueryResult;
-  try {
-    data = await _getAssignedCollars(idir, filterFromRequestParams(req), page);
-  } catch (e) {
-    return res.status(500).send(`Failed to query database: ${e}`);
+  const sql = getAssignedCollarSql(idir, filterFromRequestParams(req), page);
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve assigned collars'
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
   }
-  const results = data?.rows ?? [];
-  return res.send(results);
+  return res.send(result.rows);
 };
 
-const getCollar = async function (req: Request, res: Response): Promise<void> {
-  // const idir = (req?.query?.idir || '') as string;
-  const filter = filterFromRequestParams(req);
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const results = data?.rows;
-    res.send(results);
-  };
-  const base = `select * from bctw.collar`;
-  const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar);
-  const sql = constructGetQuery({ base: base, filter: strFilter });
-  return pgPool.query(sql, done);
-};
+//
+// const getCollar = async function (req: Request, res: Response): Promise<void> {
+//   const filter = filterFromRequestParams(req);
+//   const done = function (err, data) {
+//     if (err) {
+//       return res.status(500).send(`Failed to query database: ${err}`);
+//     }
+//     const results = data?.rows;
+//     res.send(results);
+//   };
+//   const base = `select * from bctw.collar`;
+//   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar);
+//   const sql = constructGetQuery({ base: base, filter: strFilter });
+//   return pgPool.query(sql, done);
+// };
 
 export {
   addCollar,
-  assignCollarToCritter,
-  unassignCollarFromCritter,
+  assignOrUnassignCritterCollar,
   getAssignedCollars,
   getAvailableCollars,
-  getCollar,
+  // getCollar,
   _assignCollarToCritter,
   _addCollar,
-}
+};

@@ -20,7 +20,20 @@ enum CollarAccessType {
   none = 'none'
 }
 
+interface ChangeCollarData {
+  device_id: number;
+  animal_id: number;
+  start: Date | string;
+  end?: Date | string;
+}
+interface ChangeCritterCollarProps {
+  isLink: boolean;
+  data: ChangeCollarData;
+}
+
 export {
+  ChangeCollarData,
+  ChangeCritterCollarProps,
   Collar,
   CollarAccessType
 } 
