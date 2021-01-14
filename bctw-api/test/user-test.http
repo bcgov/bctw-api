@@ -18,7 +18,7 @@ content-type: application/json
   "role": "administrator"
 }
 
-###
+### should fail invalid role type
 POST http://localhost:3000/add-user HTTP/1.1
 content-type: application/json
 

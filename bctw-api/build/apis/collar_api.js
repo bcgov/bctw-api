@@ -43,7 +43,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports._addCollar = exports._assignCollarToCritter = exports.getAvailableCollars = exports.getAssignedCollars = exports.assignOrUnassignCritterCollar = exports.addCollar = void 0;
+exports.getAvailableCollars = exports.getAssignedCollars = exports.assignOrUnassignCritterCollar = exports.addCollar = void 0;
 var pg_1 = require("../database/pg");
 var bulk_handlers_1 = require("../import/bulk_handlers");
 var pg_2 = require("../types/pg");
@@ -64,51 +64,33 @@ var _accessCollarControl = function (alias, idir) {
  *
  * @param idir user idir
  * @param collar a list of collars
- * @returns the result of the insert/upsert
- * exported as this function is used in the bulk csv import
+ * @returns the result of the insert/upsert in the bulk rseponse format
  */
-var _addCollar = function (idir, collar) {
-    return __awaiter(this, void 0, void 0, function () {
-        var sql, result;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_add_collar_fn, [idir, collar], true));
-                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
-                case 1:
-                    result = _a.sent();
-                    return [2 /*return*/, result];
-            }
-        });
-    });
-};
-exports._addCollar = _addCollar;
 var addCollar = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, collars, bulkResp, sql, _b, result, error, isError, results, errors;
+        var idir, bulkResp, collars, sql, _b, result, error, isError;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    bulkResp = { errors: [], results: [] };
                     if (!idir) {
-                        return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
+                        bulkResp.errors.push({ row: '', error: api_helper_1.MISSING_IDIR, rownum: 0 });
+                        return [2 /*return*/, res.send(bulkResp)];
                     }
                     collars = !Array.isArray(req.body) ? [req.body] : req.body;
-                    bulkResp = { errors: [], results: [] };
                     sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_add_collar_fn, [idir, collars], true));
                     return [4 /*yield*/, api_helper_1.query(sql, 'failed to add collar(s)', true)];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
-                        return [2 /*return*/, res.status(500).send(error.message)];
+                        bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
                     }
-                    bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(result, pg_add_collar_fn)[0]);
-                    results = bulkResp.results, errors = bulkResp.errors;
-                    if (errors.length) {
-                        return [2 /*return*/, res.status(500).send(errors[0].error)];
+                    else {
+                        bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(result, pg_add_collar_fn)[0]);
                     }
-                    return [2 /*return*/, res.send(results)];
+                    return [2 /*return*/, res.send(bulkResp)];
             }
         });
     });
@@ -118,23 +100,6 @@ exports.addCollar = addCollar;
  * handles critter collar assignment/unassignment
  * @returns result of assignment row from the collar_animal_assignment table
  */
-var _assignCollarToCritter = function (idir, body) {
-    return __awaiter(this, void 0, void 0, function () {
-        var device_id, animal_id, start, end, params, sql;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    device_id = body.device_id, animal_id = body.animal_id, start = body.start, end = body.end;
-                    params = [idir, device_id, animal_id, start, end];
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_link_collar_fn, params));
-                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
-                case 1: return [4 /*yield*/, _a.sent()];
-                case 2: return [2 /*return*/, _a.sent()];
-            }
-        });
-    });
-};
-exports._assignCollarToCritter = _assignCollarToCritter;
 var assignOrUnassignCritterCollar = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {

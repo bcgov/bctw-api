@@ -1,51 +1,62 @@
 import csv from 'csv-parser';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
-import { QueryResult } from 'pg';
-import { _addAnimal } from '../apis/animal_api';
-import { _addCode, _addCodeHeader } from '../apis/code_api';
-import { _addCollar, _assignCollarToCritter } from '../apis/collar_api';
-import { getRowResults, momentNow } from '../database/pg';
+
+import { pg_add_animal_fn } from '../apis/animal_api';
+import { MISSING_IDIR, query } from '../apis/api_helper';
+import { addCode, addCodeHeader } from '../apis/code_api';
+import { addCollar } from '../apis/collar_api';
+import {
+  getRowResults,
+  queryAsyncTransaction,
+  to_pg_function_query,
+  transactionify,
+} from '../database/pg';
 import { Animal } from '../types/animal';
-import { ICodeInput } from '../types/code';
+import { CodeHeaderInput, CodeInput } from '../types/code';
 import { ChangeCollarData, Collar } from '../types/collar';
 import {
-  ICodeHeaderRow,
-  ICollarRow,
-  ICodeRow,
-  IAnimalRow,
-  ParsedRows,
-  isCodeHeader,
-  isAnimal,
-  isCollar,
-  isCode,
-  IImportError,
-  rowToCsv,
   IBulkResponse,
+  IImportError,
+  isAnimal,
+  isCode,
+  isCodeHeader,
+  isCollar,
+  rowToCsv,
 } from '../types/import_types';
 import { createBulkResponse } from './bulk_handlers';
 import { mapCsvImport } from './to_header';
 
-const _removeUploadedFile = async (path: string) => {
+/**
+ * deletes an uploaded csv file
+ * @param path fully qualified path of the file to be removed
+ */
+const cleanupUploadsDir = async (path: string): Promise<void> => {
   fs.unlink(path, (err) => {
     if (err) {
       console.log(`unabled to remove uploaded csv: ${err}`);
     } else console.log(`uploaded csv file removed: ${path}`);
   });
 };
-const _parseCsv = async (
+
+/**
+ * @param file
+ * @param callback called when parsing completed
+ */
+const parseCsv = async (
   file: Express.Multer.File,
-  callback: (rowObj: ParsedRows) => void
+  callback: (rowObj: Record<string, any[]>) => void
 ) => {
-  const codes: ICodeRow = { rows: [] };
-  const headers: ICodeHeaderRow = { rows: [] };
-  const animals: IAnimalRow = { rows: [] };
-  const collars: ICollarRow = { rows: [] };
-  const ret: ParsedRows = {
-    codes: codes.rows,
-    headers: headers.rows,
-    animals: animals.rows,
-    collars: collars.rows,
+  const codes: CodeInput[] = [];
+  const headers: CodeHeaderInput[] = [];
+  const animals: Animal[] = [];
+  const collars: Collar[] = [];
+
+  const ret = {
+    codes,
+    headers,
+    animals,
+    collars,
   };
 
   fs.createReadStream(file.path)
@@ -56,51 +67,63 @@ const _parseCsv = async (
         },
       })
     )
-    .on('data', (row) => {
-      if (isCodeHeader(row)) headers.rows.push(row);
-      else if (isCode(row)) codes.rows.push(row);
-      else if (isAnimal(row)) animals.rows.push(row);
-      else if (isCollar(row)) collars.rows.push(row);
+    .on('data', (row: Record<string, unknown>) => {
+      if (isCodeHeader(row)) headers.push(row);
+      else if (isCode(row)) codes.push(row);
+      else if (isAnimal(row)) animals.push(row);
+      else if (isCollar(row)) collars.push(row);
     })
     .on('end', async () => {
       console.log(
-        `CSV file ${file.path} processed\ncodes: ${codes.rows.length},\nheaders: ${headers.rows.length},\ncritters: ${animals.rows.length},\ncollars: ${collars.rows.length}`
+        `CSV file ${file.path} processed\ncodes: ${codes.length},\nheaders: ${headers.length},\ncritters: ${animals.length},\ncollars: ${collars.length}`
       );
       await callback(ret);
     });
 };
 
-const _handleCritterInsert = async (
+/**
+ * inserts critters, doesnt use the animal_api addAnimal implementation because
+ * if a device id is present here the function will attempt to attach it
+ * before sending the response
+ * @param res Response object
+ * @param idir user idir
+ * @param rows critters to be upserted
+ * @returns Express response
+ */
+const handleCritterInsert = async (
   res: Response,
   idir: string,
   rows: Animal[]
 ): Promise<Response> => {
+  const bulkResp: IBulkResponse = { errors: [], results: [] };
   const animalsWithCollars = rows.filter((a) => a.device_id);
-  const results: IBulkResponse = { errors: [], results: [] };
-  try {
-    const insertResults = await _addAnimal(idir, rows);
-    const r = getRowResults(insertResults, 'add_animal')[0];
-    createBulkResponse(results, r);
-
-    if (animalsWithCollars.length && results.errors.length === 0) {
-      _handleCollarCritterLink(
-        idir,
-        results.results as Animal[],
-        animalsWithCollars,
-        results.errors
-      );
-    }
-  } catch (e) {
-    return res
-      .status(500)
-      .send(`exception caught bulk inserting critters: ${e}`);
+  const sql = transactionify(
+    to_pg_function_query(pg_add_animal_fn, [idir, rows], true)
+  );
+  const { result, error, isError } = await query(
+    sql,
+    `failed to add animals`,
+    true
+  );
+  if (isError) {
+    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
+  } else {
+    createBulkResponse(bulkResp, getRowResults(result, pg_add_animal_fn)[0]);
   }
-  return res.send(results);
+  // attempt to attach collars
+  if (animalsWithCollars.length && bulkResp.errors.length === 0) {
+    await handleCollarCritterLink(
+      idir,
+      bulkResp.results as Animal[],
+      animalsWithCollars,
+      bulkResp.errors
+    );
+  }
+  return res.send(bulkResp);
 };
 
-// called from _handleCritterInsert for animals that have collars attached,
-// doesnt return results, simply pushes any exceptions caught to errors array param.
-const _handleCollarCritterLink = async (
+// doesnt return results, pushes any exceptions caught to errors array param.
+const handleCollarCritterLink = async (
   idir: string,
   insertResults: Animal[],
   crittersWithCollars: Animal[],
@@ -115,10 +138,15 @@ const _handleCollarCritterLink = async (
         const body: ChangeCollarData = {
           device_id: +a.device_id,
           animal_id: aid,
-          start: momentNow(),
+          start: null,
+          end: null,
         };
-        const r = await _assignCollarToCritter(idir, body);
-        return r;
+        const params = [idir, ...Object.values(body)];
+        const sql = transactionify(
+          to_pg_function_query('link_collar_to_animal', params)
+        );
+        const result = await queryAsyncTransaction(sql);
+        return result;
       }
     })
   ).then((values) => {
@@ -126,46 +154,12 @@ const _handleCollarCritterLink = async (
       if (val.status === 'rejected') {
         errors.push({
           rownum: i,
-          error: `ROW ${i}: Critter ID ${crittersWithCollars[i].animal_id} ${val.reason}`,
+          error: `Critter ID ${crittersWithCollars[i].animal_id} ${val.reason}`,
           row: rowToCsv(crittersWithCollars[i]),
         });
       }
     });
   });
-};
-
-const _handleCodeInsert = async (
-  res: Response,
-  idir: string,
-  rows: ICodeInput[]
-): Promise<Response> => {
-  const results: IBulkResponse = { errors: [], results: [] };
-  try {
-    const insertResults = await _addCode(idir, rows);
-    const r = getRowResults(insertResults, 'add_code')[0];
-    createBulkResponse(results, r);
-  } catch (e) {
-    return res.status(500).send(`exception caught bulk upserting codes: ${e}`);
-  }
-  return res.send(results);
-};
-
-const _handleCollarInsert = async (
-  res: Response,
-  idir: string,
-  rows: Collar[]
-): Promise<Response> => {
-  const results: IBulkResponse = { errors: [], results: [] };
-  try {
-    const insertResults = await _addCollar(idir, rows);
-    const r = getRowResults(insertResults, 'add_collar')[0];
-    createBulkResponse(results, r);
-  } catch (e) {
-    return res
-      .status(500)
-      .send(`exception caught bulk upserting collars: ${e}`);
-  }
-  return res.send(results);
 };
 
 /*
@@ -177,42 +171,35 @@ const _handleCollarInsert = async (
 const importCsv = async function (req: Request, res: Response): Promise<void> {
   const idir = (req?.query?.idir || '') as string;
   if (!idir) {
-    res.status(500).send('must supply idir');
+    res.status(500).send(MISSING_IDIR);
   }
   const file = req.file;
   if (!file) {
     res.status(500).send('failed: csv file not found');
   }
 
-  let headerResults;
-
-  const onFinishedParsing = async (rows: ParsedRows) => {
-    const codes = rows.codes;
-    const headers = rows.headers;
-    const animals = rows.animals;
-    const collars = rows.collars;
+  const onFinishedParsing = async (rows: Record<string, any[]>) => {
+    const { codes, headers, animals, collars } = rows;
     try {
       if (codes.length) {
-        _handleCodeInsert(res, idir, codes);
+        req.body.codes = codes;
+        return await addCode(req, res);
       } else if (headers.length) {
-        headerResults = await _addCodeHeader(idir, headers);
+        req.body.headers = headers;
+        return await addCodeHeader(req, res);
       } else if (animals.length) {
-        _handleCritterInsert(res, idir, animals);
+        handleCritterInsert(res, idir, animals);
       } else if (collars.length) {
-        _handleCollarInsert(res, idir, collars);
+        req.body = collars;
+        return await addCollar(req, res);
       }
-      _removeUploadedFile(file.path);
     } catch (e) {
       res.status(500).send(e.message);
-    }
-    if (
-      (headerResults as QueryResult[])?.length ||
-      (headerResults as QueryResult)?.rows.length
-    ) {
-      res.send(getRowResults(headerResults, 'add_code_header'));
+    } finally {
+      cleanupUploadsDir(file.path);
     }
   };
-  await _parseCsv(file, onFinishedParsing);
+  await parseCsv(file, onFinishedParsing);
 };
 
 export { importCsv };

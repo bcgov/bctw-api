@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCollarAssignmentHistory = exports.getAnimals = exports.addAnimal = exports._addAnimal = void 0;
+exports.getCollarAssignmentHistory = exports.getAnimals = exports.addAnimal = exports.pg_add_animal_fn = void 0;
 var pg_1 = require("../database/pg");
 var bulk_handlers_1 = require("../import/bulk_handlers");
 var pg_2 = require("../types/pg");
@@ -48,22 +48,7 @@ var _accessControlQuery = function (alias, idir) {
 /// select all animal table properties other than created/deleted etc.
 var _selectAnimals = "select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date_day, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, \na.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,\na.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,\na.trans_location, a.wlh_id, a.nickname";
 var pg_add_animal_fn = 'add_animal';
-var _addAnimal = function (idir, animal) {
-    return __awaiter(this, void 0, void 0, function () {
-        var sql, result;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_add_animal_fn, [idir, animal], true));
-                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
-                case 1:
-                    result = _a.sent();
-                    return [2 /*return*/, result];
-            }
-        });
-    });
-};
-exports._addAnimal = _addAnimal;
+exports.pg_add_animal_fn = pg_add_animal_fn;
 /*
   handles upsert. body can be single or array of Animals, since
   db function handles this in a bulk fashion, create the proper bulk response

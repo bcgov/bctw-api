@@ -1,46 +1,42 @@
-import { QueryResultRow } from "pg";
-import { Animal } from "./animal";
-import { ICodeHeaderInput, ICodeInput } from "./code";
-import { Collar } from "./collar";
+import { QueryResultRow } from 'pg';
+import { Animal } from './animal';
+import { CodeHeaderInput, CodeInput } from './code';
+import { Collar } from './collar';
 
-const isAnimal = (row: any):row is Animal => {
+const isAnimal = (row: Record<string, unknown>): row is Animal => {
   const r = row as Animal;
   if (r.animal_id) {
     return true;
-  } return false;
-}
+  }
+  return false;
+};
 
-const isCollar = (row: any): row is Collar => {
+const isCollar = (row: Record<string, unknown>): row is Collar => {
   const r = row as Collar;
   if (r.device_id) {
     return true;
   }
   return false;
-}
+};
 
-const isCode = (row: any): row is ICodeInput => {
-  const r = row as ICodeInput;
-  if (r.code_name) {
+const isCode = (row: Record<string, unknown>): row is CodeInput => {
+  const r = (row as unknown) as CodeInput;
+  if (r.code_name && r.code_header) {
     return true;
-  } return false;
-}
+  }
+  return false;
+};
 
-const isCodeHeader = (row: any): row is ICodeHeaderInput => {
-  const r = row as ICodeHeaderInput;
-  if (r.code_header_name &&
-      r.code_header_description &&
-      r.code_header_title &&
-      r.code_header_name
-    ) { return true } return false;
-}
+const isCodeHeader = (row: Record<string, unknown>): row is CodeHeaderInput => {
+  const r = (row as unknown) as CodeHeaderInput;
+  if (r.code_header_name && r.code_header_description && r.code_header_title) {
+    return true;
+  }
+  return false;
+};
 
-interface IAnimalRow { rows: Animal[]}
-interface ICodeRow { rows: ICodeInput[] }
-interface ICodeHeaderRow { rows: ICodeHeaderInput[]}
-interface ICollarRow { rows: Collar[]}
-interface ParsedRows { codes: ICodeInput[], headers: ICodeHeaderInput[], animals: Animal[], collars: Collar[] }
-
-const rowToCsv = (row: any): string => Object.values(row).join(',');
+const rowToCsv = (row: Record<string, unknown>): string =>
+  Object.values(row).join(',');
 export interface IImportError {
   error: string;
   row: string;
@@ -48,8 +44,8 @@ export interface IImportError {
 }
 
 export interface IBulkResponse {
-  errors: IImportError[],
-  results: QueryResultRow[],
+  errors: IImportError[];
+  results: QueryResultRow[];
 }
 
 export interface BctwBaseType {
@@ -64,10 +60,5 @@ export {
   isCollar,
   isCodeHeader,
   isCode,
-  IAnimalRow,
-  ICodeHeaderRow,
-  ICodeRow,
-  ICollarRow,
-  ParsedRows,
-  rowToCsv
-}
+  rowToCsv,
+};

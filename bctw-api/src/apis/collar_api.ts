@@ -1,18 +1,15 @@
 import { Request, Response } from 'express';
-import { QueryResult } from 'pg';
 
 import {
   appendSqlFilter,
   constructGetQuery,
   getRowResults,
   paginate,
-  queryAsyncTransaction,
   to_pg_function_query,
   transactionify,
 } from '../database/pg';
 import { createBulkResponse } from '../import/bulk_handlers';
 import {
-  ChangeCollarData,
   ChangeCritterCollarProps,
   Collar,
 } from '../types/collar';
@@ -41,30 +38,19 @@ const _accessCollarControl = (alias: string, idir: string) => {
  *
  * @param idir user idir
  * @param collar a list of collars
- * @returns the result of the insert/upsert
- * exported as this function is used in the bulk csv import
+ * @returns the result of the insert/upsert in the bulk rseponse format
  */
-const _addCollar = async function (
-  idir: string,
-  collar: Collar[]
-): Promise<QueryResult> {
-  const sql = transactionify(
-    to_pg_function_query(pg_add_collar_fn, [idir, collar], true)
-  );
-  const result = await queryAsyncTransaction(sql);
-  return result;
-};
-
 const addCollar = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const idir = (req?.query?.idir || '') as string;
+  const bulkResp: IBulkResponse = { errors: [], results: [] };
   if (!idir) {
-    return res.status(500).send(MISSING_IDIR);
+    bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
+    return res.send(bulkResp);
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const bulkResp: IBulkResponse = { errors: [], results: [] };
   const sql = transactionify(
     to_pg_function_query(pg_add_collar_fn, [idir, collars], true)
   );
@@ -74,30 +60,17 @@ const addCollar = async function (
     true
   );
   if (isError) {
-    return res.status(500).send(error.message);
+    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
+  } else {
+    createBulkResponse(bulkResp, getRowResults(result, pg_add_collar_fn)[0]);
   }
-  createBulkResponse(bulkResp, getRowResults(result, pg_add_collar_fn)[0]);
-  const { results, errors } = bulkResp;
-  if (errors.length) {
-    return res.status(500).send(errors[0].error);
-  }
-  return res.send(results);
+  return res.send(bulkResp);
 };
 
 /**
  * handles critter collar assignment/unassignment
  * @returns result of assignment row from the collar_animal_assignment table
  */
-const _assignCollarToCritter = async function (
-  idir: string,
-  body: ChangeCollarData
-): Promise<QueryResult> {
-  const { device_id, animal_id, start, end } = body;
-  const params = [idir, device_id, animal_id, start, end];
-  const sql = transactionify(to_pg_function_query(pg_link_collar_fn, params));
-  return await await queryAsyncTransaction(sql);
-};
-
 const assignOrUnassignCritterCollar = async function (
   req: Request,
   res: Response
@@ -233,28 +206,9 @@ const getAssignedCollars = async function (
   return res.send(result.rows);
 };
 
-//
-// const getCollar = async function (req: Request, res: Response): Promise<void> {
-//   const filter = filterFromRequestParams(req);
-//   const done = function (err, data) {
-//     if (err) {
-//       return res.status(500).send(`Failed to query database: ${err}`);
-//     }
-//     const results = data?.rows;
-//     res.send(results);
-//   };
-//   const base = `select * from bctw.collar`;
-//   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar);
-//   const sql = constructGetQuery({ base: base, filter: strFilter });
-//   return pgPool.query(sql, done);
-// };
-
 export {
   addCollar,
   assignOrUnassignCritterCollar,
   getAssignedCollars,
   getAvailableCollars,
-  // getCollar,
-  _assignCollarToCritter,
-  _addCollar,
 };

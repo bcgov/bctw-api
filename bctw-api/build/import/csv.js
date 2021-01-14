@@ -54,6 +54,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -62,13 +69,18 @@ exports.importCsv = void 0;
 var csv_parser_1 = __importDefault(require("csv-parser"));
 var fs = __importStar(require("fs"));
 var animal_api_1 = require("../apis/animal_api");
+var api_helper_1 = require("../apis/api_helper");
 var code_api_1 = require("../apis/code_api");
 var collar_api_1 = require("../apis/collar_api");
 var pg_1 = require("../database/pg");
 var import_types_1 = require("../types/import_types");
 var bulk_handlers_1 = require("./bulk_handlers");
 var to_header_1 = require("./to_header");
-var _removeUploadedFile = function (path) { return __awaiter(void 0, void 0, void 0, function () {
+/**
+ * deletes an uploaded csv file
+ * @param path fully qualified path of the file to be removed
+ */
+var cleanupUploadsDir = function (path) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         fs.unlink(path, function (err) {
             if (err) {
@@ -80,18 +92,22 @@ var _removeUploadedFile = function (path) { return __awaiter(void 0, void 0, voi
         return [2 /*return*/];
     });
 }); };
-var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, void 0, function () {
+/**
+ * @param file
+ * @param callback called when parsing completed
+ */
+var parseCsv = function (file, callback) { return __awaiter(void 0, void 0, void 0, function () {
     var codes, headers, animals, collars, ret;
     return __generator(this, function (_a) {
-        codes = { rows: [] };
-        headers = { rows: [] };
-        animals = { rows: [] };
-        collars = { rows: [] };
+        codes = [];
+        headers = [];
+        animals = [];
+        collars = [];
         ret = {
-            codes: codes.rows,
-            headers: headers.rows,
-            animals: animals.rows,
-            collars: collars.rows,
+            codes: codes,
+            headers: headers,
+            animals: animals,
+            collars: collars,
         };
         fs.createReadStream(file.path)
             .pipe(csv_parser_1.default({
@@ -102,19 +118,19 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
         }))
             .on('data', function (row) {
             if (import_types_1.isCodeHeader(row))
-                headers.rows.push(row);
+                headers.push(row);
             else if (import_types_1.isCode(row))
-                codes.rows.push(row);
+                codes.push(row);
             else if (import_types_1.isAnimal(row))
-                animals.rows.push(row);
+                animals.push(row);
             else if (import_types_1.isCollar(row))
-                collars.rows.push(row);
+                collars.push(row);
         })
             .on('end', function () { return __awaiter(void 0, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("CSV file " + file.path + " processed\ncodes: " + codes.rows.length + ",\nheaders: " + headers.rows.length + ",\ncritters: " + animals.rows.length + ",\ncollars: " + collars.rows.length);
+                        console.log("CSV file " + file.path + " processed\ncodes: " + codes.length + ",\nheaders: " + headers.length + ",\ncritters: " + animals.length + ",\ncollars: " + collars.length);
                         return [4 /*yield*/, callback(ret)];
                     case 1:
                         _a.sent();
@@ -125,41 +141,47 @@ var _parseCsv = function (file, callback) { return __awaiter(void 0, void 0, voi
         return [2 /*return*/];
     });
 }); };
-var _handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var animalsWithCollars, results, insertResults, r, e_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+/**
+ * inserts critters, doesnt use the animal_api addAnimal implementation because
+ * if a device id is present here the function will attempt to attach it
+ * before sending the response
+ * @param res Response object
+ * @param idir user idir
+ * @param rows critters to be upserted
+ * @returns Express response
+ */
+var handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
+    var bulkResp, animalsWithCollars, sql, _a, result, error, isError;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
+                bulkResp = { errors: [], results: [] };
                 animalsWithCollars = rows.filter(function (a) { return a.device_id; });
-                results = { errors: [], results: [] };
-                _a.label = 1;
+                sql = pg_1.transactionify(pg_1.to_pg_function_query(animal_api_1.pg_add_animal_fn, [idir, rows], true));
+                return [4 /*yield*/, api_helper_1.query(sql, "failed to add animals", true)];
             case 1:
-                _a.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, animal_api_1._addAnimal(idir, rows)];
-            case 2:
-                insertResults = _a.sent();
-                r = pg_1.getRowResults(insertResults, 'add_animal')[0];
-                bulk_handlers_1.createBulkResponse(results, r);
-                if (animalsWithCollars.length && results.errors.length === 0) {
-                    _handleCollarCritterLink(idir, results.results, animalsWithCollars, results.errors);
+                _a = _b.sent(), result = _a.result, error = _a.error, isError = _a.isError;
+                if (isError) {
+                    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
                 }
-                return [3 /*break*/, 4];
-            case 3:
-                e_1 = _a.sent();
-                return [2 /*return*/, res
-                        .status(500)
-                        .send("exception caught bulk inserting critters: " + e_1)];
-            case 4: return [2 /*return*/, res.send(results)];
+                else {
+                    bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(result, animal_api_1.pg_add_animal_fn)[0]);
+                }
+                if (!(animalsWithCollars.length && bulkResp.errors.length === 0)) return [3 /*break*/, 3];
+                return [4 /*yield*/, handleCollarCritterLink(idir, bulkResp.results, animalsWithCollars, bulkResp.errors)];
+            case 2:
+                _b.sent();
+                _b.label = 3;
+            case 3: return [2 /*return*/, res.send(bulkResp)];
         }
     });
 }); };
-// called from _handleCritterInsert for animals that have collars attached,
-// doesnt return results, simply pushes any exceptions caught to errors array param.
-var _handleCollarCritterLink = function (idir, insertResults, crittersWithCollars, errors) { return __awaiter(void 0, void 0, void 0, function () {
+// doesnt return results, pushes any exceptions caught to errors array param.
+var handleCollarCritterLink = function (idir, insertResults, crittersWithCollars, errors) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, Promise.allSettled(crittersWithCollars.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
-                    var aid, body, r;
+                    var aid, body, params, sql, result;
                     var _a;
                     return __generator(this, function (_b) {
                         switch (_b.label) {
@@ -169,12 +191,15 @@ var _handleCollarCritterLink = function (idir, insertResults, crittersWithCollar
                                 body = {
                                     device_id: +a.device_id,
                                     animal_id: aid,
-                                    start: pg_1.momentNow(),
+                                    start: null,
+                                    end: null,
                                 };
-                                return [4 /*yield*/, collar_api_1._assignCollarToCritter(idir, body)];
+                                params = __spreadArrays([idir], Object.values(body));
+                                sql = pg_1.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', params));
+                                return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
                             case 1:
-                                r = _b.sent();
-                                return [2 /*return*/, r];
+                                result = _b.sent();
+                                return [2 /*return*/, result];
                             case 2: return [2 /*return*/];
                         }
                     });
@@ -183,7 +208,7 @@ var _handleCollarCritterLink = function (idir, insertResults, crittersWithCollar
                         if (val.status === 'rejected') {
                             errors.push({
                                 rownum: i,
-                                error: "ROW " + i + ": Critter ID " + crittersWithCollars[i].animal_id + " " + val.reason,
+                                error: "Critter ID " + crittersWithCollars[i].animal_id + " " + val.reason,
                                 row: import_types_1.rowToCsv(crittersWithCollars[i]),
                             });
                         }
@@ -192,52 +217,6 @@ var _handleCollarCritterLink = function (idir, insertResults, crittersWithCollar
             case 1:
                 _a.sent();
                 return [2 /*return*/];
-        }
-    });
-}); };
-var _handleCodeInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var results, insertResults, r, e_2;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                results = { errors: [], results: [] };
-                _a.label = 1;
-            case 1:
-                _a.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, code_api_1._addCode(idir, rows)];
-            case 2:
-                insertResults = _a.sent();
-                r = pg_1.getRowResults(insertResults, 'add_code')[0];
-                bulk_handlers_1.createBulkResponse(results, r);
-                return [3 /*break*/, 4];
-            case 3:
-                e_2 = _a.sent();
-                return [2 /*return*/, res.status(500).send("exception caught bulk upserting codes: " + e_2)];
-            case 4: return [2 /*return*/, res.send(results)];
-        }
-    });
-}); };
-var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, void 0, void 0, function () {
-    var results, insertResults, r, e_3;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                results = { errors: [], results: [] };
-                _a.label = 1;
-            case 1:
-                _a.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, collar_api_1._addCollar(idir, rows)];
-            case 2:
-                insertResults = _a.sent();
-                r = pg_1.getRowResults(insertResults, 'add_collar')[0];
-                bulk_handlers_1.createBulkResponse(results, r);
-                return [3 /*break*/, 4];
-            case 3:
-                e_3 = _a.sent();
-                return [2 /*return*/, res
-                        .status(500)
-                        .send("exception caught bulk upserting collars: " + e_3)];
-            case 4: return [2 /*return*/, res.send(results)];
         }
     });
 }); };
@@ -250,65 +229,59 @@ var _handleCollarInsert = function (res, idir, rows) { return __awaiter(void 0, 
 var importCsv = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, file, headerResults, onFinishedParsing;
+        var idir, file, onFinishedParsing;
         var _this = this;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     if (!idir) {
-                        res.status(500).send('must supply idir');
+                        res.status(500).send(api_helper_1.MISSING_IDIR);
                     }
                     file = req.file;
                     if (!file) {
                         res.status(500).send('failed: csv file not found');
                     }
                     onFinishedParsing = function (rows) { return __awaiter(_this, void 0, void 0, function () {
-                        var codes, headers, animals, collars, e_4;
-                        var _a, _b;
-                        return __generator(this, function (_c) {
-                            switch (_c.label) {
+                        var codes, headers, animals, collars, e_1;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
                                 case 0:
-                                    codes = rows.codes;
-                                    headers = rows.headers;
-                                    animals = rows.animals;
-                                    collars = rows.collars;
-                                    _c.label = 1;
+                                    codes = rows.codes, headers = rows.headers, animals = rows.animals, collars = rows.collars;
+                                    _a.label = 1;
                                 case 1:
-                                    _c.trys.push([1, 6, , 7]);
-                                    if (!codes.length) return [3 /*break*/, 2];
-                                    _handleCodeInsert(res, idir, codes);
-                                    return [3 /*break*/, 5];
-                                case 2:
-                                    if (!headers.length) return [3 /*break*/, 4];
-                                    return [4 /*yield*/, code_api_1._addCodeHeader(idir, headers)];
+                                    _a.trys.push([1, 9, 10, 11]);
+                                    if (!codes.length) return [3 /*break*/, 3];
+                                    req.body.codes = codes;
+                                    return [4 /*yield*/, code_api_1.addCode(req, res)];
+                                case 2: return [2 /*return*/, _a.sent()];
                                 case 3:
-                                    headerResults = _c.sent();
-                                    return [3 /*break*/, 5];
-                                case 4:
-                                    if (animals.length) {
-                                        _handleCritterInsert(res, idir, animals);
-                                    }
-                                    else if (collars.length) {
-                                        _handleCollarInsert(res, idir, collars);
-                                    }
-                                    _c.label = 5;
+                                    if (!headers.length) return [3 /*break*/, 5];
+                                    req.body.headers = headers;
+                                    return [4 /*yield*/, code_api_1.addCodeHeader(req, res)];
+                                case 4: return [2 /*return*/, _a.sent()];
                                 case 5:
-                                    _removeUploadedFile(file.path);
-                                    return [3 /*break*/, 7];
+                                    if (!animals.length) return [3 /*break*/, 6];
+                                    handleCritterInsert(res, idir, animals);
+                                    return [3 /*break*/, 8];
                                 case 6:
-                                    e_4 = _c.sent();
-                                    res.status(500).send(e_4.message);
-                                    return [3 /*break*/, 7];
-                                case 7:
-                                    if (((_a = headerResults) === null || _a === void 0 ? void 0 : _a.length) || ((_b = headerResults) === null || _b === void 0 ? void 0 : _b.rows.length)) {
-                                        res.send(pg_1.getRowResults(headerResults, 'add_code_header'));
-                                    }
-                                    return [2 /*return*/];
+                                    if (!collars.length) return [3 /*break*/, 8];
+                                    req.body = collars;
+                                    return [4 /*yield*/, collar_api_1.addCollar(req, res)];
+                                case 7: return [2 /*return*/, _a.sent()];
+                                case 8: return [3 /*break*/, 11];
+                                case 9:
+                                    e_1 = _a.sent();
+                                    res.status(500).send(e_1.message);
+                                    return [3 /*break*/, 11];
+                                case 10:
+                                    cleanupUploadsDir(file.path);
+                                    return [7 /*endfinally*/];
+                                case 11: return [2 /*return*/];
                             }
                         });
                     }); };
-                    return [4 /*yield*/, _parseCsv(file, onFinishedParsing)];
+                    return [4 /*yield*/, parseCsv(file, onFinishedParsing)];
                 case 1:
                     _b.sent();
                     return [2 /*return*/];

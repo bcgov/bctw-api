@@ -19,7 +19,7 @@ var isCollar = function (row) {
 exports.isCollar = isCollar;
 var isCode = function (row) {
     var r = row;
-    if (r.code_name) {
+    if (r.code_name && r.code_header) {
         return true;
     }
     return false;
@@ -27,15 +27,14 @@ var isCode = function (row) {
 exports.isCode = isCode;
 var isCodeHeader = function (row) {
     var r = row;
-    if (r.code_header_name &&
-        r.code_header_description &&
-        r.code_header_title &&
-        r.code_header_name) {
+    if (r.code_header_name && r.code_header_description && r.code_header_title) {
         return true;
     }
     return false;
 };
 exports.isCodeHeader = isCodeHeader;
-var rowToCsv = function (row) { return Object.values(row).join(','); };
+var rowToCsv = function (row) {
+    return Object.values(row).join(',');
+};
 exports.rowToCsv = rowToCsv;
 //# sourceMappingURL=import_types.js.map

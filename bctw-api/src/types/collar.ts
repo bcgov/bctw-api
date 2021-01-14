@@ -23,8 +23,8 @@ enum CollarAccessType {
 interface ChangeCollarData {
   device_id: number;
   animal_id: number;
-  start: Date | string;
-  end?: Date | string;
+  start: Date | null;
+  end?: Date | null;
 }
 interface ChangeCritterCollarProps {
   isLink: boolean;

@@ -1,12 +1,10 @@
 import { Request, Response } from 'express';
-import { QueryResult } from 'pg';
 
 import {
   appendSqlFilter,
   constructGetQuery,
   getRowResults,
   paginate,
-  queryAsyncTransaction,
   to_pg_function_query,
   transactionify,
 } from '../database/pg';
@@ -31,16 +29,6 @@ a.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.proje
 a.trans_location, a.wlh_id, a.nickname`;
 
 const pg_add_animal_fn = 'add_animal';
-const _addAnimal = async function (
-  idir: string,
-  animal: Animal[]
-): Promise<QueryResult> {
-  const sql = transactionify(
-    to_pg_function_query(pg_add_animal_fn, [idir, animal], true)
-  );
-  const result = await queryAsyncTransaction(sql);
-  return result;
-};
 /* 
   handles upsert. body can be single or array of Animals, since
   db function handles this in a bulk fashion, create the proper bulk response
@@ -184,4 +172,4 @@ const getCollarAssignmentHistory = async function (
   return res.send(result.rows);
 };
 
-export { _addAnimal, addAnimal, getAnimals, getCollarAssignmentHistory };
+export { pg_add_animal_fn, addAnimal, getAnimals, getCollarAssignmentHistory };

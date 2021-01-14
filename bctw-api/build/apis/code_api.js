@@ -36,13 +36,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addCodeHeader = exports.addCode = exports._addCodeHeader = exports._addCode = exports.getCodeHeaders = exports.getCode = void 0;
+exports.addCodeHeader = exports.addCode = exports.getCodeHeaders = exports.getCode = void 0;
 var pg_1 = require("../database/pg");
 var api_helper_1 = require("./api_helper");
+var bulk_handlers_1 = require("../import/bulk_handlers");
+var pg_get_code_fn = 'get_code';
+var pg_add_code_header_fn = 'add_code_header';
+var pg_add_code_fn = 'add_code';
 /**
  *
  */
-var pg_get_code_fn = 'get_code';
 var getCode = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var _a, idir, codeHeader, sql, _b, result, error, isError;
@@ -67,7 +70,6 @@ var getCode = function (req, res) {
 };
 exports.getCode = getCode;
 /**
- *
  * @param codeType name of code header to retrieve
  * @returns returns all codeHeadrs unless codeType is supplied
  */
@@ -100,42 +102,31 @@ exports.getCodeHeaders = getCodeHeaders;
     code_header_name: '', code_header_title: '', code_header_description: '', valid_from: Date, valid_to: Date,
   }
 */
-var pg_add_code_header_fn = 'add_code_header';
-var _addCodeHeader = function (idir, headers) {
-    return __awaiter(this, void 0, void 0, function () {
-        var sql, result;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_add_code_header_fn, [idir, headers], true));
-                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
-                case 1:
-                    result = _a.sent();
-                    return [2 /*return*/, result];
-            }
-        });
-    });
-};
-exports._addCodeHeader = _addCodeHeader;
 var addCodeHeader = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, sql, _b, result, error, isError;
+        var idir, bulkResp, headers, sql, _b, result, error, isError;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
+                    bulkResp = { errors: [], results: [] };
                     if (!idir) {
-                        return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
+                        bulkResp.errors.push({ row: '', error: api_helper_1.MISSING_IDIR, rownum: 0 });
+                        return [2 /*return*/, res.send(bulkResp)];
                     }
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, req.body], true));
+                    headers = req.body;
+                    sql = pg_1.transactionify(pg_1.to_pg_function_query('add_code_header', [idir, headers], true));
                     return [4 /*yield*/, api_helper_1.query(sql, 'failed to add code headers', true)];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
-                        return [2 /*return*/, res.status(500).send(error.message)];
+                        bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, pg_add_code_header_fn)[0])];
+                    else {
+                        bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(result, pg_add_code_header_fn)[0]);
+                    }
+                    return [2 /*return*/, res.send(bulkResp)];
             }
         });
     });
@@ -147,40 +138,27 @@ exports.addCodeHeader = addCodeHeader;
      "code_header": '', "code_type: '', code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
    }
 */
-var pg_add_code_fn = 'add_code';
-var _addCode = function (idir, codes) {
-    return __awaiter(this, void 0, void 0, function () {
-        var sql, result;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_add_code_fn, [idir, codes], true));
-                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
-                case 1:
-                    result = _a.sent();
-                    return [2 /*return*/, result];
-            }
-        });
-    });
-};
-exports._addCode = _addCode;
 var addCode = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, codes, sql, _b, result, error, isError;
+        var idir, codes, bulkResp, sql, _b, result, error, isError;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     codes = req.body.codes;
+                    bulkResp = { errors: [], results: [] };
                     sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_add_code_fn, [idir, codes], true));
                     return [4 /*yield*/, api_helper_1.query(sql, 'failed to add codes', true)];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
-                        return [2 /*return*/, res.status(500).send(error.message)];
+                        bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, pg_add_code_fn)[0])];
+                    else {
+                        bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(result, pg_add_code_fn)[0]);
+                    }
+                    return [2 /*return*/, res.send(bulkResp)];
             }
         });
     });
