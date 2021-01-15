@@ -93,7 +93,7 @@ module.exports = (on, config) => {
 
     if (paths.length !== 2) {
       console.log('cypress downloading tests completed but at least one of the transmission or data files are missing. exiting');
-      return;
+      return null;
     }
     console.log(`collar/temperature data at ${paths[0]}\ntransmission data at ${paths[1]}`)
 
