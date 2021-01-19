@@ -181,15 +181,27 @@ var handleCollarCritterLink = function (idir, insertResults, crittersWithCollars
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, Promise.allSettled(crittersWithCollars.map(function (a) { return __awaiter(void 0, void 0, void 0, function () {
-                    var aid, body, params, sql, result;
+                    var aid, collarIdResult, cid, body, params, sql, result;
                     var _a;
                     return __generator(this, function (_b) {
                         switch (_b.label) {
                             case 0:
                                 aid = (_a = insertResults.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
-                                if (!aid) return [3 /*break*/, 2];
+                                if (!aid) return [3 /*break*/, 3];
+                                return [4 /*yield*/, pg_1.queryAsync("select collar_id from bctw.collar where device_id = " + a.device_id + " limit 1;")];
+                            case 1:
+                                collarIdResult = _b.sent();
+                                if (!collarIdResult.rows.length) {
+                                    errors.push({
+                                        row: import_types_1.rowToCsv(a),
+                                        rownum: 0,
+                                        error: "unable to find matching collar with device ID " + a.device_id,
+                                    });
+                                    return [2 /*return*/];
+                                }
+                                cid = collarIdResult.rows[0]['collar_id'];
                                 body = {
-                                    device_id: +a.device_id,
+                                    collar_id: cid,
                                     animal_id: aid,
                                     start: null,
                                     end: null,
@@ -197,10 +209,10 @@ var handleCollarCritterLink = function (idir, insertResults, crittersWithCollars
                                 params = __spreadArrays([idir], Object.values(body));
                                 sql = pg_1.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', params));
                                 return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
-                            case 1:
+                            case 2:
                                 result = _b.sent();
                                 return [2 /*return*/, result];
-                            case 2: return [2 /*return*/];
+                            case 3: return [2 /*return*/];
                         }
                     });
                 }); })).then(function (values) {

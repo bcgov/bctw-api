@@ -9,5 +9,11 @@ http://localhost:3000/
 ###
 GET http://localhost:3000/animal/1234
 
+### critter with collar currently assigned
+# GET http://localhost:3000/animal/2
+
+### critter with no collar assigned
+# shouldnt be found
+# GET http://localhost:3000/animal/8
 ###
 DELETE http://localhost:3000/animal/149

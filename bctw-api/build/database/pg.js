@@ -87,7 +87,7 @@ var constructGetQuery = function (_a) {
     var base = _a.base, filter = _a.filter, order = _a.order, group = _a.group, page = _a.page;
     var sql = base + " " + filter + " ";
     if (group) {
-        sql += "group by " + group + " ";
+        sql += "group by " + group.join() + " ";
     }
     if (order) {
         sql += "order by " + order + " ";

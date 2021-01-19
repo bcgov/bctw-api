@@ -68,12 +68,13 @@ const _getAssignedSql = function (
   filter?: IFilter,
   page?: number
 ): string {
-  const base = `${_selectAnimals}, ca.device_id 
+  const base = `${_selectAnimals}, ca.collar_id, c.device_id
   from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id
+  join bctw.collar c on ca.collar_id = c.collar_id
   where now() <@ tstzrange(ca.start_time, ca.end_time)
-  and deleted is false ${_accessControlQuery('a', idir)}`;
+  and a.deleted is false ${_accessControlQuery('a', idir)}`;
   const strFilter = filter
-    ? appendSqlFilter(filter, TelemetryTypes.animal, 'a')
+    ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
     : '';
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({
@@ -94,10 +95,10 @@ const _getUnassignedSql = function (
   const base = `${_selectAnimals}
   from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id
   where a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))
-  and deleted is false ${_accessControlQuery('a', idir)}
+  and a.deleted is false ${_accessControlQuery('a', idir)}
   group by a.id`;
   const strFilter = filter
-    ? appendSqlFilter(filter, TelemetryTypes.animal, 'a')
+    ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
     : '';
   const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({
@@ -154,9 +155,9 @@ const getCollarAssignmentHistory = async function (
       .send('must supply animal id to retrieve collar history');
   }
   const base = `
-  select ca.device_id, c.make, c.radio_frequency, ca.start_time, ca.end_time
+  select ca.collar_id, c.device_id, c.make, c.radio_frequency, ca.start_time, ca.end_time
   from bctw.collar_animal_assignment ca 
-  join bctw.collar c on ca.device_id = c.device_id where ca.animal_id = ${id}`;
+  join bctw.collar c on ca.collar_id = c.collar_id where ca.animal_id = ${id}`;
   const sql = constructGetQuery({
     base,
     filter: '',
@@ -172,4 +173,9 @@ const getCollarAssignmentHistory = async function (
   return res.send(result.rows);
 };
 
-export { pg_add_animal_fn, addAnimal, getAnimals, getCollarAssignmentHistory };
+export {
+  pg_add_animal_fn,
+  addAnimal,
+  getAnimals,
+  getCollarAssignmentHistory,
+};

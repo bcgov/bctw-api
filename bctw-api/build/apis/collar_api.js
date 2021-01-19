@@ -58,7 +58,7 @@ var pg_unlink_collar_fn = 'unlink_collar_to_animal';
  * associated with a set of critters.
  */
 var _accessCollarControl = function (alias, idir) {
-    return "and " + alias + ".device_id = any((" + pg_1.to_pg_function_query('get_user_collar_access', [idir]) + ")::integer[])";
+    return "and " + alias + ".collar_id = any((" + pg_1.to_pg_function_query('get_user_collar_access', [idir]) + ")::integer[])";
 };
 /**
  *
@@ -103,7 +103,7 @@ exports.addCollar = addCollar;
 var assignOrUnassignCritterCollar = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, body, _b, device_id, animal_id, start, end, db_fn_name, params, errMsg, sql, _c, result, error, isError;
+        var idir, body, _b, collar_id, animal_id, start, end, db_fn_name, params, errMsg, sql, _c, result, error, isError;
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
@@ -112,12 +112,12 @@ var assignOrUnassignCritterCollar = function (req, res) {
                         return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
                     }
                     body = req.body;
-                    _b = body.data, device_id = _b.device_id, animal_id = _b.animal_id, start = _b.start, end = _b.end;
-                    if (!device_id || !animal_id) {
-                        return [2 /*return*/, res.status(500).send('device_id & animal_id must be supplied')];
+                    _b = body.data, collar_id = _b.collar_id, animal_id = _b.animal_id, start = _b.start, end = _b.end;
+                    if (!collar_id || !animal_id) {
+                        return [2 /*return*/, res.status(500).send('collar_id & animal_id must be supplied')];
                     }
                     db_fn_name = body.isLink ? pg_link_collar_fn : pg_unlink_collar_fn;
-                    params = [idir, device_id, animal_id];
+                    params = [idir, collar_id, animal_id];
                     errMsg = "failed to " + (body.isLink ? 'attach' : 'remove') + " device to critter " + animal_id;
                     sql = body.isLink
                         ? pg_1.to_pg_function_query(db_fn_name, __spreadArrays(params, [start, end]))
@@ -142,14 +142,14 @@ exports.assignOrUnassignCritterCollar = assignOrUnassignCritterCollar;
  * currently no access control on these results
  */
 var getAvailableCollarSql = function (idir, filter, page) {
-    var base = "\n    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type\n    from collar c \n    where c.device_id not in (\n      select device_id from collar_animal_assignment caa\n      where now() <@ tstzrange(caa.start_time, caa.end_time)\n    )\n    and c.deleted is false";
+    var base = "\n    select c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type\n    from collar c \n    where c.collar_id not in (\n      select collar_id from collar_animal_assignment caa\n      where now() <@ tstzrange(caa.start_time, caa.end_time)\n    )\n    and c.deleted is false";
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar, 'c', true);
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({
         base: base,
         filter: strFilter,
         order: 'c.device_id',
-        group: 'c.device_id',
+        group: ['c.device_id', 'c.collar_id'],
         page: strPage,
     });
     return sql;
@@ -185,14 +185,14 @@ exports.getAvailableCollars = getAvailableCollars;
  * that they are allowed to view
  */
 var getAssignedCollarSql = function (idir, filter, page) {
-    var base = "select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type\n  from collar c inner join collar_animal_assignment caa \n  on c.device_id = caa.device_id\n  and now() <@ tstzrange(caa.start_time, caa.end_time)\n  where c.deleted is false " + _accessCollarControl('c', idir);
+    var base = "select caa.animal_id, c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type\n  from collar c inner join collar_animal_assignment caa \n  on c.collar_id = caa.collar_id\n  and now() <@ tstzrange(caa.start_time, caa.end_time)\n  where c.deleted is false " + _accessCollarControl('c', idir);
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar, 'c');
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({
         base: base,
         filter: strFilter,
         order: 'c.device_id',
-        group: 'caa.animal_id, c.device_id, caa.start_time',
+        group: ['caa.animal_id', 'c.device_id', 'caa.start_time', 'c.collar_id'],
         page: strPage,
     });
     return sql;

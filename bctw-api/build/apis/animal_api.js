@@ -86,9 +86,9 @@ var addAnimal = function (req, res) {
 exports.addAnimal = addAnimal;
 /// get critters that are assigned to a collar (ie have a valid row in collar_animal_assignment table)
 var _getAssignedSql = function (idir, filter, page) {
-    var base = _selectAnimals + ", ca.device_id \n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)\n  and deleted is false " + _accessControlQuery('a', idir);
+    var base = _selectAnimals + ", ca.collar_id, c.device_id\n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  join bctw.collar c on ca.collar_id = c.collar_id\n  where now() <@ tstzrange(ca.start_time, ca.end_time)\n  and a.deleted is false " + _accessControlQuery('a', idir);
     var strFilter = filter
-        ? pg_1.appendSqlFilter(filter, pg_2.TelemetryTypes.animal, 'a')
+        ? pg_1.appendSqlFilter(filter, pg_2.TelemetryTypes.animal, 'a', true)
         : '';
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({
@@ -101,9 +101,9 @@ var _getAssignedSql = function (idir, filter, page) {
 };
 /// get critters that aren't currently assigned to a collar
 var _getUnassignedSql = function (idir, filter, page) {
-    var base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  and deleted is false " + _accessControlQuery('a', idir) + "\n  group by a.id";
+    var base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))\n  and a.deleted is false " + _accessControlQuery('a', idir) + "\n  group by a.id";
     var strFilter = filter
-        ? pg_1.appendSqlFilter(filter, pg_2.TelemetryTypes.animal, 'a')
+        ? pg_1.appendSqlFilter(filter, pg_2.TelemetryTypes.animal, 'a', true)
         : '';
     var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({
@@ -170,7 +170,7 @@ var getCollarAssignmentHistory = function (req, res) {
                                 .status(500)
                                 .send('must supply animal id to retrieve collar history')];
                     }
-                    base = "\n  select ca.device_id, c.make, c.radio_frequency, ca.start_time, ca.end_time\n  from bctw.collar_animal_assignment ca \n  join bctw.collar c on ca.device_id = c.device_id where ca.animal_id = " + id;
+                    base = "\n  select ca.collar_id, c.device_id, c.make, c.radio_frequency, ca.start_time, ca.end_time\n  from bctw.collar_animal_assignment ca \n  join bctw.collar c on ca.collar_id = c.collar_id where ca.animal_id = " + id;
                     sql = pg_1.constructGetQuery({
                         base: base,
                         filter: '',

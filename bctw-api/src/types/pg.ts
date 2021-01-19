@@ -17,7 +17,7 @@ interface IConstructQueryParameters {
   base: string,
   filter?: string,
   order?: string,
-  group?: string,
+  group?: string[],
   page?: string,
 }
 

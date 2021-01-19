@@ -211,6 +211,18 @@ const deleteType = async function (
   return res.send(true);
 };
 
+// const getType = function(req: Request, res:Response): Promise<Response> {
+//   const params = req.params;
+//   switch (params.type) {
+//     case TelemetryTypes.animal:
+//       return getCritter(req, res);
+// case TelemetryTypes.collar:
+//   return getCollar(req, res);
+//     default:
+//       return new Promise(() =>  null);
+//   }
+// }
+
 export {
   addCode,
   addCodeHeader,

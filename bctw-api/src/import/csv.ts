@@ -8,6 +8,7 @@ import { addCode, addCodeHeader } from '../apis/code_api';
 import { addCollar } from '../apis/collar_api';
 import {
   getRowResults,
+  queryAsync,
   queryAsyncTransaction,
   to_pg_function_query,
   transactionify,
@@ -135,8 +136,21 @@ const handleCollarCritterLink = async (
         (row: Animal) => row.animal_id === a.animal_id
       )?.id;
       if (aid) {
+        // find a collar_id for the user provided device_id
+        const collarIdResult = await queryAsync(
+          `select collar_id from bctw.collar where device_id = ${a.device_id} limit 1;`
+        );
+        if (!collarIdResult.rows.length) {
+          errors.push({
+            row: rowToCsv(a),
+            rownum: 0,
+            error: `unable to find matching collar with device ID ${a.device_id}`,
+          });
+          return;
+        }
+        const cid = collarIdResult.rows[0]['collar_id'];
         const body: ChangeCollarData = {
-          device_id: +a.device_id,
+          collar_id: cid,
           animal_id: aid,
           start: null,
           end: null,

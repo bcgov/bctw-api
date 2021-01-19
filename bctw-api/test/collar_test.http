@@ -26,12 +26,13 @@ content-type: application/json
   }
 ]
 
-### upsert - should update collar 21511
+### upsert - should update collar 148
 POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "device_id": 21511,
+  "collar_id": 148,
+  "device_id": 21512,
   "make": "Disney",
   "deactivated": true,
   "model": "deercollar9000",
@@ -75,7 +76,7 @@ content-type: application/json
 {
   "isLink": false,
   "data": {
-    "device_id": 21511,
+    "collar_id": 148,
     "animal_id": 4
   }
 }
@@ -87,7 +88,7 @@ content-type: application/json
 {
   "isLink": false,
   "data": {
-    "device_id": 21511,
+    "collar_id": 148,
     "animal_id": 70
   }
 }
@@ -99,7 +100,7 @@ content-type: application/json
 {
   "isLink": false,
   "data": {
-    "device_id": 21511,
+    "collar_id": 148,
     "animal_id": 70, 
     "end_date": "2021-12-01"
   }

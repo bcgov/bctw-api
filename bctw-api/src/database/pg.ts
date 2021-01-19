@@ -49,7 +49,7 @@ const transactionify = (sql: string): string => {
 const constructGetQuery = ({base, filter, order, group, page}: IConstructQueryParameters): string => {
   let sql = `${base} ${filter} `;
   if (group) {
-    sql += `group by ${group} `;
+    sql += `group by ${group.join()} `;
   }
   if (order) {
     sql += `order by ${order} `;

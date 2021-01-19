@@ -28,7 +28,7 @@ const pg_unlink_collar_fn = 'unlink_collar_to_animal';
  * associated with a set of critters.
  */
 const _accessCollarControl = (alias: string, idir: string) => {
-  return `and ${alias}.device_id = any((${to_pg_function_query(
+  return `and ${alias}.collar_id = any((${to_pg_function_query(
     'get_user_collar_access',
     [idir]
   )})::integer[])`;
@@ -81,14 +81,14 @@ const assignOrUnassignCritterCollar = async function (
   }
 
   const body: ChangeCritterCollarProps = req.body;
-  const { device_id, animal_id, start, end } = body.data;
+  const { collar_id, animal_id, start, end } = body.data;
 
-  if (!device_id || !animal_id) {
-    return res.status(500).send('device_id & animal_id must be supplied');
+  if (!collar_id || !animal_id) {
+    return res.status(500).send('collar_id & animal_id must be supplied');
   }
 
   const db_fn_name = body.isLink ? pg_link_collar_fn : pg_unlink_collar_fn;
-  const params = [idir, device_id, animal_id];
+  const params = [idir, collar_id, animal_id];
   const errMsg = `failed to ${
     body.isLink ? 'attach' : 'remove'
   } device to critter ${animal_id}`;
@@ -118,10 +118,10 @@ const getAvailableCollarSql = function (
   page?: number
 ): string {
   const base = `
-    select c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
+    select c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
     from collar c 
-    where c.device_id not in (
-      select device_id from collar_animal_assignment caa
+    where c.collar_id not in (
+      select collar_id from collar_animal_assignment caa
       where now() <@ tstzrange(caa.start_time, caa.end_time)
     )
     and c.deleted is false`;
@@ -136,7 +136,7 @@ const getAvailableCollarSql = function (
     base: base,
     filter: strFilter,
     order: 'c.device_id',
-    group: 'c.device_id',
+    group: ['c.device_id', 'c.collar_id'],
     page: strPage,
   });
   return sql;
@@ -172,9 +172,9 @@ const getAssignedCollarSql = function (
   filter?: IFilter,
   page?: number
 ): string {
-  const base = `select caa.animal_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
+  const base = `select caa.animal_id, c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.make, c.satellite_network, c.radio_frequency, c.collar_type
   from collar c inner join collar_animal_assignment caa 
-  on c.device_id = caa.device_id
+  on c.collar_id = caa.collar_id
   and now() <@ tstzrange(caa.start_time, caa.end_time)
   where c.deleted is false ${_accessCollarControl('c', idir)}`;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
@@ -183,7 +183,7 @@ const getAssignedCollarSql = function (
     base: base,
     filter: strFilter,
     order: 'c.device_id',
-    group: 'caa.animal_id, c.device_id, caa.start_time',
+    group: ['caa.animal_id', 'c.device_id', 'caa.start_time', 'c.collar_id'],
     page: strPage,
   });
   return sql;
