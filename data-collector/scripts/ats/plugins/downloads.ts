@@ -56,11 +56,16 @@ module.exports = (on, config) => {
 
   async function archiveDownloads() {
     const paths = await getPaths(downloadPath);
-    paths.forEach(async curPath => {
-      const newPath = `${archivePath}/${path.basename(curPath)}`;
-      console.log(`archiving downloaded file to ${newPath}`);
-      await asyncRename(curPath, newPath)
-    })
+    if (paths.length) {
+      console.log('archiving downloads')
+      paths.forEach(async curPath => {
+        const newPath = `${archivePath}/${path.basename(curPath)}`;
+        console.log(`archiving downloaded file to ${newPath}`);
+        await asyncRename(curPath, newPath)
+      })
+    } else {
+      console.log(`archiving failed. downloads directory contains ${paths.join()}`)
+    }
   }
 
   async function allowDownloads() {
@@ -105,10 +110,10 @@ module.exports = (on, config) => {
     const paths = await getPaths(downloadPath);
 
     if (paths.length !== 2) {
-      console.log('cypress downloading tests completed but at least one of the transmission or data files are missing. exiting');
+      console.log(`cypress downloading tests completed but a file is missing ${paths.join()} exiting early`);
       return null;
     }
-    console.log(`collar/temperature data at ${paths[0]}\ntransmission data at ${paths[1]}`)
+    console.log(`temperature data at ${paths[0]}\ntransmission data at ${paths[1]}`)
 
     const tempData = await parseCsv(paths[0]) as ITemperatureData[]; // collar data including temperature
     const transmissionData = await parseCsv(paths[1]) as ITransmissionData[]; // transmission data
