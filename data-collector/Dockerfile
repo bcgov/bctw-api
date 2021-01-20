@@ -21,9 +21,9 @@ ENV CYPRESS_CACHE_FOLDER=/root/.cache/Cypress
 # fix for "failed to get "appData' path' Electron error in OCP environment
 ENV XDG_CONFIG_HOME=/app
 
-RUN mkdir /app/downloads
+RUN mkdir /app/downloads /app/archive
 RUN chmod 777 /app
-RUN chmod 777 /app/downloads
+RUN chmod 777 /app/downloads /app/archive
 
 # switch to non-root user "node" that comes from Docker Node image
 USER node

@@ -2,18 +2,21 @@ import CDP from 'chrome-remote-interface';
 import path from 'path';
 import { promisify } from 'util';
 import { ITemperatureData, ITransmissionData } from '../types';
-
 import { filterData, getLastSuccessfulCollar, getPaths, mergeATSData, parseCsv } from './csv';
 import { formatSql, insertData } from './pg';
+import { rename } from 'fs';
 
-const debug = require('debug')('cypress:server:protocol');
 const rimraf = promisify(require('rimraf'));
+const asyncRename = promisify(rename);
 
 let port = 0;
 let client = null;
+const DELETE_DOWNLOADS = process.env.DELETE_DOWNLOADS;
+console.log(`delete_downloads env variable: ${DELETE_DOWNLOADS}`)
 
 module.exports = (on, config) => {
   const downloadPath = path.resolve(config.projectRoot, './downloads');
+  const archivePath = path.resolve(config.projRoot, './archive');
 
   // setup remote debugging port
   function ensureRdpPort(args) {
@@ -42,9 +45,22 @@ module.exports = (on, config) => {
 
   async function cleanDownloads() {
     const path = `${downloadPath}/*.txt`;
-    console.log(`cleaning up downloads ${path}`);
-    await rimraf(path); 
+    if (DELETE_DOWNLOADS === 'true') {
+      console.log(`cleaning up downloads ${path}`);
+      await rimraf(path); 
+    } else {
+      await archiveDownloads();
+    }
     return true;
+  }
+
+  async function archiveDownloads() {
+    const paths = await getPaths(downloadPath);
+    paths.forEach(async curPath => {
+      const newPath = `${archivePath}/${path.basename(curPath)}`;
+      console.log(`archiving downloaded file to ${newPath}`);
+      await asyncRename(curPath, newPath)
+    })
   }
 
   async function allowDownloads() {
@@ -58,13 +74,10 @@ module.exports = (on, config) => {
   }
 
   on('before:browser:launch', (browser, launchOptionsOrArgs) => {
-    // debug('browser launch args or options %o', launchOptionsOrArgs);
     const args = Array.isArray(launchOptionsOrArgs)
       ? launchOptionsOrArgs
       : launchOptionsOrArgs.args;
     port = ensureRdpPort(args);
-    // debug('ensureRdpPort %d', port);
-    // debug('Chrome arguments %o', args);
   });
 
   const mergeAndInsert = async (data: ITemperatureData[], transmissionData: ITransmissionData[]) => {

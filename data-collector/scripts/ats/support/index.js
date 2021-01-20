@@ -1,4 +1,3 @@
-const env = Cypress.env();
 // ***********************************************************
 // This example support/index.js is processed and
 // loaded automatically before your test files.
@@ -14,11 +13,7 @@ const env = Cypress.env();
 // import './commands'
 
 before(() => {
-  if (env.DELETE_DOWNLOADS === 'true') {
-    cy.task('cleanDownloads');
-  } else {
-    console.log('download file deletion disabled, skipping cleanDownloads')
-  }
+  cy.task('cleanDownloads');
 });
 
 beforeEach(() => {
