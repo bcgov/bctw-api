@@ -16,7 +16,7 @@ console.log(`delete_downloads env variable: ${DELETE_DOWNLOADS}`)
 
 module.exports = (on, config) => {
   const downloadPath = path.resolve(config.projectRoot, './downloads');
-  const archivePath = path.resolve(config.projRoot, './archive');
+  const archivePath = path.resolve(config.projectRoot, './archive');
 
   // setup remote debugging port
   function ensureRdpPort(args) {
