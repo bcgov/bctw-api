@@ -112,6 +112,7 @@ const insertCollarData = function(records,callback) {
 const iterateCollars = function(collar,callback) {
   const weekAgo = moment().subtract(7,'d').format('YYYY-MM-DDTHH:mm:ss');
   const url = `${lotexUrl}/gps?deviceId=${collar.nDeviceID}&dtStart=${weekAgo}`
+  console.log(url)
 
   // Send request to the API
   needle.get(url,tokenConfig,(err,res,body) => {
@@ -122,11 +123,12 @@ const iterateCollars = function(collar,callback) {
     }
 
     if (!body.flat) {
-      const msg = `Did not receive a valid array for ${collar.nDeviceID}`
+      const msg = `Did not receive a valid array for ${collar.nDeviceID} body: ${body}`
       callback(null);
       return console.error(msg);
     }
 
+    console.log(`records found for device ${collar.nDeviceID}: ${body.length}`)
     const records = body
       .flat()
       .filter((e) => { return e && e.RecDateTime && e.DeviceID});
