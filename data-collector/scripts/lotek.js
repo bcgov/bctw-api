@@ -123,7 +123,7 @@ const iterateCollars = function(collar,callback) {
     }
 
     if (!body.flat) {
-      const msg = `Did not receive a valid array for ${collar.nDeviceID} body: ${body}`
+      const msg = `Did not receive a valid array for ${collar.nDeviceID} body: ${JSON.stringify(body)}`
       callback(null);
       return console.error(msg);
     }
