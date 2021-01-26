@@ -1,12 +1,13 @@
 ##### add collar
 ##### 
-# no device id - should fail
+# this device id already exists - should fail
 POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "make": "vectronics",
-  "model": "deercollar9000"
+  "collar_make": "vectronics",
+  "collar_model": "deercollar9000",
+  "device_id": 41259
 }
 
 ###  adding a new collar should work
@@ -16,31 +17,29 @@ content-type: application/json
 [
   {
     "device_id": 99999,
-    "make": "vectronics",
-    "model": "deercollar9000"
+    "collar_make": "vectronics",
+    "collar_model": "deercollar9000"
   },
   {
     "device_id": 9998,
-    "make": "vectronics",
-    "model": "deercollar9000"
+    "collar_make": "vectronics",
+    "collar_model": "deercollar9000"
   }
 ]
 
-### upsert - should update collar 148
-POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
+### update collar
+POST http://localhost:3000/update-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "collar_id": 148,
-  "device_id": 21512,
-  "make": "Disney",
-  "deactivated": true,
-  "model": "deercollar9000",
-  "radio_frequency": 291
+  "collar_id": "5055375f-f91a-4cd7-aa4f-e0dbef56a358",
+  "radio_frequency": 291.33
 }
 
+###
+http://localhost:3000/get-collar-history/5055375f-f91a-4cd7-aa4f-e0dbef56a358?idir={{idir}}
+
 ##### linking collar to animal
-#####
 # should fail - animal asigned
 POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
@@ -50,7 +49,7 @@ content-type: application/json
   "data": {
     "device_id": 21511,
     "animal_id": 3,
-    "end_date": "2021-10-20"
+    "valid_from": "2021-10-20"
   }
 }
 
@@ -63,7 +62,7 @@ content-type: application/json
   "data": {
     "device_id": 41260,
     "animal_id": 100,
-    "end_date": "2021-10-20"
+    "valid_from": "2021-10-20"
   }
 }
 
@@ -102,7 +101,7 @@ content-type: application/json
   "data": {
     "collar_id": 148,
     "animal_id": 70, 
-    "end_date": "2021-12-01"
+    "valid_from": "2021-12-01"
   }
 }
 
@@ -114,7 +113,7 @@ http://localhost:3000/get-available-collars?idir={{idir}}
 http://localhost:3000/get-available-collars?idir={{idir}}&page=2
 
 ### specific collar
-http://localhost:3000/get-available-collars?idir={{idir}}&id=37876
+http://localhost:3000/get-available-collars?idir={{idir}}&id=a84cf03c-225c-4984-930b-1f259c9926c8
 
 ### get assigned collars
 http://localhost:3000/get-assigned-collars?idir={{idir}}

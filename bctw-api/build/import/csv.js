@@ -203,8 +203,7 @@ var handleCollarCritterLink = function (idir, insertResults, crittersWithCollars
                                 body = {
                                     collar_id: cid,
                                     animal_id: aid,
-                                    start: null,
-                                    end: null,
+                                    valid_from: null,
                                 };
                                 params = __spreadArrays([idir], Object.values(body));
                                 sql = pg_1.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', params));

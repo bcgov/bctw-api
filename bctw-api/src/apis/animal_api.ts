@@ -15,11 +15,11 @@ import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
 import { MISSING_IDIR, query } from './api_helper';
 
 /// limits retrieved critters to only those contained in user_animal_assignment table
-const _accessControlQuery = (alias: string, idir: string) => {
-  return `and ${alias}.id = any((${to_pg_function_query(
-    'get_user_critter_access',
+const _accessControlQuery = (tableAlias: string, idir: string) => {
+  return `and ${tableAlias}.id = any((${to_pg_function_query(
+    'get_user_critter_access_idir',
     [idir]
-  )})::integer[])`;
+  )})::uuid[])`;
 };
 
 /// select all animal table properties other than created/deleted etc.
@@ -29,8 +29,11 @@ a.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.proje
 a.trans_location, a.wlh_id, a.nickname`;
 
 const pg_add_animal_fn = 'add_animal';
+const pg_update_animal_fn = 'update_animal';
+const pg_get_critter_history = 'get_animal_history';
+const pg_get_history = 'get_animal_collar_assignment_history';
 /* 
-  handles upsert. body can be single or array of Animals, since
+  body can be single or array of Animals, since
   db function handles this in a bulk fashion, create the proper bulk response
 */
 const addAnimal = async function (
@@ -62,6 +65,26 @@ const addAnimal = async function (
   return res.send(results);
 };
 
+/* 
+  handles updating a critter (non bulk). 
+*/
+const updateAnimal = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const idir = (req?.query?.idir) as string;
+  if (!idir) {
+    return res.status(500).send(MISSING_IDIR);
+  }
+  const critters: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
+  const sql = transactionify(to_pg_function_query(pg_update_animal_fn, [idir, critters], true));
+  const { result, error, isError } = await query( sql, `failed to update animal`, true);
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, pg_update_animal_fn));
+};
+
 /// get critters that are assigned to a collar (ie have a valid row in collar_animal_assignment table)
 const _getAssignedSql = function (
   idir: string,
@@ -71,8 +94,9 @@ const _getAssignedSql = function (
   const base = `${_selectAnimals}, ca.collar_id, c.device_id
   from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id
   join bctw.collar c on ca.collar_id = c.collar_id
-  where now() <@ tstzrange(ca.start_time, ca.end_time)
-  and a.deleted is false ${_accessControlQuery('a', idir)}`;
+  where ca.valid_to >= now() OR ca.valid_to IS null
+  and (a.valid_to >= now() OR a.valid_to IS null)
+  ${_accessControlQuery('a', idir)}`;
   const strFilter = filter
     ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
     : '';
@@ -80,7 +104,6 @@ const _getAssignedSql = function (
   const sql = constructGetQuery({
     base,
     filter: strFilter,
-    order: 'a.id',
     page: strPage,
   });
   return sql;
@@ -94,9 +117,12 @@ const _getUnassignedSql = function (
 ): string {
   const base = `${_selectAnimals}
   from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id
-  where a.id not in (select animal_id from bctw.collar_animal_assignment ca2 where now() <@ tstzrange(ca2.start_time, ca2.end_time))
-  and a.deleted is false ${_accessControlQuery('a', idir)}
-  group by a.id`;
+  where a.id not in (
+    select animal_id from bctw.collar_animal_assignment ca2 where
+    ca2.valid_to >= now() OR ca2.valid_to IS null
+  )
+  and (a.valid_to >= now() OR a.valid_to IS null)
+  ${_accessControlQuery('a', idir)}`;
   const strFilter = filter
     ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
     : '';
@@ -104,7 +130,6 @@ const _getUnassignedSql = function (
   const sql = constructGetQuery({
     base,
     filter: strFilter,
-    order: 'a.id',
     page: strPage,
   });
   return sql;
@@ -147,22 +172,14 @@ const getCollarAssignmentHistory = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  // const idir = (req.query?.idir || '') as string;
-  const id = req.params.animal_id as string;
-  if (!id) {
+  const idir = (req.query.idir) as string;
+  const critterId = req.params.animal_id as string;
+  if (!critterId) {
     return res
       .status(500)
       .send('must supply animal id to retrieve collar history');
   }
-  const base = `
-  select ca.collar_id, c.device_id, c.make, c.radio_frequency, ca.start_time, ca.end_time
-  from bctw.collar_animal_assignment ca 
-  join bctw.collar c on ca.collar_id = c.collar_id where ca.animal_id = ${id}`;
-  const sql = constructGetQuery({
-    base,
-    filter: '',
-    order: 'ca.end_time desc',
-  });
+  const sql = to_pg_function_query(pg_get_history, [idir, critterId]);
   const { result, error, isError } = await query(
     sql,
     `failed to get collar history`
@@ -170,12 +187,34 @@ const getCollarAssignmentHistory = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(result.rows);
+  return res.send(getRowResults(result, pg_get_history));
 };
+
+/**
+ * retrieves a history of changes made to a critter
+*/
+const getAnimalHistory = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const idir = req?.query?.idir as string;
+  const animal_id = req.params?.animal_id;
+  if (!animal_id || !idir) {
+    return res.status(500).send(`animal_id and idir must be supplied`);
+  }
+  const sql = to_pg_function_query(pg_get_critter_history, [idir, animal_id]);
+  const { result, error, isError } = await query( sql, 'failed to retrieve critter history');
+  if (isError) {
+    return res.status(500).send(error.message);
+  } 
+  return res.send(getRowResults(result, pg_get_critter_history));
+}
 
 export {
   pg_add_animal_fn,
   addAnimal,
+  updateAnimal,
   getAnimals,
+  getAnimalHistory,
   getCollarAssignmentHistory,
 };

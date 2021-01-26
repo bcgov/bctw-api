@@ -1,5 +1,6 @@
 type Animal = {
-  id: number,
+  id: string,
+  transaction_id: string,
   animal_id: string,
   animal_status: string,
   calf_at_heel: string,

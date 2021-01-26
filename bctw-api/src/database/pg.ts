@@ -79,12 +79,12 @@ const to_pg_array = (arr: number[] | string[]): string => `'{${arr.join(',')}}'`
 
 const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
 
-const momentNow = () => moment().format('YYYY-MM-DD HH:mm:ss');
+const momentNow = (): string => moment().format('YYYY-MM-DD HH:mm:ss');
 
 // db code insert/update functions expect a json array
 // obj_to_pg_array accepts an object or an array of objects 
 // and outputs a psql friendly json array
-const obj_to_pg_array = (objOrArray: any): string => {
+const obj_to_pg_array = (objOrArray: Record<string, unknown>): string => {
   const asArr = Array.isArray(objOrArray) ? objOrArray : [objOrArray];
   return `'${JSON.stringify(asArr)}'`;
 }
@@ -96,7 +96,7 @@ const to_pg_str = (str: string): string | null => {
 }
 
 /// returns object in psql format '{}' 
-const to_pg_obj = (obj: any): string => {
+const to_pg_obj = (obj: Record<string, unknown>): string => {
   return `'${JSON.stringify(obj)}'`
 }
 

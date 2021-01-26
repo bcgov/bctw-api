@@ -152,8 +152,7 @@ const handleCollarCritterLink = async (
         const body: ChangeCollarData = {
           collar_id: cid,
           animal_id: aid,
-          start: null,
-          end: null,
+          valid_from: null,
         };
         const params = [idir, ...Object.values(body)];
         const sql = transactionify(

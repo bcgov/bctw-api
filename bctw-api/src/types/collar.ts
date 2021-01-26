@@ -1,8 +1,8 @@
 type Collar = {
   collar_id: number;
   device_id: number;
-  make: string;
-  model: string;
+  collar_make: string;
+  collar_model: string;
   deployment_status: string;
   collar_status: string;
   collar_type: string;
@@ -16,10 +16,10 @@ type Collar = {
 };
 
 interface ChangeCollarData {
-  collar_id: number;
-  animal_id: number;
-  start: Date | null;
-  end?: Date | null;
+  collar_id: string;
+  animal_id: string;
+  valid_from: Date | null;
+  valid_to?: Date;
 }
 interface ChangeCritterCollarProps {
   isLink: boolean;

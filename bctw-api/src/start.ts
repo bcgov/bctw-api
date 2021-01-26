@@ -7,14 +7,18 @@ import {
 } from './apis/user_api';
 import {
   addCollar,
+  updateCollar,
   assignOrUnassignCritterCollar,
   getAvailableCollars,
   getAssignedCollars,
+  getCollarChangeHistory
 } from './apis/collar_api';
 import {
   addAnimal,
+  updateAnimal,
   getAnimals,
   getCollarAssignmentHistory,
+  getAnimalHistory
 } from './apis/animal_api';
 import {
   addCode,
@@ -227,14 +231,18 @@ export {
   addCode,
   addCodeHeader,
   addCollar,
+  updateCollar,
+  updateAnimal,
   addAnimal,
   addUser,
   assignOrUnassignCritterCollar,
   assignCritterToUser,
   getAnimals,
+  getAnimalHistory,
   getAssignedCollars,
   getAvailableCollars,
   getCollarAssignmentHistory,
+  getCollarChangeHistory,
   getCode,
   getCodeHeaders,
   getDBCritters,
