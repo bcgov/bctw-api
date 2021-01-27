@@ -2,6 +2,13 @@ FROM cypress/base:10
 
 WORKDIR /app
 
+# update node
+RUN npm install -g n
+RUN n stable
+
+# check locations and packages are correct
+RUN which node; node -v; which npm; npm -v; npm ls -g --depth=0
+
 COPY package*.json ./
 RUN npm install
 
