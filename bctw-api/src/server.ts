@@ -48,8 +48,10 @@ const app = express()
   .post('/update-collar', api.updateCollar)
   .post('/change-animal-collar', api.assignOrUnassignCritterCollar)
   // users
-  .get('/users',api.getUsers)
-  .get('/role',api.getUserRole)
+  .get('/get-user',api.getUser)
+  .get('/get-users',api.getUsers)
+  .get('/get-user-role',api.getUserRole)
+  .get('/critter-access/:user', api.getUserCritterAccess)
   .post('/add-user', api.addUser)
   .post('/assign-critter-to-user', api.assignCritterToUser)
   // codes

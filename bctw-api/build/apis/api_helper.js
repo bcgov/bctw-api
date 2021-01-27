@@ -70,7 +70,7 @@ var query = function (sql, msgIfErr, performAsTransaction) {
                 case 6:
                     e_1 = _b.sent();
                     isError = true;
-                    error = new Error(msgIfErr + ": " + e_1);
+                    error = new Error(msgIfErr + " " + e_1);
                     return [3 /*break*/, 7];
                 case 7: return [2 /*return*/, { result: result, error: error, isError: isError }];
             }

@@ -3,7 +3,9 @@ import {
   addUser,
   assignCritterToUser,
   getUserRole,
+  getUser,
   getUsers,
+  getUserCritterAccess,
 } from './apis/user_api';
 import {
   addCollar,
@@ -244,6 +246,7 @@ export {
   getCollarAssignmentHistory,
   getCollarChangeHistory,
   getCode,
+  getUserCritterAccess,
   getCodeHeaders,
   getDBCritters,
   getCritterTracks,
@@ -251,6 +254,7 @@ export {
   getLastPings,
   // getType,
   getUserRole,
+  getUser,
   getUsers,
   deleteType,
   notFound,

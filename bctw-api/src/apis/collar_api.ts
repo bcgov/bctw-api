@@ -124,7 +124,7 @@ const assignOrUnassignCritterCollar = async function (
   } device to critter ${animal_id}`;
 
   const functionParams = body.isLink ? [...params, valid_from, valid_to ] : [...params, valid_to ?? momentNow()];
-  const sql = to_pg_function_query(db_fn_name, functionParams)
+  const sql = transactionify(to_pg_function_query(db_fn_name, functionParams));
 
   const { result, error, isError } = await query(sql, errMsg, true);
 

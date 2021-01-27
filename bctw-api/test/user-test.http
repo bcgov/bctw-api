@@ -1,10 +1,8 @@
-http://localhost:3000/role
+###
+http://localhost:3000/get-user-role?idir=stuff
 
 ###
-http://localhost:3000/role?idir=stuff
-
-###
-http://localhost:3000/role?idir={{idir}}
+http://localhost:3000/get-user-role?idir={{idir}}
 
 ###
 POST http://localhost:3000/add-user HTTP/1.1
@@ -36,24 +34,30 @@ POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "animalId": 3,
-  "start": "2020-12-01",
-  "end": "2021-12-01"
+  "user": "jcraven",
+  "animalId": "4bedfa0f-e73c-4698-9f55-8c7296edd586"
 }
 
-### - should succeed with my idir
+### - should succeed
 POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "animalId": [1482, 1449],
-  "start": "2020-12-01",
-  "end": "2021-12-01"
+  "user": "jcraven",
+  "animalId": ["1b22dc11-f814-4707-821e-6112485c5fd5"]
 }
 
 ### should succeed with my idir
-GET http://localhost:3000/users?idir={{idir}}
+GET http://localhost:3000/get-users?idir={{idir}}
 
 ### should throw with idirtest2 - not an admin
-GET http://localhost:3000/users?idir={{idirtest2}}
+GET http://localhost:3000/get-users?idir={{idirtest2}}
 
+###
+GET http://localhost:3000/critter-access/{{idir}}
+
+### should fail
+GET http://localhost:3000/critter-access/sdf
+
+### Get user with role info
+GET http://localhost:3000/get-user?idir={{idir}}

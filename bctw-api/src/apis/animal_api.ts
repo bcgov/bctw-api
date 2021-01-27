@@ -17,7 +17,7 @@ import { MISSING_IDIR, query } from './api_helper';
 /// limits retrieved critters to only those contained in user_animal_assignment table
 const _accessControlQuery = (tableAlias: string, idir: string) => {
   return `and ${tableAlias}.id = any((${to_pg_function_query(
-    'get_user_critter_access_idir',
+    'get_user_critter_access',
     [idir]
   )})::uuid[])`;
 };

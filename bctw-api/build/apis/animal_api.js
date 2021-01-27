@@ -43,7 +43,7 @@ var pg_2 = require("../types/pg");
 var api_helper_1 = require("./api_helper");
 /// limits retrieved critters to only those contained in user_animal_assignment table
 var _accessControlQuery = function (tableAlias, idir) {
-    return "and " + tableAlias + ".id = any((" + pg_1.to_pg_function_query('get_user_critter_access_idir', [idir]) + ")::uuid[])";
+    return "and " + tableAlias + ".id = any((" + pg_1.to_pg_function_query('get_user_critter_access', [idir]) + ")::uuid[])";
 };
 /// select all animal table properties other than created/deleted etc.
 var _selectAnimals = "select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date_day, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, \na.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,\na.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,\na.trans_location, a.wlh_id, a.nickname";

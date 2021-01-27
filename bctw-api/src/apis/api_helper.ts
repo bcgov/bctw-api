@@ -14,7 +14,7 @@ export type QResult = {
  */
 const query = async (
   sql: string,
-  msgIfErr: string,
+  msgIfErr?: string,
   performAsTransaction = false
 ): Promise<QResult> => {
   let result, error;
@@ -25,7 +25,7 @@ const query = async (
       : await queryAsync(sql);
   } catch (e) {
     isError = true;
-    error = new Error(`${msgIfErr}: ${e}`);
+    error = new Error(`${msgIfErr} ${e}`);
   }
   return { result, error, isError };
 };

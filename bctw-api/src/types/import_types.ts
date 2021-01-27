@@ -49,10 +49,12 @@ export interface IBulkResponse {
 }
 
 export interface BctwBaseType {
-  created: Date;
-  expire_date: Date;
-  deleted: boolean;
-  deleted_at: Date;
+  created_at: Date;
+  created_by_user_id: number;
+  updated_at: Date;
+  updated_by_user_id: number;
+  valid_from: Date;
+  valid_to: Date;
 }
 
 export {

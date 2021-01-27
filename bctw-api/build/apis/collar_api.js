@@ -158,7 +158,7 @@ var assignOrUnassignCritterCollar = function (req, res) {
                     params = [idir, collar_id, animal_id];
                     errMsg = "failed to " + (body.isLink ? 'attach' : 'remove') + " device to critter " + animal_id;
                     functionParams = body.isLink ? __spreadArrays(params, [valid_from, valid_to]) : __spreadArrays(params, [valid_to !== null && valid_to !== void 0 ? valid_to : pg_1.momentNow()]);
-                    sql = pg_1.to_pg_function_query(db_fn_name, functionParams);
+                    sql = pg_1.transactionify(pg_1.to_pg_function_query(db_fn_name, functionParams));
                     return [4 /*yield*/, api_helper_1.query(sql, errMsg, true)];
                 case 1:
                     _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
