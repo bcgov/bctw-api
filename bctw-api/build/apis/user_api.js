@@ -166,7 +166,7 @@ var getUserCritterAccess = function (req, res) {
                         return [2 /*return*/, res.status(500).send("must supply user parameter")];
                     }
                     fn_name = 'get_user_critter_access';
-                    base = "select id, animal_id, nickname from bctw.animal where id=any((" + pg_1.to_pg_function_query(fn_name, [userIdir]) + ")::uuid[]) and valid_to >= now() OR valid_to IS null";
+                    base = "select id, animal_id, nickname from bctw.animal where id=any((" + pg_1.to_pg_function_query(fn_name, [userIdir]) + ")::uuid[]) and (valid_to >= now() OR valid_to IS null)";
                     sql = pg_1.constructGetQuery({ base: base, page: page });
                     return [4 /*yield*/, api_helper_1.query(sql, '')];
                 case 1:

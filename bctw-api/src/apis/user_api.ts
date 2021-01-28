@@ -123,7 +123,7 @@ const getUserCritterAccess = async function (
   const base = `select id, animal_id, nickname from bctw.animal where id=any((${to_pg_function_query(
     fn_name,
     [userIdir]
-  )})::uuid[]) and valid_to >= now() OR valid_to IS null`;
+  )})::uuid[]) and (valid_to >= now() OR valid_to IS null)`;
   const sql = constructGetQuery({ base, page });
   const { result, error, isError } = await query(sql, '');
   if (isError) {
