@@ -5,7 +5,6 @@ import {
   constructGetQuery,
   getRowResults,
   momentNow,
-  paginate,
   to_pg_function_query,
   transactionify,
 } from '../database/pg';
@@ -158,12 +157,11 @@ const getAvailableCollarSql = function (
     'c',
     true
   );
-  const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({
     base: base,
     filter: strFilter,
     order: 'c.device_id',
-    page: strPage,
+    page,
   });
   return sql;
 };
@@ -204,13 +202,11 @@ const getAssignedCollarSql = function (
   where caa.valid_to >= now() OR caa.valid_to IS null
   and (c.valid_to >= now() OR c.valid_to IS null) ${_accessCollarControl('c', idir)}`;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
-  const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({
     base: base,
     filter: strFilter,
     order: 'c.device_id',
-    // group: ['caa.animal_id', 'c.device_id', 'caa.start_time', 'c.collar_id'],
-    page: strPage,
+    page
   });
   return sql;
 };

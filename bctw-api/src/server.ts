@@ -51,7 +51,7 @@ const app = express()
   .get('/get-user',api.getUser)
   .get('/get-users',api.getUsers)
   .get('/get-user-role',api.getUserRole)
-  .get('/critter-access/:user', api.getUserCritterAccess)
+  .get('/get-critter-access/:user', api.getUserCritterAccess)
   .post('/add-user', api.addUser)
   .post('/assign-critter-to-user', api.assignCritterToUser)
   // codes

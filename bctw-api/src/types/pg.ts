@@ -1,4 +1,4 @@
-
+// todo: rename this something more appropriate
 import { Request } from "express"
 import { QueryResult } from "pg";
 
@@ -18,7 +18,7 @@ interface IConstructQueryParameters {
   filter?: string,
   order?: string,
   group?: string[],
-  page?: string,
+  page?: number,
 }
 
 enum TelemetryTypes {
@@ -37,11 +37,9 @@ const filterFromRequestParams = (req: Request): IFilter => {
   if (!keys.length) {
     keys = Object.keys(req.query);
   } 
-  // if (keys.includes('id') || keys.includes('search')) {
   if (keys.includes('id')) {
     return {
       id: req.params.id ?? req.query.id,
-      // search: <ISearch><unknown>req.params.search
     }
   } else if (keys.includes('ids')) {
     return {

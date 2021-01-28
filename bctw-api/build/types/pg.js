@@ -16,7 +16,6 @@ var filterFromRequestParams = function (req) {
     if (!keys.length) {
         keys = Object.keys(req.query);
     }
-    // if (keys.includes('id') || keys.includes('search')) {
     if (keys.includes('id')) {
         return {
             id: (_a = req.params.id) !== null && _a !== void 0 ? _a : req.query.id,

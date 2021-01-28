@@ -2,7 +2,6 @@ import moment from 'moment';
 import pg, {
   PoolClient,
   QueryResult,
-  QueryResultBase,
   QueryResultRow,
 } from 'pg';
 import {
@@ -40,12 +39,19 @@ pgPool.on('connect', (client: PoolClient): void => {
   // console.log(`postgresql client connected`);
 });
 
-// make dev api calls that persist data into transactions that rollback
+/**
+ * if not in production, rollback database calls that would persist changes
+ * @param sql the query to run
+ * @returns the query wrapped in begin/rollback
+ */
 const transactionify = (sql: string): string => {
   return isProd ? sql : `begin;\n${sql};\nrollback;`;
 };
 
-// enforce named parameters by making the object param type of IConstruct..
+/**
+ * @param IConstructQueryParameters
+ * @returns the sql string with parameters applied
+ */
 const constructGetQuery = ({
   base,
   filter,
@@ -53,7 +59,7 @@ const constructGetQuery = ({
   group,
   page,
 }: IConstructQueryParameters): string => {
-  let sql = `${base} ${filter} `;
+  let sql = `${base} ${filter ?? ''} `;
   if (group) {
     sql += `group by ${group.join()} `;
   }
@@ -61,11 +67,18 @@ const constructGetQuery = ({
     sql += `order by ${order} `;
   }
   if (page) {
-    sql += page;
+    sql += paginate(page);
   }
   return sql;
 };
 
+/**
+ *
+ * @param fnName name of the database function/stored procedure
+ * @param params array of stuff to be converted to postgres friendly types
+ * @param expectsObjAsArray flag to convert single objects to psql formatted array
+ * @returns sql string with formatted function procedure parameters
+ */
 const to_pg_function_query = (
   fnName: string,
   params: any[],
@@ -73,20 +86,27 @@ const to_pg_function_query = (
 ): string => {
   const newParams: any[] = [];
   params.forEach((p) => {
-    if (p === undefined || p === null) newParams.push('null');
-    else if (typeof p === 'string') newParams.push(to_pg_str(p));
-    else if (typeof p === 'number') newParams.push(p);
-    else if (typeof p.getMonth === 'function')
+    if (p === undefined || p === null) {
+      newParams.push('null');
+    } else if (typeof p === 'string') {
+      newParams.push(to_pg_str(p));
+    } else if (typeof p === 'number') {
+      newParams.push(p);
+    } else if (typeof p.getMonth === 'function') {
       newParams.push(to_pg_timestamp(p));
-    else if (typeof p === 'object' && expectsObjAsArray)
-      newParams.push(obj_to_pg_array(p));
-    else if (Array.isArray(p)) newParams.push(to_pg_array(p));
-    else if (typeof p === 'object') newParams.push(to_pg_obj(p));
+    } else if (typeof p === 'object' && expectsObjAsArray) {
+      newParams.push(convert_obj_to_pg_array(p));
+    } else if (Array.isArray(p)) {
+      newParams.push(to_pg_array(p));
+    } else if (typeof p === 'object') {
+      newParams.push(to_pg_obj(p));
+    }
   });
   return `select bctw.${fnName}(${newParams.join()})`;
 };
 
-// converts a javascript array to the postgresql format ex. ['abc','def'] => '{abc, def}'
+// converts a js array to the postgres format
+// ex. ['abc','def'] => '{abc, def}'
 const to_pg_array = (arr: number[] | string[]): string =>
   `'{${arr.join(',')}}'`;
 
@@ -94,10 +114,10 @@ const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
 
 const momentNow = (): string => moment().format('YYYY-MM-DD HH:mm:ss');
 
-// db code insert/update functions expect a json array
-// obj_to_pg_array accepts an object or an array of objects
-// and outputs a psql friendly json array
-const obj_to_pg_array = (objOrArray: Record<string, unknown>): string => {
+// stringifies a single object into a psql friendly array of objects
+const convert_obj_to_pg_array = (
+  objOrArray: Record<string, unknown>
+): string => {
   const asArr = Array.isArray(objOrArray) ? objOrArray : [objOrArray];
   return `'${JSON.stringify(asArr)}'`;
 };
@@ -118,40 +138,22 @@ const to_pg_obj = (obj: Record<string, unknown>): string => {
  this function handles dev and prod query result parsing
 */
 const getRowResults = (
-  data: QueryResult | QueryResultBase[],
+  data: QueryResult | QueryResult[],
   functionName: string
 ): QueryResultRow[] => {
-  return isProd
-    ? _getRowResults(<QueryResult>data, functionName)
-    : _getRowResultsDev(<QueryResult[]>data, functionName);
-};
-
-const _getRowResults = (
-  data: QueryResult,
-  dbFunctionName: string
-): QueryResultRow[] => {
-  const results = data.rows.map((row: QueryResultRow) => row[dbFunctionName]);
-  return results;
-};
-const _getRowResultsDev = (
-  data: QueryResult[],
-  dbFunctionName: string
-): QueryResultRow[] => {
   if (Array.isArray(data)) {
-    const rows = data.find((result) => result.command === 'SELECT')?.rows;
-    if (rows && rows.length) {
-      return rows.map((row: QueryResultRow) => row[dbFunctionName]);
-    }
-  } else {
-    return _getRowResults(data, dbFunctionName);
+    const filtered = data.find((result) => result.command === 'SELECT');
+    if (!filtered) {
+      return [];
+    } else return _getQueryResult(filtered, functionName);
   }
-  return [];
+  return _getQueryResult(data, functionName);
 };
 
-// const to_pg_date = (date: Date): string | null => {
-//   if (!date) return null;
-//   return `'${moment(date).format('YYYY-MM-DD')}'::Date`;
-// }
+const _getQueryResult = (data: QueryResult, fn: string) => {
+  return data.rows.map((row: QueryResultRow) => row[fn]);
+}
+
 const queryAsync = async (sql: string): Promise<QueryResult> => {
   const client = await pgPool.connect();
   let res: QueryResult;
@@ -192,6 +194,9 @@ const _getPrimaryKey = (table: string): string => {
 
 /// given a page number, return a string with the limit offset
 const paginate = (pageNumber: number): string => {
+  if (isNaN(pageNumber)) {
+    return '';
+  }
   const limit = 10;
   const offset = limit * pageNumber - limit;
   return `limit ${limit} offset ${offset};`;

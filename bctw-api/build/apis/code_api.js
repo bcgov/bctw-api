@@ -38,8 +38,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.addCodeHeader = exports.addCode = exports.getCodeHeaders = exports.getCode = void 0;
 var pg_1 = require("../database/pg");
-var api_helper_1 = require("./api_helper");
 var bulk_handlers_1 = require("../import/bulk_handlers");
+var api_helper_1 = require("./api_helper");
 var pg_get_code_fn = 'get_code';
 var pg_add_code_header_fn = 'add_code_header';
 var pg_add_code_fn = 'add_code';
@@ -56,7 +56,7 @@ var getCode = function (req, res) {
                     if (!idir || !codeHeader) {
                         return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR + " and codeHeader")];
                     }
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query('get_code', [idir, codeHeader, {}]));
+                    sql = pg_1.to_pg_function_query('get_code', [idir, codeHeader, {}]);
                     return [4 /*yield*/, api_helper_1.query(sql, 'failed to retrieve codes')];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;

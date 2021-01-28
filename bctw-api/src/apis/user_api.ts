@@ -1,4 +1,5 @@
 import {
+  constructGetQuery,
   getRowResults,
   to_pg_function_query,
   transactionify,
@@ -78,7 +79,8 @@ const getUser = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name)[0]);
+  const results = getRowResults(result, fn_name)[0];
+  return res.send(results);
 };
 
 /**
@@ -113,14 +115,16 @@ const getUserCritterAccess = async function (
   res: Response
 ): Promise<Response> {
   const userIdir: string = req.params.user ?? req.query.idir;
+  const page = (req.query?.page || 1) as number;
   if (!userIdir) {
     return res.status(500).send(`must supply user parameter`);
   }
   const fn_name = 'get_user_critter_access';
-  const sql = `select id, animal_id, nickname from bctw.animal where id=any((${to_pg_function_query(
+  const base = `select id, animal_id, nickname from bctw.animal where id=any((${to_pg_function_query(
     fn_name,
     [userIdir]
-  )})::uuid[])`;
+  )})::uuid[]) and valid_to >= now() OR valid_to IS null`;
+  const sql = constructGetQuery({ base, page });
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);

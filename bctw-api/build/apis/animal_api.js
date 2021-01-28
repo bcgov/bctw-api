@@ -121,11 +121,10 @@ var _getAssignedSql = function (idir, filter, page) {
     var strFilter = filter
         ? pg_1.appendSqlFilter(filter, pg_2.TelemetryTypes.animal, 'a', true)
         : '';
-    var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({
         base: base,
         filter: strFilter,
-        page: strPage,
+        page: page
     });
     return sql;
 };
@@ -135,11 +134,10 @@ var _getUnassignedSql = function (idir, filter, page) {
     var strFilter = filter
         ? pg_1.appendSqlFilter(filter, pg_2.TelemetryTypes.animal, 'a', true)
         : '';
-    var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({
         base: base,
         filter: strFilter,
-        page: strPage,
+        page: page
     });
     return sql;
 };

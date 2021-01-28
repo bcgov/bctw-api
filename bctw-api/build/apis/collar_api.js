@@ -181,12 +181,11 @@ exports.assignOrUnassignCritterCollar = assignOrUnassignCritterCollar;
 var getAvailableCollarSql = function (idir, filter, page) {
     var base = "select c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.collar_make, c.satellite_network, c.radio_frequency, c.collar_type\n    from collar c \n    where c.collar_id not in (\n      select collar_id from collar_animal_assignment caa\n      where caa.valid_to >= now() OR caa.valid_to IS null \n    ) and (c.valid_to >= now() OR c.valid_to IS null)";
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar, 'c', true);
-    var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({
         base: base,
         filter: strFilter,
         order: 'c.device_id',
-        page: strPage,
+        page: page,
     });
     return sql;
 };
@@ -223,13 +222,11 @@ exports.getAvailableCollars = getAvailableCollars;
 var getAssignedCollarSql = function (idir, filter, page) {
     var base = "select caa.animal_id, c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.collar_make, c.satellite_network, c.radio_frequency, c.collar_type\n  from collar c inner join collar_animal_assignment caa \n  on c.collar_id = caa.collar_id\n  where caa.valid_to >= now() OR caa.valid_to IS null\n  and (c.valid_to >= now() OR c.valid_to IS null) " + _accessCollarControl('c', idir);
     var strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar, 'c');
-    var strPage = page ? pg_1.paginate(page) : '';
     var sql = pg_1.constructGetQuery({
         base: base,
         filter: strFilter,
         order: 'c.device_id',
-        // group: ['caa.animal_id', 'c.device_id', 'caa.start_time', 'c.collar_id'],
-        page: strPage,
+        page: page
     });
     return sql;
 };

@@ -98,7 +98,7 @@ exports.getUserRole = getUserRole;
  */
 var getUser = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var idir, fn_name, sql, _a, result, error, isError;
+        var idir, fn_name, sql, _a, result, error, isError, results;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -114,7 +114,8 @@ var getUser = function (req, res) {
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, fn_name)[0])];
+                    results = pg_1.getRowResults(result, fn_name)[0];
+                    return [2 /*return*/, res.send(results)];
             }
         });
     });
@@ -153,21 +154,23 @@ exports.getUsers = getUsers;
  * @returns a list of critters the user has access to
  */
 var getUserCritterAccess = function (req, res) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
-        var userIdir, fn_name, sql, _b, result, error, isError;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
+        var userIdir, page, fn_name, base, sql, _c, result, error, isError;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
                 case 0:
                     userIdir = (_a = req.params.user) !== null && _a !== void 0 ? _a : req.query.idir;
+                    page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
                     if (!userIdir) {
                         return [2 /*return*/, res.status(500).send("must supply user parameter")];
                     }
                     fn_name = 'get_user_critter_access';
-                    sql = "select id, animal_id, nickname from bctw.animal where id=any((" + pg_1.to_pg_function_query(fn_name, [userIdir]) + ")::uuid[])";
+                    base = "select id, animal_id, nickname from bctw.animal where id=any((" + pg_1.to_pg_function_query(fn_name, [userIdir]) + ")::uuid[]) and valid_to >= now() OR valid_to IS null";
+                    sql = pg_1.constructGetQuery({ base: base, page: page });
                     return [4 /*yield*/, api_helper_1.query(sql, '')];
                 case 1:
-                    _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
+                    _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }

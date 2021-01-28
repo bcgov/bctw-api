@@ -69,15 +69,22 @@ pgPool.on('acquire', function (client) {
 pgPool.on('connect', function (client) {
     // console.log(`postgresql client connected`);
 });
-// make dev api calls that persist data into transactions that rollback
+/**
+ * if not in production, rollback database calls that would persist changes
+ * @param sql the query to run
+ * @returns the query wrapped in begin/rollback
+ */
 var transactionify = function (sql) {
     return isProd ? sql : "begin;\n" + sql + ";\nrollback;";
 };
 exports.transactionify = transactionify;
-// enforce named parameters by making the object param type of IConstruct..
+/**
+ * @param IConstructQueryParameters
+ * @returns the sql string with parameters applied
+ */
 var constructGetQuery = function (_a) {
     var base = _a.base, filter = _a.filter, order = _a.order, group = _a.group, page = _a.page;
-    var sql = base + " " + filter + " ";
+    var sql = base + " " + (filter !== null && filter !== void 0 ? filter : '') + " ";
     if (group) {
         sql += "group by " + group.join() + " ";
     }
@@ -85,44 +92,57 @@ var constructGetQuery = function (_a) {
         sql += "order by " + order + " ";
     }
     if (page) {
-        sql += page;
+        sql += paginate(page);
     }
     return sql;
 };
 exports.constructGetQuery = constructGetQuery;
+/**
+ *
+ * @param fnName name of the database function/stored procedure
+ * @param params array of stuff to be converted to postgres friendly types
+ * @param expectsObjAsArray flag to convert single objects to psql formatted array
+ * @returns sql string with formatted function procedure parameters
+ */
 var to_pg_function_query = function (fnName, params, expectsObjAsArray) {
     if (expectsObjAsArray === void 0) { expectsObjAsArray = false; }
     var newParams = [];
     params.forEach(function (p) {
-        if (p === undefined || p === null)
+        if (p === undefined || p === null) {
             newParams.push('null');
-        else if (typeof p === 'string')
+        }
+        else if (typeof p === 'string') {
             newParams.push(to_pg_str(p));
-        else if (typeof p === 'number')
+        }
+        else if (typeof p === 'number') {
             newParams.push(p);
-        else if (typeof p.getMonth === 'function')
+        }
+        else if (typeof p.getMonth === 'function') {
             newParams.push(to_pg_timestamp(p));
-        else if (typeof p === 'object' && expectsObjAsArray)
-            newParams.push(obj_to_pg_array(p));
-        else if (Array.isArray(p))
+        }
+        else if (typeof p === 'object' && expectsObjAsArray) {
+            newParams.push(convert_obj_to_pg_array(p));
+        }
+        else if (Array.isArray(p)) {
             newParams.push(to_pg_array(p));
-        else if (typeof p === 'object')
+        }
+        else if (typeof p === 'object') {
             newParams.push(to_pg_obj(p));
+        }
     });
     return "select bctw." + fnName + "(" + newParams.join() + ")";
 };
 exports.to_pg_function_query = to_pg_function_query;
-// converts a javascript array to the postgresql format ex. ['abc','def'] => '{abc, def}'
+// converts a js array to the postgres format
+// ex. ['abc','def'] => '{abc, def}'
 var to_pg_array = function (arr) {
     return "'{" + arr.join(',') + "}'";
 };
 var to_pg_timestamp = function (date) { return "to_timestamp(" + date + " / 1000)"; };
 var momentNow = function () { return moment_1.default().format('YYYY-MM-DD HH:mm:ss'); };
 exports.momentNow = momentNow;
-// db code insert/update functions expect a json array
-// obj_to_pg_array accepts an object or an array of objects
-// and outputs a psql friendly json array
-var obj_to_pg_array = function (objOrArray) {
+// stringifies a single object into a psql friendly array of objects
+var convert_obj_to_pg_array = function (objOrArray) {
     var asArr = Array.isArray(objOrArray) ? objOrArray : [objOrArray];
     return "'" + JSON.stringify(asArr) + "'";
 };
@@ -141,32 +161,20 @@ var to_pg_obj = function (obj) {
  this function handles dev and prod query result parsing
 */
 var getRowResults = function (data, functionName) {
-    return isProd
-        ? _getRowResults(data, functionName)
-        : _getRowResultsDev(data, functionName);
+    if (Array.isArray(data)) {
+        var filtered = data.find(function (result) { return result.command === 'SELECT'; });
+        if (!filtered) {
+            return [];
+        }
+        else
+            return _getQueryResult(filtered, functionName);
+    }
+    return _getQueryResult(data, functionName);
 };
 exports.getRowResults = getRowResults;
-var _getRowResults = function (data, dbFunctionName) {
-    var results = data.rows.map(function (row) { return row[dbFunctionName]; });
-    return results;
+var _getQueryResult = function (data, fn) {
+    return data.rows.map(function (row) { return row[fn]; });
 };
-var _getRowResultsDev = function (data, dbFunctionName) {
-    var _a;
-    if (Array.isArray(data)) {
-        var rows = (_a = data.find(function (result) { return result.command === 'SELECT'; })) === null || _a === void 0 ? void 0 : _a.rows;
-        if (rows && rows.length) {
-            return rows.map(function (row) { return row[dbFunctionName]; });
-        }
-    }
-    else {
-        return _getRowResults(data, dbFunctionName);
-    }
-    return [];
-};
-// const to_pg_date = (date: Date): string | null => {
-//   if (!date) return null;
-//   return `'${moment(date).format('YYYY-MM-DD')}'::Date`;
-// }
 var queryAsync = function (sql) { return __awaiter(void 0, void 0, void 0, function () {
     var client, res;
     return __generator(this, function (_a) {
@@ -233,6 +241,9 @@ var _getPrimaryKey = function (table) {
 };
 /// given a page number, return a string with the limit offset
 var paginate = function (pageNumber) {
+    if (isNaN(pageNumber)) {
+        return '';
+    }
     var limit = 10;
     var offset = limit * pageNumber - limit;
     return "limit " + limit + " offset " + offset + ";";

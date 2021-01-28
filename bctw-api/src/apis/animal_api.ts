@@ -4,7 +4,6 @@ import {
   appendSqlFilter,
   constructGetQuery,
   getRowResults,
-  paginate,
   to_pg_function_query,
   transactionify,
 } from '../database/pg';
@@ -100,11 +99,10 @@ const _getAssignedSql = function (
   const strFilter = filter
     ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
     : '';
-  const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({
     base,
     filter: strFilter,
-    page: strPage,
+    page
   });
   return sql;
 };
@@ -126,11 +124,10 @@ const _getUnassignedSql = function (
   const strFilter = filter
     ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
     : '';
-  const strPage = page ? paginate(page) : '';
   const sql = constructGetQuery({
     base,
     filter: strFilter,
-    page: strPage,
+    page
   });
   return sql;
 };
