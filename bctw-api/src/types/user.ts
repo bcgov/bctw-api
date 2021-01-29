@@ -9,14 +9,21 @@ interface IUserInput {
 
 type User = BctwBaseType & IUserInput;
 
+// used to represent user role type
 enum UserRole {
   administrator = 'administrator',
   owner = 'owner',
   observer = 'observer'
 }
 
+enum CritterPermission {
+  view = 'view',
+  change = 'change'
+}
+
 export {
   IUserInput,
   User,
-  UserRole
+  UserRole,
+  CritterPermission,
 } 
