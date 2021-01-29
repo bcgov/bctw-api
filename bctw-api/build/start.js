@@ -63,6 +63,7 @@ Object.defineProperty(exports, "addCode", { enumerable: true, get: function () {
 Object.defineProperty(exports, "addCodeHeader", { enumerable: true, get: function () { return code_api_1.addCodeHeader; } });
 Object.defineProperty(exports, "getCode", { enumerable: true, get: function () { return code_api_1.getCode; } });
 Object.defineProperty(exports, "getCodeHeaders", { enumerable: true, get: function () { return code_api_1.getCodeHeaders; } });
+var query_1 = require("./database/query");
 /* ## getDBCritters
   Request all collars the user has access to.
   @param req {object} Node/Express request object
@@ -136,7 +137,7 @@ var getPingExtent = function (req, res) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, pg_1.queryAsync(sql)];
+                    return [4 /*yield*/, query_1.queryAsync(sql)];
                 case 2:
                     data = _a.sent();
                     return [3 /*break*/, 4];
@@ -210,7 +211,7 @@ var deleteType = function (req, res) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
+                    return [4 /*yield*/, query_1.queryAsyncAsTransaction(sql)];
                 case 2:
                     _a.sent();
                     return [3 /*break*/, 4];

@@ -1,13 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TelemetryTypes = exports.filterFromRequestParams = void 0;
-var TelemetryTypes;
-(function (TelemetryTypes) {
-    TelemetryTypes["animal"] = "animal";
-    TelemetryTypes["collar"] = "collar";
-    TelemetryTypes["user"] = "user";
-})(TelemetryTypes || (TelemetryTypes = {}));
-exports.TelemetryTypes = TelemetryTypes;
+exports.MISSING_IDIR = exports.filterFromRequestParams = void 0;
+var MISSING_IDIR = 'must supply idir';
+exports.MISSING_IDIR = MISSING_IDIR;
 // parses the request parameters or request query parameters to
 // create an IFilter
 var filterFromRequestParams = function (req) {
@@ -29,4 +24,4 @@ var filterFromRequestParams = function (req) {
     return {};
 };
 exports.filterFromRequestParams = filterFromRequestParams;
-//# sourceMappingURL=pg.js.map
+//# sourceMappingURL=requests.js.map

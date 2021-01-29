@@ -2,20 +2,17 @@ import { Request, Response } from 'express';
 
 import {
   appendSqlFilter,
+  constructFunctionQuery,
   constructGetQuery,
   getRowResults,
   momentNow,
-  to_pg_function_query,
-  transactionify,
-} from '../database/pg';
+  query,
+} from '../database/query';
+import { filterFromRequestParams, MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
-import {
-  ChangeCritterCollarProps,
-  Collar,
-} from '../types/collar';
+import { ChangeCritterCollarProps, Collar } from '../types/collar';
 import { IBulkResponse } from '../types/import_types';
-import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
-import { MISSING_IDIR, query } from './api_helper';
+import { IFilter, TelemetryTypes } from '../types/query';
 
 const pg_add_collar_fn = 'add_collar';
 const pg_update_collar_fn = 'update_collar';
@@ -30,7 +27,7 @@ const pg_get_collar_history = 'get_collar_history';
  * associated with a set of critters.
  */
 const _accessCollarControl = (alias: string, idir: string) => {
-  return `and ${alias}.collar_id = any((${to_pg_function_query(
+  return `and ${alias}.collar_id = any((${constructFunctionQuery(
     'get_user_collar_access',
     [idir]
   )})::uuid[])`;
@@ -53,9 +50,7 @@ const addCollar = async function (
     return res.send(bulkResp);
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = transactionify(
-    to_pg_function_query(pg_add_collar_fn, [idir, collars], true)
-  );
+  const sql = constructFunctionQuery(pg_add_collar_fn, [idir, collars], true);
   const { result, error, isError } = await query(
     sql,
     'failed to add collar(s)',
@@ -70,9 +65,9 @@ const addCollar = async function (
 };
 
 /**
- * 
- * @param req 
- * @param res 
+ *
+ * @param req
+ * @param res
  * @returns
  */
 const updateCollar = async function (
@@ -86,15 +81,23 @@ const updateCollar = async function (
     return res.send(bulkResp);
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = transactionify(to_pg_function_query(pg_update_collar_fn, [idir, collars], true));
-  const { result, error, isError } = await query( sql, 'failed to update collar', true);
+  const sql = constructFunctionQuery(
+    pg_update_collar_fn,
+    [idir, collars],
+    true
+  );
+  const { result, error, isError } = await query(
+    sql,
+    'failed to update collar',
+    true
+  );
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
     createBulkResponse(bulkResp, getRowResults(result, pg_update_collar_fn)[0]);
   }
   return res.send(bulkResp);
-}
+};
 
 /**
  * handles critter collar assignment/unassignment
@@ -122,9 +125,10 @@ const assignOrUnassignCritterCollar = async function (
     body.isLink ? 'attach' : 'remove'
   } device to critter ${animal_id}`;
 
-  const functionParams = body.isLink ? [...params, valid_from, valid_to ] : [...params, valid_to ?? momentNow()];
-  const sql = transactionify(to_pg_function_query(db_fn_name, functionParams));
-
+  const functionParams = body.isLink
+    ? [...params, valid_from, valid_to]
+    : [...params, valid_to ?? momentNow()];
+  const sql = constructFunctionQuery(db_fn_name, functionParams);
   const { result, error, isError } = await query(sql, errMsg, true);
 
   if (isError) {
@@ -200,13 +204,16 @@ const getAssignedCollarSql = function (
   from collar c inner join collar_animal_assignment caa 
   on c.collar_id = caa.collar_id
   where caa.valid_to >= now() OR caa.valid_to IS null
-  and (c.valid_to >= now() OR c.valid_to IS null) ${_accessCollarControl('c', idir)}`;
+  and (c.valid_to >= now() OR c.valid_to IS null) ${_accessCollarControl(
+    'c',
+    idir
+  )}`;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
   const sql = constructGetQuery({
     base: base,
     filter: strFilter,
     order: 'c.device_id',
-    page
+    page,
   });
   return sql;
 };
@@ -230,7 +237,7 @@ const getAssignedCollars = async function (
 
 /**
  * retrieves a history of changes made to a collar
-*/
+ */
 const getCollarChangeHistory = async function (
   req: Request,
   res: Response
@@ -240,13 +247,16 @@ const getCollarChangeHistory = async function (
   if (!collar_id || !idir) {
     return res.status(500).send(`collar_id and idir must be supplied in query`);
   }
-  const sql = to_pg_function_query(pg_get_collar_history, [idir, collar_id]);
-  const { result, error, isError } = await query( sql, 'failed to retrieve collar history');
+  const sql = constructFunctionQuery(pg_get_collar_history, [idir, collar_id]);
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve collar history'
+  );
   if (isError) {
     return res.status(500).send(error.message);
-  } 
+  }
   return res.send(getRowResults(result, pg_get_collar_history));
-}
+};
 
 export {
   addCollar,
@@ -254,5 +264,5 @@ export {
   assignOrUnassignCritterCollar,
   getAssignedCollars,
   getAvailableCollars,
-  getCollarChangeHistory
+  getCollarChangeHistory,
 };

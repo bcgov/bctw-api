@@ -1,7 +1,7 @@
-###
+### get role - should fail user with idir stuff DNE
 http://localhost:3000/get-user-role?idir=stuff
 
-###
+### should return administrator
 http://localhost:3000/get-user-role?idir={{idir}}
 
 ###
@@ -53,11 +53,11 @@ GET http://localhost:3000/get-users?idir={{idir}}
 ### should throw with idirtest2 - not an admin
 GET http://localhost:3000/get-users?idir={{idirtest2}}
 
-###
-GET http://localhost:3000/critter-access/{{idir}}
+### should succeed
+GET http://localhost:3000/get-critter-access/{{idir}}
 
 ### should fail
-GET http://localhost:3000/critter-access/sdf
+GET http://localhost:3000/get-critter-access/sdf
 
 ### Get user with role info
 GET http://localhost:3000/get-user?idir={{idir}}

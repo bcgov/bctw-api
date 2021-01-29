@@ -3,16 +3,10 @@ import { Request, Response } from 'express';
 import * as fs from 'fs';
 
 import { pg_add_animal_fn } from '../apis/animal_api';
-import { MISSING_IDIR, query } from '../apis/api_helper';
 import { addCode, addCodeHeader } from '../apis/code_api';
 import { addCollar } from '../apis/collar_api';
-import {
-  getRowResults,
-  queryAsync,
-  queryAsyncTransaction,
-  to_pg_function_query,
-  transactionify,
-} from '../database/pg';
+import { constructFunctionQuery, getRowResults, query, queryAsync, queryAsyncAsTransaction } from '../database/query';
+import { MISSING_IDIR } from '../database/requests';
 import { Animal } from '../types/animal';
 import { CodeHeaderInput, CodeInput } from '../types/code';
 import { ChangeCollarData, Collar } from '../types/collar';
@@ -98,9 +92,8 @@ const handleCritterInsert = async (
 ): Promise<Response> => {
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   const animalsWithCollars = rows.filter((a) => a.device_id);
-  const sql = transactionify(
-    to_pg_function_query(pg_add_animal_fn, [idir, rows], true)
-  );
+  const sql = constructFunctionQuery(pg_add_animal_fn, [idir, rows], true)
+ ;
   const { result, error, isError } = await query(
     sql,
     `failed to add animals`,
@@ -155,10 +148,8 @@ const handleCollarCritterLink = async (
           valid_from: null,
         };
         const params = [idir, ...Object.values(body)];
-        const sql = transactionify(
-          to_pg_function_query('link_collar_to_animal', params)
-        );
-        const result = await queryAsyncTransaction(sql);
+        const sql = constructFunctionQuery('link_collar_to_animal', params) ;
+        const result = await queryAsyncAsTransaction(sql);
         return result;
       }
     })

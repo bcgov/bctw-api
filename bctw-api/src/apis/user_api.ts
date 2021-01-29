@@ -1,12 +1,7 @@
-import {
-  constructGetQuery,
-  getRowResults,
-  to_pg_function_query,
-  transactionify,
-} from '../database/pg';
-import { IUserInput, UserRole } from '../types/user';
 import { Request, Response } from 'express';
-import { MISSING_IDIR, QResult, query } from './api_helper';
+import { constructFunctionQuery, constructGetQuery, getRowResults, query } from '../database/query';
+import { MISSING_IDIR } from '../database/requests';
+import { IUserInput, UserRole } from '../types/user';
 
 interface IUserProps {
   user: IUserInput;
@@ -22,7 +17,7 @@ const addUser = async function (
 ): Promise<Response> {
   const { user, role }: IUserProps = req.body;
   const fn_name = 'add_user';
-  const sql = transactionify(to_pg_function_query(fn_name, [user, role]));
+  const sql = constructFunctionQuery(fn_name, [user, role]);
   const { result, error, isError } = await query(
     sql,
     `failed to add user ${user.idir}`,
@@ -47,7 +42,7 @@ const getUserRole = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_user_role';
-  const sql = to_pg_function_query(fn_name, [idir]);
+  const sql = constructFunctionQuery(fn_name, [idir]);
   const { result, error, isError } = await query(
     sql,
     'failed to query user role'
@@ -71,7 +66,7 @@ const getUser = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_user';
-  const sql = to_pg_function_query(fn_name, [idir]);
+  const sql = constructFunctionQuery(fn_name, [idir]);
   const { result, error, isError } = await query(
     sql,
     'failed to query user role'
@@ -96,11 +91,8 @@ const getUsers = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_users';
-  const sql = to_pg_function_query(fn_name, [idir]);
-  const { result, error, isError }: QResult = await query(
-    sql,
-    'failed to query users'
-  );
+  const sql = constructFunctionQuery(fn_name, [idir]);
+  const { result, error, isError } = await query(sql, 'failed to query users');
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -119,17 +111,14 @@ const getUserCritterAccess = async function (
   if (!userIdir) {
     return res.status(500).send(`must supply user parameter`);
   }
-  const fn_name = 'get_user_critter_access';
-  const base = `select id, animal_id, nickname from bctw.animal where id=any((${to_pg_function_query(
-    fn_name,
-    [userIdir]
-  )})::uuid[]) and (valid_to >= now() OR valid_to IS null)`;
+  const fn_name = 'get_user_critter_access_json';
+  const base = `${constructFunctionQuery(fn_name, [userIdir])}`;
   const sql = constructGetQuery({ base, page });
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(result.rows);
+  return res.send(getRowResults(result, fn_name));
 };
 
 interface IGrantUserCritterAccessProps {
@@ -154,7 +143,7 @@ const assignCritterToUser = async function (
   // db function takes an array, if request supplies only a single animal add it to an array
   const ids: string[] = Array.isArray(animalId) ? animalId : [animalId];
 
-  const sql = transactionify(to_pg_function_query(fn_name, [idir, user, ids]));
+  const sql = constructFunctionQuery(fn_name, [idir, user, ids]);
   const { result, error, isError } = await query(
     sql,
     'failed to link user to critter(s)',

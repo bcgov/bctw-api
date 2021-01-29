@@ -1,21 +1,20 @@
 import { Request, Response } from 'express';
-
 import {
   appendSqlFilter,
+  constructFunctionQuery,
   constructGetQuery,
   getRowResults,
-  to_pg_function_query,
-  transactionify,
-} from '../database/pg';
+  query,
+} from '../database/query';
+import { filterFromRequestParams, MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
-import { filterFromRequestParams, IFilter, TelemetryTypes } from '../types/pg';
-import { MISSING_IDIR, query } from './api_helper';
+import { IFilter, TelemetryTypes } from '../types/query';
 
 /// limits retrieved critters to only those contained in user_animal_assignment table
 const _accessControlQuery = (tableAlias: string, idir: string) => {
-  return `and ${tableAlias}.id = any((${to_pg_function_query(
+  return `and ${tableAlias}.id = any((${constructFunctionQuery(
     'get_user_critter_access',
     [idir]
   )})::uuid[])`;
@@ -45,14 +44,8 @@ const addAnimal = async function (
   }
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  const sql = transactionify(
-    to_pg_function_query(pg_add_animal_fn, [idir, animals], true)
-  );
-  const { result, error, isError } = await query(
-    sql,
-    `failed to add animals`,
-    true
-  );
+  const sql = constructFunctionQuery(pg_add_animal_fn, [idir, animals], true);
+  const { result, error, isError } = await query(sql, `failed to add animals`, true);
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -71,13 +64,17 @@ const updateAnimal = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir) as string;
+  const idir = req?.query?.idir as string;
   if (!idir) {
     return res.status(500).send(MISSING_IDIR);
   }
   const critters: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = transactionify(to_pg_function_query(pg_update_animal_fn, [idir, critters], true));
-  const { result, error, isError } = await query( sql, `failed to update animal`, true);
+  const sql = constructFunctionQuery(pg_update_animal_fn, [idir, critters], true);
+  const { result, error, isError } = await query(
+    sql,
+    `failed to update animal`, 
+    true
+  );
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -102,7 +99,7 @@ const _getAssignedSql = function (
   const sql = constructGetQuery({
     base,
     filter: strFilter,
-    page
+    page,
   });
   return sql;
 };
@@ -127,7 +124,7 @@ const _getUnassignedSql = function (
   const sql = constructGetQuery({
     base,
     filter: strFilter,
-    page
+    page,
   });
   return sql;
 };
@@ -169,14 +166,14 @@ const getCollarAssignmentHistory = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req.query.idir) as string;
+  const idir = req.query.idir as string;
   const critterId = req.params.animal_id as string;
   if (!critterId) {
     return res
       .status(500)
       .send('must supply animal id to retrieve collar history');
   }
-  const sql = to_pg_function_query(pg_get_history, [idir, critterId]);
+  const sql = constructFunctionQuery(pg_get_history, [idir, critterId]);
   const { result, error, isError } = await query(
     sql,
     `failed to get collar history`
@@ -189,7 +186,7 @@ const getCollarAssignmentHistory = async function (
 
 /**
  * retrieves a history of changes made to a critter
-*/
+ */
 const getAnimalHistory = async function (
   req: Request,
   res: Response
@@ -199,13 +196,16 @@ const getAnimalHistory = async function (
   if (!animal_id || !idir) {
     return res.status(500).send(`animal_id and idir must be supplied`);
   }
-  const sql = to_pg_function_query(pg_get_critter_history, [idir, animal_id]);
-  const { result, error, isError } = await query( sql, 'failed to retrieve critter history');
+  const sql = constructFunctionQuery(pg_get_critter_history, [idir, animal_id]);
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve critter history'
+  );
   if (isError) {
     return res.status(500).send(error.message);
-  } 
+  }
   return res.send(getRowResults(result, pg_get_critter_history));
-}
+};
 
 export {
   pg_add_animal_fn,

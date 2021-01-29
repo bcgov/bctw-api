@@ -37,8 +37,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserCritterAccess = exports.getUsers = exports.getUser = exports.assignCritterToUser = exports.getUserRole = exports.addUser = void 0;
-var pg_1 = require("../database/pg");
-var api_helper_1 = require("./api_helper");
+var query_1 = require("../database/query");
+var requests_1 = require("../database/requests");
 /**
  *
  * @returns boolean of whether the user was added successfully
@@ -51,14 +51,14 @@ var addUser = function (req, res) {
                 case 0:
                     _a = req.body, user = _a.user, role = _a.role;
                     fn_name = 'add_user';
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(fn_name, [user, role]));
-                    return [4 /*yield*/, api_helper_1.query(sql, "failed to add user " + user.idir, true)];
+                    sql = query_1.constructFunctionQuery(fn_name, [user, role]);
+                    return [4 /*yield*/, query_1.query(sql, "failed to add user " + user.idir, true)];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, fn_name)[0])];
+                    return [2 /*return*/, res.send(query_1.getRowResults(result, fn_name)[0])];
             }
         });
     });
@@ -76,17 +76,17 @@ var getUserRole = function (req, res) {
                 case 0:
                     idir = req.query.idir;
                     if (!idir) {
-                        return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
+                        return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
                     fn_name = 'get_user_role';
-                    sql = pg_1.to_pg_function_query(fn_name, [idir]);
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to query user role')];
+                    sql = query_1.constructFunctionQuery(fn_name, [idir]);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to query user role')];
                 case 1:
                     _a = _b.sent(), result = _a.result, error = _a.error, isError = _a.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, fn_name)[0])];
+                    return [2 /*return*/, res.send(query_1.getRowResults(result, fn_name)[0])];
             }
         });
     });
@@ -104,17 +104,17 @@ var getUser = function (req, res) {
                 case 0:
                     idir = req.query.idir;
                     if (!idir) {
-                        return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
+                        return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
                     fn_name = 'get_user';
-                    sql = pg_1.to_pg_function_query(fn_name, [idir]);
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to query user role')];
+                    sql = query_1.constructFunctionQuery(fn_name, [idir]);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to query user role')];
                 case 1:
                     _a = _b.sent(), result = _a.result, error = _a.error, isError = _a.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    results = pg_1.getRowResults(result, fn_name)[0];
+                    results = query_1.getRowResults(result, fn_name)[0];
                     return [2 /*return*/, res.send(results)];
             }
         });
@@ -134,17 +134,17 @@ var getUsers = function (req, res) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     if (!idir) {
-                        return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
+                        return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
                     fn_name = 'get_users';
-                    sql = pg_1.to_pg_function_query(fn_name, [idir]);
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to query users')];
+                    sql = query_1.constructFunctionQuery(fn_name, [idir]);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to query users')];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, fn_name))];
+                    return [2 /*return*/, res.send(query_1.getRowResults(result, fn_name))];
             }
         });
     });
@@ -165,16 +165,16 @@ var getUserCritterAccess = function (req, res) {
                     if (!userIdir) {
                         return [2 /*return*/, res.status(500).send("must supply user parameter")];
                     }
-                    fn_name = 'get_user_critter_access';
-                    base = "select id, animal_id, nickname from bctw.animal where id=any((" + pg_1.to_pg_function_query(fn_name, [userIdir]) + ")::uuid[]) and (valid_to >= now() OR valid_to IS null)";
-                    sql = pg_1.constructGetQuery({ base: base, page: page });
-                    return [4 /*yield*/, api_helper_1.query(sql, '')];
+                    fn_name = 'get_user_critter_access_json';
+                    base = "" + query_1.constructFunctionQuery(fn_name, [userIdir]);
+                    sql = query_1.constructGetQuery({ base: base, page: page });
+                    return [4 /*yield*/, query_1.query(sql, '')];
                 case 1:
                     _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    return [2 /*return*/, res.send(result.rows)];
+                    return [2 /*return*/, res.send(query_1.getRowResults(result, fn_name))];
             }
         });
     });
@@ -193,18 +193,18 @@ var assignCritterToUser = function (req, res) {
                     idir = (_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir;
                     fn_name = 'grant_critter_to_user';
                     if (!idir) {
-                        return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
+                        return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
                     _b = req.body, animalId = _b.animalId, user = _b.user;
                     ids = Array.isArray(animalId) ? animalId : [animalId];
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(fn_name, [idir, user, ids]));
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to link user to critter(s)', true)];
+                    sql = query_1.constructFunctionQuery(fn_name, [idir, user, ids]);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to link user to critter(s)', true)];
                 case 1:
                     _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, fn_name))];
+                    return [2 /*return*/, res.send(query_1.getRowResults(result, fn_name))];
             }
         });
     });

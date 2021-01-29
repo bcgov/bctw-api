@@ -69,10 +69,10 @@ exports.importCsv = void 0;
 var csv_parser_1 = __importDefault(require("csv-parser"));
 var fs = __importStar(require("fs"));
 var animal_api_1 = require("../apis/animal_api");
-var api_helper_1 = require("../apis/api_helper");
 var code_api_1 = require("../apis/code_api");
 var collar_api_1 = require("../apis/collar_api");
-var pg_1 = require("../database/pg");
+var query_1 = require("../database/query");
+var requests_1 = require("../database/requests");
 var import_types_1 = require("../types/import_types");
 var bulk_handlers_1 = require("./bulk_handlers");
 var to_header_1 = require("./to_header");
@@ -157,15 +157,15 @@ var handleCritterInsert = function (res, idir, rows) { return __awaiter(void 0, 
             case 0:
                 bulkResp = { errors: [], results: [] };
                 animalsWithCollars = rows.filter(function (a) { return a.device_id; });
-                sql = pg_1.transactionify(pg_1.to_pg_function_query(animal_api_1.pg_add_animal_fn, [idir, rows], true));
-                return [4 /*yield*/, api_helper_1.query(sql, "failed to add animals", true)];
+                sql = query_1.constructFunctionQuery(animal_api_1.pg_add_animal_fn, [idir, rows], true);
+                return [4 /*yield*/, query_1.query(sql, "failed to add animals", true)];
             case 1:
                 _a = _b.sent(), result = _a.result, error = _a.error, isError = _a.isError;
                 if (isError) {
                     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
                 }
                 else {
-                    bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(result, animal_api_1.pg_add_animal_fn)[0]);
+                    bulk_handlers_1.createBulkResponse(bulkResp, query_1.getRowResults(result, animal_api_1.pg_add_animal_fn)[0]);
                 }
                 if (!(animalsWithCollars.length && bulkResp.errors.length === 0)) return [3 /*break*/, 3];
                 return [4 /*yield*/, handleCollarCritterLink(idir, bulkResp.results, animalsWithCollars, bulkResp.errors)];
@@ -188,7 +188,7 @@ var handleCollarCritterLink = function (idir, insertResults, crittersWithCollars
                             case 0:
                                 aid = (_a = insertResults.find(function (row) { return row.animal_id === a.animal_id; })) === null || _a === void 0 ? void 0 : _a.id;
                                 if (!aid) return [3 /*break*/, 3];
-                                return [4 /*yield*/, pg_1.queryAsync("select collar_id from bctw.collar where device_id = " + a.device_id + " limit 1;")];
+                                return [4 /*yield*/, query_1.queryAsync("select collar_id from bctw.collar where device_id = " + a.device_id + " limit 1;")];
                             case 1:
                                 collarIdResult = _b.sent();
                                 if (!collarIdResult.rows.length) {
@@ -206,8 +206,8 @@ var handleCollarCritterLink = function (idir, insertResults, crittersWithCollars
                                     valid_from: null,
                                 };
                                 params = __spreadArrays([idir], Object.values(body));
-                                sql = pg_1.transactionify(pg_1.to_pg_function_query('link_collar_to_animal', params));
-                                return [4 /*yield*/, pg_1.queryAsyncTransaction(sql)];
+                                sql = query_1.constructFunctionQuery('link_collar_to_animal', params);
+                                return [4 /*yield*/, query_1.queryAsyncAsTransaction(sql)];
                             case 2:
                                 result = _b.sent();
                                 return [2 /*return*/, result];
@@ -247,7 +247,7 @@ var importCsv = function (req, res) {
                 case 0:
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     if (!idir) {
-                        res.status(500).send(api_helper_1.MISSING_IDIR);
+                        res.status(500).send(requests_1.MISSING_IDIR);
                     }
                     file = req.file;
                     if (!file) {

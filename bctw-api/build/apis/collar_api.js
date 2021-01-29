@@ -44,10 +44,10 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCollarChangeHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.assignOrUnassignCritterCollar = exports.updateCollar = exports.addCollar = void 0;
-var pg_1 = require("../database/pg");
+var query_1 = require("../database/query");
+var requests_1 = require("../database/requests");
 var bulk_handlers_1 = require("../import/bulk_handlers");
-var pg_2 = require("../types/pg");
-var api_helper_1 = require("./api_helper");
+var query_2 = require("../types/query");
 var pg_add_collar_fn = 'add_collar';
 var pg_update_collar_fn = 'update_collar';
 var pg_link_collar_fn = 'link_collar_to_animal';
@@ -60,7 +60,7 @@ var pg_get_collar_history = 'get_collar_history';
  * associated with a set of critters.
  */
 var _accessCollarControl = function (alias, idir) {
-    return "and " + alias + ".collar_id = any((" + pg_1.to_pg_function_query('get_user_collar_access', [idir]) + ")::uuid[])";
+    return "and " + alias + ".collar_id = any((" + query_1.constructFunctionQuery('get_user_collar_access', [idir]) + ")::uuid[])";
 };
 /**
  *
@@ -78,19 +78,19 @@ var addCollar = function (req, res) {
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     bulkResp = { errors: [], results: [] };
                     if (!idir) {
-                        bulkResp.errors.push({ row: '', error: api_helper_1.MISSING_IDIR, rownum: 0 });
+                        bulkResp.errors.push({ row: '', error: requests_1.MISSING_IDIR, rownum: 0 });
                         return [2 /*return*/, res.send(bulkResp)];
                     }
                     collars = !Array.isArray(req.body) ? [req.body] : req.body;
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_add_collar_fn, [idir, collars], true));
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to add collar(s)', true)];
+                    sql = query_1.constructFunctionQuery(pg_add_collar_fn, [idir, collars], true);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to add collar(s)', true)];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
                         bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
                     }
                     else {
-                        bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(result, pg_add_collar_fn)[0]);
+                        bulk_handlers_1.createBulkResponse(bulkResp, query_1.getRowResults(result, pg_add_collar_fn)[0]);
                     }
                     return [2 /*return*/, res.send(bulkResp)];
             }
@@ -114,19 +114,19 @@ var updateCollar = function (req, res) {
                     idir = (((_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     bulkResp = { errors: [], results: [] };
                     if (!idir) {
-                        bulkResp.errors.push({ row: '', error: api_helper_1.MISSING_IDIR, rownum: 0 });
+                        bulkResp.errors.push({ row: '', error: requests_1.MISSING_IDIR, rownum: 0 });
                         return [2 /*return*/, res.send(bulkResp)];
                     }
                     collars = !Array.isArray(req.body) ? [req.body] : req.body;
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(pg_update_collar_fn, [idir, collars], true));
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to update collar', true)];
+                    sql = query_1.constructFunctionQuery(pg_update_collar_fn, [idir, collars], true);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to update collar', true)];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
                         bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
                     }
                     else {
-                        bulk_handlers_1.createBulkResponse(bulkResp, pg_1.getRowResults(result, pg_update_collar_fn)[0]);
+                        bulk_handlers_1.createBulkResponse(bulkResp, query_1.getRowResults(result, pg_update_collar_fn)[0]);
                     }
                     return [2 /*return*/, res.send(bulkResp)];
             }
@@ -147,7 +147,7 @@ var assignOrUnassignCritterCollar = function (req, res) {
                 case 0:
                     idir = (_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir;
                     if (!idir) {
-                        return [2 /*return*/, res.status(500).send(api_helper_1.MISSING_IDIR)];
+                        return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
                     body = req.body;
                     _b = body.data, collar_id = _b.collar_id, animal_id = _b.animal_id, valid_from = _b.valid_from, valid_to = _b.valid_to;
@@ -157,15 +157,16 @@ var assignOrUnassignCritterCollar = function (req, res) {
                     db_fn_name = body.isLink ? pg_link_collar_fn : pg_unlink_collar_fn;
                     params = [idir, collar_id, animal_id];
                     errMsg = "failed to " + (body.isLink ? 'attach' : 'remove') + " device to critter " + animal_id;
-                    functionParams = body.isLink ? __spreadArrays(params, [valid_from, valid_to]) : __spreadArrays(params, [valid_to !== null && valid_to !== void 0 ? valid_to : pg_1.momentNow()]);
-                    sql = pg_1.transactionify(pg_1.to_pg_function_query(db_fn_name, functionParams));
-                    return [4 /*yield*/, api_helper_1.query(sql, errMsg, true)];
+                    functionParams = body.isLink
+                        ? __spreadArrays(params, [valid_from, valid_to]) : __spreadArrays(params, [valid_to !== null && valid_to !== void 0 ? valid_to : query_1.momentNow()]);
+                    sql = query_1.constructFunctionQuery(db_fn_name, functionParams);
+                    return [4 /*yield*/, query_1.query(sql, errMsg, true)];
                 case 1:
                     _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, db_fn_name))];
+                    return [2 /*return*/, res.send(query_1.getRowResults(result, db_fn_name))];
             }
         });
     });
@@ -180,8 +181,8 @@ exports.assignOrUnassignCritterCollar = assignOrUnassignCritterCollar;
  */
 var getAvailableCollarSql = function (idir, filter, page) {
     var base = "select c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.collar_make, c.satellite_network, c.radio_frequency, c.collar_type\n    from collar c \n    where c.collar_id not in (\n      select collar_id from collar_animal_assignment caa\n      where caa.valid_to >= now() OR caa.valid_to IS null \n    ) and (c.valid_to >= now() OR c.valid_to IS null)";
-    var strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar, 'c', true);
-    var sql = pg_1.constructGetQuery({
+    var strFilter = query_1.appendSqlFilter(filter || {}, query_2.TelemetryTypes.collar, 'c', true);
+    var sql = query_1.constructGetQuery({
         base: base,
         filter: strFilter,
         order: 'c.device_id',
@@ -198,8 +199,8 @@ var getAvailableCollars = function (req, res) {
                 case 0:
                     idir = (_a = req.query) === null || _a === void 0 ? void 0 : _a.idir;
                     page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
-                    sql = getAvailableCollarSql(idir, pg_2.filterFromRequestParams(req), page);
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to retrieve available collars')];
+                    sql = getAvailableCollarSql(idir, requests_1.filterFromRequestParams(req), page);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to retrieve available collars')];
                 case 1:
                     _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
                     if (isError) {
@@ -221,12 +222,12 @@ exports.getAvailableCollars = getAvailableCollars;
  */
 var getAssignedCollarSql = function (idir, filter, page) {
     var base = "select caa.animal_id, c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.collar_make, c.satellite_network, c.radio_frequency, c.collar_type\n  from collar c inner join collar_animal_assignment caa \n  on c.collar_id = caa.collar_id\n  where caa.valid_to >= now() OR caa.valid_to IS null\n  and (c.valid_to >= now() OR c.valid_to IS null) " + _accessCollarControl('c', idir);
-    var strFilter = pg_1.appendSqlFilter(filter || {}, pg_2.TelemetryTypes.collar, 'c');
-    var sql = pg_1.constructGetQuery({
+    var strFilter = query_1.appendSqlFilter(filter || {}, query_2.TelemetryTypes.collar, 'c');
+    var sql = query_1.constructGetQuery({
         base: base,
         filter: strFilter,
         order: 'c.device_id',
-        page: page
+        page: page,
     });
     return sql;
 };
@@ -239,8 +240,8 @@ var getAssignedCollars = function (req, res) {
                 case 0:
                     idir = (_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir;
                     page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
-                    sql = getAssignedCollarSql(idir, pg_2.filterFromRequestParams(req), page);
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to retrieve assigned collars')];
+                    sql = getAssignedCollarSql(idir, requests_1.filterFromRequestParams(req), page);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to retrieve assigned collars')];
                 case 1:
                     _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
                     if (isError) {
@@ -254,7 +255,7 @@ var getAssignedCollars = function (req, res) {
 exports.getAssignedCollars = getAssignedCollars;
 /**
  * retrieves a history of changes made to a collar
-*/
+ */
 var getCollarChangeHistory = function (req, res) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
@@ -267,14 +268,14 @@ var getCollarChangeHistory = function (req, res) {
                     if (!collar_id || !idir) {
                         return [2 /*return*/, res.status(500).send("collar_id and idir must be supplied in query")];
                     }
-                    sql = pg_1.to_pg_function_query(pg_get_collar_history, [idir, collar_id]);
-                    return [4 /*yield*/, api_helper_1.query(sql, 'failed to retrieve collar history')];
+                    sql = query_1.constructFunctionQuery(pg_get_collar_history, [idir, collar_id]);
+                    return [4 /*yield*/, query_1.query(sql, 'failed to retrieve collar history')];
                 case 1:
                     _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
-                    return [2 /*return*/, res.send(pg_1.getRowResults(result, pg_get_collar_history))];
+                    return [2 /*return*/, res.send(query_1.getRowResults(result, pg_get_collar_history))];
             }
         });
     });

@@ -1,5 +1,4 @@
-##### add a new animal
-###
+### add a new animal
 POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
 
@@ -12,6 +11,30 @@ content-type: application/json
   "wlh_id": "abc123",
   "nickname": "shimmer"
 }
+
+### add more than one animal
+POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+[
+  {
+    "animal_id": "test123",
+    "animal_status": "Alive",
+    "calf_at_heel": true,
+    "species": "unicorn",
+    "sex": "M",
+    "wlh_id": "abc123",
+    "nickname": "shimmer"
+  },
+  {
+    "animal_id": "test1234",
+    "animal_status": "Mortality",
+    "calf_at_heel": false,
+    "sex": "F",
+    "wlh_id": "abc123",
+    "nickname": "unknown"
+  }
+]
 
 ### update existing animal
 POST http://localhost:3000/update-animal?idir={{idir}} HTTP/1.1
@@ -27,11 +50,8 @@ content-type: application/json
   "id": "bb8bbbc9-417e-4d91-9638-d55820c43fd5"
 }
 
-### get history 
-http://localhost:3000/get-animal-history/bb8bbbc9-417e-4d91-9638-d55820c43fd5?idir={{idir}}
-
-### add multiple animals
-POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
+### update multiple animals
+POST http://localhost:3000/update-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 [
@@ -42,35 +62,52 @@ content-type: application/json
     "sex": "M",
     "wlh_id": "abc123",
     "nickname": "shimmer",
+    "id": "bb8bbbc9-417e-4d91-9638-d55820c43fd5"
   },
   {
     "animal_id": "test123",
     "animal_status": "Alive",
     "calf_at_heel": true,
-    "species": "unicorn",
     "sex": "M",
     "wlh_id": "abc123",
-    "nickname": "shimmer2"
+    "nickname": "shimmer",
+    "id": "2a3829f5-e76a-4488-af57-a0a7c9e64709"
   }
 ]
 
-##### get animals
-###
+### try updating critter that DNE should fail
+POST http://localhost:3000/update-animal?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "animal_id": "test123",
+  "animal_status": "Alive",
+  "calf_at_heel": true,
+  "sex": "M",
+  "wlh_id": "abc123",
+  "nickname": "shimmer",
+  "id": "bb8bbbc9-417e-4d91-9638-c55820c43fd5"
+}
+
+### get critter history 
+http://localhost:3000/get-animal-history/bb8bbbc9-417e-4d91-9638-d55820c43fd5?idir={{idir}}
+
+### get animal queries
 http://localhost:3000/get-animals?idir={{idir}}
 ###
 http://localhost:3000/get-animals?idir={{idir}}&testUser=test1
 
 ### get specific id
-http://localhost:3000/animal/3
+# http://localhost:3000/animal/3
 
 ### get assigned critters
 http://localhost:3000/get-animals?idir={{idir}}&assigned=true
 
-###
-http://localhost:3000/get-animals?idir={{idir}}&page=1
+### get assigned - page 2
+http://localhost:3000/get-animals?idir={{idir}}&page=2
 
 ###
-http://localhost:3000/get-animals?idir={{idir}}&page=1&assigned=true&testUser=test3
+# http://localhost:3000/get-animals?idir={{idir}}&page=1&assigned=true&testUser=test3
 
 ### page 2
 http://localhost:3000/get-animals?idir={{idir}}&page=2&assigned=true

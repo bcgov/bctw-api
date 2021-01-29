@@ -38,98 +38,76 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.momentNow = exports.constructGetQuery = exports.paginate = exports.queryAsyncTransaction = exports.queryAsync = exports.getRowResults = exports.appendSqlFilter = exports.isProd = exports.transactionify = exports.to_pg_function_query = exports.pgPool = void 0;
+exports.appendSqlFilter = exports.momentNow = exports.constructGetQuery = exports.constructFunctionQuery = exports.queryAsyncAsTransaction = exports.queryAsync = exports.query = exports.getRowResults = void 0;
 var moment_1 = __importDefault(require("moment"));
-var pg_1 = __importDefault(require("pg"));
-var pg_2 = require("../types/pg");
-var isProd = process.env.NODE_ENV === 'production' ? true : false;
-exports.isProd = isProd;
-var test = process.env.NODE_ENV;
-console.log('typeof test: ', test);
-console.log('comparison: ', process.env.NODE_ENV === 'production');
-var devPort = '5432';
-// Set up the database pool
-var pgPool = new pg_1.default.Pool({
-    user: process.env.POSTGRES_USER,
-    database: process.env.POSTGRES_DB,
-    password: process.env.POSTGRES_PASSWORD,
-    host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
-    port: +(isProd ? (_a = process.env.POSTGRES_SERVER_PORT) !== null && _a !== void 0 ? _a : devPort : devPort),
-    max: 10,
-});
-exports.pgPool = pgPool;
-pgPool.on('error', function (err, client) {
-    console.log("postgresql error: " + err);
-});
-pgPool.on('acquire', function (client) {
-    // console.log(`postgresql client acquired`);
-});
-pgPool.on('connect', function (client) {
-    // console.log(`postgresql client connected`);
-});
-// XXX Debugging database connection
-// console.log("POSTGRES_USER: ",process.env.POSTGRES_USER);
-// console.log("POSTGRES_DB: ",process.env.POSTGRES_DB);
-// console.log("POSTGRES_PASSWORD: ",process.env.POSTGRES_PASSWORD);
-// console.log("POSTGRES_SERVER_HOST: ",process.env.POSTGRES_SERVER_HOST);
-// console.log("Other host: ",isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost');
-// console.log("isProd: ",isProd);
-// console.log("port: ",+(isProd ? process.env.POSTGRES_SERVER_PORT ?? devPort : devPort));
-// make dev api calls that persist data into transactions that rollback
-var transactionify = function (sql) {
-    return isProd ? sql : "begin;\n" + sql + ";\nrollback;";
-};
-exports.transactionify = transactionify;
-// enforce named parameters by making the object param type of IConstruct..
+var query_1 = require("../types/query");
+var pg_1 = require("./pg");
+// a set of helper functions for constructing db queries
+/**
+ * @param IConstructQueryParameters
+ * @returns the sql string with parameters applied
+ */
 var constructGetQuery = function (_a) {
     var base = _a.base, filter = _a.filter, order = _a.order, group = _a.group, page = _a.page;
-    var sql = base + " " + filter + " ";
+    var sql = base + " " + (filter !== null && filter !== void 0 ? filter : '') + " ";
     if (group) {
-        sql += "group by " + group + " ";
+        sql += "group by " + group.join() + " ";
     }
     if (order) {
         sql += "order by " + order + " ";
     }
     if (page) {
-        sql += page;
+        sql += paginate(page);
     }
     return sql;
 };
 exports.constructGetQuery = constructGetQuery;
-var to_pg_function_query = function (fnName, params, expectsObjAsArray) {
+/**
+ *
+ * @param fnName name of the database function/stored procedure
+ * @param params array of stuff to be converted to postgres friendly types
+ * @param expectsObjAsArray flag to convert single objects to psql formatted array
+ * @returns sql string with formatted function procedure parameters
+ */
+var constructFunctionQuery = function (fnName, params, expectsObjAsArray) {
     if (expectsObjAsArray === void 0) { expectsObjAsArray = false; }
     var newParams = [];
     params.forEach(function (p) {
-        if (p === undefined || p === null)
+        if (p === undefined || p === null) {
             newParams.push('null');
-        else if (typeof p === 'string')
+        }
+        else if (typeof p === 'string') {
             newParams.push(to_pg_str(p));
-        else if (typeof p === 'number')
+        }
+        else if (typeof p === 'number') {
             newParams.push(p);
-        else if (typeof p.getMonth === 'function')
+        }
+        else if (typeof p.getMonth === 'function') {
             newParams.push(to_pg_timestamp(p));
-        else if (typeof p === 'object' && expectsObjAsArray)
+        }
+        else if (typeof p === 'object' && expectsObjAsArray) {
             newParams.push(obj_to_pg_array(p));
-        else if (Array.isArray(p))
+        }
+        else if (Array.isArray(p)) {
             newParams.push(to_pg_array(p));
-        else if (typeof p === 'object')
+        }
+        else if (typeof p === 'object') {
             newParams.push(to_pg_obj(p));
+        }
     });
     return "select bctw." + fnName + "(" + newParams.join() + ")";
 };
-exports.to_pg_function_query = to_pg_function_query;
-// converts a javascript array to the postgresql format ex. ['abc','def'] => '{abc, def}'
+exports.constructFunctionQuery = constructFunctionQuery;
+// converts a js array to the postgres format
+// ex. ['abc','def'] => '{abc, def}'
 var to_pg_array = function (arr) {
     return "'{" + arr.join(',') + "}'";
 };
 var to_pg_timestamp = function (date) { return "to_timestamp(" + date + " / 1000)"; };
 var momentNow = function () { return moment_1.default().format('YYYY-MM-DD HH:mm:ss'); };
 exports.momentNow = momentNow;
-// db code insert/update functions expect a json array
-// obj_to_pg_array accepts an object or an array of objects
-// and outputs a psql friendly json array
+// stringifies a single object into a psql friendly array of objects
 var obj_to_pg_array = function (objOrArray) {
     var asArr = Array.isArray(objOrArray) ? objOrArray : [objOrArray];
     return "'" + JSON.stringify(asArr) + "'";
@@ -145,41 +123,28 @@ var to_pg_obj = function (obj) {
     return "'" + JSON.stringify(obj) + "'";
 };
 /*
- the <transactionify> function will add multiple row types to the query result.
- this function handles dev and prod query result parsing
+ function handles dev and prod query result parsing
 */
 var getRowResults = function (data, functionName) {
-    return isProd
-        ? _getRowResults(data, functionName)
-        : _getRowResultsDev(data, functionName);
+    if (Array.isArray(data)) {
+        var filtered = data.find(function (result) { return result.command === 'SELECT'; });
+        if (!filtered) {
+            return [];
+        }
+        else
+            return _getQueryResult(filtered, functionName);
+    }
+    return _getQueryResult(data, functionName);
 };
 exports.getRowResults = getRowResults;
-var _getRowResults = function (data, dbFunctionName) {
-    var results = data.rows.map(function (row) { return row[dbFunctionName]; });
-    return results;
+var _getQueryResult = function (data, fn) {
+    return data.rows.map(function (row) { return row[fn]; });
 };
-var _getRowResultsDev = function (data, dbFunctionName) {
-    var _a;
-    if (Array.isArray(data)) {
-        var rows = (_a = data.find(function (result) { return result.command === 'SELECT'; })) === null || _a === void 0 ? void 0 : _a.rows;
-        if (rows && rows.length) {
-            return rows.map(function (row) { return row[dbFunctionName]; });
-        }
-    }
-    else {
-        return _getRowResults(data, dbFunctionName);
-    }
-    return [];
-};
-// const to_pg_date = (date: Date): string | null => {
-//   if (!date) return null;
-//   return `'${moment(date).format('YYYY-MM-DD')}'::Date`;
-// }
 var queryAsync = function (sql) { return __awaiter(void 0, void 0, void 0, function () {
     var client, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, pgPool.connect()];
+            case 0: return [4 /*yield*/, pg_1.pgPool.connect()];
             case 1:
                 client = _a.sent();
                 _a.label = 2;
@@ -197,11 +162,11 @@ var queryAsync = function (sql) { return __awaiter(void 0, void 0, void 0, funct
     });
 }); };
 exports.queryAsync = queryAsync;
-var queryAsyncTransaction = function (sql) { return __awaiter(void 0, void 0, void 0, function () {
+var queryAsyncAsTransaction = function (sql) { return __awaiter(void 0, void 0, void 0, function () {
     var client, res, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, pgPool.connect()];
+            case 0: return [4 /*yield*/, pg_1.pgPool.connect()];
             case 1:
                 client = _a.sent();
                 _a.label = 2;
@@ -227,25 +192,73 @@ var queryAsyncTransaction = function (sql) { return __awaiter(void 0, void 0, vo
         }
     });
 }); };
-exports.queryAsyncTransaction = queryAsyncTransaction;
+exports.queryAsyncAsTransaction = queryAsyncAsTransaction;
+/**
+ * helper function that handles the try catch of querying the database
+ * @param sql the sql string to be passed to the db
+ * @param msgIfErr function will return an Error with this message if exception is caught
+ * @param performAsTransaction whether or not to attempt to rollback the transaction if it fails
+ */
+var query = function (sql, msgIfErr, asTransaction) {
+    if (asTransaction === void 0) { asTransaction = false; }
+    return __awaiter(void 0, void 0, void 0, function () {
+        var result, error, isError, _a, e_1;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    isError = false;
+                    _b.label = 1;
+                case 1:
+                    _b.trys.push([1, 6, , 7]);
+                    if (!asTransaction) return [3 /*break*/, 3];
+                    return [4 /*yield*/, queryAsyncAsTransaction(transactionify(sql))];
+                case 2:
+                    _a = _b.sent();
+                    return [3 /*break*/, 5];
+                case 3: return [4 /*yield*/, queryAsync(sql)];
+                case 4:
+                    _a = _b.sent();
+                    _b.label = 5;
+                case 5:
+                    result = _a;
+                    return [3 /*break*/, 7];
+                case 6:
+                    e_1 = _b.sent();
+                    isError = true;
+                    error = new Error(msgIfErr + " " + e_1);
+                    return [3 /*break*/, 7];
+                case 7: return [2 /*return*/, { result: result, error: error, isError: isError }];
+            }
+        });
+    });
+};
+exports.query = query;
+var transactionify = function (sql) {
+    console.log("rolback? " + pg_1.ROLLBACK);
+    return pg_1.ROLLBACK ? "begin;\n" + sql + ";\nrollback;" : sql;
+};
 // hardcoded primary key getter given a table name
 var _getPrimaryKey = function (table) {
     switch (table) {
-        case pg_2.TelemetryTypes.animal:
+        case query_1.TelemetryTypes.animal:
             return 'id';
-        case pg_2.TelemetryTypes.collar:
-            return 'device_id';
+        case query_1.TelemetryTypes.collar:
+            return 'collar_id';
         default:
             return '';
     }
 };
 /// given a page number, return a string with the limit offset
 var paginate = function (pageNumber) {
+    if (isNaN(pageNumber)) {
+        return '';
+    }
     var limit = 10;
     var offset = limit * pageNumber - limit;
     return "limit " + limit + " offset " + offset + ";";
 };
-exports.paginate = paginate;
+/*
+*/
 var appendSqlFilter = function (filter, table, tableAlias, containsWhere) {
     if (containsWhere === void 0) { containsWhere = false; }
     if (!Object.keys(filter).length) {
@@ -255,11 +268,7 @@ var appendSqlFilter = function (filter, table, tableAlias, containsWhere) {
     if (filter.id) {
         sql += _getPrimaryKey(table) + " = " + filter.id;
     }
-    // else if (filter.search) {
-    //   const search = filter.search;
-    //   sql += `${search.column} = ${search.value}`;
-    // }
     return sql;
 };
 exports.appendSqlFilter = appendSqlFilter;
-//# sourceMappingURL=pg.js.map
+//# sourceMappingURL=query.js.map

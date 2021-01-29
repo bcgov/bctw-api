@@ -1,5 +1,4 @@
-##### add collar
-##### 
+### add collar
 # this device id already exists - should fail
 POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
@@ -10,7 +9,7 @@ content-type: application/json
   "device_id": 41259
 }
 
-###  adding a new collar should work
+###  adding new collars should work
 POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
@@ -36,19 +35,28 @@ content-type: application/json
   "radio_frequency": 291.33
 }
 
-###
+### update collar that doesn't exist should fail
+POST http://localhost:3000/update-collar?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "collar_id": "4055375f-f91a-4cd7-aa4f-e0dbef56a358",
+  "radio_frequency": 291.33
+}
+
+### retrive collar history
 http://localhost:3000/get-collar-history/5055375f-f91a-4cd7-aa4f-e0dbef56a358?idir={{idir}}
 
-##### linking collar to animal
-# should fail - animal asigned
+##### collar assignment tests
+# should fail - already attached in dev
 POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
   "isLink": true,
   "data": {
-    "device_id": 21511,
-    "animal_id": 3,
+    "collar_id": "0dbd1ce5-7250-4483-9a6f-5618f0847a75",
+    "animal_id": "b6a76948-f564-4366-bde3-0fab53a31bda",
     "valid_from": "2021-10-20"
   }
 }
@@ -60,53 +68,28 @@ content-type: application/json
 {
   "isLink": true,
   "data": {
-    "device_id": 41260,
-    "animal_id": 100,
+    "collar_id": "a84cf03c-225c-4984-930b-1f259c9926c8",
+    "animal_id": "76a8a6eb-f975-43c3-a03b-fc5deb4f626a",
     "valid_from": "2021-10-20"
   }
 }
 
-##### unlinking collar
-##### 
-### should fail because 21511 is assigned to TWC1009
+### unlinking collar
+# should succeed
 POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
   "isLink": false,
   "data": {
-    "collar_id": 148,
-    "animal_id": 4
+    "collar_id": "0dbd1ce5-7250-4483-9a6f-5618f0847a75",
+    "animal_id": "b6a76948-f564-4366-bde3-0fab53a31bda",
+    "valid_from": "2021-10-20"
   }
 }
 
-### should work, will end assignment today because endDate is not provided
-POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "isLink": false,
-  "data": {
-    "collar_id": 148,
-    "animal_id": 70
-  }
-}
-
-### should work
-POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "isLink": false,
-  "data": {
-    "collar_id": 148,
-    "animal_id": 70, 
-    "valid_from": "2021-12-01"
-  }
-}
-
-######
-### get available collars
+### collar queries
+# get available collars
 http://localhost:3000/get-available-collars?idir={{idir}}
 
 ### get paged available collars
