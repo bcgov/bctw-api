@@ -92,28 +92,17 @@ content-type: application/json
 ### get critter history 
 http://localhost:3000/get-animal-history/bb8bbbc9-417e-4d91-9638-d55820c43fd5?idir={{idir}}
 
-### get animal queries
+### get all critters (requires admin)
 http://localhost:3000/get-animals?idir={{idir}}
-###
-http://localhost:3000/get-animals?idir={{idir}}&testUser=test1
-
-### get specific id
-# http://localhost:3000/animal/3
 
 ### get assigned critters
-http://localhost:3000/get-animals?idir={{idir}}&assigned=true
+http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
 
-### get assigned - page 2
-http://localhost:3000/get-animals?idir={{idir}}&page=2
+### get unassigned
+http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned
 
-###
-# http://localhost:3000/get-animals?idir={{idir}}&page=1&assigned=true&testUser=test3
-
-### page 2
-http://localhost:3000/get-animals?idir={{idir}}&page=2&assigned=true
+### get unassigned - page 2
+http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=unassigned
 
 ### assignmenthistory
 http://localhost:3000/get-assignment-history/03c72709-77c8-43e3-a7e5-70f27b960b64?idir={{idir}}
-
-###
-http://localhost:3000/get-animals?idir={{idir}}&page=2&assigned=false

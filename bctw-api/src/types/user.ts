@@ -16,7 +16,7 @@ enum UserRole {
   observer = 'observer'
 }
 
-enum CritterPermission {
+enum eCritterPermission {
   view = 'view',
   change = 'change'
 }
@@ -25,5 +25,5 @@ export {
   IUserInput,
   User,
   UserRole,
-  CritterPermission,
+  eCritterPermission,
 } 

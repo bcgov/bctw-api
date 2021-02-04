@@ -44,6 +44,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCollarChangeHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.assignOrUnassignCritterCollar = exports.updateCollar = exports.addCollar = void 0;
+var constants_1 = require("../constants");
 var query_1 = require("../database/query");
 var requests_1 = require("../database/requests");
 var bulk_handlers_1 = require("../import/bulk_handlers");
@@ -180,7 +181,7 @@ exports.assignOrUnassignCritterCollar = assignOrUnassignCritterCollar;
  * currently no access control on these results
  */
 var getAvailableCollarSql = function (idir, filter, page) {
-    var base = "select c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.collar_make, c.satellite_network, c.radio_frequency, c.collar_type\n    from collar c \n    where c.collar_id not in (\n      select collar_id from collar_animal_assignment caa\n      where caa.valid_to >= now() OR caa.valid_to IS null \n    ) and (c.valid_to >= now() OR c.valid_to IS null)";
+    var base = "select c.* from " + constants_1.S_API + ".collar_v c \n    where c.collar_id not in (\n      select caa.collar_id from " + constants_1.S_API + ".collar_animal_assignment_v caa\n      where caa.valid_to >= now() OR caa.valid_to IS null \n    )";
     var strFilter = query_1.appendSqlFilter(filter || {}, query_2.TelemetryTypes.collar, 'c', true);
     var sql = query_1.constructGetQuery({
         base: base,
@@ -221,7 +222,7 @@ exports.getAvailableCollars = getAvailableCollars;
  * that they are allowed to view
  */
 var getAssignedCollarSql = function (idir, filter, page) {
-    var base = "select caa.animal_id, c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.collar_make, c.satellite_network, c.radio_frequency, c.collar_type\n  from collar c inner join collar_animal_assignment caa \n  on c.collar_id = caa.collar_id\n  where caa.valid_to >= now() OR caa.valid_to IS null\n  and (c.valid_to >= now() OR c.valid_to IS null) " + _accessCollarControl('c', idir);
+    var base = "select caa.animal_id, c.*\n  from " + constants_1.S_API + ".collar_v c inner join " + constants_1.S_API + ".collar_animal_assignment_v caa \n  on c.collar_id = caa.collar_id\n  where caa.valid_to >= now() OR caa.valid_to IS null\n  " + _accessCollarControl('c', idir);
     var strFilter = query_1.appendSqlFilter(filter || {}, query_2.TelemetryTypes.collar, 'c');
     var sql = query_1.constructGetQuery({
         base: base,

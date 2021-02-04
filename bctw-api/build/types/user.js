@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CritterPermission = exports.UserRole = void 0;
+exports.eCritterPermission = exports.UserRole = void 0;
 // used to represent user role type
 var UserRole;
 (function (UserRole) {
@@ -9,10 +9,10 @@ var UserRole;
     UserRole["observer"] = "observer";
 })(UserRole || (UserRole = {}));
 exports.UserRole = UserRole;
-var CritterPermission;
-(function (CritterPermission) {
-    CritterPermission["view"] = "view";
-    CritterPermission["change"] = "change";
-})(CritterPermission || (CritterPermission = {}));
-exports.CritterPermission = CritterPermission;
+var eCritterPermission;
+(function (eCritterPermission) {
+    eCritterPermission["view"] = "view";
+    eCritterPermission["change"] = "change";
+})(eCritterPermission || (eCritterPermission = {}));
+exports.eCritterPermission = eCritterPermission;
 //# sourceMappingURL=user.js.map

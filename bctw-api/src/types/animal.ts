@@ -34,6 +34,13 @@ type Animal = {
   device_id: string,
 }
 
+enum eCritterFetchType {
+  assigned = 'assigned',
+  unassigned= 'unassigned',
+  all = 'all'
+}
+
 export {
+  eCritterFetchType,
   Animal,
 }

@@ -186,21 +186,22 @@ exports.getUserCritterAccess = getUserCritterAccess;
 var assignCritterToUser = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, fn_name, _b, animalId, user, permission_type, ids, sql, _c, result, error, isError;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var idir, fn_name, body, ret1, userId, access, sql, _b, result, error, isError;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
                     idir = (_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir;
                     fn_name = 'grant_critter_to_user';
                     if (!idir) {
                         return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
-                    _b = req.body, animalId = _b.animalId, user = _b.user, permission_type = _b.permission_type;
-                    ids = Array.isArray(animalId) ? animalId : [animalId];
-                    sql = query_1.constructFunctionQuery(fn_name, [idir, user, permission_type, ids]);
+                    body = req.body;
+                    ret1 = body[0];
+                    userId = ret1.userId, access = ret1.access;
+                    sql = query_1.constructFunctionQuery(fn_name, [idir, userId, access], true);
                     return [4 /*yield*/, query_1.query(sql, 'failed to link user to critter(s)', true)];
                 case 1:
-                    _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
+                    _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }

@@ -37,16 +37,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCollarAssignmentHistory = exports.getAnimalHistory = exports.getAnimals = exports.updateAnimal = exports.addAnimal = exports.pg_add_animal_fn = void 0;
+var constants_1 = require("../constants");
 var query_1 = require("../database/query");
 var requests_1 = require("../database/requests");
 var bulk_handlers_1 = require("../import/bulk_handlers");
+var animal_1 = require("../types/animal");
 var query_2 = require("../types/query");
 /// limits retrieved critters to only those contained in user_animal_assignment table
 var _accessControlQuery = function (tableAlias, idir) {
-    return "and " + tableAlias + ".id = any((" + query_1.constructFunctionQuery('get_user_critter_access', [idir]) + ")::uuid[])";
+    return "and " + tableAlias + ".id = any((" + query_1.constructFunctionQuery(constants_1.S_BCTW + ".get_user_critter_access", [idir]) + ")::uuid[])";
 };
-/// select all animal table properties other than created/deleted etc.
-var _selectAnimals = "select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date_day, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, \na.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,\na.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,\na.trans_location, a.wlh_id, a.nickname";
 var pg_add_animal_fn = 'add_animal';
 exports.pg_add_animal_fn = pg_add_animal_fn;
 var pg_update_animal_fn = 'update_animal';
@@ -117,7 +117,7 @@ var updateAnimal = function (req, res) {
 exports.updateAnimal = updateAnimal;
 /// get critters that are assigned to a collar (ie have a valid row in collar_animal_assignment table)
 var _getAssignedSql = function (idir, filter, page) {
-    var base = _selectAnimals + ", ca.collar_id, c.device_id\n  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  join bctw.collar c on ca.collar_id = c.collar_id\n  where ca.valid_to >= now() OR ca.valid_to IS null\n  and (a.valid_to >= now() OR a.valid_to IS null)\n  " + _accessControlQuery('a', idir);
+    var base = "select a.*, ca.collar_id, c.device_id\n  from " + constants_1.S_API + ".animal_v a join " + constants_1.S_API + ".collar_animal_assignment_v ca on a.id = ca.animal_id\n  join " + constants_1.S_API + ".collar_v c on ca.collar_id = c.collar_id\n  where ca.valid_to >= now() OR ca.valid_to IS null\n  " + _accessControlQuery('a', idir);
     var strFilter = filter
         ? query_1.appendSqlFilter(filter, query_2.TelemetryTypes.animal, 'a', true)
         : '';
@@ -130,7 +130,7 @@ var _getAssignedSql = function (idir, filter, page) {
 };
 /// get critters that aren't currently assigned to a collar
 var _getUnassignedSql = function (idir, filter, page) {
-    var base = _selectAnimals + "\n  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id\n  where a.id not in (\n    select animal_id from bctw.collar_animal_assignment ca2 where\n    ca2.valid_to >= now() OR ca2.valid_to IS null\n  )\n  and (a.valid_to >= now() OR a.valid_to IS null)\n  " + _accessControlQuery('a', idir);
+    var base = "select a.*\n  from " + constants_1.S_API + ".animal_v a left join " + constants_1.S_API + ".collar_animal_assignment_v ca on a.id = ca.animal_id\n  where a.id not in (\n    select animal_id from " + constants_1.S_API + ".collar_animal_assignment_v ca2 where\n    ca2.valid_to >= now() OR ca2.valid_to IS null\n  )\n  " + _accessControlQuery('a', idir);
     var strFilter = filter
         ? query_1.appendSqlFilter(filter, query_2.TelemetryTypes.animal, 'a', true)
         : '';
@@ -141,37 +141,34 @@ var _getUnassignedSql = function (idir, filter, page) {
     });
     return sql;
 };
+var _getAllCritters = function (idir, page) {
+    var roleCheck = constants_1.S_BCTW + ".get_user_role('" + idir + "') = 'administrator'";
+    var base = "select * from " + constants_1.S_API + ".animal_v where " + roleCheck;
+    return query_1.constructGetQuery({ base: base, page: page });
+};
 /*
-  params:
-    isAssigned (boolean) - defaults to false
 */
 var getAnimals = function (req, res) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, page, bGetAssigned, sql, _d, _e, result, error, isError;
-        return __generator(this, function (_f) {
-            switch (_f.label) {
+        var idir, page, critterType, sql, _d, result, error, isError;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0:
                     idir = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.idir) || '');
                     page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
-                    bGetAssigned = (((_c = req.query) === null || _c === void 0 ? void 0 : _c.assigned) === 'true');
+                    critterType = (_c = req.query) === null || _c === void 0 ? void 0 : _c.critterType;
                     if (!idir) {
                         return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
-                    if (!bGetAssigned) return [3 /*break*/, 2];
-                    return [4 /*yield*/, _getAssignedSql(idir, requests_1.filterFromRequestParams(req), page)];
-                case 1:
-                    _d = _f.sent();
-                    return [3 /*break*/, 4];
-                case 2: return [4 /*yield*/, _getUnassignedSql(idir, requests_1.filterFromRequestParams(req), page)];
-                case 3:
-                    _d = _f.sent();
-                    _f.label = 4;
-                case 4:
-                    sql = _d;
+                    sql = critterType === animal_1.eCritterFetchType.assigned
+                        ? _getAssignedSql(idir, requests_1.filterFromRequestParams(req), page)
+                        : critterType === animal_1.eCritterFetchType.unassigned
+                            ? _getUnassignedSql(idir, requests_1.filterFromRequestParams(req), page)
+                            : _getAllCritters(idir, page);
                     return [4 /*yield*/, query_1.query(sql, "failed to query critters")];
-                case 5:
-                    _e = _f.sent(), result = _e.result, error = _e.error, isError = _e.isError;
+                case 1:
+                    _d = _e.sent(), result = _d.result, error = _d.error, isError = _d.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { constructFunctionQuery, constructGetQuery, getRowResults, query } from '../database/query';
 import { MISSING_IDIR } from '../database/requests';
-import { CritterPermission, IUserInput, UserRole } from '../types/user';
+import { eCritterPermission, IUserInput, UserRole } from '../types/user';
 
 interface IUserProps {
   user: IUserInput;
@@ -120,14 +120,17 @@ const getUserCritterAccess = async function (
   }
   return res.send(getRowResults(result, fn_name));
 };
-
-interface IGrantUserCritterAccessProps {
-  animalId: string | string[];
-  user: string; // idir of the user receiving permissions
+interface ICritterAccess {
+  animal_id: string;
+  permission_type: eCritterPermission;
   valid_from?: Date;
   valid_to?: Date;
-  permission_type: CritterPermission;
 }
+interface IUserCritterPermission {
+  userId: number;
+  access: ICritterAccess[]
+}
+
 /**
  * @returns list of successful assignments
  */
@@ -140,11 +143,13 @@ const assignCritterToUser = async function (
   if (!idir) {
     return res.status(500).send(MISSING_IDIR);
   }
-  const { animalId, user, permission_type }: IGrantUserCritterAccessProps = req.body;
+  const body: IUserCritterPermission[] = req.body;
+  const ret1 = body[0];
   // db function takes an array, if request supplies only a single animal add it to an array
-  const ids: string[] = Array.isArray(animalId) ? animalId : [animalId];
+  // const ids: string[] = Array.isArray(animalId) ? animalId : [animalId];
+  const { userId, access } = ret1;
 
-  const sql = constructFunctionQuery(fn_name, [idir, user, permission_type, ids]);
+  const sql = constructFunctionQuery(fn_name, [idir, userId, access], true);
   const { result, error, isError } = await query(
     sql,
     'failed to link user to critter(s)',

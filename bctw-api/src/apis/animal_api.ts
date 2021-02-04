@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { S_API, S_BCTW } from '../constants';
 import {
   appendSqlFilter,
   constructFunctionQuery,
@@ -8,23 +9,17 @@ import {
 } from '../database/query';
 import { filterFromRequestParams, MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
-import { Animal } from '../types/animal';
+import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { IFilter, TelemetryTypes } from '../types/query';
 
 /// limits retrieved critters to only those contained in user_animal_assignment table
 const _accessControlQuery = (tableAlias: string, idir: string) => {
   return `and ${tableAlias}.id = any((${constructFunctionQuery(
-    'get_user_critter_access',
+    `${S_BCTW}.get_user_critter_access`,
     [idir]
   )})::uuid[])`;
 };
-
-/// select all animal table properties other than created/deleted etc.
-const _selectAnimals = `select a.id, a.animal_id, a.animal_status, a.calf_at_heel, a.capture_date_day, a.capture_date_year, a.capture_date_month, a.capture_utm_zone, 
-a.capture_utm_easting, a.capture_utm_northing, a.ecotype, a.population_unit, a.ear_tag_left, a.ear_tag_right, a.life_stage, a.management_area, a.mortality_date,
-a.mortality_utm_zone, a.mortality_utm_easting, a.mortality_utm_northing, a.project, a.re_capture, a.region, a.regional_contact, a.release_date, a.sex, a.species,
-a.trans_location, a.wlh_id, a.nickname`;
 
 const pg_add_animal_fn = 'add_animal';
 const pg_update_animal_fn = 'update_animal';
@@ -45,7 +40,11 @@ const addAnimal = async function (
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   const sql = constructFunctionQuery(pg_add_animal_fn, [idir, animals], true);
-  const { result, error, isError } = await query(sql, `failed to add animals`, true);
+  const { result, error, isError } = await query(
+    sql,
+    `failed to add animals`,
+    true
+  );
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -69,10 +68,14 @@ const updateAnimal = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const critters: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery(pg_update_animal_fn, [idir, critters], true);
+  const sql = constructFunctionQuery(
+    pg_update_animal_fn,
+    [idir, critters],
+    true
+  );
   const { result, error, isError } = await query(
     sql,
-    `failed to update animal`, 
+    `failed to update animal`,
     true
   );
   if (isError) {
@@ -87,11 +90,10 @@ const _getAssignedSql = function (
   filter?: IFilter,
   page?: number
 ): string {
-  const base = `${_selectAnimals}, ca.collar_id, c.device_id
-  from bctw.animal a join bctw.collar_animal_assignment ca on a.id = ca.animal_id
-  join bctw.collar c on ca.collar_id = c.collar_id
+  const base = `select a.*, ca.collar_id, c.device_id
+  from ${S_API}.animal_v a join ${S_API}.collar_animal_assignment_v ca on a.id = ca.animal_id
+  join ${S_API}.collar_v c on ca.collar_id = c.collar_id
   where ca.valid_to >= now() OR ca.valid_to IS null
-  and (a.valid_to >= now() OR a.valid_to IS null)
   ${_accessControlQuery('a', idir)}`;
   const strFilter = filter
     ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
@@ -110,13 +112,12 @@ const _getUnassignedSql = function (
   filter?: IFilter,
   page?: number
 ): string {
-  const base = `${_selectAnimals}
-  from bctw.animal a left join bctw.collar_animal_assignment ca on a.id = ca.animal_id
+  const base = `select a.*
+  from ${S_API}.animal_v a left join ${S_API}.collar_animal_assignment_v ca on a.id = ca.animal_id
   where a.id not in (
-    select animal_id from bctw.collar_animal_assignment ca2 where
+    select animal_id from ${S_API}.collar_animal_assignment_v ca2 where
     ca2.valid_to >= now() OR ca2.valid_to IS null
   )
-  and (a.valid_to >= now() OR a.valid_to IS null)
   ${_accessControlQuery('a', idir)}`;
   const strFilter = filter
     ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
@@ -129,9 +130,13 @@ const _getUnassignedSql = function (
   return sql;
 };
 
+const _getAllCritters = function (idir: string, page?: number): string {
+  const roleCheck = `${S_BCTW}.get_user_role('${idir}') = 'administrator'`;
+  const base = `select * from ${S_API}.animal_v where ${roleCheck}`;
+  return constructGetQuery({ base, page });
+};
+
 /*
-  params: 
-    isAssigned (boolean) - defaults to false
 */
 const getAnimals = async function (
   req: Request,
@@ -139,13 +144,16 @@ const getAnimals = async function (
 ): Promise<Response> {
   const idir = (req.query?.idir || '') as string;
   const page = (req.query?.page || 1) as number;
-  const bGetAssigned = (req.query?.assigned === 'true') as boolean;
+  const critterType = req.query?.critterType as eCritterFetchType;
   if (!idir) {
     return res.status(500).send(MISSING_IDIR);
   }
-  const sql = bGetAssigned
-    ? await _getAssignedSql(idir, filterFromRequestParams(req), page)
-    : await _getUnassignedSql(idir, filterFromRequestParams(req), page);
+  const sql =
+    critterType === eCritterFetchType.assigned
+      ? _getAssignedSql(idir, filterFromRequestParams(req), page)
+      : critterType === eCritterFetchType.unassigned
+      ? _getUnassignedSql(idir, filterFromRequestParams(req), page)
+      : _getAllCritters(idir, page);
 
   const { result, error, isError } = await query(
     sql,

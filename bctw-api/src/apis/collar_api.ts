@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { S_API } from '../constants';
 
 import {
   appendSqlFilter,
@@ -149,12 +150,11 @@ const getAvailableCollarSql = function (
   filter?: IFilter,
   page?: number
 ): string {
-  const base = `select c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.collar_make, c.satellite_network, c.radio_frequency, c.collar_type
-    from collar c 
+  const base = `select c.* from ${S_API}.collar_v c 
     where c.collar_id not in (
-      select collar_id from collar_animal_assignment caa
+      select caa.collar_id from ${S_API}.collar_animal_assignment_v caa
       where caa.valid_to >= now() OR caa.valid_to IS null 
-    ) and (c.valid_to >= now() OR c.valid_to IS null)`;
+    )`;
   const strFilter = appendSqlFilter(
     filter || {},
     TelemetryTypes.collar,
@@ -200,14 +200,11 @@ const getAssignedCollarSql = function (
   filter?: IFilter,
   page?: number
 ): string {
-  const base = `select caa.animal_id, c.collar_id, c.device_id, c.collar_status, c.max_transmission_date, c.collar_make, c.satellite_network, c.radio_frequency, c.collar_type
-  from collar c inner join collar_animal_assignment caa 
+  const base = `select caa.animal_id, c.*
+  from ${S_API}.collar_v c inner join ${S_API}.collar_animal_assignment_v caa 
   on c.collar_id = caa.collar_id
   where caa.valid_to >= now() OR caa.valid_to IS null
-  and (c.valid_to >= now() OR c.valid_to IS null) ${_accessCollarControl(
-    'c',
-    idir
-  )}`;
+  ${_accessCollarControl('c', idir)}`;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
   const sql = constructGetQuery({
     base: base,
