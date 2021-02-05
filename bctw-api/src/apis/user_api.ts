@@ -144,21 +144,15 @@ const assignCritterToUser = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const body: IUserCritterPermission[] = req.body;
-  const ret1 = body[0];
-  // db function takes an array, if request supplies only a single animal add it to an array
-  // const ids: string[] = Array.isArray(animalId) ? animalId : [animalId];
-  const { userId, access } = ret1;
-
-  const sql = constructFunctionQuery(fn_name, [idir, userId, access], true);
-  const { result, error, isError } = await query(
-    sql,
-    'failed to link user to critter(s)',
-    true
-  );
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  return res.send(getRowResults(result, fn_name));
+  const promises = body.map(cp => {
+    const { userId, access } = cp;
+    const sql = constructFunctionQuery(fn_name, [idir, userId, access], true);
+    return query(sql, `failed to grant user with id ${userId} access to animals`, true);
+  })
+  const resolved = await Promise.all(promises);
+  const errors = resolved.map(r => r.isError ? r.error.toString() : undefined).filter(a => a); 
+  const results = resolved.map(r => r.isError ? undefined : getRowResults(r.result, fn_name)).filter(a => a);
+  return res.send({errors, results});
 };
 
 export {

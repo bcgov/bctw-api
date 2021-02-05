@@ -186,9 +186,9 @@ exports.getUserCritterAccess = getUserCritterAccess;
 var assignCritterToUser = function (req, res) {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var idir, fn_name, body, ret1, userId, access, sql, _b, result, error, isError;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
+        var idir, fn_name, body, promises, resolved, errors, results;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0:
                     idir = (_a = req === null || req === void 0 ? void 0 : req.query) === null || _a === void 0 ? void 0 : _a.idir;
                     fn_name = 'grant_critter_to_user';
@@ -196,16 +196,17 @@ var assignCritterToUser = function (req, res) {
                         return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
                     body = req.body;
-                    ret1 = body[0];
-                    userId = ret1.userId, access = ret1.access;
-                    sql = query_1.constructFunctionQuery(fn_name, [idir, userId, access], true);
-                    return [4 /*yield*/, query_1.query(sql, 'failed to link user to critter(s)', true)];
+                    promises = body.map(function (cp) {
+                        var userId = cp.userId, access = cp.access;
+                        var sql = query_1.constructFunctionQuery(fn_name, [idir, userId, access], true);
+                        return query_1.query(sql, "failed to grant user with id " + userId + " access to animals", true);
+                    });
+                    return [4 /*yield*/, Promise.all(promises)];
                 case 1:
-                    _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
-                    if (isError) {
-                        return [2 /*return*/, res.status(500).send(error.message)];
-                    }
-                    return [2 /*return*/, res.send(query_1.getRowResults(result, fn_name))];
+                    resolved = _b.sent();
+                    errors = resolved.map(function (r) { return r.isError ? r.error.toString() : undefined; }).filter(function (a) { return a; });
+                    results = resolved.map(function (r) { return r.isError ? undefined : query_1.getRowResults(r.result, fn_name); }).filter(function (a) { return a; });
+                    return [2 /*return*/, res.send({ errors: errors, results: results })];
             }
         });
     });

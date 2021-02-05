@@ -47,19 +47,21 @@ var pg_add_code_fn = 'add_code';
  *
  */
 var getCode = function (req, res) {
+    var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var _a, idir, codeHeader, sql, _b, result, error, isError;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
+        var _b, idir, codeHeader, page, sql, _c, result, error, isError;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
                 case 0:
-                    _a = req.query, idir = _a.idir, codeHeader = _a.codeHeader;
+                    _b = req.query, idir = _b.idir, codeHeader = _b.codeHeader;
                     if (!idir || !codeHeader) {
                         return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR + " and codeHeader")];
                     }
-                    sql = query_1.constructFunctionQuery('get_code', [idir, codeHeader, {}]);
+                    page = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.page) || 1);
+                    sql = query_1.constructFunctionQuery('get_code', [idir, codeHeader, page]);
                     return [4 /*yield*/, query_1.query(sql, 'failed to retrieve codes')];
                 case 1:
-                    _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
+                    _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }

@@ -19,7 +19,8 @@ const getCode = async function (
   if (!idir || !codeHeader) {
     return res.status(500).send(`${MISSING_IDIR} and codeHeader`);
   }
-  const sql = constructFunctionQuery('get_code', [idir, codeHeader, {}]);
+  const page = (req.query?.page || 1) as number;
+  const sql = constructFunctionQuery('get_code', [idir, codeHeader, page]);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve codes'

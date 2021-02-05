@@ -161,7 +161,6 @@ const query = async (
 };
 
 const transactionify = (sql: string): string => {
-  console.log(`rolback? ${ROLLBACK}`)
   return ROLLBACK ? `begin;\n${sql};\nrollback;` : sql;
 };
 

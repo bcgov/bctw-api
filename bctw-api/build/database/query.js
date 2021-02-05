@@ -234,7 +234,6 @@ var query = function (sql, msgIfErr, asTransaction) {
 };
 exports.query = query;
 var transactionify = function (sql) {
-    console.log("rolback? " + pg_1.ROLLBACK);
     return pg_1.ROLLBACK ? "begin;\n" + sql + ";\nrollback;" : sql;
 };
 // hardcoded primary key getter given a table name
