@@ -64,6 +64,7 @@ Object.defineProperty(exports, "addCodeHeader", { enumerable: true, get: functio
 Object.defineProperty(exports, "getCode", { enumerable: true, get: function () { return code_api_1.getCode; } });
 Object.defineProperty(exports, "getCodeHeaders", { enumerable: true, get: function () { return code_api_1.getCodeHeaders; } });
 var query_1 = require("./database/query");
+var requests_1 = require("./database/requests");
 /* ## getDBCritters
   Request all collars the user has access to.
   @param req {object} Node/Express request object
@@ -75,7 +76,7 @@ var getDBCritters = function (req, res) {
     console.log(req.query);
     var start = req.query.start;
     var end = req.query.end;
-    var sql = "\n    select geojson from vendor_merge_view \n    where date_recorded between '" + start + "' and '" + end + "';\n  ";
+    var sql = "\n    select geojson from vendor_merge_view2 \n    where date_recorded between '" + start + "' and '" + end + "'\n    and vendor_merge_view2.id = any(bctw.get_user_critter_access ('" + idir + "'));\n  ";
     console.log('SQL: ', sql);
     var done = function (err, data) {
         if (err) {
@@ -99,26 +100,34 @@ exports.getDBCritters = getDBCritters;
   @param next {function} Node/Express function for flow control
  */
 var getCritterTracks = function (req, res) {
-    var idir = req.query.idir;
-    var start = req.query.start;
-    var end = req.query.end;
-    if (!start || !end) {
-        return res.status(404).send('Must have a valid start and end date');
-    }
-    var sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'animal_id', animal_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      vendor_merge_view\n    where\n      date_recorded between '" + start + "' and '" + end + "' and\n      animal_id is not null and\n      animal_id <> 'None' and\n      st_asText(geom) <> 'POINT(0 0)'\n    group by\n      animal_id,\n      population_unit,\n      species;";
-    console.log('SQL: ', sql);
-    var done = function (err, data) {
-        if (err) {
-            return res.status(500).send("Failed to query database: " + err);
-        }
-        var features = data.rows.map(function (row) { return row.geojson; });
-        var featureCollection = {
-            type: 'FeatureCollection',
-            features: features,
-        };
-        res.send(featureCollection);
-    };
-    pg_1.pgPool.query(sql, done);
+    return __awaiter(this, void 0, void 0, function () {
+        var _a, idir, start, end, sql, _b, result, error, isError, features, featureCollection;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _a = req.query, idir = _a.idir, start = _a.start, end = _a.end;
+                    if (!start || !end) {
+                        return [2 /*return*/, res.status(404).send('Must have a valid start and end date')];
+                    }
+                    if (!idir) {
+                        return [2 /*return*/, res.status(404).send(requests_1.MISSING_IDIR)];
+                    }
+                    sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'animal_id', animal_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      vendor_merge_view2\n    where\n      date_recorded between '" + start + "' and '" + end + "' and\n      animal_id is not null and\n      animal_id <> 'None' and\n      st_asText(geom) <> 'POINT(0 0)'\n      AND vendor_merge_view2.id = ANY (bctw.get_user_critter_access ('" + idir + "'))\n    group by\n      animal_id,\n      population_unit,\n      species;\n  ";
+                    return [4 /*yield*/, query_1.query(sql, "unable to retrive critter tracks")];
+                case 1:
+                    _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
+                    if (isError) {
+                        return [2 /*return*/, res.status(500).send(error.message)];
+                    }
+                    features = result.rows.map(function (row) { return row.geojson; });
+                    featureCollection = {
+                        type: 'FeatureCollection',
+                        features: features,
+                    };
+                    return [2 /*return*/, res.send(featureCollection)];
+            }
+        });
+    });
 };
 exports.getCritterTracks = getCritterTracks;
 /* ## getPingExtent
@@ -133,7 +142,7 @@ var getPingExtent = function (req, res) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    sql = "\n    select\n      max(date_recorded) \"max\",\n      min(date_recorded) \"min\"\n    from\n      vendor_merge_view\n  ";
+                    sql = "\n    select\n      max(date_recorded) \"max\",\n      min(date_recorded) \"min\"\n    from\n      vendor_merge_view2\n  ";
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
@@ -157,7 +166,7 @@ exports.getPingExtent = getPingExtent;
   @param next {function} Node/Express function for flow control
  */
 var getLastPings = function (req, res) {
-    var sql = "\n    select * from last_critter_pings_view\n  ";
+    var sql = "\n    select * from last_critter_pings_view2\n  ";
     var done = function (err, data) {
         if (err) {
             return res.status(500).send("Failed to query database: " + err);

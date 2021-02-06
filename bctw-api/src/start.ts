@@ -30,7 +30,8 @@ import {
 } from './apis/code_api';
 import { Request, Response } from 'express';
 import { QueryResult } from 'pg';
-import { queryAsync, queryAsyncAsTransaction } from './database/query';
+import { query, queryAsync, queryAsyncAsTransaction } from './database/query';
+import { MISSING_IDIR } from './database/requests';
 
 /* ## getDBCritters
   Request all collars the user has access to.
@@ -45,8 +46,9 @@ const getDBCritters = function (req: Request, res: Response): void {
   const end = req.query.end;
 
   const sql = `
-    select geojson from vendor_merge_view 
-    where date_recorded between '${start}' and '${end}';
+    select geojson from vendor_merge_view2 
+    where date_recorded between '${start}' and '${end}'
+    and vendor_merge_view2.id = any(bctw.get_user_critter_access ('${idir}'));
   `;
   console.log('SQL: ', sql);
 
@@ -72,15 +74,14 @@ const getDBCritters = function (req: Request, res: Response): void {
   @param res {object} Node/Express response object
   @param next {function} Node/Express function for flow control
  */
-const getCritterTracks = function (req: Request, res: Response) {
-  const idir = req.query.idir;
-  const start = req.query.start;
-  const end = req.query.end;
-
+const getCritterTracks = async function (req: Request, res: Response): Promise<Response> {
+  const { idir, start, end } = req.query;
   if (!start || !end) {
     return res.status(404).send('Must have a valid start and end date');
   }
-
+  if (!idir) {
+    return res.status(404).send(MISSING_IDIR);
+  }
   const sql = `
     select
       jsonb_build_object (
@@ -93,32 +94,28 @@ const getCritterTracks = function (req: Request, res: Response) {
         'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
       ) as "geojson"
     from
-      vendor_merge_view
+      vendor_merge_view2
     where
       date_recorded between '${start}' and '${end}' and
       animal_id is not null and
       animal_id <> 'None' and
       st_asText(geom) <> 'POINT(0 0)'
+      AND vendor_merge_view2.id = ANY (bctw.get_user_critter_access ('${idir}'))
     group by
       animal_id,
       population_unit,
-      species;`;
-
-  console.log('SQL: ', sql);
-
-  const done = function (err: any, data: any) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const features = data.rows.map((row) => row.geojson);
-    const featureCollection = {
-      type: 'FeatureCollection',
-      features: features,
-    };
-
-    res.send(featureCollection);
+      species;
+  `;
+  const { result, error, isError } = await query(sql, `unable to retrive critter tracks`);
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  const features = result.rows.map((row) => row.geojson);
+  const featureCollection = {
+    type: 'FeatureCollection',
+    features: features,
   };
-  pgPool.query(sql, done);
+  return res.send(featureCollection);
 };
 
 /* ## getPingExtent
@@ -136,7 +133,7 @@ const getPingExtent = async function (
       max(date_recorded) "max",
       min(date_recorded) "min"
     from
-      vendor_merge_view
+      vendor_merge_view2
   `;
   let data: QueryResult;
   try {
@@ -155,7 +152,7 @@ const getPingExtent = async function (
  */
 const getLastPings = function (req: Request, res: Response): void {
   const sql = `
-    select * from last_critter_pings_view
+    select * from last_critter_pings_view2
   `;
 
   const done = function (err, data) {
