@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { S_API } from '../constants';
 import { constructFunctionQuery, constructGetQuery, getRowResults, query } from '../database/query';
 import { MISSING_IDIR } from '../database/requests';
 import { eCritterPermission, IUserInput, UserRole } from '../types/user';
@@ -112,7 +113,7 @@ const getUserCritterAccess = async function (
     return res.status(500).send(`must supply user parameter`);
   }
   const fn_name = 'get_user_critter_access_json';
-  const base = `${constructFunctionQuery(fn_name, [userIdir])}`;
+  const base = constructFunctionQuery(fn_name, [userIdir], false, S_API);
   const sql = constructGetQuery({ base, page });
   const { result, error, isError } = await query(sql, '');
   if (isError) {

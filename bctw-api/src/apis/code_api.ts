@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
-import { constructFunctionQuery, getRowResults, query } from '../database/query';
+import {
+  constructFunctionQuery,
+  getRowResults,
+  query,
+} from '../database/query';
 import { MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IBulkResponse } from '../types/import_types';
@@ -9,7 +13,7 @@ const pg_add_code_header_fn = 'add_code_header';
 const pg_add_code_fn = 'add_code';
 
 /**
- *
+ * @param codeHeader - code_header_name of the codes to be retrieved
  */
 const getCode = async function (
   req: Request,
@@ -32,17 +36,22 @@ const getCode = async function (
 };
 
 /**
- * @param codeType name of code header to retrieve
- * @returns returns all codeHeadrs unless codeType is supplied
+ * @param codeType optional param of code_header_name
+ * @returns returns all codeHeaders unless codeType is supplied
  */
 const getCodeHeaders = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const { codeType } = req.query;
-  let sql = `select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_title as title, ch.code_header_description as description from bctw.code_header ch `;
+  let sql = `select
+    code_header_id as id,
+    code_header_name as type,
+    code_header_title as title,
+    code_header_description as description
+    from bctw.code_header `;
   if (codeType) {
-    sql += `where ch.code_header_name = '${codeType}';`;
+    sql += `where code_header_name = '${codeType}';`;
   }
   const { result, error, isError } = await query(
     sql,
@@ -102,7 +111,11 @@ const addCode = async function (
   const { codes } = req.body;
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   const sql = constructFunctionQuery(pg_add_code_fn, [idir, codes], true);
-  const { result, error, isError } = await query(sql, 'failed to add codes', true);
+  const { result, error, isError } = await query(
+    sql,
+    'failed to add codes',
+    true
+  );
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {

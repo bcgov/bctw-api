@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserCritterAccess = exports.getUsers = exports.getUser = exports.assignCritterToUser = exports.getUserRole = exports.addUser = void 0;
+var constants_1 = require("../constants");
 var query_1 = require("../database/query");
 var requests_1 = require("../database/requests");
 /**
@@ -166,7 +167,7 @@ var getUserCritterAccess = function (req, res) {
                         return [2 /*return*/, res.status(500).send("must supply user parameter")];
                     }
                     fn_name = 'get_user_critter_access_json';
-                    base = "" + query_1.constructFunctionQuery(fn_name, [userIdir]);
+                    base = query_1.constructFunctionQuery(fn_name, [userIdir], false, constants_1.S_API);
                     sql = query_1.constructGetQuery({ base: base, page: page });
                     return [4 /*yield*/, query_1.query(sql, '')];
                 case 1:

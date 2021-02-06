@@ -41,6 +41,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.appendSqlFilter = exports.momentNow = exports.constructGetQuery = exports.constructFunctionQuery = exports.queryAsyncAsTransaction = exports.queryAsync = exports.query = exports.getRowResults = void 0;
 var moment_1 = __importDefault(require("moment"));
+var constants_1 = require("../constants");
 var query_1 = require("../types/query");
 var pg_1 = require("./pg");
 // a set of helper functions for constructing db queries
@@ -70,8 +71,9 @@ exports.constructGetQuery = constructGetQuery;
  * @param expectsObjAsArray flag to convert single objects to psql formatted array
  * @returns sql string with formatted function procedure parameters
  */
-var constructFunctionQuery = function (fnName, params, expectsObjAsArray) {
+var constructFunctionQuery = function (fnName, params, expectsObjAsArray, schema) {
     if (expectsObjAsArray === void 0) { expectsObjAsArray = false; }
+    if (schema === void 0) { schema = constants_1.S_BCTW; }
     var newParams = [];
     params.forEach(function (p) {
         if (p === undefined || p === null) {
@@ -96,7 +98,7 @@ var constructFunctionQuery = function (fnName, params, expectsObjAsArray) {
             newParams.push(to_pg_obj(p));
         }
     });
-    return "select bctw." + fnName + "(" + newParams.join() + ")";
+    return "select " + schema + "." + fnName + "(" + newParams.join() + ")";
 };
 exports.constructFunctionQuery = constructFunctionQuery;
 // converts a js array to the postgres format
@@ -257,7 +259,7 @@ var paginate = function (pageNumber) {
     return "limit " + limit + " offset " + offset + ";";
 };
 /*
-*/
+ */
 var appendSqlFilter = function (filter, table, tableAlias, containsWhere) {
     if (containsWhere === void 0) { containsWhere = false; }
     if (!Object.keys(filter).length) {

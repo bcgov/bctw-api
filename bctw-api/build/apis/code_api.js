@@ -44,7 +44,7 @@ var pg_get_code_fn = 'get_code';
 var pg_add_code_header_fn = 'add_code_header';
 var pg_add_code_fn = 'add_code';
 /**
- *
+ * @param codeHeader - code_header_name of the codes to be retrieved
  */
 var getCode = function (req, res) {
     var _a;
@@ -72,8 +72,8 @@ var getCode = function (req, res) {
 };
 exports.getCode = getCode;
 /**
- * @param codeType name of code header to retrieve
- * @returns returns all codeHeadrs unless codeType is supplied
+ * @param codeType optional param of code_header_name
+ * @returns returns all codeHeaders unless codeType is supplied
  */
 var getCodeHeaders = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {
@@ -82,9 +82,9 @@ var getCodeHeaders = function (req, res) {
             switch (_b.label) {
                 case 0:
                     codeType = req.query.codeType;
-                    sql = "select ch.code_header_id as id, ch.code_header_name as type, ch.code_header_title as title, ch.code_header_description as description from bctw.code_header ch ";
+                    sql = "select\n    code_header_id as id,\n    code_header_name as type,\n    code_header_title as title,\n    code_header_description as description\n    from bctw.code_header ";
                     if (codeType) {
-                        sql += "where ch.code_header_name = '" + codeType + "';";
+                        sql += "where code_header_name = '" + codeType + "';";
                     }
                     return [4 /*yield*/, query_1.query(sql, 'failed to retrieve code headers')];
                 case 1:

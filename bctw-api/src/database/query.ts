@@ -1,7 +1,13 @@
-import moment from "moment";
-import { QueryResult, QueryResultRow } from "pg";
-import { IConstructQueryParameters, IFilter, QResult, TelemetryTypes } from "../types/query";
-import { pgPool, ROLLBACK } from "./pg";
+import moment from 'moment';
+import { QueryResult, QueryResultRow } from 'pg';
+import { S_BCTW } from '../constants';
+import {
+  IConstructQueryParameters,
+  IFilter,
+  QResult,
+  TelemetryTypes,
+} from '../types/query';
+import { pgPool, ROLLBACK } from './pg';
 // a set of helper functions for constructing db queries
 
 /**
@@ -38,7 +44,8 @@ const constructGetQuery = ({
 const constructFunctionQuery = (
   fnName: string,
   params: any[],
-  expectsObjAsArray = false
+  expectsObjAsArray = false,
+  schema = S_BCTW
 ): string => {
   const newParams: any[] = [];
   params.forEach((p) => {
@@ -58,7 +65,7 @@ const constructFunctionQuery = (
       newParams.push(to_pg_obj(p));
     }
   });
-  return `select bctw.${fnName}(${newParams.join()})`;
+  return `select ${schema}.${fnName}(${newParams.join()})`;
 };
 
 // converts a js array to the postgres format
@@ -71,9 +78,7 @@ const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
 const momentNow = (): string => moment().format('YYYY-MM-DD HH:mm:ss');
 
 // stringifies a single object into a psql friendly array of objects
-const obj_to_pg_array = (
-  objOrArray: Record<string, unknown>
-): string => {
+const obj_to_pg_array = (objOrArray: Record<string, unknown>): string => {
   const asArr = Array.isArray(objOrArray) ? objOrArray : [objOrArray];
   return `'${JSON.stringify(asArr)}'`;
 };
@@ -119,7 +124,6 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
   }
   return res;
 };
-
 
 const queryAsyncAsTransaction = async (sql: string): Promise<QueryResult> => {
   const client = await pgPool.connect();
@@ -186,9 +190,8 @@ const paginate = (pageNumber: number): string => {
   return `limit ${limit} offset ${offset};`;
 };
 
-
 /*
-*/
+ */
 const appendSqlFilter = (
   filter: IFilter,
   table: string,
@@ -213,5 +216,5 @@ export {
   constructFunctionQuery,
   constructGetQuery,
   momentNow,
-  appendSqlFilter
-}
+  appendSqlFilter,
+};
