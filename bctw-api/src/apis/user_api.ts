@@ -67,7 +67,7 @@ const getUser = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_user';
-  const sql = constructFunctionQuery(fn_name, [idir]);
+  const sql = constructFunctionQuery(fn_name, [idir], false, S_API);
   const { result, error, isError } = await query(
     sql,
     'failed to query user role'
@@ -92,7 +92,7 @@ const getUsers = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_users';
-  const sql = constructFunctionQuery(fn_name, [idir]);
+  const sql = constructFunctionQuery(fn_name, [idir], false, S_API);
   const { result, error, isError } = await query(sql, 'failed to query users');
   if (isError) {
     return res.status(500).send(error.message);

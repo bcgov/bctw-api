@@ -108,7 +108,7 @@ var getUser = function (req, res) {
                         return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
                     fn_name = 'get_user';
-                    sql = query_1.constructFunctionQuery(fn_name, [idir]);
+                    sql = query_1.constructFunctionQuery(fn_name, [idir], false, constants_1.S_API);
                     return [4 /*yield*/, query_1.query(sql, 'failed to query user role')];
                 case 1:
                     _a = _b.sent(), result = _a.result, error = _a.error, isError = _a.isError;
@@ -138,7 +138,7 @@ var getUsers = function (req, res) {
                         return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
                     }
                     fn_name = 'get_users';
-                    sql = query_1.constructFunctionQuery(fn_name, [idir]);
+                    sql = query_1.constructFunctionQuery(fn_name, [idir], false, constants_1.S_API);
                     return [4 /*yield*/, query_1.query(sql, 'failed to query users')];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
