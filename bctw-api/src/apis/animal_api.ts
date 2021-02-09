@@ -131,13 +131,18 @@ const _getUnassignedSql = function (
 };
 
 const _getAllCritters = function (idir: string, page?: number): string {
-  const roleCheck = `${S_BCTW}.get_user_role('${idir}') = 'administrator'`;
-  const base = `select * from ${S_API}.animal_v where ${roleCheck}`;
+  const base = `select a.id, a.animal_id, a.wlh_id, a.nickname, c.device_id, c.collar_make
+    from ${S_API}.animal_v a
+    left join ${S_API}.collar_animal_assignment_v caa on caa.animal_id = a.id
+    left join ${S_API}.collar_v c on caa.collar_id = c.collar_id
+    where is_valid(caa.valid_to)`;
+  // const roleCheck = `${S_BCTW}.get_user_role('${idir}') = 'administrator'`;
+  // const base = `select * from ${S_API}.animal_v where ${roleCheck}`;
   return constructGetQuery({ base, page });
 };
 
 /*
-*/
+ */
 const getAnimals = async function (
   req: Request,
   res: Response

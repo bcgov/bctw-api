@@ -142,12 +142,13 @@ var _getUnassignedSql = function (idir, filter, page) {
     return sql;
 };
 var _getAllCritters = function (idir, page) {
-    var roleCheck = constants_1.S_BCTW + ".get_user_role('" + idir + "') = 'administrator'";
-    var base = "select * from " + constants_1.S_API + ".animal_v where " + roleCheck;
+    var base = "select a.id, a.animal_id, a.wlh_id, a.nickname, c.device_id, c.collar_make\n    from " + constants_1.S_API + ".animal_v a\n    left join " + constants_1.S_API + ".collar_animal_assignment_v caa on caa.animal_id = a.id\n    left join " + constants_1.S_API + ".collar_v c on caa.collar_id = c.collar_id\n    where is_valid(caa.valid_to)";
+    // const roleCheck = `${S_BCTW}.get_user_role('${idir}') = 'administrator'`;
+    // const base = `select * from ${S_API}.animal_v where ${roleCheck}`;
     return query_1.constructGetQuery({ base: base, page: page });
 };
 /*
-*/
+ */
 var getAnimals = function (req, res) {
     var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
