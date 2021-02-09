@@ -76,7 +76,7 @@ var getDBCritters = function (req, res) {
     console.log(req.query);
     var start = req.query.start;
     var end = req.query.end;
-    var sql = "\n    select geojson from vendor_merge_view2 \n    where date_recorded between '" + start + "' and '" + end + "'\n    and vendor_merge_view2.id = any(bctw.get_user_critter_access ('" + idir + "'));\n  ";
+    var sql = "\n    select geojson from vendor_merge_view2 \n    where date_recorded between '" + start + "' and '" + end + "'\n    and vendor_merge_view2.critter_id = any(bctw.get_user_critter_access ('" + idir + "'));\n  ";
     console.log('SQL: ', sql);
     var done = function (err, data) {
         if (err) {
@@ -112,7 +112,7 @@ var getCritterTracks = function (req, res) {
                     if (!idir) {
                         return [2 /*return*/, res.status(404).send(requests_1.MISSING_IDIR)];
                     }
-                    sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'animal_id', animal_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      vendor_merge_view2\n    where\n      date_recorded between '" + start + "' and '" + end + "' and\n      animal_id is not null and\n      animal_id <> 'None' and\n      st_asText(geom) <> 'POINT(0 0)'\n      AND vendor_merge_view2.id = ANY (bctw.get_user_critter_access ('" + idir + "'))\n    group by\n      animal_id,\n      population_unit,\n      species;\n  ";
+                    sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'animal_id', animal_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      vendor_merge_view2\n    where\n      date_recorded between '" + start + "' and '" + end + "' and\n      animal_id is not null and\n      animal_id <> 'None' and\n      st_asText(geom) <> 'POINT(0 0)'\n      AND vendor_merge_view2.critter_id = ANY (bctw.get_user_critter_access ('" + idir + "'))\n    group by\n      animal_id,\n      population_unit,\n      species;\n  ";
                     return [4 /*yield*/, query_1.query(sql, "unable to retrive critter tracks")];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;

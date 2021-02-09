@@ -48,7 +48,7 @@ const getDBCritters = function (req: Request, res: Response): void {
   const sql = `
     select geojson from vendor_merge_view2 
     where date_recorded between '${start}' and '${end}'
-    and vendor_merge_view2.id = any(bctw.get_user_critter_access ('${idir}'));
+    and vendor_merge_view2.critter_id = any(bctw.get_user_critter_access ('${idir}'));
   `;
   console.log('SQL: ', sql);
 
@@ -100,7 +100,7 @@ const getCritterTracks = async function (req: Request, res: Response): Promise<R
       animal_id is not null and
       animal_id <> 'None' and
       st_asText(geom) <> 'POINT(0 0)'
-      AND vendor_merge_view2.id = ANY (bctw.get_user_critter_access ('${idir}'))
+      AND vendor_merge_view2.critter_id = ANY (bctw.get_user_critter_access ('${idir}'))
     group by
       animal_id,
       population_unit,
