@@ -58,9 +58,9 @@ var mapCsvImport = function (header) {
             return 'nickname';
         // collars
         case 'Collar Make':
-            return 'make';
+            return 'collar_make';
         case 'Collar Model':
-            return 'model';
+            return 'collar_model';
         case 'Deployment Status':
             return 'deployment_status';
         case 'Collar Status':

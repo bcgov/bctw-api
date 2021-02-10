@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.rowToCsv = exports.isCode = exports.isCodeHeader = exports.isCollar = exports.isAnimal = void 0;
 var isAnimal = function (row) {
     var r = row;
-    if (r.animal_id) {
+    if (r.animal_id || r.wlh_id) {
         return true;
     }
     return false;

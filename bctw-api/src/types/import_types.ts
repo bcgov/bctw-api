@@ -5,7 +5,7 @@ import { Collar } from './collar';
 
 const isAnimal = (row: Record<string, unknown>): row is Animal => {
   const r = row as Animal;
-  if (r.animal_id) {
+  if (r.animal_id || r.wlh_id) {
     return true;
   }
   return false;

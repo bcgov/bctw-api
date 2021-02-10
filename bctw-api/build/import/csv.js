@@ -92,6 +92,15 @@ var cleanupUploadsDir = function (path) { return __awaiter(void 0, void 0, void 
         return [2 /*return*/];
     });
 }); };
+function removeEmptyProps(obj) {
+    for (var propName in obj) {
+        var val = obj[propName];
+        if (val === null || val === undefined || val === '') {
+            delete obj[propName];
+        }
+    }
+    return obj;
+}
 /**
  * @param file
  * @param callback called when parsing completed
@@ -117,14 +126,16 @@ var parseCsv = function (file, callback) { return __awaiter(void 0, void 0, void
             },
         }))
             .on('data', function (row) {
-            if (import_types_1.isCodeHeader(row))
-                headers.push(row);
-            else if (import_types_1.isCode(row))
-                codes.push(row);
-            else if (import_types_1.isAnimal(row))
-                animals.push(row);
-            else if (import_types_1.isCollar(row))
-                collars.push(row);
+            // cleanup empty props from the row
+            var crow = removeEmptyProps(row);
+            if (import_types_1.isCodeHeader(crow))
+                headers.push(crow);
+            else if (import_types_1.isCode(crow))
+                codes.push(crow);
+            else if (import_types_1.isAnimal(crow))
+                animals.push(crow);
+            else if (import_types_1.isCollar(crow))
+                collars.push(crow);
         })
             .on('end', function () { return __awaiter(void 0, void 0, void 0, function () {
             return __generator(this, function (_a) {

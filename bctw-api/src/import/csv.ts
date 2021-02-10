@@ -34,6 +34,16 @@ const cleanupUploadsDir = async (path: string): Promise<void> => {
   });
 };
 
+function removeEmptyProps(obj) {
+  for (const propName in obj) {
+    const val = obj[propName];
+    if (val === null || val === undefined || val === '') {
+      delete obj[propName];
+    }
+  }
+  return obj
+}
+
 /**
  * @param file
  * @param callback called when parsing completed
@@ -63,10 +73,12 @@ const parseCsv = async (
       })
     )
     .on('data', (row: Record<string, unknown>) => {
-      if (isCodeHeader(row)) headers.push(row);
-      else if (isCode(row)) codes.push(row);
-      else if (isAnimal(row)) animals.push(row);
-      else if (isCollar(row)) collars.push(row);
+      // cleanup empty props from the row
+      const crow = removeEmptyProps(row);
+      if (isCodeHeader(crow)) headers.push(crow);
+      else if (isCode(crow)) codes.push(crow);
+      else if (isAnimal(crow)) animals.push(crow);
+      else if (isCollar(crow)) collars.push(crow);
     })
     .on('end', async () => {
       console.log(
