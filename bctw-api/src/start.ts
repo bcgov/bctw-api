@@ -87,7 +87,7 @@ const getCritterTracks = async function (req: Request, res: Response): Promise<R
       jsonb_build_object (
         'type', 'Feature',
         'properties', json_build_object(
-          'animal_id', animal_id,
+          'critter_id', critter_id,
           'population_unit', population_unit,
           'species', species
         ),
@@ -97,12 +97,11 @@ const getCritterTracks = async function (req: Request, res: Response): Promise<R
       vendor_merge_view2
     where
       date_recorded between '${start}' and '${end}' and
-      animal_id is not null and
-      animal_id <> 'None' and
+      critter_id is not null and
       st_asText(geom) <> 'POINT(0 0)'
       AND vendor_merge_view2.critter_id = ANY (bctw.get_user_critter_access ('${idir}'))
     group by
-      animal_id,
+      critter_id,
       population_unit,
       species;
   `;
