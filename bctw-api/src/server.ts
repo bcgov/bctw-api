@@ -64,6 +64,8 @@ const app = express()
   // generic getter for multiple types
   // .get('/:type/:id', api.getType)
   .delete('/:type/:id', api.deleteType)
+  // Health check
+  .get('/health', (_,res) => res.send('healthy'))
   .get('*', api.notFound);
 
   

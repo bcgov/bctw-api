@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: readiness
+  name: readiness-http
+spec:
+  containers:
+  - args:
+    image: k8s.gcr.io/readiness 
+    readinessProbe: 
+    httpGet:
+      host: bctw-api 
+    # scheme: HTTPS 
+      path: /health
+      port: 3000
+    initialDelaySeconds: 15  
+    timeoutSeconds: 1  
+# oc create -f bctw-api-health.yaml
