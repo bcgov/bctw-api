@@ -1,25 +1,15 @@
 import { Request, Response } from 'express';
 import { S_API, S_BCTW } from '../constants';
 import {
-  appendSqlFilter,
   constructFunctionQuery,
   constructGetQuery,
   getRowResults,
   query,
 } from '../database/query';
-import { filterFromRequestParams, MISSING_IDIR } from '../database/requests';
+import { MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
-import { IFilter, TelemetryTypes } from '../types/query';
-
-/// limits retrieved critters to only those contained in user_animal_assignment table
-const _accessControlQuery = (tableAlias: string, idir: string) => {
-  return `and ${tableAlias}.id = any((${constructFunctionQuery(
-    `${S_BCTW}.get_user_critter_access`,
-    [idir]
-  )})::uuid[])`;
-};
 
 const pg_add_animal_fn = 'add_animal';
 const pg_update_animal_fn = 'update_animal';
@@ -84,62 +74,28 @@ const updateAnimal = async function (
   return res.send(getRowResults(result, pg_update_animal_fn));
 };
 
-/// get critters that are assigned to a collar (ie have a valid row in collar_animal_assignment table)
-const _getAssignedSql = function (
-  idir: string,
-  filter?: IFilter,
-  page?: number
-): string {
-  const base = `select a.*, ca.collar_id, c.device_id
-  from ${S_API}.animal_v a join ${S_API}.collar_animal_assignment_v ca on a.id = ca.animal_id
-  join ${S_API}.collar_v c on ca.collar_id = c.collar_id
-  where ca.valid_to >= now() OR ca.valid_to IS null
-  ${_accessControlQuery('a', idir)}`;
-  const strFilter = filter
-    ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
-    : '';
-  const sql = constructGetQuery({
-    base,
-    filter: strFilter,
-    page,
-  });
-  return sql;
-};
+const _getCritterBaseSql = `
+    SELECT
+      c.device_id, ua.permission_type, a.*
+    FROM
+      ${S_API}.user_animal_assignment_v ua
+      JOIN ${S_API}.animal_v a ON ua.animal_id = a.id `;
 
-/// get critters that aren't currently assigned to a collar
-const _getUnassignedSql = function (
-  idir: string,
-  filter?: IFilter,
-  page?: number
-): string {
-  const base = `select a.*
-  from ${S_API}.animal_v a left join ${S_API}.collar_animal_assignment_v ca on a.id = ca.animal_id
-  where a.id not in (
-    select animal_id from ${S_API}.collar_animal_assignment_v ca2 where
-    ca2.valid_to >= now() OR ca2.valid_to IS null
-  )
-  ${_accessControlQuery('a', idir)}`;
-  const strFilter = filter
-    ? appendSqlFilter(filter, TelemetryTypes.animal, 'a', true)
-    : '';
-  const sql = constructGetQuery({
-    base,
-    filter: strFilter,
-    page,
-  });
-  return sql;
-};
+const _getAssignedCritterSql = (idir: string) =>
+  `${_getCritterBaseSql}
+      JOIN ${S_API}.collar_animal_assignment_v caa ON caa.animal_id = a.id
+      LEFT JOIN ${S_API}.collar_v c ON caa.collar_id = c.collar_id
+    WHERE
+      ua.user_id = ${S_BCTW}.get_user_id('${idir}')
+      and ${S_BCTW}.is_valid(caa.valid_to) `;
 
-const _getAllCritters = function (idir: string, page?: number): string {
-  const base = `select a.id, a.animal_id, a.wlh_id, a.nickname, c.device_id, c.collar_make
-    from ${S_API}.animal_v a
-    left join ${S_API}.collar_animal_assignment_v caa on caa.animal_id = a.id
-    left join ${S_API}.collar_v c on caa.collar_id = c.collar_id
-    where is_valid(caa.valid_to)`;
-  // const roleCheck = `${S_BCTW}.get_user_role('${idir}') = 'administrator'`;
-  // const base = `select * from ${S_API}.animal_v where ${roleCheck}`;
-  return constructGetQuery({ base, page });
-};
+const _getUnassignedCritterSql = (idir: string) =>
+  `${_getCritterBaseSql}
+    LEFT JOIN ${S_API}.collar_animal_assignment_v caa ON caa.animal_id = a.id
+    LEFT JOIN ${S_API}.collar_v c ON caa.collar_id = c.collar_id
+    WHERE
+      ua.user_id = ${S_BCTW}.get_user_id('${idir}')
+      and (not is_valid(caa.valid_to) or device_id is null) `;
 
 /*
  */
@@ -155,16 +111,12 @@ const getAnimals = async function (
   }
   const sql =
     critterType === eCritterFetchType.assigned
-      ? _getAssignedSql(idir, filterFromRequestParams(req), page)
-      : critterType === eCritterFetchType.unassigned
-      ? _getUnassignedSql(idir, filterFromRequestParams(req), page)
-      : _getAllCritters(idir, page);
-
+      ? constructGetQuery({ base: _getAssignedCritterSql(idir), page })
+      : constructGetQuery({ base: _getUnassignedCritterSql(idir), page });
   const { result, error, isError } = await query(
     sql,
     `failed to query critters`
   );
-
   if (isError) {
     return res.status(500).send(error.message);
   }

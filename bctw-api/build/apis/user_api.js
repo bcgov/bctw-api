@@ -155,14 +155,14 @@ exports.getUsers = getUsers;
  * @returns a list of critters the user has access to
  */
 var getUserCritterAccess = function (req, res) {
-    var _a, _b;
+    var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var userIdir, page, fn_name, base, sql, _c, result, error, isError;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var userIdir, page, fn_name, base, sql, _b, result, error, isError;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    userIdir = (_a = req.params.user) !== null && _a !== void 0 ? _a : req.query.idir;
-                    page = (((_b = req.query) === null || _b === void 0 ? void 0 : _b.page) || 1);
+                    userIdir = req.params.user;
+                    page = (((_a = req.query) === null || _a === void 0 ? void 0 : _a.page) || 1);
                     if (!userIdir) {
                         return [2 /*return*/, res.status(500).send("must supply user parameter")];
                     }
@@ -171,7 +171,7 @@ var getUserCritterAccess = function (req, res) {
                     sql = query_1.constructGetQuery({ base: base, page: page });
                     return [4 /*yield*/, query_1.query(sql, '')];
                 case 1:
-                    _c = _d.sent(), result = _c.result, error = _c.error, isError = _c.isError;
+                    _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;
                     if (isError) {
                         return [2 /*return*/, res.status(500).send(error.message)];
                     }
@@ -199,14 +199,24 @@ var assignCritterToUser = function (req, res) {
                     body = req.body;
                     promises = body.map(function (cp) {
                         var userId = cp.userId, access = cp.access;
-                        var sql = query_1.constructFunctionQuery(fn_name, [idir, userId, access], true);
+                        /* the getUserCritterAccess endpoint returns animal_id, so the frontend uses 'animal.id' as its unique
+                         * identifier and posts 'id' for new assignments. since the database routine parses the permission json as a
+                         * user_animal_access table row, and this table uses animal_id,
+                         * need to remap the id to animal_id coming from the frontend
+                         */
+                        var mapAnimalId = access.map(function (a) { return ({ animal_id: a.id, permission_type: a.permission_type }); });
+                        var sql = query_1.constructFunctionQuery(fn_name, [idir, userId, mapAnimalId], true);
                         return query_1.query(sql, "failed to grant user with id " + userId + " access to animals", true);
                     });
                     return [4 /*yield*/, Promise.all(promises)];
                 case 1:
                     resolved = _b.sent();
-                    errors = resolved.map(function (r) { return r.isError ? r.error.toString() : undefined; }).filter(function (a) { return a; });
-                    results = resolved.map(function (r) { return r.isError ? undefined : query_1.getRowResults(r.result, fn_name); }).filter(function (a) { return a; });
+                    errors = resolved
+                        .map(function (r) { return (r.isError ? r.error.toString() : undefined); })
+                        .filter(function (a) { return a; });
+                    results = resolved
+                        .map(function (r) { return (r.isError ? undefined : query_1.getRowResults(r.result, fn_name)); })
+                        .filter(function (a) { return a; });
                     return [2 /*return*/, res.send({ errors: errors, results: results })];
             }
         });

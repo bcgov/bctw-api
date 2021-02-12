@@ -82,6 +82,7 @@ const getCritterTracks = async function (req: Request, res: Response): Promise<R
   if (!idir) {
     return res.status(404).send(MISSING_IDIR);
   }
+  // fixme: is changing animal_id to critter_id the right way to fix the tracks?
   const sql = `
     select
       jsonb_build_object (

@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import { S_API } from '../constants';
-import { constructFunctionQuery, constructGetQuery, getRowResults, query } from '../database/query';
+import {
+  constructFunctionQuery,
+  constructGetQuery,
+  getRowResults,
+  query,
+} from '../database/query';
 import { MISSING_IDIR } from '../database/requests';
 import { eCritterPermission, IUserInput, UserRole } from '../types/user';
 
@@ -107,7 +112,7 @@ const getUserCritterAccess = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const userIdir: string = req.params.user ?? req.query.idir;
+  const userIdir: string = req.params.user;
   const page = (req.query?.page || 1) as number;
   if (!userIdir) {
     return res.status(500).send(`must supply user parameter`);
@@ -121,15 +126,17 @@ const getUserCritterAccess = async function (
   }
   return res.send(getRowResults(result, fn_name));
 };
+
 interface ICritterAccess {
-  animal_id: string;
+  id: string;
+  animal_id?: string;
   permission_type: eCritterPermission;
   valid_from?: Date;
   valid_to?: Date;
 }
 interface IUserCritterPermission {
   userId: number;
-  access: ICritterAccess[]
+  access: ICritterAccess[];
 }
 
 /**
@@ -145,15 +152,29 @@ const assignCritterToUser = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const body: IUserCritterPermission[] = req.body;
-  const promises = body.map(cp => {
+  const promises = body.map((cp) => {
     const { userId, access } = cp;
-    const sql = constructFunctionQuery(fn_name, [idir, userId, access], true);
-    return query(sql, `failed to grant user with id ${userId} access to animals`, true);
-  })
+    /* the getUserCritterAccess endpoint returns animal_id, so the frontend uses 'animal.id' as its unique
+     * identifier and posts 'id' for new assignments. since the database routine parses the permission json as a
+     * user_animal_access table row, and this table uses animal_id,
+     * need to remap the id to animal_id coming from the frontend
+     */
+    const mapAnimalId = access.map((a) => ({ animal_id: a.id, permission_type: a.permission_type }));
+    const sql = constructFunctionQuery(fn_name, [idir, userId, mapAnimalId], true);
+    return query(
+      sql,
+      `failed to grant user with id ${userId} access to animals`,
+      true
+    );
+  });
   const resolved = await Promise.all(promises);
-  const errors = resolved.map(r => r.isError ? r.error.toString() : undefined).filter(a => a); 
-  const results = resolved.map(r => r.isError ? undefined : getRowResults(r.result, fn_name)).filter(a => a);
-  return res.send({errors, results});
+  const errors = resolved
+    .map((r) => (r.isError ? r.error.toString() : undefined))
+    .filter((a) => a);
+  const results = resolved
+    .map((r) => (r.isError ? undefined : getRowResults(r.result, fn_name)))
+    .filter((a) => a);
+  return res.send({ errors, results });
 };
 
 export {
