@@ -85,6 +85,8 @@ app.all('*', function (req, res, next) {
     // generic getter for multiple types
     // .get('/:type/:id', api.getType)
     .delete('/:type/:id', api.deleteType)
+    // Health check
+    .get('/health', function (_, res) { return res.send('healthy'); })
     .get('*', api.notFound);
 http_1.default.createServer(app).listen(3000, function () {
     console.log("listening on port 3000");
