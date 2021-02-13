@@ -43,7 +43,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCollarChangeHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.assignOrUnassignCritterCollar = exports.updateCollar = exports.addCollar = void 0;
+exports.getCollarChangeHistory = exports.getAvailableCollars = exports.getAssignedCollars = exports.assignOrUnassignCritterCollar = exports.updateCollar = exports.deleteCollar = exports.addCollar = void 0;
 var constants_1 = require("../constants");
 var query_1 = require("../database/query");
 var requests_1 = require("../database/requests");
@@ -135,6 +135,23 @@ var updateCollar = function (req, res) {
     });
 };
 exports.updateCollar = updateCollar;
+var deleteCollar = function (userIdentifier, collarIds, res) {
+    return __awaiter(this, void 0, void 0, function () {
+        var fn_name, sql, _a, result, error, isError;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    fn_name = 'delete_collar';
+                    sql = query_1.constructFunctionQuery(fn_name, [userIdentifier, collarIds]);
+                    return [4 /*yield*/, query_1.query(sql, '', true)];
+                case 1:
+                    _a = _b.sent(), result = _a.result, error = _a.error, isError = _a.isError;
+                    return [2 /*return*/, isError ? res.status(500).send(error.message) : res.status(200).send()];
+            }
+        });
+    });
+};
+exports.deleteCollar = deleteCollar;
 /**
  * handles critter collar assignment/unassignment
  * @returns result of assignment row from the collar_animal_assignment table

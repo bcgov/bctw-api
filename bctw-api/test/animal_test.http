@@ -106,3 +106,43 @@ http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=unassigned
 
 ### assignmenthistory
 http://localhost:3000/get-assignment-history/03c72709-77c8-43e3-a7e5-70f27b960b64?idir={{idir}}
+
+### delete multiple - fail (already deleted)
+DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "ids": [
+    "03c72709-77c8-43e3-a7e5-70f27b960b64"
+  ]
+}
+
+### delete individual - fail (critter DNE)
+DELETE http://localhost:3000/animal/03c72709-77c8-43e3-a7e5-70f27b960b64?idir={{idir}} HTTP/1.1
+
+### should fail - dont have permission to delete 4c10a...
+DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "ids": ["c97a9154-0431-434d-aee4-76e4349aaec8", "4c10a670-d5de-41c1-ad29-e96615686f2e", "5b67a55b-f32d-4b5e-ba5f-1df97cf9851b"]
+}
+
+### should succeed
+DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "ids": ["c97a9154-0431-434d-aee4-76e4349aaec8"]
+}
+
+### should fail no permission on 5b67...
+DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "ids": ["5b67a55b-f32d-4b5e-ba5f-1df97cf9851b"]
+}
+
+### - should suceed
+DELETE http://localhost:3000/animal/c97a9154-0431-434d-aee4-76e4349aaec8?idir={{idir}} HTTP/1.1

@@ -63,6 +63,7 @@ const app = express()
   .post('/import', upload.single('csv'), importCsv)
   // generic getter for multiple types
   // .get('/:type/:id', api.getType)
+  .delete('/:type', api.deleteType)
   .delete('/:type/:id', api.deleteType)
   // Health check
   .get('/health', (_,res) => res.send('healthy'))

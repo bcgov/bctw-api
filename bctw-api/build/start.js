@@ -185,45 +185,32 @@ var notFound = function (req, res) {
     return res.status(404).json({ error: 'Sorry you must be lost :(' });
 };
 exports.notFound = notFound;
-var DeletableType;
-(function (DeletableType) {
-    DeletableType["collar"] = "collar";
-    DeletableType["animal"] = "animal";
-    DeletableType["user"] = "user";
-})(DeletableType || (DeletableType = {}));
-var TypePk;
-(function (TypePk) {
-    TypePk["collar"] = "device_id";
-    TypePk["animal"] = "id";
-    TypePk["user"] = "id";
-})(TypePk || (TypePk = {}));
+/**
+ * can be called with an individual id or have ids in the body
+ */
 var deleteType = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var params, type, id, sql, e_2;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    params = req.params;
-                    type = params.type, id = params.id;
-                    if (!type || !id) {
-                        return [2 /*return*/, res.status(404).json({ error: 'must supply id and type' })];
-                    }
-                    if (!(type in DeletableType)) {
-                        return [2 /*return*/, res.status(404).json({ error: "cannot delete type " + type })];
-                    }
-                    sql = "\n  update bctw." + type + " \n    set deleted_at = now(),\n    deleted = true \n  where " + TypePk[type] + " = " + id;
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, query_1.queryAsyncAsTransaction(sql)];
-                case 2:
-                    _a.sent();
-                    return [3 /*break*/, 4];
-                case 3:
-                    e_2 = _a.sent();
-                    return [2 /*return*/, res.status(500).send("Failed to delete type: " + e_2)];
-                case 4: return [2 /*return*/, res.send(true)];
+        var idir, _a, id, type, ids, toDelete;
+        return __generator(this, function (_b) {
+            idir = req.query.idir;
+            if (!idir) {
+                return [2 /*return*/, res.status(500).send(requests_1.MISSING_IDIR)];
             }
+            _a = req.params, id = _a.id, type = _a.type;
+            ids = req.body.ids;
+            toDelete = ids || [id];
+            if (!toDelete.length) {
+                return [2 /*return*/, res.status(500).send('must supply id as a query parameter or ids as request body')];
+            }
+            switch (type) {
+                case 'animal':
+                    return [2 /*return*/, animal_api_1.deleteAnimal(idir, toDelete, res)];
+                case 'collar':
+                    return [2 /*return*/, collar_api_1.deleteCollar(idir, toDelete, res)];
+                default:
+                    return [2 /*return*/, res.status(404).json({ error: type + " is not a valid deletion type." })];
+            }
+            return [2 /*return*/];
         });
     });
 };

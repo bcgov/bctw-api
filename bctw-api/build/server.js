@@ -84,6 +84,7 @@ app.all('*', function (req, res, next) {
     .post('/import', upload.single('csv'), csv_1.importCsv)
     // generic getter for multiple types
     // .get('/:type/:id', api.getType)
+    .delete('/:type', api.deleteType)
     .delete('/:type/:id', api.deleteType)
     // Health check
     .get('/health', function (_, res) { return res.send('healthy'); })

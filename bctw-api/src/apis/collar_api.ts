@@ -100,6 +100,17 @@ const updateCollar = async function (
   return res.send(bulkResp);
 };
 
+const deleteCollar = async function (
+  userIdentifier: string,
+  collarIds: string[],
+  res: Response
+): Promise<Response> {
+  const fn_name = 'delete_collar';
+  const sql = constructFunctionQuery(fn_name, [userIdentifier, collarIds]);
+  const { result, error, isError } = await query(sql, '', true);
+  return isError ? res.status(500).send(error.message) : res.status(200).send();
+};
+
 /**
  * handles critter collar assignment/unassignment
  * @returns result of assignment row from the collar_animal_assignment table
@@ -257,6 +268,7 @@ const getCollarChangeHistory = async function (
 
 export {
   addCollar,
+  deleteCollar,
   updateCollar,
   assignOrUnassignCritterCollar,
   getAssignedCollars,

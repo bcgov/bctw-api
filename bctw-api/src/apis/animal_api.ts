@@ -74,6 +74,17 @@ const updateAnimal = async function (
   return res.send(getRowResults(result, pg_update_animal_fn));
 };
 
+const deleteAnimal = async function (
+  userIdentifier: string,
+  critterIds: string[],
+  res: Response
+): Promise<Response> {
+  const fn_name = 'delete_animal';
+  const sql = constructFunctionQuery(fn_name, [userIdentifier, critterIds]);
+  const { result, error, isError } = await query(sql, '', true);
+  return isError ? res.status(500).send(error.message) : res.status(200).send();
+};
+
 const _getAssignedCritterSql = (idir: string) =>
   `
     SELECT
@@ -194,6 +205,7 @@ const getAnimalHistory = async function (
 export {
   pg_add_animal_fn,
   addAnimal,
+  deleteAnimal,
   updateAnimal,
   getAnimals,
   getAnimalHistory,

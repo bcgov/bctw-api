@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCollarAssignmentHistory = exports.getAnimalHistory = exports.getAnimals = exports.updateAnimal = exports.addAnimal = exports.pg_add_animal_fn = void 0;
+exports.getCollarAssignmentHistory = exports.getAnimalHistory = exports.getAnimals = exports.updateAnimal = exports.deleteAnimal = exports.addAnimal = exports.pg_add_animal_fn = void 0;
 var constants_1 = require("../constants");
 var query_1 = require("../database/query");
 var requests_1 = require("../database/requests");
@@ -110,6 +110,23 @@ var updateAnimal = function (req, res) {
     });
 };
 exports.updateAnimal = updateAnimal;
+var deleteAnimal = function (userIdentifier, critterIds, res) {
+    return __awaiter(this, void 0, void 0, function () {
+        var fn_name, sql, _a, result, error, isError;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    fn_name = 'delete_animal';
+                    sql = query_1.constructFunctionQuery(fn_name, [userIdentifier, critterIds]);
+                    return [4 /*yield*/, query_1.query(sql, '', true)];
+                case 1:
+                    _a = _b.sent(), result = _a.result, error = _a.error, isError = _a.isError;
+                    return [2 /*return*/, isError ? res.status(500).send(error.message) : res.status(200).send()];
+            }
+        });
+    });
+};
+exports.deleteAnimal = deleteAnimal;
 var _getAssignedCritterSql = function (idir) {
     return "\n    SELECT\n      c.device_id, ua.permission_type, a.*\n    FROM\n      " + constants_1.S_API + ".user_animal_assignment_v ua\n      JOIN " + constants_1.S_API + ".animal_v a ON ua.animal_id = a.id \n      JOIN " + constants_1.S_API + ".collar_animal_assignment_v caa ON caa.animal_id = a.id\n      LEFT JOIN " + constants_1.S_API + ".collar_v c ON caa.collar_id = c.collar_id\n    WHERE\n      ua.user_id = " + constants_1.S_BCTW + ".get_user_id('" + idir + "')\n      and " + constants_1.S_BCTW + ".is_valid(caa.valid_to)\n  ";
 };

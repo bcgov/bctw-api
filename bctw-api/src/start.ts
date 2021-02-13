@@ -14,6 +14,7 @@ import {
   getAvailableCollars,
   getAssignedCollars,
   getCollarChangeHistory,
+  deleteCollar,
 } from './apis/collar_api';
 import {
   addAnimal,
@@ -21,6 +22,7 @@ import {
   getAnimals,
   getCollarAssignmentHistory,
   getAnimalHistory,
+  deleteAnimal,
 } from './apis/animal_api';
 import {
   addCode,
@@ -30,7 +32,7 @@ import {
 } from './apis/code_api';
 import { Request, Response } from 'express';
 import { QueryResult } from 'pg';
-import { query, queryAsync, queryAsyncAsTransaction } from './database/query';
+import { query, queryAsync } from './database/query';
 import { MISSING_IDIR } from './database/requests';
 import { S_BCTW } from './constants';
 
@@ -173,53 +175,32 @@ const notFound = function (req: Request, res: Response): Response {
   return res.status(404).json({ error: 'Sorry you must be lost :(' });
 };
 
-enum DeletableType {
-  collar = 'collar',
-  animal = 'animal',
-  user = 'user',
-}
-enum TypePk {
-  collar = 'device_id',
-  animal = 'id',
-  user = 'id',
-}
+/**
+ * can be called with an individual id or have ids in the body 
+ */
 const deleteType = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const params = req.params;
-  const { type, id } = params;
-  if (!type || !id) {
-    return res.status(404).json({ error: 'must supply id and type' });
+  const idir = req.query.idir as string;
+  if (!idir) {
+    return res.status(500).send(MISSING_IDIR);
   }
-  if (!(type in DeletableType)) {
-    return res.status(404).json({ error: `cannot delete type ${type}` });
+  const { id, type } = req.params;
+  const { ids } = req.body;
+  const toDelete: string[] = ids || [id];
+  if (!toDelete.length) {
+    return res.status(500).send('must supply id as a query parameter or ids as request body');
   }
-
-  const sql = `
-  update bctw.${type} 
-    set deleted_at = now(),
-    deleted = true 
-  where ${TypePk[type]} = ${id}`;
-  try {
-    await queryAsyncAsTransaction(sql);
-  } catch (e) {
-    return res.status(500).send(`Failed to delete type: ${e}`);
+  switch (type) {
+    case 'animal':
+      return deleteAnimal(idir, toDelete, res);
+    case 'collar':
+      return deleteCollar(idir, toDelete, res);
+    default:
+      return res.status(404).json({ error: `${type} is not a valid deletion type.`});
   }
-  return res.send(true);
 };
-
-// const getType = function(req: Request, res:Response): Promise<Response> {
-//   const params = req.params;
-//   switch (params.type) {
-//     case TelemetryTypes.animal:
-//       return getCritter(req, res);
-// case TelemetryTypes.collar:
-//   return getCollar(req, res);
-//     default:
-//       return new Promise(() =>  null);
-//   }
-// }
 
 export {
   addCode,
@@ -244,7 +225,6 @@ export {
   getCritterTracks,
   getPingExtent,
   getLastPings,
-  // getType,
   getUserRole,
   getUser,
   getUsers,
