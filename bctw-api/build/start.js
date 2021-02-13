@@ -65,18 +65,16 @@ Object.defineProperty(exports, "getCode", { enumerable: true, get: function () {
 Object.defineProperty(exports, "getCodeHeaders", { enumerable: true, get: function () { return code_api_1.getCodeHeaders; } });
 var query_1 = require("./database/query");
 var requests_1 = require("./database/requests");
-/* ## getDBCritters
-  Request all collars the user has access to.
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
-  @param next {function} Node/Express function for flow control
+var constants_1 = require("./constants");
+/** getDBCritters
+ * Request all collars the user has access to.
  */
 var getDBCritters = function (req, res) {
     var idir = req.query.idir;
     console.log(req.query);
     var start = req.query.start;
     var end = req.query.end;
-    var sql = "\n    select geojson from vendor_merge_view2 \n    where date_recorded between '" + start + "' and '" + end + "'\n    and vendor_merge_view2.critter_id = any(bctw.get_user_critter_access ('" + idir + "'));\n  ";
+    var sql = "select geojson from " + constants_1.S_BCTW + ".get_telemetry('" + idir + "', '" + start + "', '" + end + "')";
     console.log('SQL: ', sql);
     var done = function (err, data) {
         if (err) {
@@ -92,12 +90,9 @@ var getDBCritters = function (req, res) {
     pg_1.pgPool.query(sql, done);
 };
 exports.getDBCritters = getDBCritters;
-/* ## getCritterTracks
-  Request all the critter tracks with an date interval
-  These geometries are build on the fly.
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
-  @param next {function} Node/Express function for flow control
+/** getCritterTracks
+ * Request all the critter tracks with an date interval
+ * These geometries are build on the fly.
  */
 var getCritterTracks = function (req, res) {
     return __awaiter(this, void 0, void 0, function () {
@@ -112,7 +107,7 @@ var getCritterTracks = function (req, res) {
                     if (!idir) {
                         return [2 /*return*/, res.status(404).send(requests_1.MISSING_IDIR)];
                     }
-                    sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'critter_id', critter_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      vendor_merge_view2\n    where\n      date_recorded between '" + start + "' and '" + end + "' and\n      critter_id is not null and\n      st_asText(geom) <> 'POINT(0 0)'\n      AND vendor_merge_view2.critter_id = ANY (bctw.get_user_critter_access ('" + idir + "'))\n    group by\n      critter_id,\n      population_unit,\n      species;\n  ";
+                    sql = "\n    select\n      jsonb_build_object (\n        'type', 'Feature',\n        'properties', json_build_object(\n          'critter_id', critter_id,\n          'population_unit', population_unit,\n          'species', species\n        ),\n        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb\n      ) as \"geojson\"\n    from\n      " + constants_1.S_BCTW + ".get_telemetry('" + idir + "', '" + start + "', '" + end + "')\n    where\n      critter_id is not null and\n      st_asText(geom) <> 'POINT(0 0)'\n    group by\n      critter_id,\n      population_unit,\n      species;\n  ";
                     return [4 /*yield*/, query_1.query(sql, "unable to retrive critter tracks")];
                 case 1:
                     _b = _c.sent(), result = _b.result, error = _b.error, isError = _b.isError;

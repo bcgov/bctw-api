@@ -13,14 +13,14 @@ import {
   assignOrUnassignCritterCollar,
   getAvailableCollars,
   getAssignedCollars,
-  getCollarChangeHistory
+  getCollarChangeHistory,
 } from './apis/collar_api';
 import {
   addAnimal,
   updateAnimal,
   getAnimals,
   getCollarAssignmentHistory,
-  getAnimalHistory
+  getAnimalHistory,
 } from './apis/animal_api';
 import {
   addCode,
@@ -32,12 +32,10 @@ import { Request, Response } from 'express';
 import { QueryResult } from 'pg';
 import { query, queryAsync, queryAsyncAsTransaction } from './database/query';
 import { MISSING_IDIR } from './database/requests';
+import { S_BCTW } from './constants';
 
-/* ## getDBCritters
-  Request all collars the user has access to.
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
-  @param next {function} Node/Express function for flow control
+/** getDBCritters
+ * Request all collars the user has access to.
  */
 const getDBCritters = function (req: Request, res: Response): void {
   const idir = req.query.idir;
@@ -45,11 +43,7 @@ const getDBCritters = function (req: Request, res: Response): void {
   const start = req.query.start;
   const end = req.query.end;
 
-  const sql = `
-    select geojson from vendor_merge_view2 
-    where date_recorded between '${start}' and '${end}'
-    and vendor_merge_view2.critter_id = any(bctw.get_user_critter_access ('${idir}'));
-  `;
+  const sql = `select geojson from ${S_BCTW}.get_telemetry('${idir}', '${start}', '${end}')`;
   console.log('SQL: ', sql);
 
   const done = function (err, data) {
@@ -67,14 +61,14 @@ const getDBCritters = function (req: Request, res: Response): void {
   pgPool.query(sql, done);
 };
 
-/* ## getCritterTracks
-  Request all the critter tracks with an date interval
-  These geometries are build on the fly.
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
-  @param next {function} Node/Express function for flow control
+/** getCritterTracks
+ * Request all the critter tracks with an date interval
+ * These geometries are build on the fly.
  */
-const getCritterTracks = async function (req: Request, res: Response): Promise<Response> {
+const getCritterTracks = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const { idir, start, end } = req.query;
   if (!start || !end) {
     return res.status(404).send('Must have a valid start and end date');
@@ -82,7 +76,6 @@ const getCritterTracks = async function (req: Request, res: Response): Promise<R
   if (!idir) {
     return res.status(404).send(MISSING_IDIR);
   }
-  // fixme: is changing animal_id to critter_id the right way to fix the tracks?
   const sql = `
     select
       jsonb_build_object (
@@ -95,18 +88,19 @@ const getCritterTracks = async function (req: Request, res: Response): Promise<R
         'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
       ) as "geojson"
     from
-      vendor_merge_view2
+      ${S_BCTW}.get_telemetry('${idir}', '${start}', '${end}')
     where
-      date_recorded between '${start}' and '${end}' and
       critter_id is not null and
       st_asText(geom) <> 'POINT(0 0)'
-      AND vendor_merge_view2.critter_id = ANY (bctw.get_user_critter_access ('${idir}'))
     group by
       critter_id,
       population_unit,
       species;
   `;
-  const { result, error, isError } = await query(sql, `unable to retrive critter tracks`);
+  const { result, error, isError } = await query(
+    sql,
+    `unable to retrive critter tracks`
+  );
   if (isError) {
     return res.status(500).send(error.message);
   }

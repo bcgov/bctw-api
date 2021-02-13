@@ -110,12 +110,11 @@ var updateAnimal = function (req, res) {
     });
 };
 exports.updateAnimal = updateAnimal;
-var _getCritterBaseSql = "\n    SELECT\n      c.device_id, ua.permission_type, a.*\n    FROM\n      " + constants_1.S_API + ".user_animal_assignment_v ua\n      JOIN " + constants_1.S_API + ".animal_v a ON ua.animal_id = a.id ";
 var _getAssignedCritterSql = function (idir) {
-    return _getCritterBaseSql + "\n      JOIN " + constants_1.S_API + ".collar_animal_assignment_v caa ON caa.animal_id = a.id\n      LEFT JOIN " + constants_1.S_API + ".collar_v c ON caa.collar_id = c.collar_id\n    WHERE\n      ua.user_id = " + constants_1.S_BCTW + ".get_user_id('" + idir + "')\n      and " + constants_1.S_BCTW + ".is_valid(caa.valid_to) ";
+    return "\n    SELECT\n      c.device_id, ua.permission_type, a.*\n    FROM\n      " + constants_1.S_API + ".user_animal_assignment_v ua\n      JOIN " + constants_1.S_API + ".animal_v a ON ua.animal_id = a.id \n      JOIN " + constants_1.S_API + ".collar_animal_assignment_v caa ON caa.animal_id = a.id\n      LEFT JOIN " + constants_1.S_API + ".collar_v c ON caa.collar_id = c.collar_id\n    WHERE\n      ua.user_id = " + constants_1.S_BCTW + ".get_user_id('" + idir + "')\n      and " + constants_1.S_BCTW + ".is_valid(caa.valid_to)\n  ";
 };
 var _getUnassignedCritterSql = function (idir) {
-    return _getCritterBaseSql + "\n    LEFT JOIN " + constants_1.S_API + ".collar_animal_assignment_v caa ON caa.animal_id = a.id\n    LEFT JOIN " + constants_1.S_API + ".collar_v c ON caa.collar_id = c.collar_id\n    WHERE\n      ua.user_id = " + constants_1.S_BCTW + ".get_user_id('" + idir + "')\n      and (not is_valid(caa.valid_to) or device_id is null) ";
+    return "\n    SELECT DISTINCT ON (a.id)\n      a.id,\n      c.collar_id,\n      c.device_id,\n      caa.valid_from,\n      caa.valid_to,\n      ua.permission_type,\n      a.*\n    FROM\n      bctw_dapi_v1.user_animal_assignment_v ua\n      JOIN " + constants_1.S_API + ".animal_v a ON ua.animal_id = a.id\n      LEFT JOIN " + constants_1.S_API + ".collar_animal_assignment_v caa ON caa.animal_id = a.id\n      LEFT JOIN " + constants_1.S_API + ".collar_v c ON caa.collar_id = c.collar_id\n    WHERE\n      ua.user_id = " + constants_1.S_BCTW + ".get_user_id ('" + idir + "')\n      AND caa.collar_id NOT IN (\n        SELECT\n          x.collar_id\n        FROM\n          " + constants_1.S_API + ".collar_animal_assignment_v x\n        WHERE\n          x.collar_id = caa.collar_id\n          AND is_valid (x.valid_to)\n      )\n  ";
 };
 /*
  */

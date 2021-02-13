@@ -74,28 +74,47 @@ const updateAnimal = async function (
   return res.send(getRowResults(result, pg_update_animal_fn));
 };
 
-const _getCritterBaseSql = `
+const _getAssignedCritterSql = (idir: string) =>
+  `
     SELECT
       c.device_id, ua.permission_type, a.*
     FROM
       ${S_API}.user_animal_assignment_v ua
-      JOIN ${S_API}.animal_v a ON ua.animal_id = a.id `;
-
-const _getAssignedCritterSql = (idir: string) =>
-  `${_getCritterBaseSql}
+      JOIN ${S_API}.animal_v a ON ua.animal_id = a.id 
       JOIN ${S_API}.collar_animal_assignment_v caa ON caa.animal_id = a.id
       LEFT JOIN ${S_API}.collar_v c ON caa.collar_id = c.collar_id
     WHERE
       ua.user_id = ${S_BCTW}.get_user_id('${idir}')
-      and ${S_BCTW}.is_valid(caa.valid_to) `;
+      and ${S_BCTW}.is_valid(caa.valid_to)
+  `;
 
 const _getUnassignedCritterSql = (idir: string) =>
-  `${_getCritterBaseSql}
-    LEFT JOIN ${S_API}.collar_animal_assignment_v caa ON caa.animal_id = a.id
-    LEFT JOIN ${S_API}.collar_v c ON caa.collar_id = c.collar_id
+  `
+    SELECT DISTINCT ON (a.id)
+      a.id,
+      c.collar_id,
+      c.device_id,
+      caa.valid_from,
+      caa.valid_to,
+      ua.permission_type,
+      a.*
+    FROM
+      bctw_dapi_v1.user_animal_assignment_v ua
+      JOIN ${S_API}.animal_v a ON ua.animal_id = a.id
+      LEFT JOIN ${S_API}.collar_animal_assignment_v caa ON caa.animal_id = a.id
+      LEFT JOIN ${S_API}.collar_v c ON caa.collar_id = c.collar_id
     WHERE
-      ua.user_id = ${S_BCTW}.get_user_id('${idir}')
-      and (not is_valid(caa.valid_to) or device_id is null) `;
+      ua.user_id = ${S_BCTW}.get_user_id ('${idir}')
+      AND caa.collar_id NOT IN (
+        SELECT
+          x.collar_id
+        FROM
+          ${S_API}.collar_animal_assignment_v x
+        WHERE
+          x.collar_id = caa.collar_id
+          AND is_valid (x.valid_to)
+      )
+  `;
 
 /*
  */
