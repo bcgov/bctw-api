@@ -86,46 +86,26 @@ const deleteAnimal = async function (
 };
 
 const _getAssignedCritterSql = (idir: string) =>
-  `
-    SELECT
-      c.device_id, ua.permission_type, a.*
-    FROM
-      ${S_API}.user_animal_assignment_v ua
-      JOIN ${S_API}.animal_v a ON ua.animal_id = a.id 
-      JOIN ${S_API}.collar_animal_assignment_v caa ON caa.animal_id = a.id
-      LEFT JOIN ${S_API}.collar_v c ON caa.collar_id = c.collar_id
-    WHERE
-      ua.user_id = ${S_BCTW}.get_user_id('${idir}')
-      and ${S_BCTW}.is_valid(caa.valid_to)
-  `;
+  `SELECT
+    ua.permission_type,
+    cac.device_id,
+    a.*
+  FROM
+    ${S_API}.currently_attached_collars_v cac
+    JOIN ${S_API}.animal_v a ON cac.critter_id = a.id
+    JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = a.id
+  WHERE
+    ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
 
 const _getUnassignedCritterSql = (idir: string) =>
-  `
-    SELECT DISTINCT ON (a.id)
-      a.id,
-      c.collar_id,
-      c.device_id,
-      caa.valid_from,
-      caa.valid_to,
-      ua.permission_type,
-      a.*
-    FROM
-      bctw_dapi_v1.user_animal_assignment_v ua
-      JOIN ${S_API}.animal_v a ON ua.animal_id = a.id
-      LEFT JOIN ${S_API}.collar_animal_assignment_v caa ON caa.animal_id = a.id
-      LEFT JOIN ${S_API}.collar_v c ON caa.collar_id = c.collar_id
-    WHERE
-      ua.user_id = ${S_BCTW}.get_user_id ('${idir}')
-      AND caa.collar_id NOT IN (
-        SELECT
-          x.collar_id
-        FROM
-          ${S_API}.collar_animal_assignment_v x
-        WHERE
-          x.collar_id = caa.collar_id
-          AND is_valid (x.valid_to)
-      )
-  `;
+  `SELECT
+    ua.permission_type,
+    ac.*
+  FROM
+    ${S_API}.currently_unattached_critters ac
+    JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = ac.id
+  WHERE
+    ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
 
 /*
  */
@@ -187,6 +167,7 @@ const getAnimalHistory = async function (
   res: Response
 ): Promise<Response> {
   const idir = req?.query?.idir as string;
+  const page = (req.query?.page || 1) as number;
   const animal_id = req.params?.animal_id;
   if (!animal_id || !idir) {
     return res.status(500).send(`animal_id and idir must be supplied`);

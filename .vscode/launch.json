@@ -22,6 +22,15 @@
         "${workspaceFolder}/bctw-api/build/**/*.js",
         "!**/node_modules/**"
       ]
-    }
+    },
+    {
+      "name": "lotek",
+      "program": "${workspaceFolder}/data-collector/scripts/lotek.js",
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "pwa-node"
+    },
   ]
 }

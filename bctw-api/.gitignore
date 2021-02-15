@@ -4,3 +4,4 @@
 *.tgz
 ~*
 node_modules
+build
