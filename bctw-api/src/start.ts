@@ -41,7 +41,7 @@ import { S_BCTW } from './constants';
  */
 const getDBCritters = function (req: Request, res: Response): void {
   const idir = req.query.idir;
-  console.log(req.query);
+  // console.log(req.query);
   const start = req.query.start;
   const end = req.query.end;
 

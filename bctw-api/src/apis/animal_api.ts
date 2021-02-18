@@ -172,9 +172,9 @@ const getAnimalHistory = async function (
   if (!animal_id || !idir) {
     return res.status(500).send(`animal_id and idir must be supplied`);
   }
-  const sql = constructFunctionQuery(pg_get_critter_history, [idir, animal_id]);
+  const sql = constructFunctionQuery(pg_get_critter_history, [idir, animal_id], false, S_API);
   const { result, error, isError } = await query(
-    sql,
+    constructGetQuery({base: sql, page}),
     'failed to retrieve critter history'
   );
   if (isError) {
