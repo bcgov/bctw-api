@@ -2,7 +2,7 @@
 
 // ATS dashboard login URL
 const ATS_URL = process.env.ATS_URL;
- // login form field IDs
+// login form field IDs
 const ATS_USERNAME_FIELD_ID = process.env.ATS_USERNAME_FIELD_ID || '#username';
 const ATS_PASSWORD_FIELD_ID = process.env.ATS_PASSWORD_FIELD_ID || '#password';
 const ATS_LOGIN_FORM_ID = process.env.ATS_LOGIN_FORM_ID || '#ctl01';
@@ -12,14 +12,8 @@ const ATS_USERNAME = process.env.ATS_USERNAME;
 // booleon - should downloaded events should be preserved?
 const DELETE_DOWNLOADS = process.env.DELETE_DOWNLOADS;
 
-const envString = `
-    ATS_URL=${ATS_URL},
-    ATS_USERNAME_FIELD_ID=${ATS_USERNAME_FIELD_ID},
-    ATS_PASSWORD_FIELD_ID=${ATS_PASSWORD_FIELD_ID},
-    ATS_LOGIN_FORM_ID=${ATS_LOGIN_FORM_ID},
-    ATS_PASSWORD=${ATS_PASSWORD},
-    ATS_USERNAME=${ATS_USERNAME},
-    DELETE_DOWNLOADS=${DELETE_DOWNLOADS}`;
+const envString = `ATS_URL=${ATS_URL},ATS_USERNAME_FIELD_ID=${ATS_USERNAME_FIELD_ID},ATS_PASSWORD_FIELD_ID=${ATS_PASSWORD_FIELD_ID},ATS_LOGIN_FORM_ID=${ATS_LOGIN_FORM_ID},ATS_PASSWORD=${ATS_PASSWORD},ATS_USERNAME=${ATS_USERNAME},DELETE_DOWNLOADS=${DELETE_DOWNLOADS}`;
+console.log(`environment variables passed to cypress: ${envString}`);
 
 // spawn cypress as a child process, passing the node environment variables
 const cypress = spawn('cypress', ['run', '-b', 'chromium', '--headless', '--env', envString]);
