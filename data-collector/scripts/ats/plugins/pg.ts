@@ -48,6 +48,8 @@ const getLastSuccessfulCollar = async (): Promise<Dayjs> => {
   return result;
 }
 
+// fields up until and including 'cepradius_km' are from the cumulative_transmissions file.
+// the following fields are from the cumulative_d "download all data" file.
 const formatSql = (records: IATSRow[]): string => {
   const sqlPreamble = `
     insert into ats_collar_data (

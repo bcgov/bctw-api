@@ -1,63 +1,117 @@
-import csvtojson from 'csvtojson';
-const fs = require('fs').promises;
-const dayjs = require('dayjs');
-import { IATSRow, ITransmissionData, ITemperatureData } from '../types';
-import { getLastSuccessfulCollar } from './pg';
-import { Dayjs } from 'dayjs';
+import csvtojson from "csvtojson";
+const fs = require("fs").promises;
+const dayjs = require("dayjs");
+import {
+  IATSRow,
+  IDeviceReadingEvent,
+  ITransmissionEvent,
+  IATSBase,
+} from "../types";
+import { getLastSuccessfulCollar } from "./pg";
+import { Dayjs } from "dayjs";
 
 // get fully qualified paths of files in supplied directory
-const getPaths = async(pathToDir): Promise<string[]> => {
+const getPaths = async (pathToDir): Promise<string[]> => {
   const fileNames = await fs.readdir(pathToDir);
-  return fileNames.map(f => `${pathToDir}/${f}`);
-}
+  return fileNames.map((f) => `${pathToDir}/${f}`);
+};
 
 // parses a file in csv format and returns it as JSON
-const parseCsv = async(path): Promise<any[]> => {
+const parseCsv = async (path): Promise<any[]> => {
   console.log(`path to parse is ${path}`);
   const json = await csvtojson().fromFile(path);
   return json;
-}
+};
 
-// retrieves the date from supplied ITemperatureData, returns it with hour/minute added
-const parseDateFromTempData = (o: ITemperatureData): Dayjs => {
-  let date = dayjs(o.Date);
-  date = date.hour(o.Hour);
-  date = date.minute(o.Minute)
+/**
+ * Cumulative_D or "temperature" data files have the timestamps spread across multiple columns
+ * @returns a dayjs instance of the date from @param row
+ */
+const parseDateFromEventData = (row: IDeviceReadingEvent): Dayjs => {
+  let date = dayjs(row.Date);
+  date = date.hour(row.Hour);
+  date = date.minute(row.Minute);
   return date;
-}
+};
 
-/// filters data with timestamps older than {olderThan}
-const filterData = (data: any[], olderThan: Dayjs) => {
-  return data.filter(d => dayjs(d.Date).isAfter(olderThan));
-}
+/**
+ *  filters out data with timestamps older than @param olderThan
+ * @param data
+ * @param olderThan
+ */
+const filterDataAsOfDate = <T extends IATSBase>(
+  data: T[],
+  olderThan: Dayjs
+): T[] => {
+  return data.filter((d) => dayjs(d.Date).isAfter(olderThan));
+};
 
-// merges collar and transmission data
-// returns an array of IATSRow.
-const mergeATSData = (data: ITransmissionData[], tempData: ITemperatureData[]): IATSRow[] => {
+// merge data and transmission record
+const createMergedRecord = (
+  data: IDeviceReadingEvent,
+  transmission: ITransmissionEvent
+): IATSRow => {
+  // remove a few of the transmission properties that shouldn't be copiedo ver
+  const copyOfTransmission = Object.assign({}, transmission);
+  delete copyOfTransmission.Date;
+  delete copyOfTransmission.Latitude;
+  delete copyOfTransmission.Longitude;
+  const r = Object.assign(data, copyOfTransmission);
+  r.Date = parseDateFromEventData(data).format("YYYY-MM-DD H:mm");
+  return r;
+};
+
+/**
+ * combines entries from both files into a single bctw.ats_collar_data record
+ * in the sample data looked at so far, the cumulative_d file has more entries on a given
+ * day than the transmission record does. Assuming these records are important, this function
+ * iterates these and looks for a matching record with the same device_id and day in the
+ * transmission log.
+ * Sometimes there are more than one transmission per day -
+ * Assuming that the:
+ * temperature record is the event when the collar takes a reading
+ * transmission record is when the collar transmitted the events to the satellite
+ *  The function looks for the closest transmission AFTER the reading event
+ * @param transmissionData
+ * @param deviceData
+ * @returns an array of merged data
+ */
+const mergeATSData = (
+  transmissionData: ITransmissionEvent[],
+  deviceData: IDeviceReadingEvent[]
+): IATSRow[] => {
   const validEntries: IATSRow[] = [];
-  data.forEach((i: ITransmissionData) => {
-    let d = dayjs(i.Date);
+  deviceData.forEach((record: IDeviceReadingEvent) => {
+    const tempRowDate = parseDateFromEventData(record);
+    const matchingTransmissionRecords = transmissionData.filter((t) => {
+      const isSameDay = tempRowDate.isSame(dayjs(t.Date), "day");
+      return t.CollarSerialNumber === record.CollarSerialNumber && isSameDay;
+    });
 
-    const match = tempData.find((td: ITemperatureData) => {
-      const day = parseDateFromTempData(td);
-      const same = d.isSame(day, 'hour');
-      // considered a match if the date and collar id match
-      return same && i.CollarSerialNumber === td.CollarSerialNumber;
-    })
-    if (match) {
-      const merged = Object.assign(i, match);
-      validEntries.push(merged);
-    } 
-  })
-  // console.log(JSON.stringify(validEntries, null, 2))
+    if (!matchingTransmissionRecords.length) {
+      return;
+    }
+    const closest = matchingTransmissionRecords
+      .sort((a, b) => dayjs(a.Date) - dayjs(b.Date)) // sort by ascending dates
+      .filter((mtr) => dayjs(mtr.Date).isAfter(tempRowDate));
+
+    const closestTransmissionAfter = closest.length
+      ? closest[0]
+      : matchingTransmissionRecords[0];
+    const mergedRecord: IATSRow = createMergedRecord(
+      record,
+      closestTransmissionAfter
+    );
+    validEntries.push(mergedRecord);
+  });
+  console.log(JSON.stringify(validEntries, null, 2));
   return validEntries;
-}
-
+};
 
 export {
   getLastSuccessfulCollar,
   mergeATSData,
-  filterData,
+  filterDataAsOfDate,
   getPaths,
   parseCsv,
-}
+};

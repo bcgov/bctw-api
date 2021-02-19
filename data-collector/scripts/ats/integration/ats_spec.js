@@ -1,48 +1,52 @@
 const env = Cypress.env();
 const waitTime = 10000;
-const usernameFormId = '#txt_username';
-const passwordFormId = '#txt_password';
-const submitFormId = '#btt_SignIn';
+// helps cypress find the download buttons faster
+const buttonGroupSelector = {within: '.button-container-group'};
 
+const createSelector = (innerText) => `span:contains('${innerText}')`;
 
-describe('ATS Test', () => {
-  const { ATS_URL, ATS_USERNAME, ATS_PASSWORD } = env;
-  
-  it(`download all collar data: ${ATS_URL}`, () => {
-    const dataDownloadBtnId = '#ContentPlaceHolder1_DownloadAll3';
+describe("ATS Test", () => {
+  const {
+    ATS_URL,
+    ATS_USERNAME,
+    ATS_PASSWORD,
+    ATS_USERNAME_FIELD_ID,
+    ATS_PASSWORD_FIELD_ID,
+    ATS_LOGIN_FORM_ID
+  } = env;
 
-    cy.visit(ATS_URL)
+  it(`can download collar reading data: ${ATS_URL}`, () => {
+    const dataDownloadSelector = createSelector('download all data');
+    cy.visit(ATS_URL);
 
-    cy.get(usernameFormId).type(ATS_USERNAME)
-    cy.get(passwordFormId).type(ATS_PASSWORD)
-    cy.get(submitFormId).click()
+    cy.get(ATS_USERNAME_FIELD_ID).type(ATS_USERNAME);
+    cy.get(ATS_PASSWORD_FIELD_ID).type(ATS_PASSWORD);
+    cy.get(ATS_LOGIN_FORM_ID).submit();
 
-    // no way to catch this error, this test WILL fail 
+    // no way to catch this error, so this test WILL fail
     // because Cypress expects a new page to be loaded when the button is clicked
-    cy.get(dataDownloadBtnId).then(f => {
-      f.click()
-      cy.wait(waitTime)
+    cy.get(dataDownloadSelector, buttonGroupSelector).then((f) => {
+      f.click();
+      cy.wait(waitTime);
     });
-  })
+  });
 
-  it('can download all transmission data', () => {
-    const transmissionsDownloadBtnId = '#ContentPlaceHolder1_DownloadAll4';
+  it("can download transmission data", () => {
+    const downloadTransmissionsSelector = createSelector('download all transmissions');
+    cy.visit(ATS_URL);
 
-    cy.visit(ATS_URL)
+    cy.get(ATS_USERNAME_FIELD_ID).type(ATS_USERNAME);
+    cy.get(ATS_PASSWORD_FIELD_ID).type(ATS_PASSWORD);
+    cy.get(ATS_LOGIN_FORM_ID).submit();
 
-    cy.get(usernameFormId).type(ATS_USERNAME)
-    cy.get(passwordFormId).type(ATS_PASSWORD)
-    cy.get(submitFormId).click()
-
-    cy.get(transmissionsDownloadBtnId).then(f => {
-      f.click()
-      cy.wait(waitTime)
+    cy.get(downloadTransmissionsSelector, buttonGroupSelector).then((f) => {
+      f.click();
+      cy.wait(waitTime);
     });
-  })
+  });
 
-  it('can parse downloaded ATS files, and upload the rows to the database', () => {
-    // see this function in plugins/download.ts
-    cy.task('handleParseAndInsert');
-  })
-
-})
+  it("can parse downloaded ATS files, and upload the rows to the database", () => {
+    // handled in plugins/download.ts
+    cy.task("handleParseAndInsert");
+  });
+});

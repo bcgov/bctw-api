@@ -1,8 +1,8 @@
 import CDP from 'chrome-remote-interface';
 import path from 'path';
 import { promisify } from 'util';
-import { ITemperatureData, ITransmissionData } from '../types';
-import { filterData, getLastSuccessfulCollar, getPaths, mergeATSData, parseCsv } from './csv';
+import { IDeviceReadingEvent, ITransmissionEvent} from '../types';
+import { filterDataAsOfDate, getLastSuccessfulCollar, getPaths, mergeATSData, parseCsv } from './csv';
 import { formatSql, insertData } from './pg';
 import { rename } from 'fs';
 
@@ -23,15 +23,11 @@ module.exports = (on, config) => {
     const existing = args.find((arg) =>
       arg.startsWith('--remote-debugging-port')
     );
-
     if (existing) {
       return Number(existing.split('=')[1]);
     }
-
     const port = 40000 + Math.round(Math.random() * 25000);
-
     args.push(`--remote-debugging-port=${port}`);
-
     return port;
   }
 
@@ -85,15 +81,18 @@ module.exports = (on, config) => {
     port = ensureRdpPort(args);
   });
 
-  const mergeAndInsert = async (data: ITemperatureData[], transmissionData: ITransmissionData[]) => {
+  const mergeAndInsert = async (data: IDeviceReadingEvent[], transmissionData: ITransmissionEvent[]) => {
+    // retrieve timestamp of last successfull entry
     const lastEntry = await getLastSuccessfulCollar();
     console.log(`last successfull insertion to ATS table was ${lastEntry.format()}`);
 
-    const filteredTempData: ITemperatureData[] = filterData(data, lastEntry);
-    const filteredTransData: ITransmissionData[] = filterData(transmissionData, lastEntry);
-    console.log(`filtered results: data entries: ${filteredTempData.length}, transmission entries: ${filteredTransData.length}`)
+    // filter out old data 
+    const deviceEvents = filterDataAsOfDate(data, lastEntry);
+    const transmissionEvents = filterDataAsOfDate(transmissionData, lastEntry);
+    console.log(`filtered results: data entries: ${deviceEvents.length}, transmission entries: ${transmissionEvents.length}`)
 
-    const newCollarData = mergeATSData(filteredTransData, filteredTempData);
+    // combine entries from both the files into a single bctw.ats_collar_data record
+    const newCollarData = mergeATSData(transmissionEvents, deviceEvents);
 
     if (!newCollarData.length) {
       console.log(`no new entries found after ${lastEntry.format()}, exiting`);
@@ -115,8 +114,8 @@ module.exports = (on, config) => {
     }
     console.log(`temperature data at ${paths[0]}\ntransmission data at ${paths[1]}`)
 
-    const tempData = await parseCsv(paths[0]) as ITemperatureData[]; // collar data including temperature
-    const transmissionData = await parseCsv(paths[1]) as ITransmissionData[]; // transmission data
+    const tempData = await parseCsv(paths[0]) as IDeviceReadingEvent[]; // collar data including temperature
+    const transmissionData = await parseCsv(paths[1]) as ITransmissionEvent[]; // transmission data
 
     console.log(`completed parsing files downloaded files to JSON, ${tempData.length} temperature data and ${transmissionData.length} transmission data`)
     if (tempData.length && transmissionData.length) {

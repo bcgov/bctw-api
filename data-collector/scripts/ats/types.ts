@@ -1,6 +1,12 @@
-// dont extend these interfaces - extended properties may not be parsed correctly using csv-tojson
-interface ITemperatureData {
-  CollarSerialNumber
+// extended properties may not be parsed correctly using csv-tojson
+
+// representation of a row from the Cumulative_D.... csv file. Non transmission data
+
+interface IATSBase {
+  Date?: string;
+}
+interface IDeviceReadingEvent extends IATSBase {
+  CollarSerialNumber: string;
   Year: string;
   Julianday: string;
   Hour: string;
@@ -16,9 +22,10 @@ interface ITemperatureData {
   Date: string;
 }
 
-interface ITransmissionData {
+// representation of a row from the Cumulative_Transmissions_.... file.
+interface ITransmissionEvent extends IATSBase {
   CollarSerialNumber: string;
-  Date: string;
+  Date?: string;
   NumberFixes: string;
   BattVoltage: string;
   Mortality: string;
@@ -29,21 +36,25 @@ interface ITransmissionData {
   GmtOffset: string;
   LowBatt: string;
   Event: string;
-  Latitude: string;
-  Longitude: string;
+  Latitude?: string;
+  Longitude?: string;
   CEPradius_km: string;
 }
 
-interface IATSRow extends ITransmissionData {
+// a row in the ats_collar_data database table
+interface IATSRow extends ITransmissionEvent {
   Temperature: string;
   Activity: string;
   HDOP: string;
   NumSats: string;
   FixTime: string;
+  Latitude: string;
+  Longitude: string;
 }
 
 export {
-  ITemperatureData,
-  ITransmissionData,
+  IATSBase,
+  IDeviceReadingEvent,
+  ITransmissionEvent,
   IATSRow,
 }
