@@ -50,6 +50,7 @@ interface IATSRow extends ITransmissionEvent {
   FixTime: string;
   Latitude: string;
   Longitude: string;
+  Date: string;
 }
 
 export {

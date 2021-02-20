@@ -1,14 +1,15 @@
-import csvtojson from "csvtojson";
-const fs = require("fs").promises;
-const dayjs = require("dayjs");
+import csvtojson from 'csvtojson';
+const fs = require('fs').promises;
 import {
   IATSRow,
   IDeviceReadingEvent,
   ITransmissionEvent,
   IATSBase,
-} from "../types";
-import { getLastSuccessfulCollar } from "./pg";
-import { Dayjs } from "dayjs";
+} from '../types';
+import { parseAsUtc } from './time';
+import { Dayjs } from 'dayjs';
+const dayjs = require('dayjs')
+
 
 // get fully qualified paths of files in supplied directory
 const getPaths = async (pathToDir): Promise<string[]> => {
@@ -28,9 +29,9 @@ const parseCsv = async (path): Promise<any[]> => {
  * @returns a dayjs instance of the date from @param row
  */
 const parseDateFromEventData = (row: IDeviceReadingEvent): Dayjs => {
-  let date = dayjs(row.Date);
-  date = date.hour(row.Hour);
-  date = date.minute(row.Minute);
+  let date: Dayjs = parseAsUtc(row.Date);
+  date = date.hour(+(row.Hour));
+  date = date.minute(+(row.Minute));
   return date;
 };
 
@@ -43,7 +44,7 @@ const filterDataAsOfDate = <T extends IATSBase>(
   data: T[],
   olderThan: Dayjs
 ): T[] => {
-  return data.filter((d) => dayjs(d.Date).isAfter(olderThan));
+  return data.filter((d) => parseAsUtc(d.Date).isAfter(olderThan));
 };
 
 // merge data and transmission record
@@ -51,13 +52,13 @@ const createMergedRecord = (
   data: IDeviceReadingEvent,
   transmission: ITransmissionEvent
 ): IATSRow => {
-  // remove a few of the transmission properties that shouldn't be copiedo ver
+  // remove the transmission properties that shouldn't be copied over
   const copyOfTransmission = Object.assign({}, transmission);
   delete copyOfTransmission.Date;
   delete copyOfTransmission.Latitude;
   delete copyOfTransmission.Longitude;
   const r = Object.assign(data, copyOfTransmission);
-  r.Date = parseDateFromEventData(data).format("YYYY-MM-DD H:mm");
+  r.Date = parseDateFromEventData(data).format('YYYY-MM-DD H:mm');
   return r;
 };
 
@@ -83,21 +84,24 @@ const mergeATSData = (
   const validEntries: IATSRow[] = [];
   deviceData.forEach((record: IDeviceReadingEvent) => {
     const tempRowDate = parseDateFromEventData(record);
-    const matchingTransmissionRecords = transmissionData.filter((t) => {
-      const isSameDay = tempRowDate.isSame(dayjs(t.Date), "day");
+
+    const sameDayTransmissions = transmissionData.filter((t) => {
+      const isSameDay = tempRowDate.isSame(parseAsUtc(t.Date), 'day');
       return t.CollarSerialNumber === record.CollarSerialNumber && isSameDay;
     });
 
-    if (!matchingTransmissionRecords.length) {
+    if (!sameDayTransmissions.length) {
       return;
     }
-    const closest = matchingTransmissionRecords
+
+    const closest = sameDayTransmissions
       .sort((a, b) => dayjs(a.Date) - dayjs(b.Date)) // sort by ascending dates
-      .filter((mtr) => dayjs(mtr.Date).isAfter(tempRowDate));
+      .filter((mtr) => parseAsUtc(mtr.Date).isAfter(tempRowDate));
 
     const closestTransmissionAfter = closest.length
       ? closest[0]
-      : matchingTransmissionRecords[0];
+      : sameDayTransmissions[0];
+
     const mergedRecord: IATSRow = createMergedRecord(
       record,
       closestTransmissionAfter
@@ -109,7 +113,6 @@ const mergeATSData = (
 };
 
 export {
-  getLastSuccessfulCollar,
   mergeATSData,
   filterDataAsOfDate,
   getPaths,

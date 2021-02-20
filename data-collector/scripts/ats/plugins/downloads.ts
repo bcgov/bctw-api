@@ -2,7 +2,8 @@ import CDP from 'chrome-remote-interface';
 import path from 'path';
 import { promisify } from 'util';
 import { IDeviceReadingEvent, ITransmissionEvent} from '../types';
-import { filterDataAsOfDate, getLastSuccessfulCollar, getPaths, mergeATSData, parseCsv } from './csv';
+import { filterDataAsOfDate, getPaths, mergeATSData, parseCsv } from './csv';
+import { getTimestampOfLastCollarEntry } from './pg';
 import { formatSql, insertData } from './pg';
 import { rename } from 'fs';
 
@@ -83,7 +84,7 @@ module.exports = (on, config) => {
 
   const mergeAndInsert = async (data: IDeviceReadingEvent[], transmissionData: ITransmissionEvent[]) => {
     // retrieve timestamp of last successfull entry
-    const lastEntry = await getLastSuccessfulCollar();
+    const lastEntry = await getTimestampOfLastCollarEntry();
     console.log(`last successfull insertion to ATS table was ${lastEntry.format()}`);
 
     // filter out old data 

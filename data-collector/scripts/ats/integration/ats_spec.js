@@ -16,7 +16,7 @@ describe("ATS Test", () => {
   } = env;
 
   it(`can download collar reading data from the ATS login at ${ATS_URL}`, () => {
-    const dataDownloadSelector = createSelector('download all data');
+    const dataDownloadSelector = createSelector('all data');
     cy.visit(ATS_URL);
 
     cy.get(ATS_USERNAME_FIELD_ID).type(ATS_USERNAME);
