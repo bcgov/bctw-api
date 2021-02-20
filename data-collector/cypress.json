@@ -1,6 +1,6 @@
 {
   "env": { },
-  "pageLoadTimeout": 5000,
+  "pageLoadTimeout": 10000,
   "video": false,
   "pluginsFile": "scripts/ats/plugins/index.js",
   "supportFile": "scripts/ats/support/index.js",

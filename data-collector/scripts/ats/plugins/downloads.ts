@@ -110,7 +110,7 @@ module.exports = (on, config) => {
     const paths = await getPaths(downloadPath);
 
     if (paths.length !== 2) {
-      console.log(`cypress downloading tests completed. Downloads dir contains ${paths.length ? paths.join() : 'no files'}. exiting script early.`);
+      console.log(`cypress downloading tests completed. ${downloadPath} contains ${paths.length ? paths.join() : 'no files'}. exiting script early.`);
       return null;
     }
     console.log(`collar event data at ${paths[0]}\ntransmission data at ${paths[1]}`)
