@@ -29,8 +29,7 @@ ENV CYPRESS_CACHE_FOLDER=/root/.cache/Cypress
 ENV XDG_CONFIG_HOME=/app
 
 RUN mkdir /app/downloads /app/archive
-RUN chmod 777 /app
-RUN chmod 777 /app/downloads /app/archive
+RUN chmod 777 /app /app/downloads /app/archive
 
 # switch to non-root user "node" that comes from Docker Node image
 USER node

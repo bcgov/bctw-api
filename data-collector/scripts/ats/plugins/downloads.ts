@@ -53,14 +53,14 @@ module.exports = (on, config) => {
   async function archiveDownloads() {
     const paths = await getPaths(downloadPath);
     if (paths.length) {
-      console.log('archiving downloads')
+      console.log('files found in downloads directory, attempting to archive')
       paths.forEach(async curPath => {
         const newPath = `${archivePath}/${path.basename(curPath)}`;
         console.log(`archiving downloaded file to ${newPath}`);
         await asyncRename(curPath, newPath)
       })
     } else {
-      console.log(`archiving failed. downloads directory contains ${paths.join()}`)
+      console.log('archiving skipped - download directory is empty')
     }
   }
 
@@ -109,17 +109,17 @@ module.exports = (on, config) => {
     const paths = await getPaths(downloadPath);
 
     if (paths.length !== 2) {
-      console.log(`cypress downloading tests completed but a file is missing ${paths.join()} exiting early`);
+      console.log(`cypress downloading tests completed. Downloads dir contains ${paths.length ? paths.join() : 'no files'}. exiting script early.`);
       return null;
     }
-    console.log(`temperature data at ${paths[0]}\ntransmission data at ${paths[1]}`)
+    console.log(`collar event data at ${paths[0]}\ntransmission data at ${paths[1]}`)
 
-    const tempData = await parseCsv(paths[0]) as IDeviceReadingEvent[]; // collar data including temperature
+    const collarData = await parseCsv(paths[0]) as IDeviceReadingEvent[]; // collar data including temperature
     const transmissionData = await parseCsv(paths[1]) as ITransmissionEvent[]; // transmission data
 
-    console.log(`completed parsing files downloaded files to JSON, ${tempData.length} temperature data and ${transmissionData.length} transmission data`)
-    if (tempData.length && transmissionData.length) {
-      await mergeAndInsert(tempData, transmissionData);
+    console.log(`completed parsing files downloaded files to JSON, ${collarData.length} temperature data and ${transmissionData.length} transmission data`)
+    if (collarData.length && transmissionData.length) {
+      await mergeAndInsert(collarData, transmissionData);
     }
     return null;
   }

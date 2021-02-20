@@ -57,6 +57,14 @@ objects:
                     value: bctw
                   - name: ATS_URL
                     value: 'https://www.atsidaq.net/Login.aspx'
+                  - name: ATS_USERNAME_FIELD_ID
+                    value: '#username'
+                  - name: ATS_PASSWORD_FIELD_ID
+                    value: '#password'
+                  - name: ATS_LOGIN_FORM_ID
+                    value: '#ctl01'
+                  - name: DELETE_DOWNLOADS
+                    value: 'false'
                   - name: ATS_PASSWORD
                     valueFrom: 
                       secretKeyRef:
@@ -69,7 +77,7 @@ objects:
                         name: ats
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
-              activeDeadlineSeconds: 180
+              activeDeadlineSeconds: 220
               dnsPolicy: 'ClusterFirst'
 parameters:
   - name: 'NAMESPACE'

@@ -15,7 +15,7 @@ describe("ATS Test", () => {
     ATS_LOGIN_FORM_ID
   } = env;
 
-  it(`can download collar reading data: ${ATS_URL}`, () => {
+  it(`can download collar reading data from the ATS login at ${ATS_URL}`, () => {
     const dataDownloadSelector = createSelector('download all data');
     cy.visit(ATS_URL);
 
@@ -32,7 +32,7 @@ describe("ATS Test", () => {
   });
 
   it("can download transmission data", () => {
-    const downloadTransmissionsSelector = createSelector('download all transmissions');
+    const downloadTransmissionsSelector = createSelector('all transmissions');
     cy.visit(ATS_URL);
 
     cy.get(ATS_USERNAME_FIELD_ID).type(ATS_USERNAME);
