@@ -1,11 +1,11 @@
 const env = Cypress.env();
 const waitTime = 10000;
-// helps cypress find the download buttons faster
+// group selector to help cypress find the download buttons faster
 const buttonGroupSelector = {within: '.button-container-group'};
 
 const createSelector = (innerText) => `span:contains('${innerText}')`;
 
-describe("ATS Test", () => {
+describe('ATS Test', () => {
   const {
     ATS_URL,
     ATS_USERNAME,
@@ -15,7 +15,7 @@ describe("ATS Test", () => {
     ATS_LOGIN_FORM_ID
   } = env;
 
-  it(`can download collar reading data from the ATS login at ${ATS_URL}`, () => {
+  it(`can download collar reading data from the ATS site`, () => {
     const dataDownloadSelector = createSelector('all data');
     cy.visit(ATS_URL);
 
@@ -31,7 +31,7 @@ describe("ATS Test", () => {
     });
   });
 
-  it("can download transmission data", () => {
+  it('can download transmission data from the ATS site', () => {
     const downloadTransmissionsSelector = createSelector('all transmissions');
     cy.visit(ATS_URL);
 
@@ -45,8 +45,8 @@ describe("ATS Test", () => {
     });
   });
 
-  it("can parse downloaded ATS files, and upload the rows to the database", () => {
+  it('can parse downloaded ATS files, and upload the rows to the database', () => {
     // handled in plugins/download.ts
-    cy.task("handleParseAndInsert");
+    cy.task('handleParseAndInsert');
   });
 });

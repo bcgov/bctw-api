@@ -25,7 +25,7 @@ const parseCsv = async (path): Promise<any[]> => {
 };
 
 /**
- * Cumulative_D or "temperature" data files have the timestamps spread across multiple columns
+ * Cumulative_D data files have the timestamps spread across multiple columns
  * @returns a dayjs instance of the date from @param row
  */
 const parseDateFromEventData = (row: IDeviceReadingEvent): Dayjs => {
@@ -108,7 +108,8 @@ const mergeATSData = (
     );
     validEntries.push(mergedRecord);
   });
-  console.log(JSON.stringify(validEntries, null, 2));
+  console.log(`number of valid entries: ${validEntries.length}`);
+  // console.log(JSON.stringify(validEntries, null, 2));
   return validEntries;
 };
 

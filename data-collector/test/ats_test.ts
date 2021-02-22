@@ -1,16 +1,15 @@
-// require('ts-node').register();
-import path from "path";
-const dayjs = require("dayjs");
+import path from 'path';
+const dayjs = require('dayjs');
 import {
   filterDataAsOfDate,
-  getLastSuccessfulCollar,
   getPaths,
   mergeATSData,
   parseCsv,
-} from "../scripts/ats/plugins/csv";
+} from '../scripts/ats/plugins/csv';
+// import { getTimestampOfLastCollarEntry} from '../scripts/ats/plugins/pg';
 
 const canParseCSVFiles = async () => {
-  const testDownloadPath = path.resolve(".", "test/csv");
+  const testDownloadPath = path.resolve('.', 'test/csv');
   const paths = await getPaths(testDownloadPath);
   // console.log(paths);
 
@@ -20,8 +19,8 @@ const canParseCSVFiles = async () => {
   // console.log(`number of data events ${data.length}`);
   // console.log(`number of transmission events ${transmissionData.length}`);
 
-  const specificDay = dayjs("2021-01-23");
-  const predicate = (d) => specificDay.isSame(dayjs(d.Date), "day");
+  const specificDay = dayjs('2021-01-23');
+  const predicate = (d) => specificDay.isSame(dayjs(d.Date), 'day');
   const filtered_d = data.filter(predicate);
   const filtered_t = transmissionData.filter(predicate);
 

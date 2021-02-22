@@ -18,11 +18,11 @@ console.log(`environment variables passed to cypress: ${envString}`);
 // spawn cypress as a child process, passing the node environment variables
 const cypress = spawn('cypress', ['run', '-b', 'chromium', '--headless', '--env', envString]);
 
-cypress.stdout.on("data", data => {
+cypress.stdout.on('data', data => {
     console.log(`stdout: ${data}`);
 });
 
-cypress.stderr.on("data", data => {
+cypress.stderr.on('data', data => {
     console.log(`stderr: ${data}`);
 });
 
@@ -30,6 +30,6 @@ cypress.on('error', (error) => {
     console.log(`error: ${error.message}`);
 });
 
-cypress.on("close", code => {
+cypress.on('close', code => {
     console.log(`child process exited with code ${code}`);
 });

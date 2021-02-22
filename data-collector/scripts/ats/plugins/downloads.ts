@@ -12,8 +12,8 @@ const asyncRename = promisify(rename);
 
 let port = 0;
 let client = null;
-const DELETE_DOWNLOADS = process.env.DELETE_DOWNLOADS;
-console.log(`delete_downloads env variable: ${DELETE_DOWNLOADS}`)
+// const DELETE_DOWNLOADS = process.env.DELETE_DOWNLOADS;
+// console.log(`delete_downloads env variable: ${DELETE_DOWNLOADS}`)
 
 module.exports = (on, config) => {
   const downloadPath = path.resolve(config.projectRoot, './downloads');
@@ -42,12 +42,12 @@ module.exports = (on, config) => {
 
   async function cleanDownloads() {
     const path = `${downloadPath}/*.txt`;
-    if (DELETE_DOWNLOADS === 'true') {
-      console.log(`cleaning up downloads ${path}`);
-      await rimraf(path); 
-    } else {
-      await archiveDownloads();
-    }
+    // if (DELETE_DOWNLOADS === 'true') {
+    console.log(`cleaning up downloads ${path}`);
+    await rimraf(path); 
+    // } else {
+      // await archiveDownloads();
+    // }
     return true;
   }
 
@@ -105,7 +105,7 @@ module.exports = (on, config) => {
     return null;
   }
 
-  // exported to be called as a cypress test after collar data is downloaded
+  // exported to be called as a cypress task after collar data is downloaded
   async function handleParseAndInsert() {
     const paths = await getPaths(downloadPath);
 
