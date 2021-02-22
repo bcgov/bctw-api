@@ -24,8 +24,8 @@ const callback = (err) => {
 };
 
 const sql = `
-  refresh materialized view vendor_merge_view;
-  refresh materialized view last_critter_pings_view;
+  refresh materialized view vendor_merge_view_no_critter;
+  refresh materialized view last_pings_view;
 `;
 
 pgPool.query(sql,callback);

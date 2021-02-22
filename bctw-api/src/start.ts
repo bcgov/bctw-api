@@ -32,9 +32,9 @@ import {
 } from './apis/code_api';
 import { Request, Response } from 'express';
 import { QueryResult } from 'pg';
-import { query, queryAsync } from './database/query';
+import { constructFunctionQuery, getRowResults, query, queryAsync } from './database/query';
 import { MISSING_IDIR } from './database/requests';
-import { S_BCTW } from './constants';
+import { S_API, S_BCTW } from './constants';
 
 /** getDBCritters
  * Request all collars the user has access to.
@@ -129,7 +129,7 @@ const getPingExtent = async function (
       max(date_recorded) "max",
       min(date_recorded) "min"
     from
-      vendor_merge_view2
+      vendor_merge_view_no_critter
   `;
   let data: QueryResult;
   try {
@@ -140,30 +140,28 @@ const getPingExtent = async function (
   return res.send(data.rows[0]);
 };
 
-/* ## getLastPings
-  Get the last know location of every collar ever deployed.
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
-  @param next {function} Node/Express function for flow control
+/**
+ * getLastPings:
+ * retrieves the last known location of collars that you have access to
+ * currently only returns collars that are attached to a critter
  */
-const getLastPings = function (req: Request, res: Response): void {
-  const sql = `
-    select * from last_critter_pings_view2
-  `;
-
-  const done = function (err, data) {
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const features = data.rows.map((row) => row.geojson);
-    const featureCollection = {
-      type: 'FeatureCollection',
-      features: features,
-    };
-
-    res.send(featureCollection);
+const getLastPings = async function (req: Request, res: Response): Promise<Response> {
+  const { idir } = req.query;
+  const fn_name = 'get_last_critter_pings';
+  const sql = constructFunctionQuery(fn_name, [idir], false, S_API);
+  const { result, error, isError } = await query(
+    sql,
+    `unable to retrive critter tracks`
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  const features = getRowResults(result, fn_name);
+  const featureCollection = {
+    type: 'FeatureCollection',
+    features: features,
   };
-  pgPool.query(sql, done);
+  return res.send(featureCollection); 
 };
 
 /* ## notFound

@@ -102,7 +102,7 @@ const _getUnassignedCritterSql = (idir: string) =>
     ua.permission_type,
     ac.*
   FROM
-    ${S_API}.currently_unattached_critters ac
+    ${S_API}.currently_unattached_critters_v ac
     JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = ac.id
   WHERE
     ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
