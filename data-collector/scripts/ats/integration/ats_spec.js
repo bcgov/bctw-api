@@ -1,8 +1,4 @@
 const env = Cypress.env();
-const waitTime = 10000;
-// group selector to help cypress find the download buttons faster
-const buttonGroupSelector = {within: '.button-container-group'};
-
 const createSelector = (innerText) => `span:contains('${innerText}')`;
 
 describe('ATS Test', () => {
@@ -16,7 +12,7 @@ describe('ATS Test', () => {
   } = env;
 
   it(`can download collar reading data from the ATS site`, () => {
-    const dataDownloadSelector = createSelector('all data');
+    const dataDownloadSelector = createSelector('download all data points');
     cy.visit(ATS_URL);
 
     cy.get(ATS_USERNAME_FIELD_ID).type(ATS_USERNAME);
@@ -25,24 +21,18 @@ describe('ATS Test', () => {
 
     // no way to catch this error, so this test WILL fail
     // because Cypress expects a new page to be loaded when the button is clicked
-    cy.get(dataDownloadSelector, buttonGroupSelector).then((f) => {
-      f.click();
-      cy.wait(waitTime);
-    });
+    cy.get(dataDownloadSelector).parent().click();
   });
 
   it('can download transmission data from the ATS site', () => {
-    const downloadTransmissionsSelector = createSelector('all transmissions');
+    const downloadTransmissionsSelector = createSelector('download all transmissions');
     cy.visit(ATS_URL);
 
     cy.get(ATS_USERNAME_FIELD_ID).type(ATS_USERNAME);
     cy.get(ATS_PASSWORD_FIELD_ID).type(ATS_PASSWORD);
     cy.get(ATS_LOGIN_FORM_ID).submit();
 
-    cy.get(downloadTransmissionsSelector, buttonGroupSelector).then((f) => {
-      f.click();
-      cy.wait(waitTime);
-    });
+    cy.get(downloadTransmissionsSelector).parent().click();
   });
 
   it('can parse downloaded ATS files, and upload the rows to the database', () => {
