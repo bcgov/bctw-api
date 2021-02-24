@@ -13,7 +13,7 @@
 // import './commands'
 
 before(() => {
-  cy.task('cleanDownloads');
+  // cy.task('cleanDownloads');
 });
 
 beforeEach(() => {

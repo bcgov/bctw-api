@@ -16,6 +16,7 @@ const envString = `ATS_URL=${ATS_URL},ATS_USERNAME_FIELD_ID=${ATS_USERNAME_FIELD
 console.log(`environment variables passed to cypress: ${envString}`);
 
 // spawn cypress as a child process, passing the node environment variables
+// pass '--no-exit' when debugging locally to have cypress not exit immediately
 const cypress = spawn('cypress', ['run', '-b', 'chromium', '--headless', '--env', envString]);
 
 cypress.stdout.on('data', data => {
