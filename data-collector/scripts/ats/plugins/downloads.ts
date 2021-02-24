@@ -29,12 +29,13 @@ module.exports = (on, config) => {
     }
     const port = 40000 + Math.round(Math.random() * 25000);
     args.push(`--remote-debugging-port=${port}`);
+    console.log('remote debugging on port ', port);
     return port;
   }
 
   async function resetCRI() {
     if (client) {
-      console.log('resetting CRI client');
+      // console.log('resetting CRI client');
       await (client as any).close();
       client = null;
     }

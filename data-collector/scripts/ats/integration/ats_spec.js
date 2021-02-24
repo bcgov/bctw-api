@@ -19,6 +19,7 @@ describe('ATS Test', () => {
     cy.get(ATS_PASSWORD_FIELD_ID).type(ATS_PASSWORD);
     cy.get(ATS_LOGIN_FORM_ID).submit();
 
+    cy.wait(5000);
     // no way to catch this error, so this test WILL fail
     // because Cypress expects a new page to be loaded when the button is clicked
     cy.get(downloadTransmissionsSelector).parent().click();
@@ -36,6 +37,7 @@ describe('ATS Test', () => {
   });
 
   it('can parse downloaded ATS files, and upload the rows to the database', () => {
+    cy.wait(5000);
     // handled in plugins/download.ts
     cy.task('handleParseAndInsert');
   });
