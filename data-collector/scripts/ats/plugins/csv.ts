@@ -4,9 +4,8 @@ import {
   IATSRow,
   IDeviceReadingEvent,
   ITransmissionEvent,
-  IATSBase,
 } from '../types';
-import { parseAsUtc } from './time';
+import { parseAsCT, parseAsUtc } from './time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
 
@@ -40,12 +39,19 @@ const parseDateFromEventData = (row: IDeviceReadingEvent): Dayjs => {
  * @param data
  * @param olderThan
  */
-const filterDataAsOfDate = <T extends IATSBase>(
-  data: T[],
+const filterCollarDataAfter = (
+  data: IDeviceReadingEvent[],
   olderThan: Dayjs
-): T[] => {
+): IDeviceReadingEvent[] => {
   return data.filter((d) => parseAsUtc(d.Date).isAfter(olderThan));
 };
+
+const filterTransmissionDataAfter =  (
+  data: ITransmissionEvent[],
+  olderThan: Dayjs
+): ITransmissionEvent[] => {
+  return data.filter((d) => parseAsUtc(d.DateCT).isAfter(olderThan))
+}
 
 // merge data and transmission record
 const createMergedRecord = (
@@ -54,7 +60,6 @@ const createMergedRecord = (
 ): IATSRow => {
   // remove the transmission properties that shouldn't be copied over
   const copyOfTransmission = Object.assign({}, transmission);
-  delete copyOfTransmission.Date;
   delete copyOfTransmission.Latitude;
   delete copyOfTransmission.Longitude;
   const r = Object.assign(data, copyOfTransmission);
@@ -83,10 +88,11 @@ const mergeATSData = (
 ): IATSRow[] => {
   const validEntries: IATSRow[] = [];
   deviceData.forEach((record: IDeviceReadingEvent) => {
-    const tempRowDate = parseDateFromEventData(record);
+    const tempRowDate = parseDateFromEventData(record); // in UTC
 
     const sameDayTransmissions = transmissionData.filter((t) => {
-      const isSameDay = tempRowDate.isSame(parseAsUtc(t.Date), 'day');
+      // transmission timestamps are in central time
+      const isSameDay = tempRowDate.isSame(parseAsCT(t.DateCT), 'day');
       return t.CollarSerialNumber === record.CollarSerialNumber && isSameDay;
     });
 
@@ -94,13 +100,17 @@ const mergeATSData = (
       return;
     }
 
+    // sort by ascending date then find the closest transmission
+    // after the collar event occurred
     const closest = sameDayTransmissions
-      .sort((a, b) => dayjs(a.Date) - dayjs(b.Date)) // sort by ascending dates
-      .filter((mtr) => parseAsUtc(mtr.Date).isAfter(tempRowDate));
+      .sort((a, b) => dayjs(a.DateCT) - dayjs(b.DateCT))
+      .filter((mtr) => parseAsUtc(mtr.DateCT).isAfter(tempRowDate));
 
     const closestTransmissionAfter = closest.length
       ? closest[0]
       : sameDayTransmissions[0];
+      
+    console.log(`collar ${record.CollarSerialNumber}: data timestamp ${tempRowDate.format()}, transmission timestamp ${closestTransmissionAfter.DateCT}`);
 
     const mergedRecord: IATSRow = createMergedRecord(
       record,
@@ -108,14 +118,15 @@ const mergeATSData = (
     );
     validEntries.push(mergedRecord);
   });
-  console.log(`number of valid entries: ${validEntries.length}`);
+  console.log(`number of valid entries to be saved: ${validEntries.length}`);
   // console.log(JSON.stringify(validEntries, null, 2));
   return validEntries;
 };
 
 export {
   mergeATSData,
-  filterDataAsOfDate,
+  filterCollarDataAfter,
+  filterTransmissionDataAfter,
   getPaths,
   parseCsv,
 };
