@@ -1,11 +1,11 @@
 {
   "env": { },
   "pageLoadTimeout": 10000,
-  "video": false,
+  "video": true,
   "pluginsFile": "scripts/ats/plugins/index.js",
   "supportFile": "scripts/ats/support/index.js",
   "integrationFolder": "scripts/ats/integration",
   "fixturesFolder": "scripts/ats/fixtures",
   "trashAssetsBeforeRuns": false, 
-  "screenshotOnRunFailure": false
+  "screenshotOnRunFailure": true
 }
