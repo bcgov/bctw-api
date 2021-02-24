@@ -13,9 +13,9 @@
 // import './commands'
 
 before(() => {
-  // cy.task('cleanDownloads');
+  cy.task('cleanDownloads');
 });
 
-beforeEach(() => {
-  cy.task('allowDownloads');
-});
+// beforeEach(() => {
+// cy.task('allowDownloads');
+// });

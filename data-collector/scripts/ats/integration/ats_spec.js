@@ -26,6 +26,7 @@ describe('ATS Test', () => {
 
   it('can download transmission data from the ATS site', () => {
     const downloadTransmissionsSelector = createSelector('download all transmissions');
+    cy.task('allowDownloads');
     cy.visit(ATS_URL);
 
     cy.get(ATS_USERNAME_FIELD_ID).type(ATS_USERNAME);
@@ -39,6 +40,7 @@ describe('ATS Test', () => {
 
   it(`can download collar reading data from the ATS site`, () => {
     const dataDownloadSelector = createSelector('download all data points');
+    cy.task('allowDownloads');
     cy.visit(ATS_URL);
 
     cy.get(ATS_USERNAME_FIELD_ID).type(ATS_USERNAME);

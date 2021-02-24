@@ -10,6 +10,7 @@
     "vendor-merge": "node scripts/vendor-merge.js",
     "ats": "node scripts/ats.js",
     "cypress": "cypress run -b chromium --headless",
+    "cypress-headed": "cypress run -b chromium --no-exit",
     "test": "ts-node test/ats_test.ts"
   },
   "repository": {

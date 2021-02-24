@@ -139,7 +139,7 @@ const assignOrUnassignCritterCollar = async function (
 
   const functionParams = body.isLink
     ? [...params, valid_from, valid_to]
-    : [...params, valid_to ?? momentNow()];
+    : [...params, valid_to];
   const sql = constructFunctionQuery(db_fn_name, functionParams);
   const { result, error, isError } = await query(sql, errMsg, true);
 
