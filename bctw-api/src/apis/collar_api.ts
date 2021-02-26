@@ -1,12 +1,11 @@
 import { Request, Response } from 'express';
-import { S_API } from '../constants';
+import { S_API, S_BCTW } from '../constants';
 
 import {
   appendSqlFilter,
   constructFunctionQuery,
   constructGetQuery,
   getRowResults,
-  momentNow,
   query,
 } from '../database/query';
 import { filterFromRequestParams, MISSING_IDIR } from '../database/requests';
@@ -20,19 +19,6 @@ const pg_update_collar_fn = 'update_collar';
 const pg_link_collar_fn = 'link_collar_to_animal';
 const pg_unlink_collar_fn = 'unlink_collar_to_animal';
 const pg_get_collar_history = 'get_collar_history';
-
-/**
- * @param alias the collar table alias
- * @param idir user idir
- * @returns a list of collars the user has access to. since a user is
- * associated with a set of critters.
- */
-const _accessCollarControl = (alias: string, idir: string) => {
-  return `and ${alias}.collar_id = any((${constructFunctionQuery(
-    'get_user_collar_access',
-    [idir]
-  )})::uuid[])`;
-};
 
 /**
  *
@@ -154,7 +140,7 @@ const assignOrUnassignCritterCollar = async function (
  * @param filte
  * @param page
  * @returns a list of collars that do not have a critter attached
- * currently no access control on these results
+ * fixme: currently no access control
  */
 const getAvailableCollarSql = function (
   idir: string,
@@ -162,10 +148,8 @@ const getAvailableCollarSql = function (
   page?: number
 ): string {
   const base = `select c.* from ${S_API}.collar_v c 
-    where c.collar_id not in (
-      select caa.collar_id from ${S_API}.collar_animal_assignment_v caa
-      where caa.valid_to >= now() OR caa.valid_to IS null 
-    )`;
+    where c.collar_id not in
+    (select collar_id from bctw_dapi_v1.currently_attached_collars_v)`;
   const strFilter = appendSqlFilter(
     filter || {},
     TelemetryTypes.collar,
@@ -175,7 +159,7 @@ const getAvailableCollarSql = function (
   const sql = constructGetQuery({
     base: base,
     filter: strFilter,
-    order: 'c.device_id',
+    order: 'c.max_transmission_date desc',
     page,
   });
   return sql;
@@ -211,16 +195,15 @@ const getAssignedCollarSql = function (
   filter?: IFilter,
   page?: number
 ): string {
-  const base = `select caa.animal_id, c.*
-  from ${S_API}.collar_v c inner join ${S_API}.collar_animal_assignment_v caa 
-  on c.collar_id = caa.collar_id
-  where caa.valid_to >= now() OR caa.valid_to IS null
-  ${_accessCollarControl('c', idir)}`;
-  const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c');
+  const base = `
+    select ca.animal_id || '/' || ca.wlh_id as "(WLH_ID/Animal ID)", c.*
+    from ${S_API}.currently_attached_collars_v ca
+    join ${S_API}.collar_v c on c.collar_id = ca.collar_id
+    where ca.critter_id = any(${S_BCTW}.get_user_critter_access('${idir}'))
+  `;
   const sql = constructGetQuery({
     base: base,
-    filter: strFilter,
-    order: 'c.device_id',
+    order: 'c.max_transmission_date desc',
     page,
   });
   return sql;
