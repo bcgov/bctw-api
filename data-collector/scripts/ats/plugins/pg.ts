@@ -1,7 +1,8 @@
 import pg, { QueryResult } from 'pg';
 import { IATSRow } from '../types';
-import { parseAsUtc, formatNowUtc, nowUtc } from './time';
+import { formatNowUtc, nowUtc } from './time';
 import { Dayjs } from 'dayjs';
+const dayjs = require('dayjs')
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
@@ -42,7 +43,7 @@ const getTimestampOfLastCollarEntry = async (): Promise<Dayjs> => {
   const client = await pgPool.connect();
   const data = await client.query(sql);
   // default to 1 day ago if can't find valid date from database
-  const result = data.rowCount > 0 ? parseAsUtc(data.rows[0]['date']) : yesterday ;
+  const result = data.rowCount > 0 ? dayjs(data.rows[0]['date']) : yesterday ;
   return result;
 }
 
@@ -102,7 +103,7 @@ const formatSql = (records: IATSRow[]): string => {
         '${p.NumSats}',
         '${p.FixTime}',
         '${p.Activity}',
-        '${p.CollarSerialNumber}_${parseAsUtc(p.Date).format()}'
+        '${p.CollarSerialNumber}_${dayjs(p.Date).format()}'
       )`
     );
   }

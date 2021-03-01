@@ -12,7 +12,6 @@ let client = null;
 
 module.exports = (on, config) => {
   const downloadPath = path.resolve(config.projectRoot, './downloads');
-  const archivePath = path.resolve(config.projectRoot, './archive');
 
   // setup remote debugging port
   function ensureRdpPort(args) {

@@ -5,7 +5,7 @@ import {
   IDeviceReadingEvent,
   ITransmissionEvent,
 } from '../types';
-import { parseAsCT, parseAsUtc } from './time';
+import { parseAsCT } from './time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
 
@@ -28,7 +28,7 @@ const parseCsv = async (path): Promise<any[]> => {
  * @returns a dayjs instance of the date from @param row
  */
 const parseDateFromEventData = (row: IDeviceReadingEvent): Dayjs => {
-  let date: Dayjs = parseAsUtc(row.Date);
+  let date: Dayjs = dayjs(row.Date);
   date = date.hour(+(row.Hour));
   date = date.minute(+(row.Minute));
   return date;
@@ -43,14 +43,14 @@ const filterCollarDataAfter = (
   data: IDeviceReadingEvent[],
   olderThan: Dayjs
 ): IDeviceReadingEvent[] => {
-  return data.filter((d) => parseAsUtc(d.Date).isAfter(olderThan));
+  return data.filter((d) => dayjs(d.Date).isAfter(olderThan));
 };
 
 const filterTransmissionDataAfter =  (
   data: ITransmissionEvent[],
   olderThan: Dayjs
 ): ITransmissionEvent[] => {
-  return data.filter((d) => parseAsUtc(d.DateCT).isAfter(olderThan))
+  return data.filter((d) => dayjs(d.DateCT).isAfter(olderThan))
 }
 
 // merge data and transmission record
@@ -93,6 +93,7 @@ const mergeATSData = (
     const sameDayTransmissions = transmissionData.filter((t) => {
       // transmission timestamps are in central time
       const isSameDay = tempRowDate.isSame(parseAsCT(t.DateCT), 'day');
+      // console.log(`${tempRowDate.format()} ${parseAsCT(t.DateCT).format()} ${isSameDay}`)
       return t.CollarSerialNumber === record.CollarSerialNumber && isSameDay;
     });
 
@@ -104,7 +105,7 @@ const mergeATSData = (
     // after the collar event occurred
     const closest = sameDayTransmissions
       .sort((a, b) => dayjs(a.DateCT) - dayjs(b.DateCT))
-      .filter((mtr) => parseAsUtc(mtr.DateCT).isAfter(tempRowDate));
+      .filter((mtr) => dayjs(mtr.DateCT).isAfter(tempRowDate));
 
     const closestTransmissionAfter = closest.length
       ? closest[0]
