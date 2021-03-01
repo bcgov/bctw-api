@@ -98,6 +98,7 @@ const mergeATSData = (
     });
 
     if (!sameDayTransmissions.length) {
+      console.log(`no transmissions found on same day ${tempRowDate.format()}`)
       return;
     }
 

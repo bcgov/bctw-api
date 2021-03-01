@@ -6,10 +6,10 @@ import {
   getPaths,
   mergeATSData,
   parseCsv,
-} from '../scripts/ats/plugins/csv';
+} from '../ats/plugins/csv';
 
 const canParseCSVFiles = async () => {
-  const testDownloadPath = path.resolve('.', 'test/csv');
+  const testDownloadPath = path.resolve('.', 'scripts/test/csv');
   const paths = await getPaths(testDownloadPath);
   // console.log(paths);
 
@@ -19,7 +19,7 @@ const canParseCSVFiles = async () => {
   // console.log(`number of data events ${data.length}`);
   // console.log(`number of transmission events ${transmissionData.length}`);
 
-  const specificDay = dayjs('2021-02-18');
+  const specificDay = dayjs('2021-02-21');
   const filtered_d = filterCollarDataAfter(data, specificDay);
   const filtered_t = filterTransmissionDataAfter(transmissions, specificDay);
 
@@ -27,7 +27,7 @@ const canParseCSVFiles = async () => {
   console.log(`number of transmission events ${filtered_t.length}`);
 
   const merged = mergeATSData(filtered_t, filtered_d);
-  // console.log(merged);
+  console.log(`${merged.length} entries to be saved`);
 };
 
 (async () => {

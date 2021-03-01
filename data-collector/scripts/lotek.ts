@@ -1,17 +1,17 @@
-const pg = require('pg'); // Postgres
-const async = require('async'); // Async management
-const needle = require('needle'); // HTTP requests
-const moment = require('moment'); // Time calculation
+import pg from 'pg';
+import needle from 'needle';
+import moment from 'moment';
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
+const port: string = process?.env?.POSTGRES_SERVER_PORT ?? '5432';
 // Set up the database pool
 const pgPool = new pg.Pool({
   user: process.env.POSTGRES_USER,
   database: process.env.POSTGRES_DB,
   password: process.env.POSTGRES_PASSWORD,
   host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
-  port: isProd ? process.env.POSTGRES_SERVER_PORT : 5432,
+  port: +port,
   max: 10
 });
 
@@ -29,7 +29,7 @@ This is run under and asyncJS series loop. If there is an error, pass it to the 
 @param records {object} Array object of collar records
 @param callback {function} The asyncJS callback function. Provide an error message if something fails, otherwise null.
  */
-const insertCollarData = function(records,callback) {
+const insertCollarData = async function(records) {
   const sqlPreamble = `
     insert into lotek_collar_data (
       "channelstatus",
@@ -59,7 +59,7 @@ const insertCollarData = function(records,callback) {
     ) values
   `;
 
-  let values = [];
+  const values: any[] = [];
   for (const p of records) {
     values.push(
       `(
@@ -93,12 +93,12 @@ const insertCollarData = function(records,callback) {
 
   const sqlPostamble = ' on conflict (timeid) do nothing';
 
-  sql = sqlPreamble + values.join(',') + sqlPostamble;
+  const sql = sqlPreamble + values.join(',') + sqlPostamble;
 
   const now = moment().utc();
   console.log(`${now}: Entering ` + values.length + ' records');
 
-  pgPool.query(sql,callback);
+  await pgPool.query(sql);
 };
 
 /* ## iterateCollars
@@ -109,37 +109,34 @@ const insertCollarData = function(records,callback) {
   @param collar {object} The collar object containing the unique ID.
   @param callback {function} The asyncJS callback function. Provide an error message if something fails, otherwise null.
  */
-const iterateCollars = function(collar,callback) {
+const iterateCollars = async function(collar) {
   const weekAgo = moment().subtract(7,'d').format('YYYY-MM-DDTHH:mm:ss');
   const url = `${lotexUrl}/gps?deviceId=${collar.nDeviceID}&dtStart=${weekAgo}`
 
   // Send request to the API
-  needle.get(url,tokenConfig,(err,res,body) => {
-    if (err) {
-      const msg = `Could not get collar data for ${collar.nDeviceID}: ${err}`
-      callback(null);
-      return console.error(msg);
-    }
+  const { body, error } = await needle('get', url,tokenConfig);
+  if (error) {
+    const msg = `Could not get collar data for ${collar.nDeviceID}: ${error}`
+    console.error(msg);
+    return;
+  }
 
-    if (!body.flat) {
-      const msg = `Did not receive a valid array for ${collar.nDeviceID} body: ${JSON.stringify(body)}`
-      callback(null);
-      return console.error(msg);
-    }
+  if (!body.flat) {
+    const msg = `Did not receive a valid array for ${collar.nDeviceID} body: ${JSON.stringify(body)}`
+    console.error(msg);
+    return;
+  }
 
-    const records = body
-      .flat()
-      .filter((e) => { return e && e.RecDateTime && e.DeviceID});
+  const records = body
+    .flat()
+    .filter((e) => { return e && e.RecDateTime && e.DeviceID});
 
-    if (records.length < 1) {
-      const msg = `No records for ${collar.nDeviceID}`
-      callback(null);
-      return console.error(msg);
-    }
-     
-    insertCollarData(records,callback);
-  });
-
+  if (records.length < 1) {
+    const msg = `No records for ${collar.nDeviceID}`
+    console.error(msg);
+    return;
+  }
+  insertCollarData(records);
 };
 
 /* ## getAllCollars
@@ -148,7 +145,7 @@ const iterateCollars = function(collar,callback) {
   @param _ {object} The network request object. Blanked
   @param data {object} The array object of all collars, containing IDs
  */
-const getAllCollars = function (err, _, data) {
+const getAllCollars = async function (err, _, data) {
   // If error... exit with a message.
   if (err) {return console.error("Could not get a token: ",err)};
 
@@ -157,28 +154,21 @@ const getAllCollars = function (err, _, data) {
     headers: {Authorization: `bearer ${data.access_token}`}
   }
 
-  const done = function (err) {
-    if (err) {
-      console.error('Unsuccessfully iterated over collar array: ',err);
-    }
-    const now = moment().utc();
-    console.log(`${now}: Successfully processed Lotek collars.`);
-
-    pgPool.end(); // Disconnect from database
+  const { body, error } = await needle('get', url,tokenConfig); 
+  if (error) {
+      return console.error('Could not get collar list: ',error);
   }
 
-  needle.get(url,tokenConfig,(error,res,body) => {
-    if (err) {
-      return console.error('Could not get collar list: ',error);
-    }
+  /*
+    Async workflow of cycling through all the collars.
+    Run the IterateCollars function on each collar.
+    When done. Shut down the database connection.
+  */
+  await Promise.all(body.map(c => iterateCollars(c)));
+  const now = moment().utc();
+  console.log(`${now}: Successfully processed Lotek collars.`);
 
-    /*
-      Async workflow of cycling through all the collars.
-      Run the IterateCollars function on each collar.
-      When done. Shut down the database connection.
-     */
-    async.concatSeries(body,iterateCollars,done); // kick off collar iteration
-  });
+  pgPool.end(); // Disconnect from database
 };
 
 
@@ -196,7 +186,6 @@ const getToken = function () {
 
   console.log(url);
   needle.post(url,data,config,getAllCollars);
-
 }
 
 /*
