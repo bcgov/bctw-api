@@ -4,8 +4,8 @@ content-type: application/json
 
 {
   "animal_id": "test123",
-  "animal_status": "Alive",
-  "calf_at_heel": true,
+  "animal_status": "A",
+  "juvenile_at_heel": "N",
   "species": "unicorn",
   "sex": "M",
   "wlh_id": "abc123",
@@ -19,17 +19,17 @@ content-type: application/json
 [
   {
     "animal_id": "test123",
-    "animal_status": "Alive",
-    "calf_at_heel": true,
-    "species": "unicorn",
+    "animal_status": "P",
+    "juvenile_at_heel": "Y",
+    "species": "caribou",
     "sex": "M",
-    "wlh_id": "abc123",
+    "wlh_id": "abc1233",
     "nickname": "shimmer"
   },
   {
     "animal_id": "test1234",
-    "animal_status": "Mortality",
-    "calf_at_heel": false,
+    "animal_status": "M",
+    "juvenile_at_heel": "N",
     "sex": "F",
     "wlh_id": "abc123",
     "nickname": "unknown"
@@ -42,12 +42,11 @@ content-type: application/json
 
 {
   "animal_id": "test123",
-  "animal_status": "Alive",
-  "calf_at_heel": true,
+  "animal_status": "X",
   "sex": "M",
   "wlh_id": "abc123",
   "nickname": "shimmer",
-  "id": "bb8bbbc9-417e-4d91-9638-d55820c43fd5"
+  "critter_id": "8f640736-ccf3-4cdd-96c0-f63f2062c4ce"
 }
 
 ### update multiple animals
@@ -57,21 +56,20 @@ content-type: application/json
 [
   {
     "animal_id": "test123",
-    "animal_status": "Alive",
+    "animal_status": "A",
     "calf_at_heel": true,
     "sex": "M",
     "wlh_id": "abc123",
     "nickname": "shimmer",
-    "id": "bb8bbbc9-417e-4d91-9638-d55820c43fd5"
+    "critter_id": "8f640736-ccf3-4cdd-96c0-f63f2062c4ce"
   },
   {
     "animal_id": "test123",
-    "animal_status": "Alive",
-    "calf_at_heel": true,
+    "animal_status": "A",
     "sex": "M",
     "wlh_id": "abc123",
     "nickname": "shimmer",
-    "id": "2a3829f5-e76a-4488-af57-a0a7c9e64709"
+    "critter_id": "dfb2a77f-7e03-432c-a6b2-c727a8efa07f"
   }
 ]
 
@@ -107,18 +105,8 @@ http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=unassigned
 ### assignmenthistory
 http://localhost:3000/get-assignment-history/03c72709-77c8-43e3-a7e5-70f27b960b64?idir={{idir}}
 
-### delete multiple - fail (already deleted)
-DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "ids": [
-    "03c72709-77c8-43e3-a7e5-70f27b960b64"
-  ]
-}
-
 ### delete individual - fail (critter DNE)
-DELETE http://localhost:3000/animal/03c72709-77c8-43e3-a7e5-70f27b960b64?idir={{idir}} HTTP/1.1
+DELETE http://localhost:3000/animal/20c28d11-9a94-4358-a9e6-eeed9ed17135?idir={{idir}} HTTP/1.1
 
 ### should fail - dont have permission to delete 4c10a...
 DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1

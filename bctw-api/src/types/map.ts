@@ -2,8 +2,8 @@ import { Animal } from './animal';
 import { Collar } from './collar';
 
 type GeoJSONProperty = 
-    Pick<Animal, 'species' | 'animal_id' | 'calf_at_heel' | 'animal_status' | 'population_unit'>
-  & Pick<Collar, 'collar_id' | 'device_id' | 'radio_frequency' | 'satellite_network'> & {
+    Pick<Animal, 'species' | 'animal_id' | 'juvenile_at_heel' | 'animal_status' | 'population_unit'>
+  & Pick<Collar, 'collar_id' | 'device_id' | 'frequency' | 'satellite_network'> & {
     id: number; // row id
     critter_id: string; // aka id
     critter_transaction_id: string;

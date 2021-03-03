@@ -4,8 +4,8 @@ POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "collar_make": "vectronics",
-  "collar_model": "deercollar9000",
+  "device_make": "V",
+  "device_model": "deercollar9000",
   "device_id": 41259
 }
 
@@ -16,13 +16,13 @@ content-type: application/json
 [
   {
     "device_id": 99999,
-    "collar_make": "vectronics",
-    "collar_model": "deercollar9000"
+    "device_make": "T",
+    "device_model": "deercollar9000"
   },
   {
     "device_id": 9998,
-    "collar_make": "vectronics",
-    "collar_model": "deercollar9000"
+    "device_make": "V",
+    "device_model": "deercollar9000"
   }
 ]
 
@@ -31,8 +31,9 @@ POST http://localhost:3000/update-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "collar_id": "5055375f-f91a-4cd7-aa4f-e0dbef56a358",
-  "radio_frequency": 291.33
+  "collar_id": "3cd0d831-b424-4daa-a662-367a580439eb",
+  "frequency": 291.33,
+  "device_model": "deercollar9000"
 }
 
 ### update collar that doesn't exist should fail
@@ -41,7 +42,7 @@ content-type: application/json
 
 {
   "collar_id": "4055375f-f91a-4cd7-aa4f-e0dbef56a358",
-  "radio_frequency": 291.33
+  "frequency": 291.33
 }
 
 ### retrive collar history

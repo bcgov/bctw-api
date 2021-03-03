@@ -159,7 +159,8 @@ const getAvailableCollarSql = function (
   const sql = constructGetQuery({
     base: base,
     filter: strFilter,
-    order: 'c.max_transmission_date desc',
+    // order: 'c.max_transmission_date desc',
+    order: 'c.device_id desc',
     page,
   });
   return sql;
@@ -203,7 +204,8 @@ const getAssignedCollarSql = function (
   `;
   const sql = constructGetQuery({
     base: base,
-    order: 'c.max_transmission_date desc',
+    order: 'c.device_id desc',
+    // order: 'c.max_transmission_date desc',
     page,
   });
   return sql;
@@ -238,7 +240,7 @@ const getCollarChangeHistory = async function (
   if (!collar_id || !idir) {
     return res.status(500).send(`collar_id and idir must be supplied in query`);
   }
-  const sql = constructFunctionQuery(pg_get_collar_history, [idir, collar_id]);
+  const sql = constructFunctionQuery(pg_get_collar_history, [idir, collar_id], false, S_API);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve collar history'

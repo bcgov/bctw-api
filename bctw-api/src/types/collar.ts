@@ -1,18 +1,24 @@
 type Collar = {
-  collar_id: number;
+  collar_id: string;
+  collar_transaction_id: string;
   device_id: number;
-  collar_make: string;
-  collar_model: string;
-  deployment_status: string;
-  collar_status: string;
-  collar_type: string;
-  deactivated: boolean;
-  radio_frequency: number;
+  device_deployment_status: string;
+  device_make: string;
+  device_malfunction_type: Date;
+  device_model: string;
+  device_status: string;
+  device_type: string;
+  fix_rate: number;
+  fix_success_rate: number;
+  frequency: number;
+  frequency_unit_code: string;
   malfunction_date: Date;
-  max_transmission_date: Date;
-  reg_key: string;
-  retreival_date: Date;
+  retrieval_date: Date;
+  retrieved: boolean;
   satellite_network: string;
+  vendor_activation_status: boolean;
+  sensor_mortality: boolean;
+  sensor_battery: boolean;
 };
 
 interface ChangeCollarData {
