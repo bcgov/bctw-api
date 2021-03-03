@@ -93,7 +93,7 @@ const mergeATSData = (
     const sameDayTransmissions = transmissionData.filter((t) => {
       // transmission timestamps are in central time
       const isSameDay = tempRowDate.isSame(parseAsCT(t.DateCT), 'day');
-      // console.log(`${tempRowDate.format()} ${parseAsCT(t.DateCT).format()} ${isSameDay}`)
+      console.log(`${tempRowDate.format()} ${parseAsCT(t.DateCT).format()} ${isSameDay}`)
       return t.CollarSerialNumber === record.CollarSerialNumber && isSameDay;
     });
 
