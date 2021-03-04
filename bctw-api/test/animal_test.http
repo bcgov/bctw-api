@@ -1,3 +1,7 @@
+# create references to Critter IDs in projectroot/.vscode/settings.json
+@critter1 = {{existing_critter}}
+@critter2 = {{existing_critter2}}
+@critterCanChange = {{critter_with_change_permission}}
 ### add a new animal
 POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
@@ -46,7 +50,7 @@ content-type: application/json
   "sex": "M",
   "wlh_id": "abc123",
   "nickname": "shimmer",
-  "critter_id": "8f640736-ccf3-4cdd-96c0-f63f2062c4ce"
+  "critter_id": "{{critter1}}"
 }
 
 ### update multiple animals
@@ -61,7 +65,7 @@ content-type: application/json
     "sex": "M",
     "wlh_id": "abc123",
     "nickname": "shimmer",
-    "critter_id": "8f640736-ccf3-4cdd-96c0-f63f2062c4ce"
+    "critter_id": "{{critter1}}"
   },
   {
     "animal_id": "test123",
@@ -69,7 +73,7 @@ content-type: application/json
     "sex": "M",
     "wlh_id": "abc123",
     "nickname": "shimmer",
-    "critter_id": "dfb2a77f-7e03-432c-a6b2-c727a8efa07f"
+    "critter_id": "{{critter2}}"
   }
 ]
 
@@ -79,7 +83,7 @@ content-type: application/json
 
 {
   "animal_id": "test123",
-  "animal_status": "Alive",
+  "animal_status": "A",
   "calf_at_heel": true,
   "sex": "M",
   "wlh_id": "abc123",
@@ -88,7 +92,7 @@ content-type: application/json
 }
 
 ### get critter history 
-http://localhost:3000/get-animal-history/bb8bbbc9-417e-4d91-9638-d55820c43fd5?idir={{idir}}
+http://localhost:3000/get-animal-history/{{critter2}}?idir={{idir}}
 
 ### get all critters (requires admin)
 http://localhost:3000/get-animals?idir={{idir}}
@@ -103,34 +107,10 @@ http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned
 http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=unassigned
 
 ### assignmenthistory
-http://localhost:3000/get-assignment-history/03c72709-77c8-43e3-a7e5-70f27b960b64?idir={{idir}}
+http://localhost:3000/get-assignment-history/{{critter2}}?idir={{idir}}
 
-### delete individual - fail (critter DNE)
-DELETE http://localhost:3000/animal/20c28d11-9a94-4358-a9e6-eeed9ed17135?idir={{idir}} HTTP/1.1
-
-### should fail - dont have permission to delete 4c10a...
-DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "ids": ["c97a9154-0431-434d-aee4-76e4349aaec8", "4c10a670-d5de-41c1-ad29-e96615686f2e", "5b67a55b-f32d-4b5e-ba5f-1df97cf9851b"]
-}
+### delete individual - fail (no permission)
+DELETE http://localhost:3000/animal/{{critter1}}?idir={{idir}} HTTP/1.1
 
 ### should succeed
-DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "ids": ["c97a9154-0431-434d-aee4-76e4349aaec8"]
-}
-
-### should fail no permission on 5b67...
-DELETE http://localhost:3000/animal?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "ids": ["5b67a55b-f32d-4b5e-ba5f-1df97cf9851b"]
-}
-
-### - should suceed
-DELETE http://localhost:3000/animal/c97a9154-0431-434d-aee4-76e4349aaec8?idir={{idir}} HTTP/1.1
+DELETE http://localhost:3000/animal/{{critterCanChange}}?idir={{idir}} HTTP/1.1

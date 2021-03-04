@@ -1,3 +1,6 @@
+@my_idir = {{idir}}
+@critter_no_access = {{existing_critter}}
+@critter_with_access = {{critter_with_change_permission}}
 ### get role - should fail user with idir stuff DNE
 http://localhost:3000/get-user-role?idir=stuff
 
@@ -28,37 +31,17 @@ content-type: application/json
   "role": "administrat"
 }
 
-###
-# should fail, user with this idir already has access to this critter
+### should succeed
 POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
-{
-  "user": "jcraven",
-  "animalId": "4bedfa0f-e73c-4698-9f55-8c7296edd586",
-  "permission_type": "change"
-}
-
-###
-# should fail, invalid permission type
-POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "user": "jcraven",
-  "animalId": "65f8093f-bd76-4dc4-8b20-adeb95055947",
-  "permission_type": "asdf"
-}
-
-### - should succeed
-POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "user": "jcraven",
-  "animalId": ["1b22dc11-f814-4707-821e-6112485c5fd5"],
-  "permission_type": "view"
-}
+[{
+  "userId": "1",
+  "access": [{
+    "critter_id": "{{critter_no_access}}",
+    "permission_type": "change"
+  }]
+}]
 
 ### should succeed with my idir
 GET http://localhost:3000/get-users?idir={{idir}}
