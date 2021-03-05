@@ -5,7 +5,7 @@ import {
   IDeviceReadingEvent,
   ITransmissionEvent,
 } from '../types';
-import { parseAsCT } from './time';
+import { parseAsCT, parseAsLocal } from './time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
 
@@ -28,7 +28,7 @@ const parseCsv = async (path): Promise<any[]> => {
  * @returns a dayjs instance of the date from @param row
  */
 const parseDateFromEventData = (row: IDeviceReadingEvent): Dayjs => {
-  let date: Dayjs = dayjs(row.Date);
+  let date: Dayjs = parseAsLocal(row.Date);
   date = date.hour(+(row.Hour));
   date = date.minute(+(row.Minute));
   return date;
@@ -88,12 +88,12 @@ const mergeATSData = (
 ): IATSRow[] => {
   const validEntries: IATSRow[] = [];
   deviceData.forEach((record: IDeviceReadingEvent) => {
-    const tempRowDate = parseDateFromEventData(record); // in UTC
+    const tempRowDate = parseDateFromEventData(record);
 
     const sameDayTransmissions = transmissionData.filter((t) => {
       // transmission timestamps are in central time
       const isSameDay = tempRowDate.isSame(parseAsCT(t.DateCT), 'day');
-      // console.log(`${tempRowDate.format()} ${parseAsCT(t.DateCT).format()} ${isSameDay}`)
+      console.log(`${tempRowDate.format()} ${parseAsCT(t.DateCT).format()} ${isSameDay}`)
       return t.CollarSerialNumber === record.CollarSerialNumber && isSameDay;
     });
 

@@ -1,12 +1,18 @@
+@critter1 = {{existing_critter}}
+@attached_to_critter1 = {{collar_attached_to_critter1}}
+@critter_no_collar = {{critter_with_change_permission}}
+@collar1 = {{existing_collar}}
+@collar2 = {{existing_collar2}}
+@collarDNE = {{collar_dne}}
+@unattached_collar = {{free_collar}}
+@today = {{$datetime iso8601}}
 ### add collar
 # this device id already exists - should fail
 POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "collar_make": "vectronics",
-  "collar_model": "deercollar9000",
-  "device_id": 41259
+  "device_make": "V", "device_model": "deercollar9000", "device_id": 41259
 }
 
 ###  adding new collars should work
@@ -15,14 +21,10 @@ content-type: application/json
 
 [
   {
-    "device_id": 99999,
-    "collar_make": "vectronics",
-    "collar_model": "deercollar9000"
+    "device_id": 99999, "device_make": "T", "device_model": "deercollar9000"
   },
   {
-    "device_id": 9998,
-    "collar_make": "vectronics",
-    "collar_model": "deercollar9000"
+    "device_id": 9998, "device_make": "V", "device_model": "deercollar9000"
   }
 ]
 
@@ -31,21 +33,17 @@ POST http://localhost:3000/update-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "collar_id": "5055375f-f91a-4cd7-aa4f-e0dbef56a358",
-  "radio_frequency": 291.33
+  "collar_id": "{{collar1}}", "frequency": 291.33, "device_model": "deercollar9000"
 }
 
 ### update collar that doesn't exist should fail
 POST http://localhost:3000/update-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
-{
-  "collar_id": "4055375f-f91a-4cd7-aa4f-e0dbef56a358",
-  "radio_frequency": 291.33
-}
+{ "collar_id": "{{collarDNE}}", "frequency": 291.33 }
 
 ### retrive collar history
-http://localhost:3000/get-collar-history/5055375f-f91a-4cd7-aa4f-e0dbef56a358?idir={{idir}}
+http://localhost:3000/get-collar-history/{{collar1}}?idir={{idir}}
 
 ##### collar assignment tests
 # should fail - already attached in dev
@@ -55,9 +53,9 @@ content-type: application/json
 {
   "isLink": true,
   "data": {
-    "collar_id": "0dbd1ce5-7250-4483-9a6f-5618f0847a75",
-    "animal_id": "b6a76948-f564-4366-bde3-0fab53a31bda",
-    "valid_from": "2021-10-20"
+    "collar_id": "{{collar1}}",
+    "animal_id": "{{critter1}}",
+    "valid_from": "{{today}}"
   }
 }
 
@@ -68,9 +66,9 @@ content-type: application/json
 {
   "isLink": true,
   "data": {
-    "collar_id": "a84cf03c-225c-4984-930b-1f259c9926c8",
-    "animal_id": "76a8a6eb-f975-43c3-a03b-fc5deb4f626a",
-    "valid_from": "2021-10-20"
+    "collar_id": "{{free_collar}}",
+    "animal_id": "{{critter_no_collar}}",
+    "valid_from": "{{today}}"
   }
 }
 
@@ -82,9 +80,9 @@ content-type: application/json
 {
   "isLink": false,
   "data": {
-    "collar_id": "0dbd1ce5-7250-4483-9a6f-5618f0847a75",
-    "animal_id": "b6a76948-f564-4366-bde3-0fab53a31bda",
-    "valid_from": "2021-10-20"
+    "collar_id": "{{attached_to_critter1}}",
+    "animal_id": "{{critter1}}",
+    "valid_from": "{{today}}"
   }
 }
 
@@ -95,25 +93,11 @@ http://localhost:3000/get-available-collars?idir={{idir}}
 ### get paged available collars
 http://localhost:3000/get-available-collars?idir={{idir}}&page=2
 
-### specific collar
-http://localhost:3000/get-available-collars?idir={{idir}}&id=a84cf03c-225c-4984-930b-1f259c9926c8
-
 ### get assigned collars
 http://localhost:3000/get-assigned-collars?idir={{idir}}
 
 ### get assigned collars page 2
 http://localhost:3000/get-assigned-collars?idir={{idir}}&page=2
 
-### delete collar - fail (DNE)
-DELETE http://localhost:3000/collar/5055375f-f91a-4cd7-aa4f-e0dbef56a358?idir={{idir}} HTTP/1.1
-
 ### - should pass
-DELETE http://localhost:3000/collar?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "ids": ["4a33663e-2afd-4edf-90de-4c9a557d49e0", "b0fa00ec-2555-48d9-bc30-842b1c49b2d7"]
-}
-
-### should pass
-DELETE http://localhost:3000/collar/4a33663e-2afd-4edf-90de-4c9a557d49e0?idir={{idir}} HTTP/1.1
+DELETE http://localhost:3000/collar/{{existing_collar2}}?idir={{idir}} HTTP/1.1

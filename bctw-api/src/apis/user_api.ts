@@ -128,7 +128,7 @@ const getUserCritterAccess = async function (
 };
 
 interface ICritterAccess {
-  id: string;
+  critter_id: string;
   animal_id?: string;
   permission_type: eCritterPermission;
   valid_from?: Date;
@@ -159,7 +159,7 @@ const assignCritterToUser = async function (
      * user_animal_access table row, and this table uses animal_id,
      * need to remap the id to animal_id coming from the frontend
      */
-    const mapAnimalId = access.map((a) => ({ animal_id: a.id, permission_type: a.permission_type }));
+    const mapAnimalId = access.map((a) => ({ animal_id: a.critter_id, permission_type: a.permission_type }));
     const sql = constructFunctionQuery(fn_name, [idir, userId, mapAnimalId], true);
     return query(
       sql,
