@@ -26,6 +26,7 @@
     {
       "name": "lotek",
       "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/data-collector/.env",
       "internalConsoleOptions": "neverOpen",
       "program": "${workspaceFolder}/data-collector/scripts/lotek.ts",
       "runtimeExecutable": "${workspaceFolder}/bctw-api/node_modules/nodemon/bin/nodemon.js",
@@ -38,6 +39,15 @@
         "${workspaceFolder}/data-collector/build/**/*.js",
         "!**/node_modules/**"
       ]
+    },
+    {
+      "name": "vendor merge",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/data-collector/.env",
+      "internalConsoleOptions": "neverOpen",
+      "program": "${workspaceFolder}/data-collector/build/vendor_merge.js",
+      "request": "launch",
+      "type": "pwa-node",
     },
   ]
 }

@@ -1,19 +1,6 @@
-import pg from 'pg';
 import needle from 'needle';
 import moment from 'moment';
-
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
-
-const port: string = process?.env?.POSTGRES_SERVER_PORT ?? '5432';
-// Set up the database pool
-const pgPool = new pg.Pool({
-  user: process.env.POSTGRES_USER,
-  database: process.env.POSTGRES_DB,
-  password: process.env.POSTGRES_PASSWORD,
-  host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
-  port: +port,
-  max: 10
-});
+import { pgPool } from './db'
 
 // Grab credentials as Environment Variables
 const lotexUser = process.env.LOTEK_USER;
@@ -98,7 +85,11 @@ const insertCollarData = async function(records) {
   const now = moment().utc();
   console.log(`${now}: Entering ` + values.length + ' records');
 
-  await pgPool.query(sql);
+  try {
+    await pgPool.query(sql);
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 /* ## iterateCollars

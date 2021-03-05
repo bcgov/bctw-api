@@ -3,8 +3,7 @@ import path from 'path';
 import { promisify } from 'util';
 import { IDeviceReadingEvent, ITransmissionEvent} from '../types';
 import { filterCollarDataAfter, filterTransmissionDataAfter, getPaths, mergeATSData, parseCsv } from './csv';
-import { getTimestampOfLastCollarEntry } from './pg';
-import { formatSql, insertData } from './pg';
+import { getTimestampOfLastCollarEntry, formatSql, insertData } from './pg';
 const rimraf = promisify(require('rimraf'));
 
 let port = 0;
