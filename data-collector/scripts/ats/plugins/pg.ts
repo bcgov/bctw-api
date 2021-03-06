@@ -3,7 +3,7 @@ import { IATSRow } from '../types';
 import { formatNowUtc, nowUtc } from './time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
-import {pgPool, isProd } from '../../db';
+import {pgPool, isProd, queryAsync, transactionify } from '../../db';
 
 // returns null instead of NaN
 const parseFloatFromJSON = (val: string) => {
@@ -16,9 +16,6 @@ const parseBoolFromJSON = (val: string) => {
   return val === 'No' ? false : true;
 }
 
-// dont commit transaction if not in production
-const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
-
 // retrieves the timestamp of the last entered row in the ats_collar_data table
 // if not production, returns now() - 1 day 
 const getTimestampOfLastCollarEntry = async (): Promise<Dayjs> => {
@@ -27,8 +24,7 @@ const getTimestampOfLastCollarEntry = async (): Promise<Dayjs> => {
     return yesterday;
   }
   const sql = `select c.date from bctw.ats_collar_data c order by c.date desc limit 1`
-  const client = await pgPool.connect();
-  const data = await client.query(sql);
+  const data = await queryAsync(sql);
   // default to 1 day ago if can't find valid date from database
   const result = data.rowCount > 0 ? dayjs(data.rows[0]['date']) : yesterday ;
   return result;
@@ -102,20 +98,14 @@ const formatSql = (records: IATSRow[]): string => {
 };
 
 const insertData = async (sql: string): Promise<QueryResult> => {
-  const client = await pgPool.connect();
-  let res: QueryResult;
+  let result;
   try {
-    res = await client.query(sql);
-    await client.query('commit');
+    result = await queryAsync(sql);
   } catch (err) {
     console.log(`caught exception inserting to ats_collar_table: ${err}`);
-    await client.query('rollback');
-    throw err;
-  } finally {
-    client.release();
-  }
+  } 
   console.log(`${formatNowUtc()} sucessfully inserted records to ats_collar_table`)
-  return res;
+  return result;
 }
 
 export {

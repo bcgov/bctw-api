@@ -7,6 +7,8 @@ import {
   mergeATSData,
   parseCsv,
 } from '../ats/plugins/csv';
+import {getLastAlertTimestamp } from '../db';
+import {retrieveCredentials} from '../credentials';
 
 const canParseCSVFiles = async () => {
   const testDownloadPath = path.resolve('.', 'scripts/test/csv');
@@ -31,5 +33,7 @@ const canParseCSVFiles = async () => {
 };
 
 (async () => {
-  await canParseCSVFiles();
+  await retrieveCredentials('test1');
+  // await canParseCSVFiles();
+  // await getLastAlertTimestamp('Lotek');
 })();

@@ -41,13 +41,16 @@
       ]
     },
     {
-      "name": "vendor merge",
+      "name": "ats test",
       "console": "integratedTerminal",
       "envFile": "${workspaceFolder}/data-collector/.env",
       "internalConsoleOptions": "neverOpen",
-      "program": "${workspaceFolder}/data-collector/build/vendor_merge.js",
+      "program": "${workspaceFolder}/data-collector/scripts/test/ats_test.ts",
+      "runtimeExecutable": "${workspaceFolder}/bctw-api/node_modules/nodemon/bin/nodemon.js",
       "request": "launch",
       "type": "pwa-node",
+      "sourceMaps": true,
+      "restart": false,
     },
   ]
 }

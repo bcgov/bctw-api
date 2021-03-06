@@ -19,7 +19,6 @@ const getAllCollars = function () {
     if (err) {
       return console.error('Failed to fetch Vectronics collars: ',err);
     }
-
     async.concatSeries(data.rows,iterateCollars,disconnect);
   };
 
