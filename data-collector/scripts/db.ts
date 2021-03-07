@@ -33,7 +33,8 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
   return data;
 }
 
-const getLastAlertTimestamp = async (device_make: string): Promise<Dayjs | null> => {
+// retrieve the timestamp of the last alert added
+const getLastAlertTimestamp = async (device_make: 'Lotek' | 'ATS' | 'Vectronic'): Promise<Dayjs | null> => {
   const sql = `select valid_from from bctw.telemetry_sensor_alert where device_make = '${device_make}'
   order by valid_from desc limit 1`;
   const result = await queryAsync(sql);
