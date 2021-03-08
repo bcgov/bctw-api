@@ -55,20 +55,10 @@ objects:
                         name: bctw
                   - name: POSTGRES_DB
                     value: bctw
-                  - name: LOTEK_USER
+                  - name: VENDOR_API_CREDENTIALS_KEY
                     valueFrom:
                       secretKeyRef:
-                        key: username
-                        name: lotex
-                  - name: LOTEK_PASSWORD
-                    valueFrom:
-                      secretKeyRef:
-                        key: password
-                        name: lotex
-                  - name: LOTEK_URL
-                    value: 'https://webservice.lotek.com/API'
-                  - name: VECTRONICS_URL
-                    value: 'https://api.vectronic-wildlife.com/v2/collar'
+                        name: vendor-api-credentials-private-key
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
               activeDeadlineSeconds: 90

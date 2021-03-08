@@ -57,3 +57,6 @@ GET http://localhost:3000/get-critter-access/sdf
 
 ### Get user with role info
 GET http://localhost:3000/get-user?idir={{idir}}
+
+### Get invalid user
+GET http://localhost:3000/get-user?idir={{idirDNE}}

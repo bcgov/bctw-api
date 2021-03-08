@@ -78,6 +78,9 @@ const getUser = async function (
     'failed to query user role'
   );
   if (isError) {
+    if (error.message.includes('couldnt find user')) {
+      return res.status(401).send(`Unauthorized, user with IDIR ${idir} does not exist`);
+    }
     return res.status(500).send(error.message);
   }
   const results = getRowResults(result, fn_name)[0];

@@ -1,9 +1,9 @@
 import { QueryResult } from 'pg';
 import { IATSRow } from '../types';
-import { formatNowUtc, nowUtc } from './time';
+import { formatNowUtc } from './time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
-import {pgPool, isProd, queryAsync, transactionify } from '../../db';
+import { queryAsync, transactionify } from '../../db';
 
 // returns null instead of NaN
 const parseFloatFromJSON = (val: string) => {
@@ -19,10 +19,7 @@ const parseBoolFromJSON = (val: string) => {
 // retrieves the timestamp of the last entered row in the ats_collar_data table
 // if not production, returns now() - 1 day 
 const getTimestampOfLastCollarEntry = async (): Promise<Dayjs> => {
-  const yesterday = nowUtc().subtract(1, 'd');
-  if (!isProd) {
-    return yesterday;
-  }
+  const yesterday = dayjs().utc().subtract(1, 'd');
   const sql = `select c.date from bctw.ats_collar_data c order by c.date desc limit 1`
   const data = await queryAsync(sql);
   // default to 1 day ago if can't find valid date from database

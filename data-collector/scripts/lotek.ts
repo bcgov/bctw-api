@@ -174,7 +174,7 @@ const getAlerts = async () => {
     dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert))
   );
   console.log(
-    `alerts retrieved ${body.length} alters filtered ${filtered.length}`
+    `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`
   );
   insertAlerts(filtered);
 };
@@ -198,7 +198,8 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
   `;
   const values: string[] = [];
   for (const alert of alerts) {
-    if (alert.dtTimestampCancel === timestampNotCanceled) {
+    // are there other types of alerts?
+    if (alert.dtTimestampCancel === timestampNotCanceled && alert.strAlertType === 'Mortality') {
       values.push(`(
         (select collar_id from bctw.collar where device_make='Lotek' and device_id=${alert.nDeviceID}),
         'Lotek',
