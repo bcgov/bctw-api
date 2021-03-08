@@ -64,7 +64,8 @@ objects:
                   - name: VENDOR_API_CREDENTIALS_KEY
                     valueFrom:
                       secretKeyRef:
-                        name: vendor-api-credentials-private-key
+                        name: vendor-api-credentials-pkey
+                        key: key
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
               activeDeadlineSeconds: 220
@@ -93,8 +94,8 @@ parameters:
   - name: 'SCHEDULE'
     displayName: 'Cron Schedule'
     description: 'Cron Schedule to Execute the Job (in UTC)'
-    value: '0 1 * * *' # at one o'clock
-    # value: '*/5 * * * *' #every 5 minutes  
+    # value: '0 1 * * *' # at one o'clock
+    value: '*/5 * * * *' #every 5 minutes  
     required: true
   - name: 'SUCCESS_JOBS_HISTORY_LIMIT'
     displayName: 'Successful Job History Limit'

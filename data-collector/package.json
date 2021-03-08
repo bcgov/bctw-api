@@ -4,6 +4,7 @@
   "description": "Cron job for API integration",
   "main": "app.js",
   "scripts": {
+    "build": "rimraf ./build && tsc",
     "start": "node app.js",
     "vectronics": "node build/vectronics.js",
     "lotek": "node build/lotek.js",
@@ -50,6 +51,7 @@
     "dotenv": "^8.2.0",
     "eslint": "^7.17.0",
     "nodemon": "^2.0.6",
+    "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.2"
   }

@@ -58,7 +58,8 @@ objects:
                   - name: VENDOR_API_CREDENTIALS_KEY
                     valueFrom:
                       secretKeyRef:
-                        name: vendor-api-credentials-private-key
+                        name: vendor-api-credentials-pkey
+                        key: key
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
               activeDeadlineSeconds: 90
