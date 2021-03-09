@@ -180,6 +180,24 @@ const assignCritterToUser = async function (
   return res.send({ errors, results });
 };
 
+const getUserTelemetryAlerts = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const idir = req?.query?.idir as string;
+  if (!idir) {
+    return res.status(500).send(MISSING_IDIR);
+  }
+  const fn_name = 'get_user_telemetry_alerts';
+  const base = constructFunctionQuery(fn_name, [idir], false, S_API);
+  const sql = constructGetQuery({ base });
+  const { result, error, isError } = await query(sql, '');
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, fn_name)[0]);
+}
+
 export {
   addUser,
   getUserRole,
@@ -187,4 +205,5 @@ export {
   getUser,
   getUsers,
   getUserCritterAccess,
+  getUserTelemetryAlerts,
 };

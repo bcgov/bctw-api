@@ -12,6 +12,10 @@ const spawnProcess = async () => {
     console.log('credential row identifier: ', credential_name_id)
     // retrieve the lotek credentials from the encrypted db table
     const { username, password, url } = await retrieveCredentials(credential_name_id ?? '');
+    if (!url) {
+        console.log(`unable to retrieve ATS vendor credentials using identifier ${credential_name_id}`)
+        return;
+    }
     console.log(`retrieved credentials from db ${username}, ${password}, ${url}`)
 
     const envString = `ATS_URL=${url},ATS_USERNAME_FIELD_ID=${ATS_USERNAME_FIELD_ID},ATS_PASSWORD_FIELD_ID=${ATS_PASSWORD_FIELD_ID},ATS_LOGIN_FORM_ID=${ATS_LOGIN_FORM_ID},ATS_PASSWORD=${password},ATS_USERNAME=${username}`;

@@ -191,8 +191,9 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
   const sqlPreamble = `
     insert into bctw.telemetry_sensor_alert (
       "collar_id",
+      "device_id",
       "device_make",
-      "mortality_sensor",
+      "alert_type",
       "valid_from"
     ) values
   `;
@@ -202,9 +203,10 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     if (alert.dtTimestampCancel === timestampNotCanceled && alert.strAlertType === 'Mortality') {
       values.push(`(
         (select collar_id from bctw.collar where device_make='Lotek' and device_id=${alert.nDeviceID}),
+        ${alert.nDeviceID}
         'Lotek',
-        true,
-        now()
+        'mortality',
+        '${alert.dtTimestamp}'
       )`);
     }
   }
@@ -229,8 +231,13 @@ const setToken = (data) => {
   and iteration function
 */
 const getToken = async function () {
+  const credential_name_id = process.env.ATS_API_CREDENTIAL_NAME;
   // retrieve the lotek credentials from the encrypted db table
-  const { username, password, url } = await retrieveCredentials('lotek_dev');
+  const { username, password, url } = await retrieveCredentials(credential_name_id ?? '');
+  if (!url) {
+    console.log(`unable to retrieve Lotek vendor credentials using identifier ${credential_name_id}`)
+    return;
+  }
   // set the API url
   lotekUrl = url;
 

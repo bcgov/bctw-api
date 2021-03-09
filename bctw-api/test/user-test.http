@@ -60,3 +60,6 @@ GET http://localhost:3000/get-user?idir={{idir}}
 
 ### Get invalid user
 GET http://localhost:3000/get-user?idir={{idirDNE}}
+
+### Get alerts
+GET http://localhost:3000/get-user-alerts?idir={{idir}}

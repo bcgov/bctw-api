@@ -6,6 +6,7 @@ import {
   getUser,
   getUsers,
   getUserCritterAccess,
+  getUserTelemetryAlerts,
 } from './apis/user_api';
 import {
   addCollar,
@@ -226,6 +227,7 @@ export {
   getUserRole,
   getUser,
   getUsers,
+  getUserTelemetryAlerts,
   deleteType,
   notFound,
 };
