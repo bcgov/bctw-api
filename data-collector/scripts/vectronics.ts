@@ -1,28 +1,7 @@
-const pg = require('pg'); // Postgres
 const async = require('async'); // Async management
-const needle = require('needle'); // HTTP requests
-const moment = require('moment'); // Time calculation
-
-const isProd = process.env.NODE_ENV === 'production' ? true : false;
-
-// console.log("env",process.env.NODE_ENV);
-// console.log("user",process.env.POSTGRES_USER);
-// console.log("db",process.env.POSTGRES_DB);
-// console.log("password",process.env.POSTGRES_PASSWORD);
-// console.log("host",process.env.POSTGRES_SERVER_HOST);
-// console.log("port",process.env.POSTGRES_SERVER_PORT);
-
-// Set up the database pool
-const pgPool = new pg.Pool({
-  user: process.env.POSTGRES_USER,
-  database: process.env.POSTGRES_DB,
-  password: process.env.POSTGRES_PASSWORD,
-  host: isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost',
-  port: isProd ? process.env.POSTGRES_SERVER_PORT : 5432,
-  // idleTimeoutMillis: 30000,
-  // connectionTimeoutMillis: 60000,
-  max: 10
-});
+import needle from 'needle';
+import moment from 'moment';
+import {pgPool} from './db';
 
 const disconnect = function (err) {
   pgPool.end();
@@ -40,7 +19,6 @@ const getAllCollars = function () {
     if (err) {
       return console.error('Failed to fetch Vectronics collars: ',err);
     }
-
     async.concatSeries(data.rows,iterateCollars,disconnect);
   };
 
@@ -134,7 +112,7 @@ const insertCollarRecords = function(err,result,collar,callback) {
     ) values
   `;
 
-  let values = [];
+  let values: any[] = [];
   for (const p of records) {
     values.push(
       `(
@@ -190,11 +168,8 @@ const insertCollarRecords = function(err,result,collar,callback) {
   }
 
   const sqlPostamble = ' on conflict (idPosition) do nothing';
-
-  sql = sqlPreamble + values.join(',') + sqlPostamble;
-
+  const sql = sqlPreamble + values.join(',') + sqlPostamble;
   console.log('Entering ' + values.length + ' records');
-
   pgPool.query(sql,callback);
 }
 

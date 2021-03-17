@@ -1,11 +1,7 @@
-// extended properties may not be parsed correctly using csv-tojson
+import { Dayjs } from "dayjs";
 
 // representation of a row from the Cumulative_D.... csv file. Non transmission data
-
-interface IATSBase {
-  Date?: string;
-}
-interface IDeviceReadingEvent extends IATSBase {
+interface IDeviceReadingEvent {
   CollarSerialNumber: string;
   Year: string;
   Julianday: string;
@@ -23,9 +19,9 @@ interface IDeviceReadingEvent extends IATSBase {
 }
 
 // representation of a row from the Cumulative_Transmissions_.... file.
-interface ITransmissionEvent extends IATSBase {
+interface ITransmissionEvent {
   CollarSerialNumber: string;
-  Date?: string;
+  DateCT: string;
   NumberFixes: string;
   BattVoltage: string;
   Mortality: string;
@@ -54,7 +50,6 @@ interface IATSRow extends ITransmissionEvent {
 }
 
 export {
-  IATSBase,
   IDeviceReadingEvent,
   ITransmissionEvent,
   IATSRow,

@@ -2,22 +2,15 @@ import CDP from 'chrome-remote-interface';
 import path from 'path';
 import { promisify } from 'util';
 import { IDeviceReadingEvent, ITransmissionEvent} from '../types';
-import { filterDataAsOfDate, getPaths, mergeATSData, parseCsv } from './csv';
-import { getTimestampOfLastCollarEntry } from './pg';
-import { formatSql, insertData } from './pg';
-import { rename } from 'fs';
-
+import { filterCollarDataAfter, filterTransmissionDataAfter, getPaths, mergeATSData, parseCsv } from './csv';
+import { getTimestampOfLastCollarEntry, formatSql, insertData } from './pg';
 const rimraf = promisify(require('rimraf'));
-const asyncRename = promisify(rename);
 
 let port = 0;
 let client = null;
-const DELETE_DOWNLOADS = process.env.DELETE_DOWNLOADS;
-console.log(`delete_downloads env variable: ${DELETE_DOWNLOADS}`)
 
 module.exports = (on, config) => {
   const downloadPath = path.resolve(config.projectRoot, './downloads');
-  const archivePath = path.resolve(config.projectRoot, './archive');
 
   // setup remote debugging port
   function ensureRdpPort(args) {
@@ -29,12 +22,13 @@ module.exports = (on, config) => {
     }
     const port = 40000 + Math.round(Math.random() * 25000);
     args.push(`--remote-debugging-port=${port}`);
+    console.log('remote debugging on port ', port);
     return port;
   }
 
   async function resetCRI() {
     if (client) {
-      console.log('resetting CRI client');
+      // console.log('resetting CRI client');
       await (client as any).close();
       client = null;
     }
@@ -42,27 +36,9 @@ module.exports = (on, config) => {
 
   async function cleanDownloads() {
     const path = `${downloadPath}/*.txt`;
-    if (DELETE_DOWNLOADS === 'true') {
-      console.log(`cleaning up downloads ${path}`);
-      await rimraf(path); 
-    } else {
-      await archiveDownloads();
-    }
+    console.log(`cleaning up downloads ${path}`);
+    await rimraf(path); 
     return true;
-  }
-
-  async function archiveDownloads() {
-    const paths = await getPaths(downloadPath);
-    if (paths.length) {
-      console.log('files found in downloads directory, attempting to archive')
-      paths.forEach(async curPath => {
-        const newPath = `${archivePath}/${path.basename(curPath)}`;
-        console.log(`archiving downloaded file to ${newPath}`);
-        await asyncRename(curPath, newPath)
-      })
-    } else {
-      console.log('archiving skipped - download directory is empty')
-    }
   }
 
   async function allowDownloads() {
@@ -88,12 +64,12 @@ module.exports = (on, config) => {
     console.log(`last successfull insertion to ATS table was ${lastEntry.format()}`);
 
     // filter out old data 
-    const deviceEvents = filterDataAsOfDate(data, lastEntry);
-    const transmissionEvents = filterDataAsOfDate(transmissionData, lastEntry);
-    console.log(`filtered results: data entries: ${deviceEvents.length}, transmission entries: ${transmissionEvents.length}`)
+    const newCollarEvents = filterCollarDataAfter(data, lastEntry);
+    const newTransmissions = filterTransmissionDataAfter(transmissionData, lastEntry);
+    console.log(`filtered results: data entries: ${newCollarEvents.length}, transmission entries: ${newTransmissions.length}`)
 
     // combine entries from both the files into a single bctw.ats_collar_data record
-    const newCollarData = mergeATSData(transmissionEvents, deviceEvents);
+    const newCollarData = mergeATSData(newTransmissions, newCollarEvents);
 
     if (!newCollarData.length) {
       console.log(`no new entries found after ${lastEntry.format()}, exiting`);
@@ -105,7 +81,7 @@ module.exports = (on, config) => {
     return null;
   }
 
-  // exported to be called as a cypress test after collar data is downloaded
+  // exported to be called as a cypress task after collar data is downloaded
   async function handleParseAndInsert() {
     const paths = await getPaths(downloadPath);
 
@@ -118,7 +94,7 @@ module.exports = (on, config) => {
     const collarData = await parseCsv(paths[0]) as IDeviceReadingEvent[]; // collar data including temperature
     const transmissionData = await parseCsv(paths[1]) as ITransmissionEvent[]; // transmission data
 
-    console.log(`completed parsing files downloaded files to JSON, ${collarData.length} temperature data and ${transmissionData.length} transmission data`)
+    console.log(`completed parsing files downloaded files to JSON, ${collarData.length} collar event data and ${transmissionData.length} transmission events`)
     if (collarData.length && transmissionData.length) {
       await mergeAndInsert(collarData, transmissionData);
     }

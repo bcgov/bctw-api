@@ -52,6 +52,7 @@ const app = express()
   .get('/get-users',api.getUsers)
   .get('/get-user-role',api.getUserRole)
   .get('/get-critter-access/:user', api.getUserCritterAccess)
+  .get('/get-user-alerts', api.getUserTelemetryAlerts)
   .post('/add-user', api.addUser)
   .post('/assign-critter-to-user', api.assignCritterToUser)
   // codes
@@ -61,8 +62,7 @@ const app = express()
   .post('/add-code-header', api.addCodeHeader)
   // import
   .post('/import', upload.single('csv'), importCsv)
-  // generic getter for multiple types
-  // .get('/:type/:id', api.getType)
+  // delete
   .delete('/:type', api.deleteType)
   .delete('/:type/:id', api.deleteType)
   // Health check

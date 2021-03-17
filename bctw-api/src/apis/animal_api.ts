@@ -92,8 +92,8 @@ const _getAssignedCritterSql = (idir: string) =>
     a.*
   FROM
     ${S_API}.currently_attached_collars_v cac
-    JOIN ${S_API}.animal_v a ON cac.critter_id = a.id
-    JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = a.id
+    JOIN ${S_API}.animal_v a ON cac.critter_id = a.critter_id
+    JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = a.critter_id
   WHERE
     ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
 
@@ -102,8 +102,8 @@ const _getUnassignedCritterSql = (idir: string) =>
     ua.permission_type,
     ac.*
   FROM
-    ${S_API}.currently_unattached_critters ac
-    JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = ac.id
+    ${S_API}.currently_unattached_critters_v ac
+    JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = ac.critter_id
   WHERE
     ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
 

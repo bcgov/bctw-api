@@ -6,3 +6,6 @@
 node_modules
 downloads
 cypress
+build
+scripts/test/csv/*
+.env*

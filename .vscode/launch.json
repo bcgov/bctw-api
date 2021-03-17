@@ -25,12 +25,32 @@
     },
     {
       "name": "lotek",
-      "program": "${workspaceFolder}/data-collector/scripts/lotek.js",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/data-collector/.env",
+      "internalConsoleOptions": "neverOpen",
+      "program": "${workspaceFolder}/data-collector/scripts/lotek.ts",
+      "runtimeExecutable": "${workspaceFolder}/bctw-api/node_modules/nodemon/bin/nodemon.js",
       "request": "launch",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "type": "pwa-node"
+      "restart": true,
+      "skipFiles": [ "<node_internals>/**" ],
+      "type": "pwa-node",
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/data-collector/build/**/*.js",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "ats test",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/data-collector/.env",
+      "internalConsoleOptions": "neverOpen",
+      "program": "${workspaceFolder}/data-collector/scripts/test/ats_test.ts",
+      "runtimeExecutable": "${workspaceFolder}/bctw-api/node_modules/nodemon/bin/nodemon.js",
+      "request": "launch",
+      "type": "pwa-node",
+      "sourceMaps": true,
+      "restart": false,
     },
   ]
 }

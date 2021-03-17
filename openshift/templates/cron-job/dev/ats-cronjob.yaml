@@ -55,26 +55,22 @@ objects:
                         name: bctw
                   - name: POSTGRES_DB
                     value: bctw
-                  - name: ATS_URL
-                    value: 'https://www.atsidaq.net/Login.aspx'
                   - name: ATS_USERNAME_FIELD_ID
                     value: '#username'
                   - name: ATS_PASSWORD_FIELD_ID
                     value: '#password'
                   - name: ATS_LOGIN_FORM_ID
                     value: '#ctl01'
-                  - name: DELETE_DOWNLOADS
-                    value: 'false'
-                  - name: ATS_PASSWORD
-                    valueFrom: 
-                      secretKeyRef:
-                        key: password
-                        name: ats
-                  - name: ATS_USERNAME
+                  - name: VENDOR_API_CREDENTIALS_KEY
                     valueFrom:
                       secretKeyRef:
-                        key: username
-                        name: ats
+                        name: vendor-api-credentials-pkey
+                        key: key
+                  - name: ATS_API_CREDENTIAL_NAME
+                    valueFrom:
+                      secretKeyRef:
+                        name: ats-account-identifier-1 
+                        key: name
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
               activeDeadlineSeconds: 220

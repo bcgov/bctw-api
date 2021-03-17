@@ -16,6 +16,6 @@ before(() => {
   cy.task('cleanDownloads');
 });
 
-beforeEach(() => {
-  cy.task('allowDownloads');
-});
+// beforeEach(() => {
+// cy.task('allowDownloads');
+// });

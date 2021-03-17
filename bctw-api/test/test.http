@@ -1,4 +1,5 @@
-http://localhost:3000/get-last-pings
+###
+http://localhost:3000/get-last-pings?idir={{idir}}
 
 ###
 http://localhost:3000/get-critters?idir={{idir}}
@@ -17,3 +18,6 @@ GET http://localhost:3000/animal/1234
 # GET http://localhost:3000/animal/8
 ###
 DELETE http://localhost:3000/animal/149
+
+### 
+http://localhost:3000/get-ping-extent

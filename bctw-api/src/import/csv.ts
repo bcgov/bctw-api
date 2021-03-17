@@ -139,7 +139,7 @@ const handleCollarCritterLink = async (
     crittersWithCollars.map(async (a: Animal) => {
       const aid = insertResults.find(
         (row: Animal) => row.animal_id === a.animal_id
-      )?.id;
+      )?.critter_id;
       if (aid) {
         // find a collar_id for the user provided device_id
         const collarIdResult = await queryAsync(

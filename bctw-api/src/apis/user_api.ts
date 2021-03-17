@@ -78,6 +78,9 @@ const getUser = async function (
     'failed to query user role'
   );
   if (isError) {
+    if (error.message.includes('couldnt find user')) {
+      return res.status(401).send(`Unauthorized, user with IDIR ${idir} does not exist`);
+    }
     return res.status(500).send(error.message);
   }
   const results = getRowResults(result, fn_name)[0];
@@ -128,7 +131,7 @@ const getUserCritterAccess = async function (
 };
 
 interface ICritterAccess {
-  id: string;
+  critter_id: string;
   animal_id?: string;
   permission_type: eCritterPermission;
   valid_from?: Date;
@@ -159,7 +162,7 @@ const assignCritterToUser = async function (
      * user_animal_access table row, and this table uses animal_id,
      * need to remap the id to animal_id coming from the frontend
      */
-    const mapAnimalId = access.map((a) => ({ animal_id: a.id, permission_type: a.permission_type }));
+    const mapAnimalId = access.map((a) => ({ animal_id: a.critter_id, permission_type: a.permission_type }));
     const sql = constructFunctionQuery(fn_name, [idir, userId, mapAnimalId], true);
     return query(
       sql,
@@ -177,6 +180,24 @@ const assignCritterToUser = async function (
   return res.send({ errors, results });
 };
 
+const getUserTelemetryAlerts = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const idir = req?.query?.idir as string;
+  if (!idir) {
+    return res.status(500).send(MISSING_IDIR);
+  }
+  const fn_name = 'get_user_telemetry_alerts';
+  const base = constructFunctionQuery(fn_name, [idir], false, S_API);
+  const sql = constructGetQuery({ base });
+  const { result, error, isError } = await query(sql, '');
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, fn_name)[0]);
+}
+
 export {
   addUser,
   getUserRole,
@@ -184,4 +205,5 @@ export {
   getUser,
   getUsers,
   getUserCritterAccess,
+  getUserTelemetryAlerts,
 };
