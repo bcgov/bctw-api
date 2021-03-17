@@ -101,3 +101,6 @@ http://localhost:3000/get-assigned-collars?idir={{idir}}&page=2
 
 ### - should pass
 DELETE http://localhost:3000/collar/{{existing_collar2}}?idir={{idir}} HTTP/1.1
+
+###
+http://localhost:3000/collar/{{existing_collar}}?idir={{idir}}

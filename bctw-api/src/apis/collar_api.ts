@@ -202,10 +202,14 @@ const getAssignedCollarSql = function (
     join ${S_API}.collar_v c on c.collar_id = ca.collar_id
     where ca.critter_id = any(${S_BCTW}.get_user_critter_access('${idir}'))
   `;
+  let filterStr = '';
+  if (filter && filter.id) {
+    filterStr = `and c.collar_id = '${filter.id}'`;
+  }
   const sql = constructGetQuery({
     base: base,
     order: 'c.device_id desc',
-    // order: 'c.max_transmission_date desc',
+    filter: filterStr,
     page,
   });
   return sql;

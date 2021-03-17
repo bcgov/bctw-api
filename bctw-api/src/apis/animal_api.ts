@@ -85,6 +85,7 @@ const deleteAnimal = async function (
   return isError ? res.status(500).send(error.message) : res.status(200).send();
 };
 
+const _uaJoin = (idir: string) => `ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
 const _getAssignedCritterSql = (idir: string) =>
   `SELECT
     ua.permission_type,
@@ -94,8 +95,7 @@ const _getAssignedCritterSql = (idir: string) =>
     ${S_API}.currently_attached_collars_v cac
     JOIN ${S_API}.animal_v a ON cac.critter_id = a.critter_id
     JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = a.critter_id
-  WHERE
-    ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
+  WHERE ${_uaJoin(idir)}`;
 
 const _getUnassignedCritterSql = (idir: string) =>
   `SELECT
@@ -104,8 +104,16 @@ const _getUnassignedCritterSql = (idir: string) =>
   FROM
     ${S_API}.currently_unattached_critters_v ac
     JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = ac.critter_id
-  WHERE
-    ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
+  WHERE ${_uaJoin(idir)}`;
+
+const _getCritterSql = (idir: string, critter_id: string) =>
+  `SELECT
+    ua.permission_type,
+    a.*
+  FROM
+    ${S_API}.animal_v a
+    JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = a.critter_id
+  WHERE ${_uaJoin(idir)} and a.critter_id = '${critter_id}'`;
 
 /*
  */
@@ -119,10 +127,17 @@ const getAnimals = async function (
   if (!idir) {
     return res.status(500).send(MISSING_IDIR);
   }
-  const sql =
-    critterType === eCritterFetchType.assigned
-      ? constructGetQuery({ base: _getAssignedCritterSql(idir), page })
-      : constructGetQuery({ base: _getUnassignedCritterSql(idir), page });
+  let sql;
+  switch (critterType) {
+    case eCritterFetchType.assigned:
+      sql = constructGetQuery({ base: _getAssignedCritterSql(idir), page })
+      break;
+    case eCritterFetchType.unassigned:
+      sql = constructGetQuery({ base: _getUnassignedCritterSql(idir), page });
+      break;
+    default:
+      sql = constructGetQuery({ base: _getCritterSql(idir, req.params.id)})
+  }
   const { result, error, isError } = await query(
     sql,
     `failed to query critters`

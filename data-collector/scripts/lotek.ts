@@ -212,6 +212,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
   }
   if (!values.length) {
     console.log('Lotek alerts found but they were cancelled');
+    return;
   }
   const sql = sqlPreamble + values.join(",");
   console.log(`${dayjs()}: Entering ` + values.length + " alert records");

@@ -36,8 +36,7 @@ type Animal = {
 
 enum eCritterFetchType {
   assigned = 'assigned',
-  unassigned= 'unassigned',
-  all = 'all'
+  unassigned= 'unassigned'
 }
 
 export {

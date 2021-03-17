@@ -175,6 +175,21 @@ const notFound = function (req: Request, res: Response): Response {
 };
 
 /**
+ * generic getter, must supply id as UUID
+ */
+const getType = function(req: Request, res:Response): Promise<Response> {
+  const params = req.params;
+  switch (params.type) {
+    case 'critter':
+      return getAnimals(req, res);
+    case 'collar':
+      return getAssignedCollars(req, res);
+    default:
+      return new Promise(() =>  null);
+  }
+}
+
+/**
  * can be called with an individual id or have ids in the body 
  */
 const deleteType = async function (
@@ -228,6 +243,7 @@ export {
   getUser,
   getUsers,
   getUserTelemetryAlerts,
+  getType,
   deleteType,
   notFound,
 };
