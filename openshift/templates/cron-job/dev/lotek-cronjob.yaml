@@ -31,7 +31,7 @@ objects:
             spec:
               containers:
                 - name: '${JOB_NAME}'
-                  image: 'docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}'
+                  image: '${IMAGE_NAMESPACE}/${IMAGE_NAME}'
                   command:
                     - 'npm'
                     - 'run'
@@ -87,12 +87,12 @@ parameters:
   - name: 'IMAGE_NAMESPACE'
     displayName: 'Image Namespace'
     description: 'The locate of the image to use for this cron job.'
-    value: 'dgsbmb-tools'
+    value: '0dff19-tools'
     required: true
   - name: 'IMAGE_NAME'
     displayName: 'Image Name'
     description: 'The image name to use for this cron job.'
-    value: 'data-collector:latest'
+    value: 'data-collector:dev'
     required: true
   - name: 'SCHEDULE'
     displayName: 'Cron Schedule'
