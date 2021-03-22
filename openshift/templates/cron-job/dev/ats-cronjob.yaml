@@ -94,7 +94,7 @@ parameters:
   - name: 'IMAGE_NAME'
     displayName: 'Image Name'
     description: 'The image name to use for this cron job.'
-    value: 'data-collector:latest'
+    value: 'data-collector:dev'
     required: true
   - name: 'SCHEDULE'
     displayName: 'Cron Schedule'
