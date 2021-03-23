@@ -73,7 +73,7 @@ parameters:
   - name: 'NAMESPACE'
     displayName: 'Namespace'
     description: 'Name of the Namespace where to deploy the Scheduled Job'
-    value: 'dgsbmb-dev'
+    value: '0dff19-dev'
     required: true
   - name: 'JOB_NAME'
     displayName: 'Job Name'
