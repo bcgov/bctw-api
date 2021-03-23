@@ -60,7 +60,8 @@ const app = express()
   .get('/get-code-headers', api.getCodeHeaders)
   .post('/add-code', api.addCode)
   .post('/add-code-header', api.addCodeHeader)
-  // import
+  // export/import
+  .get('/export/:type', api.getExportData)
   .post('/import', upload.single('csv'), importCsv)
   // delete
   .delete('/:type', api.deleteType)

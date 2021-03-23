@@ -1,0 +1,17 @@
+### get critter history data 
+http://localhost:3000/export/animal?idir={{idir}}&id={{existing_critter}}
+
+### get multiple critter history data 
+http://localhost:3000/export/animal/?idir={{idir}}&id={{existing_critter}}&id={{existing_critter2}}
+
+### get collar history data
+http://localhost:3000/export/collar?idir={{idir}}&id={{collar_attached_to_critter1}}
+
+### get 2 collar history data
+http://localhost:3000/export/collar?idir={{idir}}&id={{collar_attached_to_critter1}}&id={{existing_collar2}}
+
+### get movement history
+http://localhost:3000/export/movement?idir={{idir}}&id={{existing_critter2}}
+
+### get movement history x2
+http://localhost:3000/export/movement?idir={{idir}}&id={{existing_critter2}}&id={{existing_critter}}

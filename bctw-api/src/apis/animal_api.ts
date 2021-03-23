@@ -206,4 +206,5 @@ export {
   getAnimals,
   getAnimalHistory,
   getCollarAssignmentHistory,
+  pg_get_critter_history,
 };

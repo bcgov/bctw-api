@@ -21,7 +21,6 @@ const pg_unlink_collar_fn = 'unlink_collar_to_animal';
 const pg_get_collar_history = 'get_collar_history';
 
 /**
- *
  * @param idir user idir
  * @param collar a list of collars
  * @returns the result of the insert/upsert in the bulk rseponse format
@@ -38,11 +37,7 @@ const addCollar = async function (
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
   const sql = constructFunctionQuery(pg_add_collar_fn, [idir, collars], true);
-  const { result, error, isError } = await query(
-    sql,
-    'failed to add collar(s)',
-    true
-  );
+  const { result, error, isError } = await query(sql, 'failed to add collar(s)', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
@@ -68,16 +63,8 @@ const updateCollar = async function (
     return res.send(bulkResp);
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery(
-    pg_update_collar_fn,
-    [idir, collars],
-    true
-  );
-  const { result, error, isError } = await query(
-    sql,
-    'failed to update collar',
-    true
-  );
+  const sql = constructFunctionQuery( pg_update_collar_fn, [idir, collars], true);
+  const { result, error, isError } = await query(sql, 'failed to update collar', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
@@ -86,6 +73,11 @@ const updateCollar = async function (
   return res.send(bulkResp);
 };
 
+/**
+ * @param userIdentifier - idir
+ * @param collarIds - collars to delete
+ * @returns boolean value on whether delete was successful
+ */
 const deleteCollar = async function (
   userIdentifier: string,
   collarIds: string[],
@@ -137,10 +129,9 @@ const assignOrUnassignCritterCollar = async function (
 
 /**
  * @param idir
- * @param filte
  * @param page
  * @returns a list of collars that do not have a critter attached
- * fixme: currently no access control
+ * fixme: no access control
  */
 const getAvailableCollarSql = function (
   idir: string,
@@ -150,16 +141,10 @@ const getAvailableCollarSql = function (
   const base = `select c.* from ${S_API}.collar_v c 
     where c.collar_id not in
     (select collar_id from bctw_dapi_v1.currently_attached_collars_v)`;
-  const strFilter = appendSqlFilter(
-    filter || {},
-    TelemetryTypes.collar,
-    'c',
-    true
-  );
+  const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
   const sql = constructGetQuery({
     base: base,
     filter: strFilter,
-    // order: 'c.max_transmission_date desc',
     order: 'c.device_id desc',
     page,
   });
@@ -215,6 +200,10 @@ const getAssignedCollarSql = function (
   return sql;
 };
 
+/**
+ * 
+ * @returns 
+ */
 const getAssignedCollars = async function (
   req: Request,
   res: Response
@@ -263,4 +252,5 @@ export {
   getAssignedCollars,
   getAvailableCollars,
   getCollarChangeHistory,
+  pg_get_collar_history,
 };

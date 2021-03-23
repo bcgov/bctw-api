@@ -24,7 +24,7 @@ const getCode = async function (
   if (!idir || !codeHeader) {
     return res.status(500).send(`${MISSING_IDIR} and codeHeader`);
   }
-  const page = (req.query?.page || 1) as number;
+  const page = (req.query?.page || 0) as number;
   const sql = constructFunctionQuery('get_code', [idir, codeHeader, page], false, S_API);
   const { result, error, isError } = await query(
     sql,

@@ -36,6 +36,7 @@ import { QueryResult } from 'pg';
 import { constructFunctionQuery, getRowResults, query, queryAsync } from './database/query';
 import { MISSING_IDIR } from './database/requests';
 import { S_API, S_BCTW } from './constants';
+import { getExportData } from './export/export';
 
 /** getDBCritters
  * Request all collars the user has access to.
@@ -245,5 +246,6 @@ export {
   getUserTelemetryAlerts,
   getType,
   deleteType,
+  getExportData,
   notFound,
 };
