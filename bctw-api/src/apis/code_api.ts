@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { S_API } from '../constants';
 import {
   constructFunctionQuery,
   getRowResults,
@@ -24,7 +25,7 @@ const getCode = async function (
     return res.status(500).send(`${MISSING_IDIR} and codeHeader`);
   }
   const page = (req.query?.page || 1) as number;
-  const sql = constructFunctionQuery('get_code', [idir, codeHeader, page]);
+  const sql = constructFunctionQuery('get_code', [idir, codeHeader, page], false, S_API);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve codes'
@@ -49,7 +50,7 @@ const getCodeHeaders = async function (
     code_header_name as type,
     code_header_title as title,
     code_header_description as description
-    from bctw.code_header `;
+    from ${S_API}.code_header_v `;
   if (codeType) {
     sql += `where code_header_name = '${codeType}';`;
   }

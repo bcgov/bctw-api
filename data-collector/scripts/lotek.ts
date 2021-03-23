@@ -232,7 +232,7 @@ const setToken = (data) => {
   and iteration function
 */
 const getToken = async function () {
-  const credential_name_id = process.env.ATS_API_CREDENTIAL_NAME;
+  const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   // retrieve the lotek credentials from the encrypted db table
   const { username, password, url } = await retrieveCredentials(credential_name_id ?? '');
   if (!url) {

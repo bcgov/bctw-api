@@ -60,7 +60,7 @@ objects:
                       secretKeyRef:
                         name: vendor-api-credentials-pkey
                         key: key
-                  - name: ATS_API_CREDENTIAL_NAME
+                  - name: LOTEK_API_CREDENTIAL_NAME
                     valueFrom:
                       secretKeyRef:
                         name: lotek-account-identifier-1 

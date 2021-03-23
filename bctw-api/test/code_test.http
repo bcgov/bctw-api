@@ -36,8 +36,10 @@ content-type: application/json
 }
 
 ###### get code
-###
 GET http://localhost:3000/get-code?codeHeader=region&idir={{idir}} HTTP/1.1
+
+### species 
+GET http://localhost:3000/get-code?codeHeader=species&idir={{idir}} HTTP/1.1
 
 ###### get code headers
 ###
