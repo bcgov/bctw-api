@@ -48,6 +48,7 @@ const app = express()
   .post('/update-collar', api.updateCollar)
   .post('/change-animal-collar', api.assignOrUnassignCritterCollar)
   // users
+  .get('/get-udf', api.getUDF)
   .get('/get-user',api.getUser)
   .get('/get-users',api.getUsers)
   .get('/get-user-role',api.getUserRole)
@@ -55,13 +56,14 @@ const app = express()
   .get('/get-user-alerts', api.getUserTelemetryAlerts)
   .post('/add-user', api.addUser)
   .post('/assign-critter-to-user', api.assignCritterToUser)
+  .post('/add-udf', api.upsertUDF)
   // codes
   .get('/get-code', api.getCode)
   .get('/get-code-headers', api.getCodeHeaders)
   .post('/add-code', api.addCode)
   .post('/add-code-header', api.addCodeHeader)
   // export/import
-  .get('/export/:type', api.getExportData)
+  .post('/export/:type', api.getExportData)
   .post('/import', upload.single('csv'), importCsv)
   // delete
   .delete('/:type', api.deleteType)

@@ -45,11 +45,8 @@ const getExportData = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  // node will put duplicate query string identifiers into an array
-  // ex ?id=1&id=2 => [1,2]
-  const id = req.query.id as string[];
+  const ids = req.body;
   const idir = req.query.idir as string;
-  const ids = Array.isArray(id) ? id : [id]
   const { type } = req.params;
   if (!idir) {
     return res.status(500).send(MISSING_IDIR);

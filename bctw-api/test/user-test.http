@@ -63,3 +63,20 @@ GET http://localhost:3000/get-user?idir={{idirDNE}}
 
 ### Get alerts
 GET http://localhost:3000/get-user-alerts?idir={{idir}}
+
+### get critter groups
+GET http://localhost:3000/get-udf?idir={{idir}}&type=critter_group
+
+###
+POST http://localhost:3000/add-udf?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "type": "crittter_group",
+  "key": "tg3",
+  "value": [
+    "2dcfd39b-c077-4cbd-97f0-528e9359c4c6",
+    "8f640736-ccf3-4cdd-96c0-f63f2062c4ce",
+    "20c28d11-9a94-4358-a9e6-eeed9ed17135"
+  ]
+}

@@ -7,6 +7,8 @@ import {
   getUsers,
   getUserCritterAccess,
   getUserTelemetryAlerts,
+  getUDF,
+  upsertUDF,
 } from './apis/user_api';
 import {
   addCollar,
@@ -245,6 +247,8 @@ export {
   getUsers,
   getUserTelemetryAlerts,
   getType,
+  getUDF,
+  upsertUDF,
   deleteType,
   getExportData,
   notFound,

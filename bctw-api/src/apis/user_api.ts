@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { S_API } from '../constants';
+import { S_API, S_BCTW } from '../constants';
 import {
   constructFunctionQuery,
   constructGetQuery,
@@ -198,12 +198,54 @@ const getUserTelemetryAlerts = async function (
   return res.send(getRowResults(result, fn_name)[0]);
 }
 
+type UDF = {
+  udf_id: number;
+  user_id: number;
+  type: string;
+  key: string;
+  value: string;
+}
+
+const upsertUDF = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const idir = req.query.idir as string;
+  const udf = req.body as UDF;
+  const fn_name = 'upsert_udf';
+  const sql = constructFunctionQuery(fn_name, [idir, udf], false, S_BCTW);
+  const { result, error, isError } = await query(sql, '', true);
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, fn_name)[0]);
+}
+
+const getUDF = async function (
+  req: Request,
+  res: Response
+) : Promise<Response> {
+  const idir = req.query.idir as string;
+  const udf_type = req.query.type as string;
+  const sql = 
+  `select * from ${S_API}.user_defined_fields_v
+  where user_id = bctw.get_user_id('${idir}')
+  and type = '${udf_type}'`;
+  const { result, error, isError } = await query(sql, '');
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows);
+}
+
 export {
   addUser,
   getUserRole,
   assignCritterToUser,
+  getUDF,
   getUser,
   getUsers,
   getUserCritterAccess,
   getUserTelemetryAlerts,
+  upsertUDF,
 };
