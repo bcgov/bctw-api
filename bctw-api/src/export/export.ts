@@ -45,9 +45,8 @@ const getExportData = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const ids = req.body;
+  const { ids, type } = req.body;
   const idir = req.query.idir as string;
-  const { type } = req.params;
   if (!idir) {
     return res.status(500).send(MISSING_IDIR);
   }

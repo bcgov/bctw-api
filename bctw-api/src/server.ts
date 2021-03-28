@@ -63,7 +63,7 @@ const app = express()
   .post('/add-code', api.addCode)
   .post('/add-code-header', api.addCodeHeader)
   // export/import
-  .post('/export/:type', api.getExportData)
+  .post('/export', api.getExportData)
   .post('/import', upload.single('csv'), importCsv)
   // delete
   .delete('/:type', api.deleteType)

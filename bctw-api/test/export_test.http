@@ -1,42 +1,48 @@
 ### get multiple critter history data 
-POST http://localhost:3000/export/animal/?idir={{idir}}
+POST http://localhost:3000/export?idir={{idir}}
 content-type: application/json
 
-[
+{
+"type": "animal",
+"ids": [
 "{{existing_critter}}",
 "{{existing_critter2}}"
 ]
+}
+
 
 ### get collar history data
-POST http://localhost:3000/export/collar?idir={{idir}}&id={{collar_attached_to_critter1}}
+POST http://localhost:3000/export?idir={{idir}}
 content-type: application/json
 
-[
-    "{{collar_attached_to_critter1}}"
-]
+{
+  "type": "collar",
+  "ids": [ "{{collar_attached_to_critter1}}" ]
+}
 
 ### get 2 collar history data
-POST http://localhost:3000/export/collar?idir={{idir}}
+POST http://localhost:3000/export?idir={{idir}}
 content-type: application/json
 
-[
-    "{{collar_attached_to_critter1}}",
-    "{{existing_critter2}}"
-]
+{ 
+  "type": "collar",
+  "ids": [ "{{collar_attached_to_critter1}}", "{{existing_critter2}}" ]
+ }
 
 ### get movement history
-POST http://localhost:3000/export/movement?idir={{idir}}&id={{existing_critter2}} HTTP/1.1
+POST http://localhost:3000/export?idir={{idir}}
 content-type: application/json
 
-[
-    "{{existing_critter}}"
-]
+{ 
+  "type": "movement",
+  "ids": [ "{{existing_critter}}" ]
+ }
 
 ### get movement history x2
-POST http://localhost:3000/export/movement?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/export?idir={{idir}} HTTP/1.1
 content-type: application/json
 
-[
-    "{{existing_critter}}",
-    "{{existing_critter2}}"
-]
+{ 
+  "type": "movement",
+  "ids": [ "{{existing_critter}}", "{{existing_critter2}}" ]
+ }
