@@ -1,31 +1,35 @@
 # Windows Environment Setup 
-## Prerequisites: Node, npm, Python (3.9x)
-### Connecting to OCP
-1. Login to the `OCP4` environment and click the ? sign in the top app bar, then click `Command Line Tools`
-1. Download the command line tools for Windows, then unzip the executable to somewhere in your path
-1. Copy the login command in `OCP4` by clicking your username and selecting `Copy Login Command` -> `Display Token`, then copy the string under `Log in with this token`
-1. Paste the command into a terminal, you should see the prompt auto-select the `dev` instance.
-1. Port forward the database. To get the pod name of the database, run `oc get pods`
+## Prerequisites: Docker for Windows
+
+1. Login to the `OCP4` environment and click the question mark icon in the top right side of the  app bar, then click `Command Line Tools`
+1. Download the command line tools for `Linux` (even if you are running Windows), then unzip the executable to your {project_root/bctw-api} directory.
+1. Build the `Docker` API image - make sure the `oc` executable is here first.
 ```
-  oc port-forward bctw-db-1-q5vtc 5432:5432
+cd {project_root}/bctw-api
+docker build -t bctw-api .
 ```
-### Running the API
-1. Install the API dependencies
+4. Start a container:
+* `-it` runs the container in a bash shell
+* `--rm` removes the container after it exits cleanly.
+* `-p` exposes the port the API uses to the host
 ```
-  cd bctw-api/bctw-api 
-  npm i
+docker run --rm -p 3000:3000 -it bctw-api /bin/bash
 ```
-1. create a `.env` file to connect to the database in {project_root}/bctw-api directory
-1. add the environment variables to the .env file - can be copied from the `OCP4` API pod details 
+5. Re-open your browser to the `OCP` console. Copy the login command by clicking your username and selecting `Copy Login Command` -> `Display Token`, then copy the string under `Log in with this token`
+1. Into your API container shell, paste the login command, prepending a `./`. You should see the prompt auto-select the `dev` instance. Example:
 ```
-  POSTGRES_USER=bctw
-  POSTGRES_DB=bctw
-  TESTING_USERS=true
-  NODE_ENV=test (if set to production, will persist changes)
-  ROLLBACK=true
+./oc login --token=some_token --server=some_server
 ```
-1. run the API service from the {project_root}/bctw-api directory
+7. Port forward the database. To get the pod name of the database, you can run `./oc get pods`. Example:
 ```
-  npm run start:dev
+./oc port-forward bctw-db-1-q5vtc 5432:5432
 ```
-1. You should see console message about successfully connecting to `postgres`
+8. You should see a message similar to `Forwarding from [::1]:5432 -> 5432`.
+1. Start the API
+```
+npm run start
+```
+10. You should see a message indicating that the server was able to connect
+```
+postgres server successfully connected at localhost:5432
+```

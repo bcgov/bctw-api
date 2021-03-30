@@ -115,14 +115,15 @@ const getUserCritterAccess = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const userIdir: string = req.params.user;
-  const page = (req.query?.page || 1) as number;
-  if (!userIdir) {
+  const { user } = req.params;
+  const page = (req.query.page || 0) as number;
+  const filterOutNone = req.query.filterOutNone;
+  if (!user) {
     return res.status(500).send(`must supply user parameter`);
   }
   const fn_name = 'get_user_critter_access_json';
-  const base = constructFunctionQuery(fn_name, [userIdir], false, S_API);
-  const sql = constructGetQuery({ base, page });
+  const base = constructFunctionQuery(fn_name, [user, filterOutNone], false, S_API);
+  const sql = constructGetQuery(page === 0 ? {base} : {base, page});
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);
