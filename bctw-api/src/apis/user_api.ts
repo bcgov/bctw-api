@@ -214,7 +214,7 @@ const upsertUDF = async function (
   const idir = req.query.idir as string;
   const udf = req.body as UDF;
   const fn_name = 'upsert_udf';
-  const sql = constructFunctionQuery(fn_name, [idir, udf], false, S_BCTW);
+  const sql = constructFunctionQuery(fn_name, [idir, udf], true, S_BCTW);
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
