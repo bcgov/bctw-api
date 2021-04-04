@@ -5,7 +5,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { MISSING_IDIR } from '../database/requests';
+import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IBulkResponse } from '../types/import_types';
 
@@ -74,14 +74,14 @@ const addCodeHeader = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
+  const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  if (!idir) {
+  if (!id) {
     bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
     return res.send(bulkResp);
   }
   const headers = req.body;
-  const sql = constructFunctionQuery('add_code_header', [idir, headers], true);
+  const sql = constructFunctionQuery('add_code_header', [id, headers], true);
   const { result, error, isError } = await query(
     sql,
     'failed to add code headers',
@@ -108,10 +108,10 @@ const addCode = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
+  const id = getUserIdentifier(req);
   const { codes } = req.body;
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  const sql = constructFunctionQuery(pg_add_code_fn, [idir, codes], true);
+  const sql = constructFunctionQuery(pg_add_code_fn, [id, codes], true);
   const { result, error, isError } = await query(
     sql,
     'failed to add codes',

@@ -6,7 +6,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { MISSING_IDIR } from '../database/requests';
+import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
 import { eCritterPermission, IUserInput, UserRole } from '../types/user';
 
 interface IUserProps {
@@ -43,12 +43,12 @@ const getUserRole = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req.query.idir as string;
-  if (!idir) {
+  const id = getUserIdentifier(req);
+  if (!id) {
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_user_role';
-  const sql = constructFunctionQuery(fn_name, [idir]);
+  const sql = constructFunctionQuery(fn_name, [id]);
   const { result, error, isError } = await query(
     sql,
     'failed to query user role'
@@ -67,19 +67,19 @@ const getUser = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req.query.idir as string;
-  if (!idir) {
+  const id = getUserIdentifier(req);
+  if (!id) {
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_user';
-  const sql = constructFunctionQuery(fn_name, [idir], false, S_API);
+  const sql = constructFunctionQuery(fn_name, [id], false, S_API);
   const { result, error, isError } = await query(
     sql,
     'failed to query user role'
   );
   if (isError) {
     if (error.message.includes('couldnt find user')) {
-      return res.status(401).send(`Unauthorized, user with IDIR ${idir} does not exist`);
+      return res.status(401).send(`Unauthorized, user with IDIR ${id} does not exist`);
     }
     return res.status(500).send(error.message);
   }
@@ -95,12 +95,12 @@ const getUsers = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
-  if (!idir) {
+  const id = getUserIdentifier(req);
+  if (!id) {
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_users';
-  const sql = constructFunctionQuery(fn_name, [idir], false, S_API);
+  const sql = constructFunctionQuery(fn_name, [id], false, S_API);
   const { result, error, isError } = await query(sql, 'failed to query users');
   if (isError) {
     return res.status(500).send(error.message);
@@ -150,9 +150,9 @@ const assignCritterToUser = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req?.query?.idir as string;
+  const id = getUserIdentifier(req);
   const fn_name = 'grant_critter_to_user';
-  if (!idir) {
+  if (!id) {
     return res.status(500).send(MISSING_IDIR);
   }
   const body: IUserCritterPermission[] = req.body;
@@ -164,7 +164,7 @@ const assignCritterToUser = async function (
      * need to remap the id to animal_id coming from the frontend
      */
     const mapAnimalId = access.map((a) => ({ animal_id: a.critter_id, permission_type: a.permission_type }));
-    const sql = constructFunctionQuery(fn_name, [idir, userId, mapAnimalId], true);
+    const sql = constructFunctionQuery(fn_name, [id, userId, mapAnimalId], true);
     return query(
       sql,
       `failed to grant user with id ${userId} access to animals`,
@@ -185,12 +185,12 @@ const getUserTelemetryAlerts = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req?.query?.idir as string;
-  if (!idir) {
+  const id = getUserIdentifier(req);
+  if (!id) {
     return res.status(500).send(MISSING_IDIR);
   }
   const fn_name = 'get_user_telemetry_alerts';
-  const base = constructFunctionQuery(fn_name, [idir], false, S_API);
+  const base = constructFunctionQuery(fn_name, [id], false, S_API);
   const sql = constructGetQuery({ base });
   const { result, error, isError } = await query(sql, '');
   if (isError) {
@@ -226,11 +226,11 @@ const getUDF = async function (
   req: Request,
   res: Response
 ) : Promise<Response> {
-  const idir = req.query.idir as string;
+  const id = getUserIdentifier(req);
   const udf_type = req.query.type as string;
   const sql = 
   `select * from ${S_API}.user_defined_fields_v
-  where user_id = bctw.get_user_id('${idir}')
+  where user_id = bctw.get_user_id('${id}')
   and type = '${udf_type}'`;
   const { result, error, isError } = await query(sql, '');
   if (isError) {

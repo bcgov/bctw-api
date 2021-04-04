@@ -8,7 +8,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { filterFromRequestParams, MISSING_IDIR } from '../database/requests';
+import { filterFromRequestParams, getUserIdentifier, MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { ChangeCritterCollarProps, Collar } from '../types/collar';
 import { IBulkResponse } from '../types/import_types';
@@ -29,14 +29,14 @@ const addCollar = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
+  const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  if (!idir) {
+  if (!id) {
     bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
     return res.send(bulkResp);
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery(pg_add_collar_fn, [idir, collars], true);
+  const sql = constructFunctionQuery(pg_add_collar_fn, [id, collars], true);
   const { result, error, isError } = await query(sql, 'failed to add collar(s)', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
@@ -56,14 +56,14 @@ const updateCollar = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = (req?.query?.idir || '') as string;
+  const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  if (!idir) {
+  if (!id) {
     bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
     return res.send(bulkResp);
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery( pg_update_collar_fn, [idir, collars], true);
+  const sql = constructFunctionQuery( pg_update_collar_fn, [id, collars], true);
   const { result, error, isError } = await query(sql, 'failed to update collar', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
@@ -97,8 +97,8 @@ const assignOrUnassignCritterCollar = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req?.query?.idir as string;
-  if (!idir) {
+  const id = getUserIdentifier(req);
+  if (!id) {
     return res.status(500).send(MISSING_IDIR);
   }
 
@@ -110,7 +110,7 @@ const assignOrUnassignCritterCollar = async function (
   }
 
   const db_fn_name = body.isLink ? pg_link_collar_fn : pg_unlink_collar_fn;
-  const params = [idir, collar_id, animal_id];
+  const params = [id, collar_id, animal_id];
   const errMsg = `failed to ${
     body.isLink ? 'attach' : 'remove'
   } device to critter ${animal_id}`;
@@ -155,9 +155,12 @@ const getAvailableCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req.query?.idir as string;
+  const id = getUserIdentifier(req);
+  if (!id) {
+    return res.status(500).send(MISSING_IDIR);
+  }
   const page = (req.query?.page || 1) as number;
-  const sql = getAvailableCollarSql(idir, filterFromRequestParams(req), page);
+  const sql = getAvailableCollarSql(id, filterFromRequestParams(req), page);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve available collars'
@@ -208,9 +211,12 @@ const getAssignedCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req?.query?.idir as string;
+  const id = getUserIdentifier(req);
+  if (!id) {
+    return res.status(500).send(MISSING_IDIR);
+  }
   const page = (req.query?.page || 1) as number;
-  const sql = getAssignedCollarSql(idir, filterFromRequestParams(req), page);
+  const sql = getAssignedCollarSql(id, filterFromRequestParams(req), page);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve assigned collars'
@@ -228,12 +234,12 @@ const getCollarChangeHistory = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req?.query?.idir as string;
+  const id = getUserIdentifier(req);
   const collar_id = req.params?.collar_id;
-  if (!collar_id || !idir) {
+  if (!collar_id || !id) {
     return res.status(500).send(`collar_id and idir must be supplied in query`);
   }
-  const sql = constructFunctionQuery(pg_get_collar_history, [idir, collar_id], false, S_API);
+  const sql = constructFunctionQuery(pg_get_collar_history, [id, collar_id], false, S_API);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve collar history'

@@ -65,6 +65,7 @@ const app = express()
   // export/import
   .post('/export', api.getExportData)
   .post('/import', upload.single('csv'), importCsv)
+  .post('/import2', upload.array('xml'), api.parseXML)
   // delete
   .delete('/:type', api.deleteType)
   .delete('/:type/:id', api.deleteType)

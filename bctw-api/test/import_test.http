@@ -12,3 +12,15 @@ Content-Type: text/csv
 
 <@ {{csv}}
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+###
+POST http://localhost:3000/import2?idir={{idir}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="xml"; filename="keyx.keyx"
+Content-Type: text/xml
+
+<@ {{xml}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

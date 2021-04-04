@@ -22,7 +22,13 @@ const filterFromRequestParams = (req: Request): IFilter => {
   return {};
 }
 
+const getUserIdentifier = (req: Request): string | undefined => {
+  const id = req.query.idir as string ?? req.query.bceid as string;
+  return id ?? undefined;
+}
+
 export {
+  getUserIdentifier,
   filterFromRequestParams,
   MISSING_IDIR
 }
