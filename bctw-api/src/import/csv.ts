@@ -4,7 +4,7 @@ import * as fs from 'fs';
 
 import { pg_add_animal_fn } from '../apis/animal_api';
 import { addCode, addCodeHeader } from '../apis/code_api';
-import { addCollar } from '../apis/collar_api';
+import { upsertCollar } from '../apis/collar_api';
 import { constructFunctionQuery, getRowResults, query, queryAsync, queryAsyncAsTransaction } from '../database/query';
 import { MISSING_IDIR } from '../database/requests';
 import { Animal } from '../types/animal';
@@ -207,7 +207,7 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
         handleCritterInsert(res, idir, animals);
       } else if (collars.length) {
         req.body = collars;
-        return await addCollar(req, res);
+        return await upsertCollar(req, res);
       }
     } catch (e) {
       res.status(500).send(e.message);

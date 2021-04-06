@@ -11,8 +11,7 @@ import {
   upsertUDF,
 } from './apis/user_api';
 import {
-  addCollar,
-  updateCollar,
+  upsertCollar,
   assignOrUnassignCritterCollar,
   getAvailableCollars,
   getAssignedCollars,
@@ -223,8 +222,7 @@ const deleteType = async function (
 export {
   addCode,
   addCodeHeader,
-  addCollar,
-  updateCollar,
+  upsertCollar,
   updateAnimal,
   addAnimal,
   addUser,

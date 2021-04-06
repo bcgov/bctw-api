@@ -7,40 +7,26 @@
 @unattached_collar = {{free_collar}}
 @today = {{$datetime iso8601}}
 ### add collar
-# this device id already exists - should fail
-POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
+# this device id already exists - should update model and deployment status
+POST http://localhost:3000/upsert-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
-{
-  "device_make": "V", "device_model": "deercollar9000", "device_id": 41259
-}
+{ "device_deployment_status": "Not Deployed", "device_model": "deercollar9000", "device_id": 81283}
 
-###  adding new collars should work
-POST http://localhost:3000/add-collar?idir={{idir}} HTTP/1.1
+###  adding two new collars should work
+POST http://localhost:3000/upsert-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 [
-  {
-    "device_id": 99999, "device_make": "T", "device_model": "deercollar9000"
-  },
-  {
-    "device_id": 9998, "device_make": "V", "device_model": "deercollar9000"
-  }
+  {"device_id": 99999, "device_make": "Lotek", "device_model": "deercollar9000"},
+  {"device_id": 9998, "device_make": "Vectronic", "device_model": "deercollar9000"}
 ]
 
-### update collar
-POST http://localhost:3000/update-collar?idir={{idir}} HTTP/1.1
+### attempt to update a vectronic collar that doesnt have a corresponding keyx entry should fail
+POST http://localhost:3000/upsert-collar?idir={{idir}} HTTP/1.1
 content-type: application/json
 
-{
-  "collar_id": "{{collar1}}", "frequency": 291.33, "device_model": "deercollar9000"
-}
-
-### update collar that doesn't exist should fail
-POST http://localhost:3000/update-collar?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{ "collar_id": "{{collarDNE}}", "frequency": 291.33 }
+{ "device_id": "{{vect_collar_no_keyx}}", "device_make": "Vectronic", "frequency": 291.33, "device_model": "collar9000" }
 
 ### retrive collar history
 http://localhost:3000/get-collar-history/{{collar1}}?idir={{idir}}

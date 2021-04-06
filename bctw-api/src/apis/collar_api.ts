@@ -14,8 +14,7 @@ import { ChangeCritterCollarProps, Collar } from '../types/collar';
 import { IBulkResponse } from '../types/import_types';
 import { IFilter, TelemetryTypes } from '../types/query';
 
-const pg_add_collar_fn = 'add_collar';
-const pg_update_collar_fn = 'update_collar';
+const pg_upsert_collar = 'upsert_collar';
 const pg_link_collar_fn = 'link_collar_to_animal';
 const pg_unlink_collar_fn = 'unlink_collar_to_animal';
 const pg_get_collar_history = 'get_collar_history';
@@ -25,7 +24,7 @@ const pg_get_collar_history = 'get_collar_history';
  * @param collar a list of collars
  * @returns the result of the insert/upsert in the bulk rseponse format
  */
-const addCollar = async function (
+const upsertCollar = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
@@ -36,39 +35,12 @@ const addCollar = async function (
     return res.send(bulkResp);
   }
   const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery(pg_add_collar_fn, [id, collars], true);
+  const sql = constructFunctionQuery(pg_upsert_collar, [id, collars], true);
   const { result, error, isError } = await query(sql, 'failed to add collar(s)', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
-    createBulkResponse(bulkResp, getRowResults(result, pg_add_collar_fn)[0]);
-  }
-  return res.send(bulkResp);
-};
-
-/**
- *
- * @param req
- * @param res
- * @returns
- */
-const updateCollar = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
-  const id = getUserIdentifier(req);
-  const bulkResp: IBulkResponse = { errors: [], results: [] };
-  if (!id) {
-    bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
-    return res.send(bulkResp);
-  }
-  const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery( pg_update_collar_fn, [id, collars], true);
-  const { result, error, isError } = await query(sql, 'failed to update collar', true);
-  if (isError) {
-    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
-  } else {
-    createBulkResponse(bulkResp, getRowResults(result, pg_update_collar_fn)[0]);
+    createBulkResponse(bulkResp, getRowResults(result, pg_upsert_collar)[0]);
   }
   return res.send(bulkResp);
 };
@@ -131,7 +103,8 @@ const assignOrUnassignCritterCollar = async function (
  * @param idir
  * @param page
  * @returns a list of collars that do not have a critter attached
- * fixme: no access control
+ * returns a list of collars that are not attached to a critter that the user created. 
+ * if the user has admin role they can see all unattached collars
  */
 const getAvailableCollarSql = function (
   idir: string,
@@ -141,7 +114,10 @@ const getAvailableCollarSql = function (
   const base = `select c.* from ${S_API}.collar_v c 
     where c.collar_id not in
     (select collar_id from bctw_dapi_v1.currently_attached_collars_v)
-    and c.created_by_user_id = ${S_BCTW}.get_user_id('${idir}')`;
+    and (
+      c.created_by_user_id = ${S_BCTW}.get_user_id('${idir}') 
+      or ${S_BCTW}.get_user_role('${idir}') = 'administrator')
+    `;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
   const sql = constructGetQuery({
     base: base,
@@ -252,9 +228,8 @@ const getCollarChangeHistory = async function (
 };
 
 export {
-  addCollar,
+  upsertCollar,
   deleteCollar,
-  updateCollar,
   assignOrUnassignCritterCollar,
   getAssignedCollars,
   getAvailableCollars,

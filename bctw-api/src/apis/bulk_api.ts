@@ -6,7 +6,7 @@ import { constructFunctionQuery, getRowResults, query } from '../database/query'
 import { QResult } from '../types/query';
 import { IBulkResponse } from '../types/import_types';
 import { Collar } from '../types/collar';
-import { S_API, S_BCTW } from '../constants';
+import { S_BCTW } from '../constants';
 import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
 const readPromise = promisify(readFile);
 
@@ -75,7 +75,7 @@ class VectronicDevice implements Pick<Collar, 'device_id' | 'device_deployment_s
 }
 
 const getCodeValueSQL = (header: string, description: string): string => 
-  `${S_API}.get_code_value('${header}', '${description}')`;
+  `${S_BCTW}.get_code_value('${header}', '${description}')`;
 
 const createDeviceSQL = (keyx: IKeyX[], idir: string): string => {
   const newDevices = keyx.map(k => new VectronicDevice(k));
@@ -112,7 +112,11 @@ const parseXML = async (req: Request, res: Response): Promise<Response<IBulkResp
   const errors = resolved.filter(r => r.isError).map(e => e.error);
   // if there were errors registering the collars, return early
   if (errors.length) {
-    return res.send({errors});
+    const errs = errors.map(e => {
+      return {row: '', error: e.message, rownum: 0};
+    })
+    bulkResp.errors.push(...errs);
+    return res.send(bulkResp);
   }
   // if registration was successful, generate sql to create new collar devices
   const results = resolved.filter(r => !r.isError).map(e => getRowResults(e.result, VECT_KEY_UPSERT_FN)[0]) as IKeyX[];
