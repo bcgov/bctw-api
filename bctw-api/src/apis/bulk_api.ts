@@ -6,6 +6,8 @@ import { constructFunctionQuery, getRowResults, query } from '../database/query'
 import { QResult } from '../types/query';
 import { IBulkResponse } from '../types/import_types';
 import { Collar } from '../types/collar';
+import { S_API, S_BCTW } from '../constants';
+import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
 const readPromise = promisify(readFile);
 
 const VECT_KEY_UPSERT_FN = `upsert_vectronic_key`;
@@ -66,16 +68,32 @@ class VectronicDevice implements Pick<Collar, 'device_id' | 'device_deployment_s
 
   constructor(keyx: IKeyX) {
     this.device_id = +keyx.idcollar;
-    // todo: retrieve code values for these
-    this.satellite_network = '';
-    this.device_deployment_status = '';
-    this.device_make = '';
+    this.satellite_network = keyx.comtype;
+    this.device_deployment_status = 'Not Deployed';
+    this.device_make = 'Vectronic';
   }
 }
 
+const getCodeValueSQL = (header: string, description: string): string => 
+  `${S_API}.get_code_value('${header}', '${description}')`;
+
+const createDeviceSQL = (keyx: IKeyX[], idir: string): string => {
+  const newDevices = keyx.map(k => new VectronicDevice(k));
+  return `insert into ${S_BCTW}.collar
+  (device_id, satellite_network, device_deployment_status, device_make, created_by_user_id)
+  values ${newDevices.map(nd => {
+    return `(${nd.device_id}, ${getCodeValueSQL('satellite_network', nd.satellite_network)}, ${getCodeValueSQL('device_deployment_status', nd.device_deployment_status)}, ${getCodeValueSQL('device_make', nd.device_make)}, ${S_BCTW}.get_user_id('${idir}'))`
+  })} returning *`;
+}
+
 const parseXML = async (req: Request, res: Response): Promise<Response<IBulkResponse>> => {
-  const files = req.files;
+  const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
+  if (!id) {
+    bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
+    return res.send(bulkResp);
+  }
+  const files = req.files;
   const promises: Promise<QResult>[]= [];
 
   if (!files && (files as Express.Multer.File[]).length) {
@@ -92,13 +110,19 @@ const parseXML = async (req: Request, res: Response): Promise<Response<IBulkResp
   }
   const resolved = await Promise.all(promises);
   const errors = resolved.filter(r => r.isError).map(e => e.error);
+  // if there were errors registering the collars, return early
+  if (errors.length) {
+    return res.send({errors});
+  }
+  // if registration was successful, generate sql to create new collar devices
   const results = resolved.filter(r => !r.isError).map(e => getRowResults(e.result, VECT_KEY_UPSERT_FN)[0]) as IKeyX[];
-  const ret = {errors, results };
-
-  // create collars for each successful keyx database insertion
-  const collars = results.map(r => new VectronicDevice(r))
-  console.log(JSON.stringify(collars))
-  return res.send(ret);
+  const newCollarSQL = createDeviceSQL(results, id);
+  const ret = await query(newCollarSQL, '', false);
+  if (ret.isError) {
+    bulkResp.errors.push({row: '', error: ret.error.message, rownum: -1});
+  }
+  bulkResp.results.push(...ret.result.rows);
+  return res.send(bulkResp);
 };
 
 export { parseXML };

@@ -140,7 +140,8 @@ const getAvailableCollarSql = function (
 ): string {
   const base = `select c.* from ${S_API}.collar_v c 
     where c.collar_id not in
-    (select collar_id from bctw_dapi_v1.currently_attached_collars_v)`;
+    (select collar_id from bctw_dapi_v1.currently_attached_collars_v)
+    and c.created_by_user_id = ${S_BCTW}.get_user_id('${idir}')`;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
   const sql = constructGetQuery({
     base: base,
