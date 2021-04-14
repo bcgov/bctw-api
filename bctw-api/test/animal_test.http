@@ -3,7 +3,7 @@
 @critter2 = {{existing_critter2}}
 @critterCanChange = {{critter_with_change_permission}}
 ### add a new animal
-POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/upsert-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
@@ -17,7 +17,7 @@ content-type: application/json
 }
 
 ### add more than one animal
-POST http://localhost:3000/add-animal?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/upsert-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 [
@@ -41,20 +41,20 @@ content-type: application/json
 ]
 
 ### update existing animal
-POST http://localhost:3000/update-animal?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/upsert-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
+  "critter_id": "{{critter1}}",
   "animal_id": "test123",
   "animal_status": "X",
   "sex": "M",
   "wlh_id": "abc123",
-  "nickname": "shimmer",
-  "critter_id": "{{critter1}}"
+  "nickname": "shimmer"
 }
 
 ### update multiple animals
-POST http://localhost:3000/update-animal?idir={{idir}} HTTP/1.1
+POST http://localhost:3000/upsert-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 [
@@ -76,20 +76,6 @@ content-type: application/json
     "critter_id": "{{critter2}}"
   }
 ]
-
-### try updating critter that DNE should fail
-POST http://localhost:3000/update-animal?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "animal_id": "test123",
-  "animal_status": "A",
-  "calf_at_heel": true,
-  "sex": "M",
-  "wlh_id": "abc123",
-  "nickname": "shimmer",
-  "id": "bb8bbbc9-417e-4d91-9638-c55820c43fd5"
-}
 
 ### get critter history 
 http://localhost:3000/get-animal-history/{{critter2}}?idir={{idir}}

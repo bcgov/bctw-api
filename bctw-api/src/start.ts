@@ -19,8 +19,7 @@ import {
   deleteCollar,
 } from './apis/collar_api';
 import {
-  addAnimal,
-  updateAnimal,
+  upsertAnimal,
   getAnimals,
   getCollarAssignmentHistory,
   getAnimalHistory,
@@ -223,8 +222,7 @@ export {
   addCode,
   addCodeHeader,
   upsertCollar,
-  updateAnimal,
-  addAnimal,
+  upsertAnimal,
   addUser,
   assignOrUnassignCritterCollar,
   assignCritterToUser,

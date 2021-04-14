@@ -11,15 +11,32 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 
-const pg_add_animal_fn = 'add_animal';
-const pg_update_animal_fn = 'update_animal';
+const pg_upsert_animal_fn = 'upsert_animal';
 const pg_get_critter_history = 'get_animal_history';
 const pg_get_history = 'get_animal_collar_assignment_history';
-/* 
-  body can be single or array of Animals, since
-  db function handles this in a bulk fashion, create the proper bulk response
-*/
-const addAnimal = async function (
+
+const upsertAnimals = async function (
+  userIdentifier: string,
+  animals: Animal[]
+): Promise<IBulkResponse> {
+  const bulkResp: IBulkResponse = { errors: [], results: [] };
+  const sql = constructFunctionQuery(pg_upsert_animal_fn, [userIdentifier, animals], true);
+  const { result, error, isError } = await query(sql, '', true);
+  if (isError) {
+    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
+  } else {
+    createBulkResponse(bulkResp, getRowResults(result, pg_upsert_animal_fn)[0]);
+  }
+  return bulkResp;
+}
+
+/**
+ * body can be single or array of Animals, since db function handles this in a bulk fashion, create the proper bulk response
+ * @param req 
+ * @param res 
+ * @returns 
+ */
+const upsertAnimal = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
@@ -28,52 +45,16 @@ const addAnimal = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const bulkResp: IBulkResponse = { errors: [], results: [] };
-  const sql = constructFunctionQuery(pg_add_animal_fn, [id, animals], true);
-  const { result, error, isError } = await query(
-    sql,
-    `failed to add animals`,
-    true
-  );
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  createBulkResponse(bulkResp, getRowResults(result, pg_add_animal_fn)[0]);
-  const { results, errors } = bulkResp;
-  if (errors.length) {
-    return res.status(500).send(errors[0].error);
-  }
-  return res.send(results);
+  const bulkResp: IBulkResponse = await upsertAnimals(id, animals);
+  return res.send(bulkResp);
 };
 
-/* 
-  handles updating a critter (non bulk). 
-*/
-const updateAnimal = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
-  const id = getUserIdentifier(req);
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
-  const critters: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery(
-    pg_update_animal_fn,
-    [id, critters],
-    true
-  );
-  const { result, error, isError } = await query(
-    sql,
-    `failed to update animal`,
-    true
-  );
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  return res.send(getRowResults(result, pg_update_animal_fn));
-};
-
+/**
+ * 
+ * @param userIdentifier 
+ * @param critterIds 
+ * @param res 
+ */
 const deleteAnimal = async function (
   userIdentifier: string,
   critterIds: string[],
@@ -199,10 +180,10 @@ const getAnimalHistory = async function (
 };
 
 export {
-  pg_add_animal_fn,
-  addAnimal,
+  // pg_upsert_animal_fn,
   deleteAnimal,
-  updateAnimal,
+  upsertAnimal,
+  upsertAnimals,
   getAnimals,
   getAnimalHistory,
   getCollarAssignmentHistory,

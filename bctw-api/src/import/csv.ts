@@ -2,16 +2,15 @@ import csv from 'csv-parser';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
 
-import { pg_add_animal_fn } from '../apis/animal_api';
+import { upsertAnimals } from '../apis/animal_api';
 import { addCode, addCodeHeader } from '../apis/code_api';
 import { upsertCollar } from '../apis/collar_api';
-import { constructFunctionQuery, getRowResults, query, queryAsync, queryAsyncAsTransaction } from '../database/query';
+import { constructFunctionQuery, queryAsync, queryAsyncAsTransaction } from '../database/query';
 import { MISSING_IDIR } from '../database/requests';
 import { Animal } from '../types/animal';
 import { CodeHeaderInput, CodeInput } from '../types/code';
 import { ChangeCollarData, Collar } from '../types/collar';
 import {
-  IBulkResponse,
   IImportError,
   isAnimal,
   isCode,
@@ -19,7 +18,6 @@ import {
   isCollar,
   rowToCsv,
 } from '../types/import_types';
-import { createBulkResponse } from './bulk_handlers';
 import { mapCsvImport } from './to_header';
 
 /**
@@ -73,7 +71,7 @@ const parseCsv = async (
       })
     )
     .on('data', (row: Record<string, unknown>) => {
-      // cleanup empty props from the row
+      // remove any null properties from the row
       const crow = removeEmptyProps(row);
       if (isCodeHeader(crow)) headers.push(crow);
       else if (isCode(crow)) codes.push(crow);
@@ -82,7 +80,7 @@ const parseCsv = async (
     })
     .on('end', async () => {
       console.log(
-        `CSV file ${file.path} processed\ncodes: ${codes.length},\nheaders: ${headers.length},\ncritters: ${animals.length},\ncollars: ${collars.length}`
+        `CSV file ${file.path} processed\ncodes: ${codes.length},\ncode headers: ${headers.length},\ncritters: ${animals.length},\ncollars: ${collars.length}`
       );
       await callback(ret);
     });
@@ -102,20 +100,9 @@ const handleCritterInsert = async (
   idir: string,
   rows: Animal[]
 ): Promise<Response> => {
-  const bulkResp: IBulkResponse = { errors: [], results: [] };
   const animalsWithCollars = rows.filter((a) => a.device_id);
-  const sql = constructFunctionQuery(pg_add_animal_fn, [idir, rows], true)
- ;
-  const { result, error, isError } = await query(
-    sql,
-    `failed to add animals`,
-    true
-  );
-  if (isError) {
-    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
-  } else {
-    createBulkResponse(bulkResp, getRowResults(result, pg_add_animal_fn)[0]);
-  }
+  const bulkResp = await upsertAnimals(idir, rows);
+
   // attempt to attach collars
   if (animalsWithCollars.length && bulkResp.errors.length === 0) {
     await handleCollarCritterLink(
@@ -208,6 +195,8 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
       } else if (collars.length) {
         req.body = collars;
         return await upsertCollar(req, res);
+      } else {
+        return res.status(500).send('import failed - rows did not match any known BCTW type')
       }
     } catch (e) {
       res.status(500).send(e.message);
