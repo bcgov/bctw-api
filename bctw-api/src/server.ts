@@ -1,5 +1,4 @@
 import cors from 'cors';
-import bodyParser from 'body-parser';
 import http from 'http';
 import helmet from 'helmet';
 import express from 'express';
@@ -17,8 +16,8 @@ const upload = multer({dest: 'bctw-api/build/uploads'})
 const app = express()
   .use(helmet())
   .use(cors())
-  .use(bodyParser.urlencoded({ extended: true }))
-  .use(bodyParser.json())
+  .use(express.urlencoded({ extended: true }))
+  .use(express.json())
   app.all('*', function (req, res, next) {
     const isUserSwapTest = process.env.TESTING_USERS;
     if (isUserSwapTest !== 'true') {

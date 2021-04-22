@@ -10,6 +10,12 @@ const mapCsvImport = (header: string): string => {
       return 'code_header_title';
     case 'Code Type Description':
       return 'code_header_description';
+    case 'Code Name':
+    case 'Code Description':
+    case 'Code Description Long':
+    case 'Valid From':
+    case 'Valid To':
+      return headerToColumn(header);
     default:
       return header;
   }

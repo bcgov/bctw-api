@@ -43,12 +43,9 @@ import { getExportData } from './export/export';
  * Request all collars the user has access to.
  */
 const getDBCritters = function (req: Request, res: Response): void {
-  const idir = req.query.idir;
-  // console.log(req.query);
-  const start = req.query.start;
-  const end = req.query.end;
-
-  const sql = `select geojson from ${S_BCTW}.get_telemetry('${idir}', '${start}', '${end}')`;
+  const {idir, start, end, unassigned } = req.query;
+  const fn_name = unassigned === 'true' ? 'get_unattached_telemetry' : 'get_telemetry';
+  const sql = `select geojson from ${S_BCTW}.${fn_name}('${idir}', '${start}', '${end}')`;
   console.log('SQL: ', sql);
 
   const done = function (err, data) {
@@ -60,7 +57,6 @@ const getDBCritters = function (req: Request, res: Response): void {
       type: 'FeatureCollection',
       features: features,
     };
-
     res.send(featureCollection);
   };
   pgPool.query(sql, done);
@@ -74,14 +70,33 @@ const getCritterTracks = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { idir, start, end } = req.query;
+  const { idir, start, end, unassigned } = req.query;
   if (!start || !end) {
     return res.status(404).send('Must have a valid start and end date');
   }
   if (!idir) {
     return res.status(404).send(MISSING_IDIR);
   }
-  const sql = `
+  const sql = unassigned === 'true' ? 
+  `
+    select
+    jsonb_build_object (
+      'type', 'Feature',
+      'properties', json_build_object(
+        'collar_id', collar_id,
+        'device_id', device_id
+      ),
+      'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
+    ) as "geojson"
+  from
+    ${S_BCTW}.get_unattached_telemetry('${idir}', '${start}', '${end}')
+  where
+    st_asText(geom) <> 'POINT(0 0)'
+  group by
+    collar_id,
+    device_id;
+  ` : 
+  `
     select
       jsonb_build_object (
         'type', 'Feature',

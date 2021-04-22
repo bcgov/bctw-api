@@ -203,7 +203,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     if (alert.dtTimestampCancel === timestampNotCanceled && alert.strAlertType === 'Mortality') {
       values.push(`(
         (select collar_id from bctw.collar where device_make='Lotek' and device_id=${alert.nDeviceID}),
-        ${alert.nDeviceID}
+        ${alert.nDeviceID},
         'Lotek',
         'mortality',
         '${alert.dtTimestamp}'
