@@ -235,4 +235,5 @@ export {
   getAvailableCollars,
   getCollarChangeHistory,
   pg_get_collar_history,
+  pg_link_collar_fn,
 };

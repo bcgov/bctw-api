@@ -5,7 +5,7 @@ import { Collar } from './collar';
 
 const isAnimal = (row: Record<string, unknown>): row is Animal => {
   const r = row as Animal;
-  if (r.animal_id || r.wlh_id) {
+  if (r.animal_id || r.wlh_id || r.species || r.animal_status) {
     return true;
   }
   return false;
@@ -55,6 +55,11 @@ export interface BctwBaseType {
   updated_by_user_id: number;
   valid_from: Date;
   valid_to: Date;
+}
+
+export interface ICrittersWithDevices {
+  rowIndex: number,
+  animal: Animal
 }
 
 export {

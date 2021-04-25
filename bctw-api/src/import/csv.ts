@@ -4,13 +4,14 @@ import * as fs from 'fs';
 
 import { upsertAnimals } from '../apis/animal_api';
 import { addCode, addCodeHeader } from '../apis/code_api';
-import { upsertCollar } from '../apis/collar_api';
-import { constructFunctionQuery, queryAsync, queryAsyncAsTransaction } from '../database/query';
+import { pg_link_collar_fn, upsertCollar } from '../apis/collar_api';
+import { constructFunctionQuery, momentNow, queryAsync, queryAsyncAsTransaction } from '../database/query';
 import { MISSING_IDIR } from '../database/requests';
 import { Animal } from '../types/animal';
 import { CodeHeaderInput, CodeInput } from '../types/code';
 import { ChangeCollarData, Collar } from '../types/collar';
 import {
+  ICrittersWithDevices,
   IImportError,
   isAnimal,
   isCode,
@@ -32,6 +33,11 @@ const cleanupUploadsDir = async (path: string): Promise<void> => {
   });
 };
 
+/**
+ * do not want to populate table rows with null or invalid values
+ * @param obj the object parsed from json
+ * @returns an object with properties considered empty removed
+ */
 function removeEmptyProps(obj) {
   for (const propName in obj) {
     const val = obj[propName];
@@ -48,7 +54,7 @@ function removeEmptyProps(obj) {
  */
 const parseCsv = async (
   file: Express.Multer.File,
-  callback: (rowObj: Record<string, any[]>) => void
+  callback: (rowObj: Record<string, unknown[]>) => void
 ) => {
   const codes: CodeInput[] = [];
   const headers: CodeHeaderInput[] = [];
@@ -87,24 +93,23 @@ const parseCsv = async (
 };
 
 /**
- * inserts critters, doesnt use the animal_api addAnimal implementation because
- * if a device id is present here the function will attempt to attach it
+ * inserts critters, doesn't use the animal_api @method {addAnimal}
+ * if device_id is present in the csv row, attempt to attach it
  * before sending the response
- * @param res Response object
- * @param idir user idir
  * @param rows critters to be upserted
- * @returns Express response
  */
 const handleCritterInsert = async (
   res: Response,
   idir: string,
   rows: Animal[]
 ): Promise<Response> => {
-  const animalsWithCollars = rows.filter((a) => a.device_id);
+  const animalsWithCollars: ICrittersWithDevices[] = rows
+    .map((row, idx) => { return { rowIndex: idx, animal: row}})
+    .filter(row => row.animal.device_id);
   const bulkResp = await upsertAnimals(idir, rows);
 
-  // attempt to attach collars
-  if (animalsWithCollars.length && bulkResp.errors.length === 0) {
+  // attach collars if there were no errors
+  if (animalsWithCollars.length && !bulkResp.errors.length && bulkResp.results.length) {
     await handleCollarCritterLink(
       idir,
       bulkResp.results as Animal[],
@@ -119,24 +124,23 @@ const handleCritterInsert = async (
 const handleCollarCritterLink = async (
   idir: string,
   insertResults: Animal[],
-  crittersWithCollars: Animal[],
+  crittersWithCollars: ICrittersWithDevices[],
   errors: IImportError[]
 ): Promise<void> => {
   await Promise.allSettled(
-    crittersWithCollars.map(async (a: Animal) => {
-      const aid = insertResults.find(
-        (row: Animal) => row.animal_id === a.animal_id
-      )?.critter_id;
+    crittersWithCollars.map(async (c) => {
+      const { rowIndex, animal } = c;
+      const aid = insertResults.find(row => row.animal_id === animal.animal_id)?.critter_id;
       if (aid) {
         // find a collar_id for the user provided device_id
         const collarIdResult = await queryAsync(
-          `select collar_id from bctw.collar where device_id = ${a.device_id} limit 1;`
+          `select collar_id from bctw.collar where device_id = ${animal.device_id} limit 1;`
         );
         if (!collarIdResult.rows.length) {
           errors.push({
-            row: rowToCsv(a),
-            rownum: 0,
-            error: `unable to find matching collar with device ID ${a.device_id}`,
+            row: rowToCsv(animal),
+            rownum: rowIndex,
+            error: `unable to find matching collar with device ID ${animal.device_id}`,
           });
           return;
         }
@@ -144,21 +148,22 @@ const handleCollarCritterLink = async (
         const body: ChangeCollarData = {
           collar_id: cid,
           animal_id: aid,
-          valid_from: null,
+          valid_from: momentNow(),
         };
         const params = [idir, ...Object.values(body)];
-        const sql = constructFunctionQuery('link_collar_to_animal', params) ;
+        const sql = constructFunctionQuery(pg_link_collar_fn, params) ;
         const result = await queryAsyncAsTransaction(sql);
         return result;
       }
     })
   ).then((values) => {
     values.forEach((val, i) => {
+      const { animal, rowIndex } = crittersWithCollars[i];
       if (val.status === 'rejected') {
         errors.push({
-          rownum: i,
-          error: `Critter ID ${crittersWithCollars[i].animal_id} ${val.reason}`,
-          row: rowToCsv(crittersWithCollars[i]),
+          rownum: rowIndex,
+          error: `Critter ID ${animal.animal_id} ${val.reason}`,
+          row: rowToCsv(animal),
         });
       }
     });
@@ -171,8 +176,9 @@ const handleCollarCritterLink = async (
     2) once finished, pass any parsed rows to their db handler functions and do the upserts 
     3) delete the uploaded csv file
 */
+// todo: add isTest option
 const importCsv = async function (req: Request, res: Response): Promise<void> {
-  const idir = (req?.query?.idir || '') as string;
+  const { idir, isTest } = req.query;
   if (!idir) {
     res.status(500).send(MISSING_IDIR);
   }
@@ -191,12 +197,12 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
         req.body.headers = headers;
         return await addCodeHeader(req, res);
       } else if (animals.length) {
-        handleCritterInsert(res, idir, animals);
+        handleCritterInsert(res, (idir as string), animals);
       } else if (collars.length) {
         req.body = collars;
         return await upsertCollar(req, res);
       } else {
-        return res.status(500).send('import failed - rows did not match any known BCTW type')
+        return res.status(404).send('import failed - rows did not match any known BCTW type')
       }
     } catch (e) {
       res.status(500).send(e.message);

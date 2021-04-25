@@ -24,7 +24,7 @@ type Collar = {
 interface ChangeCollarData {
   collar_id: string;
   animal_id: string;
-  valid_from: Date | null;
+  valid_from: Date | string;
   valid_to?: Date;
 }
 interface ChangeCritterCollarProps {

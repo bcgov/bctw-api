@@ -2,7 +2,7 @@ import { QueryResultRow } from 'pg';
 import { IBulkResponse, IImportError } from '../types/import_types';
 
 const doResultsHaveErrors = (results): boolean => {
-  const found = results.find((row) => Object.keys(row).includes('error'));
+  const found = results?.find((row) => Object.keys(row).includes('error'));
   return !!found;
 };
 
