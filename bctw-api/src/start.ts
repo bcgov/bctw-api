@@ -197,9 +197,9 @@ const notFound = function (req: Request, res: Response): Response {
 const getType = function(req: Request, res:Response): Promise<Response> {
   const params = req.params;
   switch (params.type) {
-    case 'critter':
+    case 'animal':
       return getAnimals(req, res);
-    case 'collar':
+    case 'device':
       return getAssignedCollars(req, res);
     default:
       return new Promise(() =>  null);
