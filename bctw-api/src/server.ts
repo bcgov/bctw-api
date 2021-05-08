@@ -54,6 +54,7 @@ const app = express()
   .post('/add-user', api.addUser)
   .post('/assign-critter-to-user', api.assignCritterToUser)
   .post('/add-udf', api.upsertUDF)
+  .post('/expire-user-alert', api.updateUserTelemetryAlert)
   // codes
   .get('/get-code', api.getCode)
   .get('/get-code-headers', api.getCodeHeaders)
@@ -62,7 +63,7 @@ const app = express()
   // export/import
   .post('/export', api.getExportData)
   .post('/import-csv', upload.single('csv'), importCsv)
-  .post('/import-xml', upload.array('xml'), api.parseXML)
+  .post('/import-xml', upload.array('xml'), api.parseVectronicKeyRegistrationXML)
   // delete
   .delete('/:type', api.deleteType)
   .delete('/:type/:id', api.deleteType)

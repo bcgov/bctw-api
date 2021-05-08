@@ -86,7 +86,7 @@ const createDeviceSQL = (keyx: IKeyX[], idir: string): string => {
   })} returning *`;
 }
 
-const parseXML = async (req: Request, res: Response): Promise<Response<IBulkResponse>> => {
+const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Promise<Response<IBulkResponse>> => {
   const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   if (!id) {
@@ -129,4 +129,4 @@ const parseXML = async (req: Request, res: Response): Promise<Response<IBulkResp
   return res.send(bulkResp);
 };
 
-export { parseXML };
+export { parseVectronicKeyRegistrationXML };

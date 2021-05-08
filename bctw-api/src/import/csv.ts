@@ -11,6 +11,7 @@ import { Animal } from '../types/animal';
 import { CodeHeaderInput, CodeInput } from '../types/code';
 import { ChangeCollarData, Collar } from '../types/collar';
 import {
+  IAnimalDeviceMetadata,
   ICrittersWithDevices,
   IImportError,
   isAnimal,
@@ -58,7 +59,7 @@ const parseCsv = async (
 ) => {
   const codes: CodeInput[] = [];
   const headers: CodeHeaderInput[] = [];
-  const animals: Animal[] = [];
+  const animals: IAnimalDeviceMetadata[] = [];
   const collars: Collar[] = [];
 
   const ret = {
@@ -81,8 +82,11 @@ const parseCsv = async (
       const crow = removeEmptyProps(row);
       if (isCodeHeader(crow)) headers.push(crow);
       else if (isCode(crow)) codes.push(crow);
-      else if (isAnimal(crow)) animals.push(crow);
-      else if (isCollar(crow)) collars.push(crow);
+      else {
+        animals.push(crow);
+      }
+      // else if (isAnimal(crow)) animals.push(crow);
+      // else if (isCollar(crow)) collars.push(crow);
     })
     .on('end', async () => {
       console.log(
@@ -101,7 +105,7 @@ const parseCsv = async (
 const handleCritterInsert = async (
   res: Response,
   idir: string,
-  rows: Animal[]
+  rows: IAnimalDeviceMetadata[]
 ): Promise<Response> => {
   const animalsWithCollars: ICrittersWithDevices[] = rows
     .map((row, idx) => { return { rowIndex: idx, animal: row}})
@@ -130,15 +134,15 @@ const handleCollarCritterLink = async (
   await Promise.allSettled(
     crittersWithCollars.map(async (c) => {
       const { rowIndex, animal } = c;
-      const aid = insertResults.find(row => row.animal_id === animal.animal_id)?.critter_id;
-      if (aid) {
+      const savedCritter = insertResults.find(row => row.animal_id === animal.animal_id);
+      if (savedCritter) {
         // find a collar_id for the user provided device_id
         const collarIdResult = await queryAsync(
           `select collar_id from bctw.collar where device_id = ${animal.device_id} limit 1;`
         );
         if (!collarIdResult.rows.length) {
           errors.push({
-            row: rowToCsv(animal),
+            row: rowToCsv(animal as Animal),
             rownum: rowIndex,
             error: `unable to find matching collar with device ID ${animal.device_id}`,
           });
@@ -147,8 +151,14 @@ const handleCollarCritterLink = async (
         const cid = collarIdResult.rows[0]['collar_id'];
         const body: ChangeCollarData = {
           collar_id: cid,
-          animal_id: aid,
-          valid_from: momentNow(),
+          animal_id: savedCritter.critter_id,
+          // a critter/device attachment starts from the capture date
+          valid_from: savedCritter.capture_date ?? momentNow(),
+          /* and is considered ended when the following dates are present:
+            a) the mortality date
+            b) the collar retrieval date
+          */
+         valid_to: savedCritter.mortality_date ?? c.animal.retrieval_date
         };
         const params = [idir, ...Object.values(body)];
         const sql = constructFunctionQuery(pg_link_collar_fn, params) ;
@@ -160,10 +170,11 @@ const handleCollarCritterLink = async (
     values.forEach((val, i) => {
       const { animal, rowIndex } = crittersWithCollars[i];
       if (val.status === 'rejected') {
+        console.log(animal)
         errors.push({
           rownum: rowIndex,
-          error: `Critter ID ${animal.animal_id} ${val.reason}`,
-          row: rowToCsv(animal),
+          error: `Animal ID ${animal.animal_id} ${val.reason}`,
+          row: rowToCsv(animal as Animal),
         });
       }
     });

@@ -1,5 +1,6 @@
 import pg, {QueryResult } from 'pg';
 import { Dayjs } from 'dayjs';
+import { eVendorType } from 'credentials';
 const dayjs = require('dayjs')
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
@@ -34,7 +35,7 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
 }
 
 // retrieve the timestamp of the last alert added
-const getLastAlertTimestamp = async (device_make: 'Lotek' | 'ATS' | 'Vectronic'): Promise<Dayjs> => {
+const getLastAlertTimestamp = async (device_make: eVendorType): Promise<Dayjs> => {
   const sql = `select valid_from from bctw.telemetry_sensor_alert where device_make = '${device_make}'
   order by valid_from desc limit 1`;
   const result = await queryAsync(sql);

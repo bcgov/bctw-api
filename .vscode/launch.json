@@ -1,13 +1,13 @@
 /*
   debugging this application with vscode chrome debugger:
     - run the npm task "watch" in a terminal
-    - start debugger for the 'nodemon tsc' config
+    - start debugger for the 'debug api' config
 */
 {
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "nodemon tsc",
+      "name": "debug api",
       "console": "integratedTerminal",
       "envFile": "${workspaceFolder}/bctw-api/.env",
       "internalConsoleOptions": "neverOpen",
@@ -29,7 +29,26 @@
       "envFile": "${workspaceFolder}/data-collector/.env",
       "internalConsoleOptions": "neverOpen",
       "program": "${workspaceFolder}/data-collector/scripts/lotek.ts",
-      "runtimeExecutable": "${workspaceFolder}/bctw-api/node_modules/nodemon/bin/nodemon.js",
+      "runtimeExecutable": "${workspaceFolder}/data-collector/node_modules/nodemon/bin/nodemon.js",
+      "env": {"TS_NODE_PROJECT": "${workspaceFolder}/data-collector/tsconfig.json"},
+      "request": "launch",
+      "restart": true,
+      "skipFiles": [ "<node_internals>/**" ],
+      "type": "pwa-node",
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/data-collector/build/**/*.js",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "vectronic",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/data-collector/.env",
+      "internalConsoleOptions": "neverOpen",
+      "program": "${workspaceFolder}/data-collector/scripts/vectronic.ts",
+      "runtimeExecutable": "${workspaceFolder}/data-collector/node_modules/nodemon/bin/nodemon.js",
+      "env": {"TS_NODE_PROJECT": "${workspaceFolder}/data-collector/tsconfig.json"},
       "request": "launch",
       "restart": true,
       "skipFiles": [ "<node_internals>/**" ],
@@ -45,8 +64,9 @@
       "console": "integratedTerminal",
       "envFile": "${workspaceFolder}/data-collector/.env",
       "internalConsoleOptions": "neverOpen",
+      "env": {"TS_NODE_PROJECT": "${workspaceFolder}/data-collector/tsconfig.json"},
       "program": "${workspaceFolder}/data-collector/scripts/test/ats_test.ts",
-      "runtimeExecutable": "${workspaceFolder}/bctw-api/node_modules/nodemon/bin/nodemon.js",
+      "runtimeExecutable": "${workspaceFolder}/data-collector/node_modules/nodemon/bin/nodemon.js",
       "request": "launch",
       "type": "pwa-node",
       "sourceMaps": true,

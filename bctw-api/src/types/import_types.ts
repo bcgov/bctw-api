@@ -59,7 +59,7 @@ export interface BctwBaseType {
 
 export interface ICrittersWithDevices {
   rowIndex: number,
-  animal: Animal
+  animal: IAnimalDeviceMetadata
 }
 
 export {
@@ -69,3 +69,5 @@ export {
   isCode,
   rowToCsv,
 };
+
+export interface IAnimalDeviceMetadata extends Animal, Collar {}

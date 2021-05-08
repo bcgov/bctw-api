@@ -1,9 +1,9 @@
 import needle from 'needle';
-import moment from 'moment';
 import { getLastAlertTimestamp, pgPool, queryAsync } from './db';
 const dayjs = require('dayjs');
-import { retrieveCredentials } from './credentials';
-import { ILotekAlert } from 'types';
+import { eVendorType, retrieveCredentials } from './credentials';
+import { ILotekAlert } from './types';
+import { formatNowUtc, nowUtc } from './ats/plugins/time';
 
 // Store the access token globally
 let tokenConfig = {};
@@ -81,8 +81,7 @@ const insertCollarData = async function (records) {
 
   const sql = sqlPreamble + values.join(',') + sqlPostamble;
 
-  const now = moment().utc();
-  console.log(`${now}: Entering ` + values.length + ' records');
+  console.log(`${formatNowUtc()}: Entering ${values.length} records for device ${records[0].DeviceID}`);
 
   try {
     await pgPool.query(sql);
@@ -100,7 +99,7 @@ const insertCollarData = async function (records) {
   @param callback {function} The asyncJS callback function. Provide an error message if something fails, otherwise null.
  */
 const iterateCollars = async function (collar) {
-  const weekAgo = moment().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
+  const weekAgo = dayjs().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
   const url = `${lotekUrl}/gps?deviceId=${collar.nDeviceID}&dtStart=${weekAgo}`;
 
   // Send request to the API
@@ -150,7 +149,7 @@ const getAllCollars = async function () {
     When done. Shut down the database connection.
   */
   await Promise.all(body.map((c) => iterateCollars(c)));
-  const now = moment().utc();
+  const now = nowUtc();
   console.log(`${now}: Successfully processed Lotek collars.`);
 
   pgPool.end(); // Disconnect from database
@@ -163,19 +162,12 @@ const getAlerts = async () => {
   const url = `${lotekUrl}/alerts`;
   const { body, error } = await needle<ILotekAlert[]>('get', url, tokenConfig);
   if (error) {
-    console.error(error);
+    console.error(`error retrieving results from Lotek alert API: ${error}`);
     return;
   }
-
-  const lastAlert =
-    (await getLastAlertTimestamp('Lotek')) ??
-    moment().subtract(20, 'd').format('YYYY-MM-DDTHH:mm:ss');
-  const filtered: ILotekAlert[] = body.filter((alert) =>
-    dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert))
-  );
-  console.log(
-    `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`
-  );
+  const lastAlert = await getLastAlertTimestamp(eVendorType.lotek) ?? dayjs().subtract(20, 'd').format('YYYY-MM-DDTHH:mm:ss');
+  const filtered: ILotekAlert[] = body.filter((alert) => dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert)));
+  console.log( `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`);
   insertAlerts(filtered);
 };
 
@@ -190,32 +182,36 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
 
   const sqlPreamble = `
     insert into bctw.telemetry_sensor_alert (
-      "collar_id",
       "device_id",
       "device_make",
+      "timeid",
       "alert_type",
       "valid_from"
     ) values
   `;
   const values: string[] = [];
+  // todo: if alert triggered for this device within the last 36 hours, don't insert duplicate
+  // "cooldown" period
   for (const alert of alerts) {
     // are there other types of alerts?
     if (alert.dtTimestampCancel === timestampNotCanceled && alert.strAlertType === 'Mortality') {
       values.push(`(
-        (select collar_id from bctw.collar where device_make='Lotek' and device_id=${alert.nDeviceID}),
         ${alert.nDeviceID},
         'Lotek',
+        '${alert.nDeviceID}_${alert.dtTimestamp}',
         'mortality',
         '${alert.dtTimestamp}'
       )`);
     }
   }
   if (!values.length) {
-    console.log('Lotek alerts found but they were cancelled');
+    console.log('no new Lotek alerts detected');
     return;
   }
-  const sql = sqlPreamble + values.join(",");
-  console.log(`${dayjs()}: Entering ` + values.length + " alert records");
+
+  // console.log(`valid alerts found ${JSON.stringify(alerts)}`)
+  const sql = sqlPreamble + values.join(",") + ` on conflict (timeid) do nothing`;
+  console.log(`${dayjs().format()}: Entering ` + values.length + " alert records");
   await queryAsync(sql);
 };
 
@@ -233,8 +229,12 @@ const setToken = (data) => {
 */
 const getToken = async function () {
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
+  if (!credential_name_id) {
+    console.log(`credential identifier: 'LOTEK_API_CREDENTIAL_NAME' not supplied`)
+    return;
+  }
   // retrieve the lotek credentials from the encrypted db table
-  const { username, password, url } = await retrieveCredentials(credential_name_id ?? '');
+  const { username, password, url } = await retrieveCredentials(credential_name_id);
   if (!url) {
     console.log(`unable to retrieve Lotek vendor credentials using identifier ${credential_name_id}`)
     return;

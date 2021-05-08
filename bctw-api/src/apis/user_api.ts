@@ -199,6 +199,21 @@ const getUserTelemetryAlerts = async function (
   return res.send(getRowResults(result, fn_name)[0]);
 }
 
+const updateUserTelemetryAlert = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const id = getUserIdentifier(req);
+  const {alert_ids } = req.body;
+  const fn_name = 'expire_user_telemetry_alert';
+  const sql = constructFunctionQuery(fn_name, [id, alert_ids], false);
+  const { result, error, isError } = await query(sql, '');
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, fn_name)[0]);
+}
+
 type UDF = {
   udf_id: number;
   user_id: number;
@@ -249,4 +264,5 @@ export {
   getUserCritterAccess,
   getUserTelemetryAlerts,
   upsertUDF,
+  updateUserTelemetryAlert,
 };

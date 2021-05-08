@@ -1,26 +1,31 @@
 type Collar = {
   collar_id: string;
   collar_transaction_id: string;
+  camera_device_id: string;
   device_id: number;
   device_deployment_status: string;
   device_make: string;
-  device_malfunction_type: Date;
+  device_status;
+  device_malfunction_type: string;
   device_model: string;
-  device_status: string;
   device_type: string;
+  dropoff_device_id: number;
+  dropoff_frequency: number;
+  dropoff_frequency_unit: number;
+  frequency: number;
   fix_rate: number;
   fix_success_rate: number;
-  frequency: number;
-  frequency_unit_code: string;
+  frequency_unit: string;
   malfunction_date: Date;
+  purchase_comment: string;
+  purchase_month: number;
+  purchase_year: number;
   retrieval_date: Date;
   retrieved: boolean;
   satellite_network: string;
+  user_comment: string;
   vendor_activation_status: boolean;
-  sensor_mortality: boolean;
-  sensor_battery: boolean;
-};
-
+}
 interface ChangeCollarData {
   collar_id: string;
   animal_id: string;

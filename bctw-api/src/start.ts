@@ -9,6 +9,7 @@ import {
   getUserTelemetryAlerts,
   getUDF,
   upsertUDF,
+  updateUserTelemetryAlert,
 } from './apis/user_api';
 import {
   upsertCollar,
@@ -31,7 +32,7 @@ import {
   getCode,
   getCodeHeaders,
 } from './apis/code_api';
-import { parseXML } from './apis/bulk_api';
+import { parseVectronicKeyRegistrationXML } from './apis/bulk_api';
 import { Request, Response } from 'express';
 import { QueryResult } from 'pg';
 import { constructFunctionQuery, getRowResults, query, queryAsync } from './database/query';
@@ -264,5 +265,6 @@ export {
   deleteType,
   getExportData,
   notFound,
-  parseXML,
+  parseVectronicKeyRegistrationXML,
+  updateUserTelemetryAlert
 };
