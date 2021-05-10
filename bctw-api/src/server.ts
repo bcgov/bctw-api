@@ -54,7 +54,7 @@ const app = express()
   .post('/add-user', api.addUser)
   .post('/assign-critter-to-user', api.assignCritterToUser)
   .post('/add-udf', api.upsertUDF)
-  .post('/expire-user-alert', api.updateUserTelemetryAlert)
+  .post('/update-user-alert', api.updateUserTelemetryAlert)
   // codes
   .get('/get-code', api.getCode)
   .get('/get-code-headers', api.getCodeHeaders)

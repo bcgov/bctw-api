@@ -71,6 +71,7 @@ const _getAssignedCritterSql = (idir: string) =>
   `SELECT
     ua.permission_type,
     cac.device_id,
+    cac.collar_id,
     a.*
   FROM
     ${S_API}.currently_attached_collars_v cac

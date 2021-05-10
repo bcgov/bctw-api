@@ -83,9 +83,10 @@ const parseCsv = async (
       if (isCodeHeader(crow)) headers.push(crow);
       else if (isCode(crow)) codes.push(crow);
       else {
-        animals.push(crow);
+        console.log(`row does not match an import type ${JSON.stringify(row)}`);
       }
-      // else if (isAnimal(crow)) animals.push(crow);
+      //fixme: 
+      // else if (isAnimal(crow) || isCollar(crow) animals.push(crow);
       // else if (isCollar(crow)) collars.push(crow);
     })
     .on('end', async () => {

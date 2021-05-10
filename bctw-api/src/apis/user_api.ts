@@ -204,9 +204,8 @@ const updateUserTelemetryAlert = async function (
   res: Response
 ): Promise<Response> {
   const id = getUserIdentifier(req);
-  const {alert_ids } = req.body;
-  const fn_name = 'expire_user_telemetry_alert';
-  const sql = constructFunctionQuery(fn_name, [id, alert_ids], false);
+  const fn_name = 'update_user_telemetry_alert';
+  const sql = constructFunctionQuery(fn_name, [id, req.body], true);
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);
