@@ -15,6 +15,7 @@ const pg_upsert_animal_fn = 'upsert_animal';
 const pg_get_critter_history = 'get_animal_history';
 const pg_get_history = 'get_animal_collar_assignment_history';
 
+// split so it can be used directly in the bulk import
 const upsertAnimals = async function (
   userIdentifier: string,
   animals: Animal[]

@@ -1,19 +1,18 @@
 import { QueryResultRow } from 'pg';
-import { Animal } from './animal';
+import { Animal as IAnimal } from './animal';
 import { CodeHeaderInput, CodeInput } from './code';
-import { Collar } from './collar';
+import { ICollar } from './collar';
 
-const isAnimal = (row: Record<string, unknown>): row is Animal => {
-  const r = row as Animal;
-  if (r.animal_id || r.wlh_id || r.species || r.animal_status) {
+// fixme:
+const isAnimal = (row: Record<string, unknown>): boolean => {
+  if (row.animal_id || row.wlh_id || row.animal_status) {
     return true;
   }
   return false;
 };
 
-const isCollar = (row: Record<string, unknown>): row is Collar => {
-  const r = row as Collar;
-  if (r.device_id) {
+const isCollar = (row: Record<string, unknown>): boolean => {
+  if (row.device_id) {
     return true;
   }
   return false;
@@ -48,15 +47,6 @@ export interface IBulkResponse {
   results: QueryResultRow[];
 }
 
-export interface BctwBaseType {
-  created_at: Date;
-  created_by_user_id: number;
-  updated_at: Date;
-  updated_by_user_id: number;
-  valid_from: Date;
-  valid_to: Date;
-}
-
 export interface ICrittersWithDevices {
   rowIndex: number,
   animal: IAnimalDeviceMetadata
@@ -70,4 +60,4 @@ export {
   rowToCsv,
 };
 
-export interface IAnimalDeviceMetadata extends Animal, Collar {}
+export interface IAnimalDeviceMetadata extends IAnimal, ICollar {}

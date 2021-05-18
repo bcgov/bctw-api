@@ -1,4 +1,53 @@
-type Animal = {
+import { BCTWBaseType } from './base_types';
+export interface IAnimal extends BCTWBaseType {
+  animal_id: string;
+  animal_status: string;
+  capture_date: Date;
+  collective_unit: string;
+  critter_id: string;
+  critter_transaction_id: string;
+  associated_animal_id: string;
+  associated_animal_relationship: string;
+  capture_comment: string;
+  capture_latitude: number;
+  capture_longitude: number;
+  capture_utm_easting: number;
+  capture_utm_northing: number;
+  capture_utm_zone: number;
+  animal_colouration: string;
+  ear_tag_id: string;
+  ear_tag_left_colour: string;
+  ear_tag_right_colour: string;
+  estimated_age: number;
+  juvenile_at_heel: string;
+  life_stage: string;
+  mortality_comment: string;
+  mortality_date: Date;
+  mortality_latitude: number;
+  mortality_longitude: number;
+  mortality_utm_easting: number;
+  mortality_utm_northing: number;
+  mortality_utm_zone: number;
+  population_unit: string;
+  probable_cause_of_death: string;
+  ultimate_cause_of_death: string;
+  recapture: boolean;
+  region: string;
+  release_comment: string;
+  release_date: Date;
+  release_latitude: number;
+  release_longitude: number;
+  release_utm_easting: number;
+  release_utm_northing: number;
+  release_utm_zone: number;
+  species: string;
+  sex: string;
+  translocation: boolean;
+  user_comment: string;
+  wlh_id: string;
+}
+
+export class Animal implements IAnimal {
   critter_id: string;
   critter_transaction_id: string;
   animal_id: string;
@@ -12,6 +61,7 @@ type Animal = {
   capture_utm_easting: number;
   capture_utm_northing: number;
   capture_utm_zone: number;
+  collective_unit: string;
   animal_colouration: string;
   ear_tag_id: string;
   ear_tag_left_colour: string;
@@ -33,25 +83,22 @@ type Animal = {
   recapture: boolean;
   region: string;
   release_comment: string;
-  release_date: Date;
   release_latitude: number;
   release_longitude: number;
   release_utm_easting: number;
   release_utm_northing: number;
   release_utm_zone: number;
+  release_date: Date;
   sex: string;
   species: string;
   translocation: boolean;
   wlh_id: string;
   user_comment: string;
+  valid_from: Date;
+  valid_to: Date;
 }
 
-enum eCritterFetchType {
+export enum eCritterFetchType {
   assigned = 'assigned',
-  unassigned= 'unassigned'
-}
-
-export {
-  eCritterFetchType,
-  Animal,
+  unassigned = 'unassigned',
 }

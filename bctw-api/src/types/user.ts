@@ -1,4 +1,4 @@
-import { BctwBaseType } from './import_types';
+import { BCTWBaseType } from './base_types';
 
 interface IUserInput {
   user_id: string,
@@ -7,7 +7,7 @@ interface IUserInput {
   email: string,
 }
 
-type User = BctwBaseType & IUserInput;
+type User = BCTWBaseType & IUserInput;
 
 // used to represent user role type
 enum UserRole {

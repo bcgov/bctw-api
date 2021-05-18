@@ -86,6 +86,11 @@ const createDeviceSQL = (keyx: IKeyX[], idir: string): string => {
   })} returning *`;
 }
 
+/**
+ * exposed as an API for handling the bulk import of Vectronic .keyx registration collars
+ * parses the .keyx files and inserts results to the bctw.api_vectronics_collar_data table
+ * to allow the data-collector module to retrieve telemetry records for the device
+ */
 const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Promise<Response<IBulkResponse>> => {
   const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
@@ -118,14 +123,16 @@ const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Pr
     bulkResp.errors.push(...errs);
     return res.send(bulkResp);
   }
-  // if registration was successful, generate sql to create new collar devices
   const results = resolved.filter(r => !r.isError).map(e => getRowResults(e.result, VECT_KEY_UPSERT_FN)[0]) as IKeyX[];
-  const newCollarSQL = createDeviceSQL(results, id);
-  const ret = await query(newCollarSQL, '', false);
-  if (ret.isError) {
-    bulkResp.errors.push({row: '', error: ret.error.message, rownum: -1});
-  }
-  bulkResp.results.push(...ret.result.rows);
+  bulkResp.results.push(...results);
+  // note: disabling this as the collar will be created on metadata csv imports anyway?
+  // if registration was successful, generate sql to create new collar devices
+  // const newCollarSQL = createDeviceSQL(results, id);
+  // const ret = await query(newCollarSQL, '', false);
+  // if (ret.isError) {
+  //   bulkResp.errors.push({row: '', error: ret.error.message, rownum: -1});
+  // }
+  // bulkResp.results.push(...ret.result.rows);
   return res.send(bulkResp);
 };
 

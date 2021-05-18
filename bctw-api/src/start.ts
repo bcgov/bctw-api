@@ -32,7 +32,7 @@ import {
   getCode,
   getCodeHeaders,
 } from './apis/code_api';
-import { parseVectronicKeyRegistrationXML } from './apis/bulk_api';
+import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
 import { Request, Response } from 'express';
 import { QueryResult } from 'pg';
 import { constructFunctionQuery, getRowResults, query, queryAsync } from './database/query';

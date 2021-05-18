@@ -10,14 +10,29 @@ import {
 } from '../database/query';
 import { filterFromRequestParams, getUserIdentifier, MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
-import { ChangeCritterCollarProps, Collar } from '../types/collar';
-import { IBulkResponse } from '../types/import_types';
+import { ChangeCritterCollarProps } from '../types/collar';
+import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
 import { IFilter, TelemetryTypes } from '../types/query';
 
 const pg_upsert_collar = 'upsert_collar';
 const pg_link_collar_fn = 'link_collar_to_animal';
 const pg_unlink_collar_fn = 'unlink_collar_to_animal';
 const pg_get_collar_history = 'get_collar_history';
+
+const upsertCollars = async function(
+  userIdentifier: string,
+  rows: IAnimalDeviceMetadata[]
+): Promise<IBulkResponse> {
+  const bulkResp: IBulkResponse = { errors: [], results: [] };
+  const sql = constructFunctionQuery(pg_upsert_collar, [userIdentifier, rows], true);
+  const { result, error, isError } = await query(sql, '', true);
+  if (isError) {
+    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
+  } else {
+    createBulkResponse(bulkResp, getRowResults(result, pg_upsert_collar)[0]);
+  }
+  return bulkResp;
+}
 
 /**
  * @param idir user idir
@@ -29,19 +44,11 @@ const upsertCollar = async function (
   res: Response
 ): Promise<Response> {
   const id = getUserIdentifier(req);
-  const bulkResp: IBulkResponse = { errors: [], results: [] };
   if (!id) {
-    bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
-    return res.send(bulkResp);
+    return res.status(500).send(MISSING_IDIR);
   }
-  const collars: Collar[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery(pg_upsert_collar, [id, collars], true);
-  const { result, error, isError } = await query(sql, 'failed to add collar(s)', true);
-  if (isError) {
-    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
-  } else {
-    createBulkResponse(bulkResp, getRowResults(result, pg_upsert_collar)[0]);
-  }
+  const collars = !Array.isArray(req.body) ? [req.body] : req.body;
+  const bulkResp: IBulkResponse = await upsertCollars(id, collars);
   return res.send(bulkResp);
 };
 
@@ -229,6 +236,7 @@ const getCollarChangeHistory = async function (
 
 export {
   upsertCollar,
+  upsertCollars,
   deleteCollar,
   assignOrUnassignCritterCollar,
   getAssignedCollars,
