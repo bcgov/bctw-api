@@ -106,12 +106,19 @@ const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Pr
     return res.send(bulkResp);
   }
   // iterate keyx files, creating a promise for each file
-  for (let idx = 0; idx < files.length; idx++) {
-    const file = await readPromise(files[idx].path);
-    const asJson = await new xml2js.Parser().parseStringPromise(file);
-    const k = new VectronicKeyxRow(asJson as IKeyXAsJson);
-    const sql = constructFunctionQuery(VECT_KEY_UPSERT_FN, [k.idcollar, k.comtype, k.idcom, k.collarkey, k.collartype], false);
-    promises.push(query(sql, '', true))
+  try {
+    for (let idx = 0; idx < files.length; idx++) {
+      const file = await readPromise(files[idx].path, {encoding: 'utf-8'});
+      console.log('parseVectronicKeyRegistrationXML xml file read:', file);
+      const asJson = await new xml2js.Parser().parseStringPromise(file);
+      const k = new VectronicKeyxRow(asJson as IKeyXAsJson);
+      const sql = constructFunctionQuery(VECT_KEY_UPSERT_FN, [k.idcollar, k.comtype, k.idcom, k.collarkey, k.collartype], false);
+      promises.push(query(sql, '', true))
+    }
+  }
+  catch (err) {
+    bulkResp.errors.push({row: '', error:`parseVectronicKeyRegistrationXML: error parsing xml: ${err}`, rownum: 0});
+    return res.send(bulkResp);
   }
   const resolved = await Promise.all(promises);
   const errors = resolved.filter(r => r.isError).map(e => e.error);
