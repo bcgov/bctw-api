@@ -29,8 +29,22 @@ const app = express()
     }
     return next() 
   })
-  .all('*', (req,res,next) => {
-    next();
+  .all('*', async (req,res,next) => {
+    // If you get here you have a valid IDIR
+    const idir = req.query.idir;
+    const sql = 'select idir from bctw.user'
+    const client = await pgPool.connect();
+    const result = await client.query(sql);
+    const idirs = result.rows.map((row) => row.idir);
+    const registered = (idirs.indexOf(idir) > 0) ? true : false;
+
+    if (registered) {
+      next();
+    } else {
+      // TODO: Redirect here
+      res.send('Not Registered');
+    }
+    client?.release();
   })
   // critters
   .get('/get-animals', api.getAnimals)
