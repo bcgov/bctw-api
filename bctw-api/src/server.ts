@@ -29,6 +29,9 @@ const app = express()
     }
     return next() 
   })
+  .all('*', (req,res,next) => {
+    next();
+  })
   // critters
   .get('/get-animals', api.getAnimals)
   .get('/get-critters',api.getDBCritters)
