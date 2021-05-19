@@ -98,11 +98,11 @@ const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Pr
     bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
     return res.send(bulkResp);
   }
-  const files = req.files;
+  const files = req.files as Express.Multer.File[];
   const promises: Promise<QResult>[]= [];
 
-  if (!files && (files as Express.Multer.File[]).length) {
-    bulkResp.errors.push({row: '', error: 'no attached found', rownum: -1});
+  if (!files || !files.length) {
+    bulkResp.errors.push({row: '', error: 'no attached files found', rownum: -1});
     return res.send(bulkResp);
   }
   // iterate keyx files, creating a promise for each file

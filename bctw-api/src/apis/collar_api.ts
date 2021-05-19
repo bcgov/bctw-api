@@ -113,7 +113,7 @@ const assignOrUnassignCritterCollar = async function (
  * returns a list of collars that are not attached to a critter that the user created. 
  * if the user has admin role they can see all unattached collars
  */
-const getAvailableCollarSql = function (
+const getAvailableCollarSQL = function (
   idir: string,
   filter?: IFilter,
   page?: number
@@ -144,7 +144,7 @@ const getAvailableCollars = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const page = (req.query?.page || 1) as number;
-  const sql = getAvailableCollarSql(id, filterFromRequestParams(req), page);
+  const sql = getAvailableCollarSQL(id, filterFromRequestParams(req), page);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve available collars'
@@ -163,7 +163,7 @@ const getAvailableCollars = async function (
  * access control is included, so the user will only see collars that have a critter
  * that they are allowed to view
  */
-const getAssignedCollarSql = function (
+const getAssignedCollarSQL = function (
   idir: string,
   filter?: IFilter,
   page?: number
@@ -200,7 +200,7 @@ const getAssignedCollars = async function (
     return res.status(500).send(MISSING_IDIR);
   }
   const page = (req.query?.page || 1) as number;
-  const sql = getAssignedCollarSql(id, filterFromRequestParams(req), page);
+  const sql = getAssignedCollarSQL(id, filterFromRequestParams(req), page);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve assigned collars'

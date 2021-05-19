@@ -88,8 +88,7 @@ const getUser = async function (
 };
 
 /**
- *
- * @returns list of Users, must be admin role
+ * @returns list of all users stored in the database, must be admin role
  */
 const getUsers = async function (
   req: Request,
@@ -144,6 +143,9 @@ interface IUserCritterPermission {
 }
 
 /**
+ * @param req.body an object with @interface IUserCritterPermission
+ * @param req.body.userId: the user receiving the permission
+ * @param req.body.access the crtter access type being granted
  * @returns list of successful assignments
  */
 const assignCritterToUser = async function (
@@ -158,11 +160,12 @@ const assignCritterToUser = async function (
   const body: IUserCritterPermission[] = req.body;
   const promises = body.map((cp) => {
     const { userId, access } = cp;
-    /* the getUserCritterAccess endpoint returns animal_id, so the frontend uses 'animal.id' as its unique
-     * identifier and posts 'id' for new assignments. since the database routine parses the permission json as a
-     * user_animal_access table row, and this table uses animal_id,
-     * need to remap the id to animal_id coming from the frontend
-     */
+    /* 
+      the getUserCritterAccess endpoint returns animal_id, so the frontend uses 'animal.id' as its unique
+      identifier and posts 'id' for new assignments. since the database routine parses the permission json as a
+      user_animal_access table row, and this table uses animal_id,
+      need to remap the id to animal_id coming from the frontend
+    */
     const mapAnimalId = access.map((a) => ({ animal_id: a.critter_id, permission_type: a.permission_type }));
     const sql = constructFunctionQuery(fn_name, [id, userId, mapAnimalId], true);
     return query(
@@ -181,6 +184,10 @@ const assignCritterToUser = async function (
   return res.send({ errors, results });
 };
 
+/**
+ * retrieves telemetry alerts from the database 
+ * @param req.id the idir of the user
+ */
 const getUserTelemetryAlerts = async function (
   req: Request,
   res: Response
@@ -199,6 +206,11 @@ const getUserTelemetryAlerts = async function (
   return res.send(getRowResults(result, fn_name)[0]);
 }
 
+/**
+ * used to expire or snooze telemetry alerts
+ * @param req.body the telemetry alert 
+ * @returns the updated alerts in JSON
+ */
 const updateUserTelemetryAlert = async function (
   req: Request,
   res: Response
@@ -221,6 +233,11 @@ type UDF = {
   value: string;
 }
 
+/**
+ * currently used to save user animal groups, this function
+ * calls a database routine that will replace the udf with the contents
+ * of the @param req.body
+ */
 const upsertUDF = async function (
   req: Request,
   res: Response
@@ -236,6 +253,9 @@ const upsertUDF = async function (
   return res.send(getRowResults(result, fn_name)[0]);
 }
 
+/**
+ * retrieves UDFs for the user specified in @param req.idir
+ */
 const getUDF = async function (
   req: Request,
   res: Response

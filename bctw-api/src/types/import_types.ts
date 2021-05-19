@@ -3,7 +3,6 @@ import { Animal as IAnimal } from './animal';
 import { CodeHeaderInput, CodeInput } from './code';
 import { ICollar } from './collar';
 
-// fixme:
 const isAnimal = (row: Record<string, unknown>): boolean => {
   if (row.animal_id || row.wlh_id || row.animal_status) {
     return true;
@@ -34,8 +33,6 @@ const isCodeHeader = (row: Record<string, unknown>): row is CodeHeaderInput => {
   return false;
 };
 
-const rowToCsv = (row: Record<string, unknown>): string =>
-  Object.values(row).join(',');
 export interface IImportError {
   error: string;
   row: string;
@@ -49,7 +46,7 @@ export interface IBulkResponse {
 
 export interface ICrittersWithDevices {
   rowIndex: number,
-  animal: IAnimalDeviceMetadata
+  row: IAnimalDeviceMetadata
 }
 
 export {
@@ -57,7 +54,6 @@ export {
   isCollar,
   isCodeHeader,
   isCode,
-  rowToCsv,
 };
 
 export interface IAnimalDeviceMetadata extends IAnimal, ICollar {}
