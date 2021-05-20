@@ -5,5 +5,16 @@ body {
   min-height: 100vh;
 }
 .title {
-  font-size: 20px;
+  font-size: 24px;
+  font-weight: bolder;
+}
+a.btn {
+  margin-left: 20rem;
+}
+p.desc {
+  font-size: 18px;
+  display: block;
+  text-align: left;
+  max-width: 28rem;
+  margin-bottom: 3rem;
 }
