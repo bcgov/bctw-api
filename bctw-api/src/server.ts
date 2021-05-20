@@ -1,3 +1,5 @@
+import fs from 'fs';
+import pug from 'pug';
 import cors from 'cors';
 import http from 'http';
 import helmet from 'helmet';
@@ -14,7 +16,12 @@ import { pgPool } from './database/pg';
 const upload = multer({dest: 'bctw-api/build/uploads'})
 
 const onboarding = (req,res) => {
-  res.status(200).send('HEY YOU GUYS!!!');
+  const template = pug.compileFile('src/onboarding/index.pug')
+
+  const html = template();
+
+  res.status(200).send(html);
+  // res.status(200).send('HEY YOU GUYS!!!');
 }
 
 const app = express()
