@@ -4,6 +4,9 @@ body {
   align-items: center;
   min-height: 100vh;
 }
+.center {
+  transform: translate(0,-30px);
+}
 .title {
   font-size: 24px;
   font-weight: bolder;
@@ -12,9 +15,12 @@ a.btn {
   margin-left: 20rem;
 }
 p.desc {
-  font-size: 18px;
+  font-size: 16px;
   display: block;
   text-align: left;
   max-width: 28rem;
   margin-bottom: 3rem;
+}
+img {
+  transform: scale(0.7) translate(-10px,40px);
 }

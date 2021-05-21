@@ -15,16 +15,22 @@ html
 
   body
     .center
-      .title British Columbia Telemetry Warehouse
+      include logo.html
+      .title Telemetry Warehouse
 
       p.desc
         | Thank you for your interest in the BC Telemetry Warehouse.  To request access please submit your email and someone will contact you shortly.
 
-      .input-field
-        i(class='material-icons prefix') mail_outline
-        input(id='icon_prefix' type='text' class='validate')
-        label(for='icon_prefix') Email Address 
-      a(class='waves-effect waves-light btn') Submit
+      form
+        .input-field
+          i(class='material-icons prefix') mail_outline
+          input(id='icon_prefix' type='email' class='validate')
+          label(for='icon_prefix') Email Address 
+          span(class='helper-text' data-error='Invalid Email' data-success='Valid Email')
+        a(
+          class='waves-effect waves-light btn'
+          onclick='clicked()'
+        ) Submit
 
 
     script(
