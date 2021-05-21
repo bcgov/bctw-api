@@ -9,6 +9,7 @@ import { constructFunctionQuery, momentNow, queryAsyncAsTransaction } from '../d
 import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
 import { Animal, IAnimal } from '../types/animal';
 import { CodeInput } from '../types/code';
+import { HistoricalTelemetryInput } from '../types/point';
 import { ChangeCollarData, Collar, ICollar } from '../types/collar';
 import {
   IAnimalDeviceMetadata,
@@ -16,9 +17,11 @@ import {
   ICrittersWithDevices,
   isAnimal,
   isCode,
-  isCollar
+  isCollar,
+  isHistoricalTelemtry,
 } from '../types/import_types';
 import { cleanupUploadsDir, mapCsvHeader, removeEmptyProps, rowToCsv } from './import_helpers';
+import { upsertPointTelemetry } from '../apis/map_api';
 
 /**
  * parses the csv file
@@ -33,7 +36,8 @@ const parseCsv = async (
   const codes: CodeInput[] = [];
   const animals: IAnimal[] = [];
   const collars: ICollar[] = [];
-  const ret = { codes, animals, collars };
+  const points: HistoricalTelemetryInput[] = []; 
+  const ret = { codes, animals, collars, points };
 
   fs.createReadStream(file.path)
     .pipe(
@@ -49,6 +53,9 @@ const parseCsv = async (
       if (isCode(crow)) {
         codes.push(crow);
         return;
+      }
+      if (isHistoricalTelemtry(crow)) {
+        points.push(crow);
       }
       // a row can contain both animal and collar metadata
       if (isAnimal(crow)) {
@@ -202,12 +209,17 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
   }
 
   const onFinishedParsing = async (rows: Record<string, any[]>) => {
-    const { codes, animals, collars } = rows;
+    const { codes, animals, collars, points } = rows;
     try {
       if (codes.length) {
         req.body.codes = codes; // add parsed codes to the request
         return await addCode(req, res);
       } 
+      // when there is historical telemetry points
+      if (points.length) {
+        const r: IBulkResponse = await upsertPointTelemetry(id as string, points);
+        return res.send(r);
+      }
       // when there is only collar metadata
       if (collars.length && !animals.length) {
         req.body = collars; // add parsed devices to the request
