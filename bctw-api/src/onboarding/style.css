@@ -20,6 +20,7 @@ p.desc {
   text-align: left;
   max-width: 28rem;
   margin-bottom: 3rem;
+  transform: translate(10px,0);
 }
 img {
   transform: scale(0.7) translate(-10px,40px);
