@@ -22,7 +22,11 @@ const onboarding = (req,res) => {
 
   res.status(200).send(html);
   // res.status(200).send('HEY YOU GUYS!!!');
-}
+};
+
+const onboardingAccess = (req,res) => {
+  console.log(req);
+};
 
 const app = express()
   .use(helmet())
@@ -41,6 +45,7 @@ const app = express()
     return next() 
   })
   .get('/onboarding',onboarding)
+  .post('/onboarding',onboardingAccess)
   .all('*', async (req,res,next) => {
     // If you get here you have a valid IDIR
     const idir = req.query.idir;
