@@ -7,9 +7,11 @@ const clicked = async () => {
   if (re.test(email)) {
     const request = new Request('/onboarding',{
       method: 'POST',
-      body: `{"email":"${email}"}`
+      body: `{"email":"${email}"}`,
+      headers: {'content-Type': 'application/json'}
     });
 
+    console.log('fetching')
     fetch(request)
       .then(() => {
         M.toast({html: 'Your request was sent successfully'});

@@ -2,6 +2,7 @@ import fs from 'fs';
 import pug from 'pug';
 import cors from 'cors';
 import http from 'http';
+import axios from 'axios';
 import helmet from 'helmet';
 import express from 'express';
 import multer from 'multer';
@@ -21,11 +22,10 @@ const onboarding = (req,res) => {
   const html = template();
 
   res.status(200).send(html);
-  // res.status(200).send('HEY YOU GUYS!!!');
 };
 
 const onboardingAccess = (req,res) => {
-  console.log(req);
+  console.log(req.body);
 };
 
 const app = express()
