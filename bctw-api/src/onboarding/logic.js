@@ -3,7 +3,12 @@ const clicked = async () => {
   const email = input.value;
   const re = /^[^\s@]+@[^\s@]+$/; // Match a valid email
 
-  // If successful... Display then blank input 
+  /**
+   * If valid email...
+   * 1. Send authorization request
+   * 2. Display message according to success/failure
+   * 3. Blank the input field
+   */
   if (re.test(email)) {
     const request = new Request('/onboarding',{
       method: 'POST',
@@ -13,12 +18,10 @@ const clicked = async () => {
 
     fetch(request)
       .then((res) => {
-        console.log('res',res)
         M.toast({html: 'Your request was sent successfully'});
         input.value = '';
       })
       .catch((err) => {
-        console.error('res',err)
         M.toast({html: 'Your request was not successfully'});
       });
   }

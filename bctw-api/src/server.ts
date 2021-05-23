@@ -105,7 +105,12 @@ const app = express()
   .get('/onboarding',onboarding)
   .post('/onboarding',onboardingAccess)
   .all('*', async (req,res,next) => {
-    // If you get here you have a valid IDIR
+    /**
+     * If you get here you have a valid IDIR.
+     * Check if the user is registerd in the database.
+     * If yes.... Pass through.
+     * Else... Direct to the onboarding page.
+     */
     const idir = req.query.idir;
     const sql = 'select idir from bctw.user'
     const client = await pgPool.connect();
