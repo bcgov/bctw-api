@@ -18,14 +18,38 @@ const upload = multer({dest: 'bctw-api/build/uploads'})
 
 const onboarding = (req,res) => {
   const template = pug.compileFile('src/onboarding/index.pug')
-
   const html = template();
-
   res.status(200).send(html);
 };
 
-const onboardingAccess = (req,res) => {
-  console.log(req.body);
+const onboardingAccess = async (req,res) => {
+  const email = req.body?.email;
+  // Reject if no email
+  if (!email) return res.status(406).send('No email supplied');
+
+  // Get all the environment variable dependencies
+  let url = `${process.env.BCTW_CHES_AUTH_URL}/protocol/openid-connect/token`;
+  const username = process.env.BCTW_CHES_USERNAME;
+  const password = process.env.BCTW_CHES_PASSWORD;
+  const fromEmail = process.env.BCTW_CHES_FROM_EMAIL;
+  const toEmail = process.env.BCTW_CHES_TO_EMAIL;
+
+  // Create the authorization hash
+  const prehash = Buffer.from(`${username}:${password}`,'utf8')
+    .toString('base64');
+  const hash = `Basic ${prehash}`;
+
+  const tokenParcel = await axios.post(
+    url,
+    'grant_type=client_credentials',
+    {headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Authorization": hash
+    }
+  });
+
+  const token = tokenParcel.data?.access_token;
+  if (!token) return res.status(500).send('Authentication failed');
 };
 
 const app = express()

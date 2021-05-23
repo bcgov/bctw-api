@@ -11,7 +11,6 @@ const clicked = async () => {
       headers: {'content-Type': 'application/json'}
     });
 
-    console.log('fetching')
     fetch(request)
       .then(() => {
         M.toast({html: 'Your request was sent successfully'});
