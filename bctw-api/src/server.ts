@@ -70,8 +70,6 @@ const onboardingAccess = async (req,res) => {
     delayTS: 0
   }
 
-  console.log('emailPayload',emailPayload);
-
   axios.post(
     apiUrl,
     emailPayload,
@@ -82,10 +80,8 @@ const onboardingAccess = async (req,res) => {
       }
     }
   ).then((response) => {
-    console.log('response',response)
     res.status(200).send('Email was sent');
   }).catch((error) => {
-    console.log('error',error)
     res.status(500).send('Email failed');
   })
 };
@@ -118,10 +114,9 @@ const app = express()
     const registered = (idirs.indexOf(idir) > 0) ? true : false;
 
     if (registered) {
-      next();
+      next(); // pass through
     } else {
-      // TODO: Redirect here
-      res.send('Not Registered');
+      res.redirect('/onboarding'); // to onboarding page
     }
     client?.release();
   })
