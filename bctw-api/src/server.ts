@@ -28,7 +28,8 @@ const onboardingAccess = async (req,res) => {
   if (!email) return res.status(406).send('No email supplied');
 
   // Get all the environment variable dependencies
-  let url = `${process.env.BCTW_CHES_AUTH_URL}/protocol/openid-connect/token`;
+  const tokenUrl = `${process.env.BCTW_CHES_AUTH_URL}/protocol/openid-connect/token`;
+  const apiUrl = `${process.env.BCTW_CHES_API_URL}/api/v1/email`;
   const username = process.env.BCTW_CHES_USERNAME;
   const password = process.env.BCTW_CHES_PASSWORD;
   const fromEmail = process.env.BCTW_CHES_FROM_EMAIL;
@@ -40,7 +41,7 @@ const onboardingAccess = async (req,res) => {
   const hash = `Basic ${prehash}`;
 
   const tokenParcel = await axios.post(
-    url,
+    tokenUrl,
     'grant_type=client_credentials',
     {headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -48,8 +49,45 @@ const onboardingAccess = async (req,res) => {
     }
   });
 
-  const token = tokenParcel.data?.access_token;
-  if (!token) return res.status(500).send('Authentication failed');
+  const pretoken = tokenParcel.data?.access_token;
+  if (!pretoken) return res.status(500).send('Authentication failed');
+  const token = `Bearer ${pretoken}`;
+
+  const emailMessage = `
+    Access to the BC Telemetry Warehouse has be requested by
+    <a href="mailto:${email}">${email}</a>.
+  `
+  const emailPayload = {
+    subject: 'Access request for the BC Telemetry Warehouse',
+    priority: 'normal',
+    encoding: 'utf-8',
+    bodyType: 'html',
+    body: emailMessage,
+    from: fromEmail,
+    to: [toEmail],
+    cc: [],
+    bcc: [],
+    delayTS: 0
+  }
+
+  console.log('emailPayload',emailPayload);
+
+  axios.post(
+    apiUrl,
+    emailPayload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token
+      }
+    }
+  ).then((response) => {
+    console.log('response',response)
+    res.status(200).send('Email was sent');
+  }).catch((error) => {
+    console.log('error',error)
+    res.status(500).send('Email failed');
+  })
 };
 
 const app = express()

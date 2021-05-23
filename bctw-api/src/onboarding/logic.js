@@ -12,11 +12,13 @@ const clicked = async () => {
     });
 
     fetch(request)
-      .then(() => {
+      .then((res) => {
+        console.log('res',res)
         M.toast({html: 'Your request was sent successfully'});
         input.value = '';
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('res',err)
         M.toast({html: 'Your request was not successfully'});
       });
   }
