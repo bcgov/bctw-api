@@ -69,7 +69,7 @@ const constructFunctionQuery = (
 };
 
 // converts a js array to the postgres format
-// ex. ['abc','def'] => '{abc, def}'
+// ex. ['b','b'] => '{a, b}'
 const to_pg_array = (arr: number[] | string[]): string =>
   `'{${arr.join(',')}}'`;
 
@@ -172,7 +172,7 @@ const transactionify = (sql: string): string => {
 const _getPrimaryKey = (table: string): string => {
   switch (table) {
     case TelemetryTypes.animal:
-      return 'id';
+      return 'critter_id';
     case TelemetryTypes.collar:
       return 'collar_id';
     default:

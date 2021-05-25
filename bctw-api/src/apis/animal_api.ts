@@ -15,6 +15,7 @@ const pg_upsert_animal_fn = 'upsert_animal';
 const pg_get_critter_history = 'get_animal_history';
 const pg_get_history = 'get_animal_collar_assignment_history';
 
+// split so it can be used directly in the bulk import
 const upsertAnimals = async function (
   userIdentifier: string,
   animals: Animal[]
@@ -67,10 +68,12 @@ const deleteAnimal = async function (
 };
 
 const _uaJoin = (idir: string) => `ua.user_id = ${S_BCTW}.get_user_id('${idir}')`;
+// generate SQL for retrieving animals that are assigned/attached to a device
 const _getAssignedCritterSql = (idir: string) =>
   `SELECT
     ua.permission_type,
     cac.device_id,
+    cac.collar_id,
     a.*
   FROM
     ${S_API}.currently_attached_collars_v cac
@@ -78,6 +81,7 @@ const _getAssignedCritterSql = (idir: string) =>
     JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = a.critter_id
   WHERE ${_uaJoin(idir)}`;
 
+// generate SQL for retrieving animals that are not attached to a device
 const _getUnassignedCritterSql = (idir: string) =>
   `SELECT
     ua.permission_type,
@@ -87,6 +91,7 @@ const _getUnassignedCritterSql = (idir: string) =>
     JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = ac.critter_id
   WHERE ${_uaJoin(idir)}`;
 
+// generate SQL for retrieving an individual animal, regardless of collar assignment status
 const _getCritterSql = (idir: string, critter_id: string) =>
   `SELECT
     ua.permission_type,
@@ -130,7 +135,6 @@ const getAnimals = async function (
 };
 
 /*
-  params - id (an animal id)
   for the given animal id, retrieves current and past collars assigned to it. 
 */
 const getCollarAssignmentHistory = async function (
@@ -180,7 +184,6 @@ const getAnimalHistory = async function (
 };
 
 export {
-  // pg_upsert_animal_fn,
   deleteAnimal,
   upsertAnimal,
   upsertAnimals,

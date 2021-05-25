@@ -1,26 +1,25 @@
 import { QueryResultRow } from 'pg';
-import { Animal } from './animal';
+import { Animal as IAnimal } from './animal';
 import { CodeHeaderInput, CodeInput } from './code';
-import { Collar } from './collar';
+import { ICollar } from './collar';
+import { HistoricalTelemetryInput } from './point';
 
-const isAnimal = (row: Record<string, unknown>): row is Animal => {
-  const r = row as Animal;
-  if (r.animal_id || r.wlh_id || r.species || r.animal_status) {
+const isAnimal = (row: Record<string, unknown>): boolean => {
+  if (row.animal_id || row.wlh_id || row.animal_status) {
     return true;
   }
   return false;
 };
 
-const isCollar = (row: Record<string, unknown>): row is Collar => {
-  const r = row as Collar;
-  if (r.device_id) {
+const isCollar = (row: Record<string, unknown>): boolean => {
+  if (row.device_id) {
     return true;
   }
   return false;
 };
 
 const isCode = (row: Record<string, unknown>): row is CodeInput => {
-  const r = (row as unknown) as CodeInput;
+  const r = row as unknown as CodeInput;
   if (r.code_name && r.code_header) {
     return true;
   }
@@ -28,15 +27,22 @@ const isCode = (row: Record<string, unknown>): row is CodeInput => {
 };
 
 const isCodeHeader = (row: Record<string, unknown>): row is CodeHeaderInput => {
-  const r = (row as unknown) as CodeHeaderInput;
+  const r = row as unknown as CodeHeaderInput;
   if (r.code_header_name && r.code_header_description && r.code_header_title) {
     return true;
   }
   return false;
 };
 
-const rowToCsv = (row: Record<string, unknown>): string =>
-  Object.values(row).join(',');
+// a csv row must contain all properties to be considered a point
+const isHistoricalTelemtry = <T>(row: T): boolean => {
+  const r = row as unknown as HistoricalTelemetryInput;
+  if (r.date_recorded && r.device_id && r.device_vendor && r.latitude && r.longitude) {
+    return true;
+  }
+  return false;
+}
+
 export interface IImportError {
   error: string;
   row: string;
@@ -48,18 +54,9 @@ export interface IBulkResponse {
   results: QueryResultRow[];
 }
 
-export interface BctwBaseType {
-  created_at: Date;
-  created_by_user_id: number;
-  updated_at: Date;
-  updated_by_user_id: number;
-  valid_from: Date;
-  valid_to: Date;
-}
-
 export interface ICrittersWithDevices {
   rowIndex: number,
-  animal: IAnimalDeviceMetadata
+  row: IAnimalDeviceMetadata
 }
 
 export {
@@ -67,7 +64,7 @@ export {
   isCollar,
   isCodeHeader,
   isCode,
-  rowToCsv,
+  isHistoricalTelemtry,
 };
 
-export interface IAnimalDeviceMetadata extends Animal, Collar {}
+export interface IAnimalDeviceMetadata extends IAnimal, ICollar {}

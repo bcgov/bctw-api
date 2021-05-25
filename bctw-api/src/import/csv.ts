@@ -2,195 +2,205 @@ import csv from 'csv-parser';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
 
-import { upsertAnimals } from '../apis/animal_api';
-import { addCode, addCodeHeader } from '../apis/code_api';
-import { pg_link_collar_fn, upsertCollar } from '../apis/collar_api';
-import { constructFunctionQuery, momentNow, queryAsync, queryAsyncAsTransaction } from '../database/query';
-import { MISSING_IDIR } from '../database/requests';
-import { Animal } from '../types/animal';
-import { CodeHeaderInput, CodeInput } from '../types/code';
-import { ChangeCollarData, Collar } from '../types/collar';
+import { upsertAnimal, upsertAnimals } from '../apis/animal_api';
+import { addCode } from '../apis/code_api';
+import { pg_link_collar_fn, upsertCollar, upsertCollars } from '../apis/collar_api';
+import { constructFunctionQuery, momentNow, queryAsyncAsTransaction } from '../database/query';
+import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
+import { Animal, IAnimal } from '../types/animal';
+import { CodeInput } from '../types/code';
+import { HistoricalTelemetryInput } from '../types/point';
+import { ChangeCollarData, Collar, ICollar } from '../types/collar';
 import {
   IAnimalDeviceMetadata,
+  IBulkResponse,
   ICrittersWithDevices,
-  IImportError,
   isAnimal,
   isCode,
-  isCodeHeader,
   isCollar,
-  rowToCsv,
+  isHistoricalTelemtry,
 } from '../types/import_types';
-import { mapCsvImport } from './to_header';
+import { cleanupUploadsDir, mapCsvHeader, removeEmptyProps, rowToCsv } from './import_helpers';
+import { upsertPointTelemetry } from '../apis/map_api';
 
 /**
- * deletes an uploaded csv file
- * @param path fully qualified path of the file to be removed
- */
-const cleanupUploadsDir = async (path: string): Promise<void> => {
-  fs.unlink(path, (err) => {
-    if (err) {
-      console.log(`unabled to remove uploaded csv: ${err}`);
-    } else console.log(`uploaded csv file removed: ${path}`);
-  });
-};
-
-/**
- * do not want to populate table rows with null or invalid values
- * @param obj the object parsed from json
- * @returns an object with properties considered empty removed
- */
-function removeEmptyProps(obj) {
-  for (const propName in obj) {
-    const val = obj[propName];
-    if (val === null || val === undefined || val === '') {
-      delete obj[propName];
-    }
-  }
-  return obj
-}
-
-/**
+ * parses the csv file
  * @param file
  * @param callback called when parsing completed
+ * @returns an object containing arrays of records that were parsed
  */
 const parseCsv = async (
   file: Express.Multer.File,
   callback: (rowObj: Record<string, unknown[]>) => void
 ) => {
   const codes: CodeInput[] = [];
-  const headers: CodeHeaderInput[] = [];
-  const animals: IAnimalDeviceMetadata[] = [];
-  const collars: Collar[] = [];
-
-  const ret = {
-    codes,
-    headers,
-    animals,
-    collars,
-  };
+  const animals: IAnimal[] = [];
+  const collars: ICollar[] = [];
+  const points: HistoricalTelemetryInput[] = []; 
+  const ret = { codes, animals, collars, points };
 
   fs.createReadStream(file.path)
     .pipe(
       csv({
         mapHeaders: ({ header }) => {
-          return mapCsvImport(header);
+          return mapCsvHeader(header);
         },
       })
     )
     .on('data', (row: Record<string, unknown>) => {
-      // remove any null properties from the row
+      // remove any null values from the row
       const crow = removeEmptyProps(row);
-      if (isCodeHeader(crow)) headers.push(crow);
-      else if (isCode(crow)) codes.push(crow);
-      else {
+      if (isCode(crow)) {
+        codes.push(crow);
+        return;
+      }
+      if (isHistoricalTelemtry(crow)) {
+        points.push(crow);
+      }
+      // a row can contain both animal and collar metadata
+      if (isAnimal(crow)) {
         animals.push(crow);
       }
-      // else if (isAnimal(crow)) animals.push(crow);
-      // else if (isCollar(crow)) collars.push(crow);
+      if (isCollar(crow)) {
+        collars.push(crow);
+      }
     })
     .on('end', async () => {
       console.log(
-        `CSV file ${file.path} processed\ncodes: ${codes.length},\ncode headers: ${headers.length},\ncritters: ${animals.length},\ncollars: ${collars.length}`
+        `CSV file ${file.path} processed\ncodes: ${codes.length},\ncritters: ${animals.length},\ncollars: ${collars.length}`
       );
       await callback(ret);
     });
 };
 
 /**
- * inserts critters, doesn't use the animal_api @method {addAnimal}
- * if device_id is present in the csv row, attempt to attach it
- * before sending the response
- * @param rows critters to be upserted
+ * handles the insertion of CSV rows that are considered to contain animal and device metadata
+ * if device_id is present in the row, attempt to attach it before sending the response
+ * @param idir the idir of the user performing the upload
+ * @param rows the parsed CSV rows to be added to db
+ * @returns the response object with a bulk response object
  */
-const handleCritterInsert = async (
+const handleBulkMetadata = async (
   res: Response,
   idir: string,
   rows: IAnimalDeviceMetadata[]
 ): Promise<Response> => {
-  const animalsWithCollars: ICrittersWithDevices[] = rows
-    .map((row, idx) => { return { rowIndex: idx, animal: row}})
-    .filter(row => row.animal.device_id);
-  const bulkResp = await upsertAnimals(idir, rows);
+  // list of animals that need to have the collar attached
+  const animalsWithDevices: ICrittersWithDevices[] = rows
+    .map((row, idx) => ({ rowIndex: idx, row }))
+    .filter((r) => r.row.device_id);
+  
+  const ret: IBulkResponse = {errors: [], results: []};
 
-  // attach collars if there were no errors
-  if (animalsWithCollars.length && !bulkResp.errors.length && bulkResp.results.length) {
+  // upsert the collar metadata first
+  const collarResults = await upsertCollars(idir, rows);
+  if (collarResults.errors.length) {
+    return res.send(collarResults);
+  } else {
+    ret.results.push({'success': `${collarResults.results.length} devices were successfully added`});
+  }
+  // then the critter metadata
+  const animalResults = await upsertAnimals(idir, rows);
+  if (animalResults.errors.length) {
+    return res.send(animalResults);
+  } else {
+    ret.results.push({'success': `${animalResults.results.length} animals were successfully added`});
+  }
+  // if there were no errors until this point, attach the collars to the critters
+  if (
+    animalsWithDevices.length &&
+    !collarResults.errors.length &&
+    !animalResults.errors.length
+  ) {
     await handleCollarCritterLink(
       idir,
-      bulkResp.results as Animal[],
-      animalsWithCollars,
-      bulkResp.errors
+      animalResults.results as Animal[],
+      collarResults.results as Collar[],
+      animalsWithDevices,
+      ret
     );
   }
-  return res.send(bulkResp);
+  return res.send(ret);
 };
 
-// doesnt return results, pushes any exceptions caught to errors array param.
+/**
+ * doesnt return results, only pushes exceptions to the bulk response object.
+ * @param critterResults rows returned from upserting the animal rows
+ * @param collarResults rows returned from upserting the collar rows
+ * @param crittersWithCollars object containing animal metadata and device metadata
+ * @param bulkResp the bulk response object
+ */
 const handleCollarCritterLink = async (
   idir: string,
-  insertResults: Animal[],
+  critterResults: Animal[],
+  collarResults: Collar[],
   crittersWithCollars: ICrittersWithDevices[],
-  errors: IImportError[]
+  bulkResp: IBulkResponse
 ): Promise<void> => {
   await Promise.allSettled(
     crittersWithCollars.map(async (c) => {
-      const { rowIndex, animal } = c;
-      const savedCritter = insertResults.find(row => row.animal_id === animal.animal_id);
+      const { rowIndex, row } = c;
+      const savedCritter = critterResults.find((cr) => cr.animal_id === row.animal_id);
       if (savedCritter) {
-        // find a collar_id for the user provided device_id
-        const collarIdResult = await queryAsync(
-          `select collar_id from bctw.collar where device_id = ${animal.device_id} limit 1;`
-        );
-        if (!collarIdResult.rows.length) {
-          errors.push({
-            row: rowToCsv(animal as Animal),
+        // find the matching collar, use toString since the csv parser will parse the device ID as a string
+        const matchingCollar = collarResults.find(dr => dr.device_id.toString() === row.device_id.toString());
+        // if the collar record can't be retrieved, add an error to the bulk result and exit
+        if (!matchingCollar) {
+          bulkResp.errors.push({
+            row: rowToCsv(row),
             rownum: rowIndex,
-            error: `unable to find matching collar with device ID ${animal.device_id}`,
+            error: `unable to find matching collar with device ID ${row.device_id}`,
           });
           return;
         }
-        const cid = collarIdResult.rows[0]['collar_id'];
         const body: ChangeCollarData = {
-          collar_id: cid,
+          collar_id: matchingCollar.collar_id,
           animal_id: savedCritter.critter_id,
-          // a critter/device attachment starts from the capture date
+          // an attachment begins at the animal capture date
           valid_from: savedCritter.capture_date ?? momentNow(),
-          /* and is considered ended when the following dates are present:
+          /* 
+            and is considered ended if any of the following dates are present:
             a) the mortality date
             b) the collar retrieval date
           */
-         valid_to: savedCritter.mortality_date ?? c.animal.retrieval_date
+          valid_to: savedCritter.mortality_date ?? c.row.retrieval_date,
         };
         const params = [idir, ...Object.values(body)];
-        const sql = constructFunctionQuery(pg_link_collar_fn, params) ;
+        const sql = constructFunctionQuery(pg_link_collar_fn, params);
         const result = await queryAsyncAsTransaction(sql);
         return result;
       }
     })
   ).then((values) => {
+    // if there were errors creating the attachment, add them to the bulk response object
     values.forEach((val, i) => {
-      const { animal, rowIndex } = crittersWithCollars[i];
+      const { row: animal, rowIndex } = crittersWithCollars[i];
       if (val.status === 'rejected') {
-        console.log(animal)
-        errors.push({
+        bulkResp.errors.push({
           rownum: rowIndex,
           error: `Animal ID ${animal.animal_id} ${val.reason}`,
-          row: rowToCsv(animal as Animal),
+          row: rowToCsv(animal),
         });
       }
     });
   });
 };
 
-/*
-  the main endpoint function. workflow is:
-    1) call _parseCsv function which handles the file parsing
-    2) once finished, pass any parsed rows to their db handler functions and do the upserts 
+/** 
+  the main endpoint. workflow is:
+    1) call @function parseCsv function which handles the file parsing
+    2) once finished, pass any parsed rows to their handler functions and perform the upserts 
     3) delete the uploaded csv file
+
+  * see the @function bctw.upsert_animal and @function bctw.upsert_collar for more details
+  * the database functions will attempt to convert text versions of columns
+  * that are stored as codes into their code IDs, but will revert to null if 
+  * a column if it can't be found. Ex. device_make: 'Vectronics' should be 'Vectronic',
+  * and this value would end up as null in the collar record
 */
-// todo: add isTest option
 const importCsv = async function (req: Request, res: Response): Promise<void> {
-  const { idir, isTest } = req.query;
-  if (!idir) {
+  const id = getUserIdentifier(req);
+  if (!id) {
     res.status(500).send(MISSING_IDIR);
   }
   const file = req.file;
@@ -199,21 +209,34 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
   }
 
   const onFinishedParsing = async (rows: Record<string, any[]>) => {
-    const { codes, headers, animals, collars } = rows;
+    const { codes, animals, collars, points } = rows;
     try {
       if (codes.length) {
-        req.body.codes = codes;
+        req.body.codes = codes; // add parsed codes to the request
         return await addCode(req, res);
-      } else if (headers.length) {
-        req.body.headers = headers;
-        return await addCodeHeader(req, res);
-      } else if (animals.length) {
-        handleCritterInsert(res, (idir as string), animals);
-      } else if (collars.length) {
-        req.body = collars;
+      } 
+      // when there is historical telemetry points
+      if (points.length) {
+        const r: IBulkResponse = await upsertPointTelemetry(id as string, points);
+        return res.send(r);
+      }
+      // when there is only collar metadata
+      if (collars.length && !animals.length) {
+        req.body = collars; // add parsed devices to the request
         return await upsertCollar(req, res);
+      }
+      // when there is only animal metadata
+      if (animals.length && !collars.length) {
+        req.body = animals;
+        return await upsertAnimal(req, res);
+      }
+      // otherwise, assuming csv rows contain device and animal metadata
+      if (animals.length) {
+        handleBulkMetadata(res, id as string, animals);
       } else {
-        return res.status(404).send('import failed - rows did not match any known BCTW type')
+        return res
+          .status(404)
+          .send('import failed - rows did not match any known BCTW type');
       }
     } catch (e) {
       res.status(500).send(e.message);
