@@ -12,52 +12,50 @@ enum eExportType {
   movement = 'movement',
 }
 
-const pg_movement_history = 'get_movement_history';
-const movementSQL = (idir: string, id: string): string => 
-constructFunctionQuery(pg_movement_history, [idir, id], false, S_API);
+type MapRange = {
+  start: string;
+  end: string;
+}
 
-const animalSQL = (idir: string, id: string) =>
-  constructFunctionQuery(
-    pg_get_critter_history,
-    [idir, id],
-    true,
-    S_API
-  );
-const collarSQL = (idir: string, id: string) =>
-  constructFunctionQuery(
-    pg_get_collar_history,
-    [idir, id],
-    false,
-    S_API
-  );
+const pg_movement_history = 'get_movement_history';
+const makeQuery = (query: string, idir: string, id: string, range: MapRange) => {
+  const params = [idir, id];
+  if (range) {
+    params.push(...[range.start, range.end])
+  }
+  return constructFunctionQuery(query, params, false, S_API);
+}
+
+const movementSQL = (idir: string, id: string, range: MapRange): string => 
+  makeQuery(pg_movement_history, idir, id, range);
+
+const animalSQL = (idir: string, id: string, range: MapRange): string => 
+  makeQuery(pg_get_critter_history, idir, id, range);
+
+const deviceSQL = (idir: string, id: string, range: MapRange): string => 
+  makeQuery(pg_get_collar_history, idir, id, range);
 
 const getExportData = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { ids, type } = req.body;
+  // console.log(req.body);
+  const { type, range, collar_ids, critter_ids } = req.body;
   const idir = req.query.idir as string;
   if (!idir) {
     return res.status(500).send(MISSING_IDIR);
   }
-  if (!ids && type) {
-    return res
-      .status(500)
-      .send('missing request parameters export type and id');
-  }
   const sqlStrings: string[] = [];
   switch (type) {
     case eExportType.animal:
-      ids.forEach(i => sqlStrings.push(animalSQL(idir, i)))
+      critter_ids.forEach(i => sqlStrings.push(animalSQL(idir, i, range)))
       break;
     case eExportType.collar:
-      ids.forEach(i => sqlStrings.push(collarSQL(idir, i)))
+      collar_ids.forEach(i => sqlStrings.push(deviceSQL(idir, i, range)))
       break;
     case eExportType.movement:
-      ids.forEach(i => sqlStrings.push(movementSQL(idir, i)))
+      collar_ids.forEach(i => sqlStrings.push(movementSQL(idir, i, range)))
       break;
-    default:
-      // todo: all
   }
   const promises = sqlStrings.map(s => query(s, ''));
   const resolved = await Promise.all(promises);

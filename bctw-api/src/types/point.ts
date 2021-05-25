@@ -11,9 +11,6 @@ export interface IHistoricalTelemetry extends IHistoricalTelemetryBase {
   geom: GeoMetry;
 }
 
-// export interface IHistoricalTelemetryInput extends IHistoricalTelemetryBase {
-// }
-
 export type HistoricalTelemetryInput = IHistoricalTelemetryBase & {
   latitude: number;
   longitude: number;
