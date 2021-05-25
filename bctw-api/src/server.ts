@@ -104,27 +104,27 @@ const app = express()
   })
   .get('/onboarding',onboarding)
   .post('/onboarding',onboardingAccess)
-  .all('*', async (req,res,next) => {
-    /**
-     * If you get here you have a valid IDIR.
-     * Check if the user is registerd in the database.
-     * If yes.... Pass through.
-     * Else... Direct to the onboarding page.
-     */
-    const idir = req.query.idir;
-    const sql = 'select idir from bctw.user'
-    const client = await pgPool.connect();
-    const result = await client.query(sql);
-    const idirs = result.rows.map((row) => row.idir);
-    const registered = (idirs.indexOf(idir) > 0) ? true : false;
+  // .all('*', async (req,res,next) => {
+  //   /**
+  //    * If you get here you have a valid IDIR.
+  //    * Check if the user is registerd in the database.
+  //    * If yes.... Pass through.
+  //    * Else... Direct to the onboarding page.
+  //    */
+  //   const idir = req.query.idir;
+  //   const sql = 'select idir from bctw.user'
+  //   const client = await pgPool.connect();
+  //   const result = await client.query(sql);
+  //   const idirs = result.rows.map((row) => row.idir);
+  //   const registered = (idirs.indexOf(idir) > 0) ? true : false;
 
-    if (registered) {
-      next(); // pass through
-    } else {
-      res.redirect('/onboarding'); // to onboarding page
-    }
-    client?.release();
-  })
+  //   if (registered) {
+  //     next(); // pass through
+  //   } else {
+  //     res.redirect('/onboarding'); // to onboarding page
+  //   }
+  //   client?.release();
+  // })
   // critters
   .get('/get-animals', api.getAnimals)
   .get('/get-critters',api.getDBCritters)
