@@ -56,6 +56,7 @@ const parseCsv = async (
       }
       if (isHistoricalTelemtry(crow)) {
         points.push(crow);
+        return;
       }
       // a row can contain both animal and collar metadata
       if (isAnimal(crow)) {
@@ -67,7 +68,7 @@ const parseCsv = async (
     })
     .on('end', async () => {
       console.log(
-        `CSV file ${file.path} processed\ncodes: ${codes.length},\ncritters: ${animals.length},\ncollars: ${collars.length}`
+        `CSV file ${file.path} processed\ncodes: ${codes.length},\ncritters: ${animals.length},\ncollars: ${collars.length}\ntelemetry: ${points.length}`
       );
       await callback(ret);
     });

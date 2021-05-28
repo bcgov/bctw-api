@@ -14,26 +14,42 @@ interface IUserProps {
   role: UserRole;
 }
 /**
- *
- * @returns boolean of whether the user was added successfully
+ * adds or updates a new user. in order to update - the bctw.user.id field
+ * must be present in the JSON. 
+ * @returns the JSON record reprenting the row in the user table
  */
 const addUser = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const { user, role }: IUserProps = req.body;
-  const fn_name = 'add_user';
-  const sql = constructFunctionQuery(fn_name, [user, role]);
-  const { result, error, isError } = await query(
-    sql,
-    `failed to add user ${user.idir}`,
-    true
-  );
+  const fn_name = 'upsert_user';
+  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), user, role]);
+  const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, fn_name)[0]);
 };
+
+/**
+ * expires a user
+ * @param idToDelete ID of the user to be removed
+ * @returns a boolean indicating if the deletion was successful
+*/
+const deleteUser = async function (
+  idir: string,
+  idToDelete: string,
+  res: Response
+): Promise<Response> {
+  const fn_name = 'delete_user';
+  const sql = constructFunctionQuery(fn_name, [idir, idToDelete]);
+  const { result, error, isError } = await query(sql);
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, fn_name)[0]);
+}
 
 /**
  *
@@ -284,4 +300,5 @@ export {
   getUserTelemetryAlerts,
   upsertUDF,
   updateUserTelemetryAlert,
+  deleteUser
 };

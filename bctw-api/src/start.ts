@@ -9,6 +9,7 @@ import {
   getUDF,
   upsertUDF,
   updateUserTelemetryAlert,
+  deleteUser,
 } from './apis/user_api';
 import {
   upsertCollar,
@@ -88,6 +89,8 @@ const deleteType = async function (
       return deleteAnimal(idir, toDelete, res);
     case 'collar':
       return deleteCollar(idir, toDelete, res);
+    case 'user':
+      return deleteUser(idir, id, res);
     default:
       return res.status(404).json({ error: `${type} is not a valid deletion type.`});
   }

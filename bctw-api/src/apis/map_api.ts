@@ -151,7 +151,7 @@ const getLastPings = async function (req: Request, res: Response): Promise<Respo
 };
 
 /**
- * not exposed to API - currently only used through CSV import
+ * not exposed to API - currently only accessible through bulk CSV import
  * allows adding of historical telemetry data
  * Note: User will not see this data in the map until after the materialized 
  * view vendor_merge_view is refreshed, currently only scheduled once a day.
@@ -159,7 +159,8 @@ const getLastPings = async function (req: Request, res: Response): Promise<Respo
  * it will be considered a duplicate and not inserted. No errors will be thrown.
  * @param userIdentifier user idir/bceid
  * @param records array of @type {HistoricalTelemetryInput}
- * @returns bulkresponse
+ * @returns a bulkresponse object
+ * todo: may contain frequency instead of device_id?
  */
 const upsertPointTelemetry = async function (userIdentifier: string, records: HistoricalTelemetryInput[]): Promise<IBulkResponse> {
   const fn_name = 'add_historical_telemetry';
