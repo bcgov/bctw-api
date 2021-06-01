@@ -13,11 +13,13 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { ChangeCritterCollarProps } from '../types/collar';
 import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
 import { IFilter, TelemetryTypes } from '../types/query';
+import { fn_get_user_id } from './user_api';
 
 const pg_upsert_collar = 'upsert_collar';
 const pg_link_collar_fn = 'link_collar_to_animal';
 const pg_unlink_collar_fn = 'unlink_collar_to_animal';
 const pg_get_collar_history = 'get_collar_history';
+const pg_get_collar_p = `${S_BCTW}.get_user_collar_permission`;
 
 const upsertCollars = async function(
   userIdentifier: string,
@@ -109,22 +111,25 @@ const assignOrUnassignCritterCollar = async function (
 /**
  * @param idir
  * @param page
- * @returns a list of collars that do not have a critter attached
- * returns a list of collars that are not attached to a critter that the user created. 
- * if the user has admin role they can see all unattached collars
+ * @returns a list of collars that are not attached to a critter that the user created. 
+ * If the user has admin role they can see all unattached collars
  */
 const getAvailableCollarSQL = function (
   idir: string,
   filter?: IFilter,
   page?: number
 ): string {
-  const base = `select c.* from ${S_API}.collar_v c 
-    where c.collar_id not in
-    (select collar_id from bctw_dapi_v1.currently_attached_collars_v)
-    and (
-      c.created_by_user_id = ${S_BCTW}.get_user_id('${idir}') 
-      or ${S_BCTW}.get_user_role('${idir}') = 'administrator')
-    `;
+  const base = `
+    SELECT 
+      c.*,
+      ${pg_get_collar_p}(${fn_get_user_id}('${idir}'), c.collar_id) AS "permission_type"
+    FROM ${S_API}.collar_v c 
+    WHERE c.collar_id not in (
+      SELECT collar_id FROM ${S_API}.currently_attached_collars_v)
+    AND (
+      c.owned_by_user_id = ${S_BCTW}.get_user_id('${idir}') 
+      OR ${S_BCTW}.get_user_role('${idir}') = 'administrator')
+  `;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
   const sql = constructGetQuery({
     base: base,
@@ -145,6 +150,7 @@ const getAvailableCollars = async function (
   }
   const page = (req.query?.page || 1) as number;
   const sql = getAvailableCollarSQL(id, filterFromRequestParams(req), page);
+  // console.log(sql);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve available collars'
@@ -169,18 +175,21 @@ const getAssignedCollarSQL = function (
   page?: number
 ): string {
   const base = `
-    select ca.animal_id || '/' || ca.wlh_id as "(WLH_ID/Animal ID)", c.*
-    from ${S_API}.currently_attached_collars_v ca
-    join ${S_API}.collar_v c on c.collar_id = ca.collar_id
-    where ca.critter_id = any(${S_BCTW}.get_user_critter_access('${idir}'))
+    SELECT 
+      ca.animal_id || '/' || ca.wlh_id as "(WLH_ID/Animal ID)",
+      c.*,
+      ${pg_get_collar_p}(${fn_get_user_id}('${idir}'), c.collar_id) AS "permission_type"
+    FROM ${S_API}.currently_attached_collars_v ca
+    JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
+    WHERE ca.critter_id = ANY(${S_BCTW}.get_user_critter_access('${idir}'))
   `;
   let filterStr = '';
   if (filter && filter.id) {
-    filterStr = `and c.collar_id = '${filter.id}'`;
+    filterStr = `AND c.collar_id = '${filter.id}'`;
   }
   const sql = constructGetQuery({
     base: base,
-    order: 'c.device_id desc',
+    order: 'c.device_id DESC',
     filter: filterStr,
     page,
   });
@@ -201,6 +210,7 @@ const getAssignedCollars = async function (
   }
   const page = (req.query?.page || 1) as number;
   const sql = getAssignedCollarSQL(id, filterFromRequestParams(req), page);
+  // console.log(sql)
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve assigned collars'

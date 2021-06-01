@@ -176,12 +176,15 @@ const handleCollarCritterLink = async (
     // if there were errors creating the attachment, add them to the bulk response object
     values.forEach((val, i) => {
       const { row: animal, rowIndex } = crittersWithCollars[i];
+      const animalIdentifier = animal?.animal_id ?? animal.wlh_id;
       if (val.status === 'rejected') {
         bulkResp.errors.push({
           rownum: rowIndex,
-          error: `Animal ID ${animal.animal_id} ${val.reason}`,
+          error: `Animal ID ${animalIdentifier} ${val.reason}`,
           row: rowToCsv(animal),
         });
+      } else if (val.status === 'fulfilled') {
+        bulkResp.results.push({'sucess': `${animalIdentifier} successfully attached to ${animal.device_id}`})
       }
     });
   });

@@ -13,6 +13,8 @@ interface IUserProps {
   user: IUserInput;
   role: UserRole;
 }
+const fn_user_critter_access = 'get_user_critter_access_json';
+const fn_get_user_id = `${S_BCTW}.get_user_id`;
 /**
  * adds or updates a new user. in order to update - the bctw.user.id field
  * must be present in the JSON. 
@@ -130,20 +132,20 @@ const getUserCritterAccess = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { user } = req.params;
+  const { user } = req.params; // identifier of the user that the access is being requested for
   const page = (req.query.page || 0) as number;
-  const filterOutNone = req.query.filterOutNone;
+  const perms = (req.query?.filters as string).split(',') ?? [];
   if (!user) {
     return res.status(500).send(`must supply user parameter`);
   }
-  const fn_name = 'get_user_critter_access_json';
-  const base = constructFunctionQuery(fn_name, [user, filterOutNone], false, S_API);
+  const base = constructFunctionQuery(fn_user_critter_access, [user, perms], false, S_API);
   const sql = constructGetQuery(page === 0 ? {base} : {base, page});
+  // console.log('getUserCritterAccess', sql);
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name));
+  return res.send(getRowResults(result, fn_user_critter_access));
 };
 
 interface ICritterAccess {
@@ -300,5 +302,7 @@ export {
   getUserTelemetryAlerts,
   upsertUDF,
   updateUserTelemetryAlert,
-  deleteUser
+  deleteUser,
+  fn_user_critter_access,
+  fn_get_user_id
 };

@@ -32,7 +32,7 @@ export class Collar implements ICollar {
   device_id: number;
   device_deployment_status: string;
   device_make: string;
-  device_status;
+  device_status: string;
   device_malfunction_type: string;
   device_model: string;
   device_type: string;
