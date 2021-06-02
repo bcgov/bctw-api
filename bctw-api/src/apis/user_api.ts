@@ -13,7 +13,8 @@ interface IUserProps {
   user: IUserInput;
   role: UserRole;
 }
-const fn_user_critter_access = 'get_user_critter_access_json';
+const fn_user_critter_access_json = 'get_user_critter_access_json';
+const fn_user_critter_access_array = `${S_BCTW}.get_user_critter_access`;
 const fn_get_user_id = `${S_BCTW}.get_user_id`;
 /**
  * adds or updates a new user. in order to update - the bctw.user.id field
@@ -138,14 +139,14 @@ const getUserCritterAccess = async function (
   if (!user) {
     return res.status(500).send(`must supply user parameter`);
   }
-  const base = constructFunctionQuery(fn_user_critter_access, [user, perms], false, S_API);
+  const base = constructFunctionQuery(fn_user_critter_access_json, [user, perms], false, S_API);
   const sql = constructGetQuery(page === 0 ? {base} : {base, page});
   // console.log('getUserCritterAccess', sql);
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_user_critter_access));
+  return res.send(getRowResults(result, fn_user_critter_access_json));
 };
 
 interface ICritterAccess {
@@ -178,7 +179,7 @@ const assignCritterToUser = async function (
   const body: IUserCritterPermission[] = req.body;
   const promises = body.map((cp) => {
     const { userId, access } = cp;
-    /* 
+    /*  todo: fixme:! animal_id vs critter_id
       the getUserCritterAccess endpoint returns animal_id, so the frontend uses 'animal.id' as its unique
       identifier and posts 'id' for new assignments. since the database routine parses the permission json as a
       user_animal_access table row, and this table uses animal_id,
@@ -303,6 +304,6 @@ export {
   upsertUDF,
   updateUserTelemetryAlert,
   deleteUser,
-  fn_user_critter_access,
+  fn_user_critter_access_array,
   fn_get_user_id
 };

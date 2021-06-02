@@ -13,13 +13,12 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { ChangeCritterCollarProps } from '../types/collar';
 import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
 import { IFilter, TelemetryTypes } from '../types/query';
-import { fn_get_user_id } from './user_api';
 
 const pg_upsert_collar = 'upsert_collar';
 const pg_link_collar_fn = 'link_collar_to_animal';
 const pg_unlink_collar_fn = 'unlink_collar_to_animal';
 const pg_get_collar_history = 'get_collar_history';
-const pg_get_collar_p = `${S_BCTW}.get_user_collar_permission`;
+const pg_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
 
 const upsertCollars = async function(
   userIdentifier: string,
@@ -122,7 +121,7 @@ const getAvailableCollarSQL = function (
   const base = `
     SELECT 
       c.*,
-      ${pg_get_collar_p}(${fn_get_user_id}('${idir}'), c.collar_id) AS "permission_type"
+      ${pg_get_collar_permission}('${idir}', c.collar_id) AS "permission_type"
     FROM ${S_API}.collar_v c 
     WHERE c.collar_id not in (
       SELECT collar_id FROM ${S_API}.currently_attached_collars_v)
@@ -178,7 +177,7 @@ const getAssignedCollarSQL = function (
     SELECT 
       ca.animal_id || '/' || ca.wlh_id as "(WLH_ID/Animal ID)",
       c.*,
-      ${pg_get_collar_p}(${fn_get_user_id}('${idir}'), c.collar_id) AS "permission_type"
+      ${pg_get_collar_permission}('${idir}', c.collar_id) AS "permission_type"
     FROM ${S_API}.currently_attached_collars_v ca
     JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
     WHERE ca.critter_id = ANY(${S_BCTW}.get_user_critter_access('${idir}'))

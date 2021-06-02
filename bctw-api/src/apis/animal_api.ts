@@ -10,11 +10,12 @@ import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
-import { fn_user_critter_access } from './user_api';
+import { fn_user_critter_access_array } from './user_api';
 
 const pg_upsert_animal_fn = 'upsert_animal';
 const pg_get_critter_history = 'get_animal_history';
 const pg_get_history = 'get_animal_collar_assignment_history';
+const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
 
 // split so it can be used directly in the bulk import
 const upsertAnimals = async function (
@@ -68,44 +69,34 @@ const deleteAnimal = async function (
   return isError ? res.status(500).send(error.message) : res.status(200).send();
 };
 
-
-const _getAnimalSQL = (idir: string) =>
-`WITH j AS (SELECT ${S_API}.${fn_user_critter_access}('${idir}'))
-SELECT ${fn_user_critter_access} FROM j`;
-
 // generate SQL for retrieving animals that are attached to a device
 const _getAssignedCritterSql = (idir: string) =>
-  `${_getAnimalSQL(idir)} WHERE ${fn_user_critter_access}->>'device_id' IS NOT NULL`;
-
-  // `SELECT
-  //   ua.permission_type,
-  //   cac.device_id,
-  //   cac.collar_id,
-  //   a.*
-  // FROM
-  //   ${S_API}.currently_attached_collars_v cac
-  //   JOIN ${S_API}.animal_v a ON cac.critter_id = a.critter_id
-  //   JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = a.critter_id
-  // WHERE ${_uaJoin(idir)}`;
+  `SELECT
+      c.device_id,
+      c.collar_id,
+      a.*,
+      ${fn_get_user_animal_permission}('${idir}', a.critter_id) AS "permission_type"
+    FROM ${S_API}.currently_attached_collars_v c
+    JOIN ${S_API}.animal_v a ON c.critter_id = a.critter_id
+    WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))`
 
 // generate SQL for retrieving animals that are not attached to a device
 const _getUnassignedCritterSql = (idir: string) =>
-  `${_getAnimalSQL(idir)} WHERE ${fn_user_critter_access}->>'device_id' IS NULL`;
-
-  // `SELECT
-  //   ua.permission_type,
-  //   ac.*
-  // FROM
-  //   ${S_API}.currently_unattached_critters_v ac
-  //   JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = ac.critter_id
-  // WHERE ${_uaJoin(idir)}`;
+  `SELECT
+    cuc.*,
+    ${fn_get_user_animal_permission}('${idir}', cuc.critter_id) AS "permission_type"
+  FROM bctw_dapi_v1.currently_unattached_critters_v cuc
+  WHERE cuc.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))`;
 
 // generate SQL for retrieving an individual animal, regardless of collar assignment status
 const _getCritterSql = (idir: string, critter_id: string) =>
-  `SELECT ua.permission_type, a.*
+  `SELECT 
+    a.*
+    ${fn_get_user_animal_permission}('${idir}', ${critter_id}) AS "permission_type"
   FROM ${S_API}.animal_v a
-  JOIN ${S_API}.user_animal_assignment_v ua ON ua.animal_id = a.critter_id
-  WHERE ua.animal_id = ANY(${S_BCTW}.get_user_critter_access('${idir}')) AND a.critter_id = '${critter_id}'`;
+  WHERE ua.animal_id = ANY(${fn_user_critter_access_array}('${idir}'))
+  AND a.critter_id = '${critter_id}'`;
+
 /*
  */
 const getAnimals = async function (
@@ -136,7 +127,7 @@ const getAnimals = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_user_critter_access));
+  return res.send(result.rows);
 };
 
 /*
