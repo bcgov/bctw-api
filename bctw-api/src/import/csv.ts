@@ -56,6 +56,7 @@ const parseCsv = async (
       }
       if (isHistoricalTelemtry(crow)) {
         points.push(crow);
+        return;
       }
       // a row can contain both animal and collar metadata
       if (isAnimal(crow)) {
@@ -67,7 +68,7 @@ const parseCsv = async (
     })
     .on('end', async () => {
       console.log(
-        `CSV file ${file.path} processed\ncodes: ${codes.length},\ncritters: ${animals.length},\ncollars: ${collars.length}`
+        `CSV file ${file.path} processed\ncodes: ${codes.length},\ncritters: ${animals.length},\ncollars: ${collars.length}\ntelemetry: ${points.length}`
       );
       await callback(ret);
     });
@@ -175,12 +176,15 @@ const handleCollarCritterLink = async (
     // if there were errors creating the attachment, add them to the bulk response object
     values.forEach((val, i) => {
       const { row: animal, rowIndex } = crittersWithCollars[i];
+      const animalIdentifier = animal?.animal_id ?? animal.wlh_id;
       if (val.status === 'rejected') {
         bulkResp.errors.push({
           rownum: rowIndex,
-          error: `Animal ID ${animal.animal_id} ${val.reason}`,
+          error: `Animal ID ${animalIdentifier} ${val.reason}`,
           row: rowToCsv(animal),
         });
+      } else if (val.status === 'fulfilled') {
+        bulkResp.results.push({'sucess': `${animalIdentifier} successfully attached to ${animal.device_id}`})
       }
     });
   });

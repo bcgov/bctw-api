@@ -8,19 +8,20 @@ http://localhost:3000/get-user-role?idir=stuff
 http://localhost:3000/get-user-role?idir={{idir}}
 
 ###
-POST http://localhost:3000/add-user HTTP/1.1
+POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
   "user": {
     "idir": "someguy",
-    "email": "someguy@qt.com"
+    "email": "someguy@qt.com",
+    "bceid": "test1"
   },
   "role": "administrator"
 }
 
 ### should fail invalid role type
-POST http://localhost:3000/add-user HTTP/1.1
+POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
@@ -80,3 +81,12 @@ content-type: application/json
     "20c28d11-9a94-4358-a9e6-eeed9ed17135"
   ]
 }
+
+### delete individual - fail (no permission)
+DELETE http://localhost:3000/user/19?idir={{idirtest3}} HTTP/1.1
+
+### delete individual - fail
+DELETE http://localhost:3000/user/19?idir={{idirDNE}} HTTP/1.1
+
+### delete individual - success
+DELETE http://localhost:3000/user/19?idir={{idir}} HTTP/1.1
