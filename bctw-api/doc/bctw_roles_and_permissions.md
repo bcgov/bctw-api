@@ -21,9 +21,9 @@ Permission types fall into two categories:
 |`owner` | automatically | Allows the user to edit metadata on the object, attach and unattach the device. Can also request permissions for other users for this object
 |`subowner` | granted  | Allows the user to edit metadata on the object and unattach the device. Note: They cannot attach or re-attach the device.
 |`view` | granted | Allows user to see the objects on the map and metadata views, but cannot modify. _todo: rename to 'viewer'?_
-<!-- |`change` | granted | Allows user to modify metadata, unattach and attach devices. `todo: should this be removed now that owner/lieutenant are used?` -->
 |`none` | default | User has no access to the animal/device. It will not appear in the map or metadata views
 | | |
+<!-- |`change` | granted | Allows user to modify metadata, unattach and attach devices. `todo: should this be removed now that owner/lieutenant are used?` -->
 
 ### Requesting Permissions
 #### Owner
@@ -31,6 +31,7 @@ Permission types fall into two categories:
 * the owner can only submit requests for animals they own.
 * the owner enters email addresses into a form to complete the user portion - unlike an admin, they cannot see a list of users in the system.
 * they can choose from 'view' and 'subowner' as permission options.
+* owner can somehow see a list of past requests
 
 #### Administrator
 * By visiting the Requests page, an admin can see an enumerated list of current requests that owners have submitted.
@@ -42,5 +43,10 @@ Permission types fall into two categories:
 ### Issues to sort out
 <!-- 1. Why does a user with `lieutenant/subowner` permission actually need to be able to unattach devices from an animal? - to perform mortality events etc -->
 1. which permissions/roles can create objects? Ex. currently role
-1. An admin needs to be able to change object ownership
+1. An admin needs to be able to change object ownership, how?
 1. emailing requests to admin?
+1. how important is it for the admin to be able to edit the owner permission requests?
+
+## To implement
+* modify data table component to search or group by ex: population unit
+* 

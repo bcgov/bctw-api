@@ -5,7 +5,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
+import { getUserIdentifier } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IBulkResponse } from '../types/import_types';
 
@@ -15,17 +15,17 @@ const pg_add_code_fn = 'add_code';
 
 /**
  * @param codeHeader - code_header_name of the codes to be retrieved
- */
+*/
 const getCode = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { idir, codeHeader } = req.query;
-  if (!idir || !codeHeader) {
-    return res.status(500).send(`${MISSING_IDIR} and codeHeader`);
+  const { codeHeader } = req.query;
+  if (!codeHeader) {
+    return res.status(500).send(`invalid code header name ${codeHeader}`);
   }
   const page = (req.query?.page || 0) as number;
-  const sql = constructFunctionQuery('get_code', [idir, codeHeader, page], false, S_API);
+  const sql = constructFunctionQuery('get_code', [getUserIdentifier(req), codeHeader, page], false, S_API);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve codes'
@@ -74,14 +74,9 @@ const addCodeHeader = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  if (!id) {
-    bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
-    return res.send(bulkResp);
-  }
   const headers = req.body;
-  const sql = constructFunctionQuery('add_code_header', [id, headers], true);
+  const sql = constructFunctionQuery('add_code_header', [getUserIdentifier(req), headers], true);
   const { result, error, isError } = await query(
     sql,
     'failed to add code headers',
@@ -108,10 +103,9 @@ const addCode = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
   const { codes } = req.body;
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  const sql = constructFunctionQuery(pg_add_code_fn, [id, codes], true);
+  const sql = constructFunctionQuery(pg_add_code_fn, [getUserIdentifier(req), codes], true);
   const { result, error, isError } = await query(
     sql,
     'failed to add codes',

@@ -53,7 +53,7 @@ const constructFunctionQuery = (
       newParams.push('null');
     } else if (typeof p === 'string') {
       newParams.push(to_pg_str(p));
-    } else if (typeof p === 'number') {
+    } else if (typeof p === 'number' || typeof p === 'boolean') {
       newParams.push(p);
     } else if (typeof p.getMonth === 'function') {
       newParams.push(to_pg_timestamp(p));
@@ -159,7 +159,7 @@ const query = async (
       : await queryAsync(sql);
   } catch (e) {
     isError = true;
-    error = new Error(`${msgIfErr} ${e}`);
+    error = new Error(`${msgIfErr ?? ''} ${e}`);
   }
   return { result, error, isError };
 };

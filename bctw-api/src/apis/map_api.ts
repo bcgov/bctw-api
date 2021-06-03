@@ -3,7 +3,7 @@ import { QueryResult } from 'pg';
 import { S_BCTW, S_API } from '../constants';
 import { pgPool } from '../database/pg';
 import { queryAsync, constructFunctionQuery, getRowResults, query } from '../database/query';
-import { MISSING_IDIR } from '../database/requests';
+import { getUserIdentifier } from '../database/requests';
 import { IBulkResponse } from '../types/import_types';
 import { HistoricalTelemetryInput } from '../types/point';
 
@@ -38,13 +38,11 @@ const getCritterTracks = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { idir, start, end, unassigned } = req.query;
+  const { start, end, unassigned } = req.query;
   if (!start || !end) {
     return res.status(404).send('Must have a valid start and end date');
   }
-  if (!idir) {
-    return res.status(404).send(MISSING_IDIR);
-  }
+  const userStr = getUserIdentifier(req);
   const sql = unassigned === 'true' ? 
   `
     select
@@ -57,7 +55,7 @@ const getCritterTracks = async function (
       'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
     ) as "geojson"
   from
-    ${S_BCTW}.get_unattached_telemetry('${idir}', '${start}', '${end}')
+    ${S_BCTW}.get_unattached_telemetry('${userStr}', '${start}', '${end}')
   where
     st_asText(geom) <> 'POINT(0 0)'
   group by
@@ -76,7 +74,7 @@ const getCritterTracks = async function (
         'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
       ) as "geojson"
     from
-      ${S_BCTW}.get_telemetry('${idir}', '${start}', '${end}')
+      ${S_BCTW}.get_telemetry('${userStr}', '${start}', '${end}')
     where
       critter_id is not null and
       st_asText(geom) <> 'POINT(0 0)'
@@ -132,9 +130,8 @@ const getPingExtent = async function (
  * currently only returns collars that are attached to a critter
  */
 const getLastPings = async function (req: Request, res: Response): Promise<Response> {
-  const { idir } = req.query;
   const fn_name = 'get_last_critter_pings';
-  const sql = constructFunctionQuery(fn_name, [idir], false, S_API);
+  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
   const { result, error, isError } = await query(
     sql,
     `unable to retrive critter tracks`

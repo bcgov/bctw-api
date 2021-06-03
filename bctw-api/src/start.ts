@@ -1,61 +1,48 @@
+import { Request, Response } from 'express';
+
+import { getUserTelemetryAlerts, updateUserTelemetryAlert } from './apis/alert_api';
+import { deleteAnimal, getAnimalHistory, getAnimals, getCollarAssignmentHistory, upsertAnimal } from './apis/animal_api';
+import { addCode, addCodeHeader, getCode, getCodeHeaders } from './apis/code_api';
+import {
+  assignOrUnassignCritterCollar,
+  deleteCollar,
+  getAssignedCollars,
+  getAvailableCollars,
+  getCollarChangeHistory,
+  upsertCollar,
+} from './apis/collar_api';
+import { getCritterTracks, getDBCritters, getLastPings, getPingExtent } from './apis/map_api';
+import { approveOrDenyPermissionRequest, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
 import {
   addUser,
   assignCritterToUser,
-  getUserRole,
-  getUser,
-  getUsers,
-  getUserCritterAccess,
-  getUserTelemetryAlerts,
-  getUDF,
-  upsertUDF,
-  updateUserTelemetryAlert,
   deleteUser,
+  getUDF,
+  getUser,
+  getUserCritterAccess,
+  getUserRole,
+  getUsers,
+  upsertUDF,
 } from './apis/user_api';
-import {
-  upsertCollar,
-  assignOrUnassignCritterCollar,
-  getAvailableCollars,
-  getAssignedCollars,
-  getCollarChangeHistory,
-  deleteCollar,
-} from './apis/collar_api';
-import {
-  upsertAnimal,
-  getAnimals,
-  getCollarAssignmentHistory,
-  getAnimalHistory,
-  deleteAnimal,
-} from './apis/animal_api';
-import {
-  addCode,
-  addCodeHeader,
-  getCode,
-  getCodeHeaders,
-} from './apis/code_api';
-import {
-  getCritterTracks,
-  getDBCritters,
-  getLastPings,
-  getPingExtent,
-} from './apis/map_api';
-import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
-import { Request, Response } from 'express';
 import { MISSING_IDIR } from './database/requests';
 import { getExportData } from './export/export';
+import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
 
 /* ## notFound
   Catch-all router for any request that does not have an endpoint defined.
   @param req {object} Node/Express request object
   @param res {object} Node/Express response object
- */
+*/
 const notFound = function (req: Request, res: Response): Response {
   return res.status(404).json({ error: 'Sorry you must be lost :(' });
 };
 
 /**
- * generic getter, must supply id as UUID
+ * generic getter
+ * @param req.type : animal or device
+ * @param req.query.id : uuid identifier of the object
  */
-const getType = function(req: Request, res:Response): Promise<Response> {
+const getType = function (req: Request, res: Response): Promise<Response> {
   const params = req.params;
   switch (params.type) {
     case 'animal':
@@ -63,12 +50,12 @@ const getType = function(req: Request, res:Response): Promise<Response> {
     case 'device':
       return getAssignedCollars(req, res);
     default:
-      return new Promise(() =>  null);
+      return new Promise(() => null);
   }
-}
+};
 
 /**
- * can be called with an individual id or have ids in the body 
+ * can be called with an individual id or have ids in the body
  */
 const deleteType = async function (
   req: Request,
@@ -82,7 +69,9 @@ const deleteType = async function (
   const { ids } = req.body;
   const toDelete: string[] = ids || [id];
   if (!toDelete.length) {
-    return res.status(500).send('must supply id as a query parameter or ids as request body');
+    return res
+      .status(500)
+      .send('must supply id as a query parameter or ids as request body');
   }
   switch (type) {
     case 'animal':
@@ -92,7 +81,9 @@ const deleteType = async function (
     case 'user':
       return deleteUser(idir, id, res);
     default:
-      return res.status(404).json({ error: `${type} is not a valid deletion type.`});
+      return res
+        .status(404)
+        .json({ error: `${type} is not a valid deletion type.` });
   }
 };
 
@@ -128,5 +119,8 @@ export {
   getExportData,
   notFound,
   parseVectronicKeyRegistrationXML,
-  updateUserTelemetryAlert
+  updateUserTelemetryAlert,
+  approveOrDenyPermissionRequest, 
+  submitPermissionRequest,
+  getPermissionRequests,
 };

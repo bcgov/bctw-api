@@ -1,4 +1,4 @@
-import { Request } from "express";
+import { Request, Response } from "express";
 import { IFilter } from "../types/query";
 
 const MISSING_IDIR = 'must supply idir';
@@ -22,13 +22,18 @@ const filterFromRequestParams = (req: Request): IFilter => {
   return {};
 }
 
+/**
+ * retrieves the user identifier from the express request object - BCEID or IDIR 
+ * @returns the identifier as a string if it exists, or undefined
+ */
 const getUserIdentifier = (req: Request): string | undefined => {
   const id = req.query.idir as string ?? req.query.bceid as string;
   return id ?? undefined;
 }
 
+
 export {
   getUserIdentifier,
   filterFromRequestParams,
-  MISSING_IDIR
+  MISSING_IDIR,
 }

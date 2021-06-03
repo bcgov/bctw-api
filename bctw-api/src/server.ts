@@ -1,14 +1,14 @@
-import fs from 'fs';
 import pug from 'pug';
 import cors from 'cors';
 import http from 'http';
 import axios from 'axios';
 import helmet from 'helmet';
-import express from 'express';
+import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
 import {importCsv} from './import/csv';
 import { pgPool } from './database/pg';
+import { getUserIdentifier, MISSING_IDIR } from './database/requests';
 
 /* ## Server
   Run the server.
@@ -91,16 +91,23 @@ const app = express()
   .use(cors())
   .use(express.urlencoded({ extended: true }))
   .use(express.json())
-  app.all('*', function (req, res, next) {
-    const isUserSwapTest = process.env.TESTING_USERS;
-    if (isUserSwapTest !== 'true') {
-      return next()
+  // app.all('*', function (req, res, next) {
+  //   const isUserSwapTest = process.env.TESTING_USERS;
+  //   if (isUserSwapTest !== 'true') {
+  //     return next()
+  //   }
+  //   const query = req.query;
+  //   if (query.idir && query.testUser) {
+  //     req.query = Object.assign(req.query, {idir: query.testUser})
+  //   }
+  //   return next() 
+  // })
+  app.all('*', function (req: Request, res: Response, next) {
+    const userIdentifier = getUserIdentifier(req);
+    if (!userIdentifier) {
+      return res.status(500).send(MISSING_IDIR);
     }
-    const query = req.query;
-    if (query.idir && query.testUser) {
-      req.query = Object.assign(req.query, {idir: query.testUser})
-    }
-    return next() 
+    return next()
   })
   .get('/onboarding',onboarding)
   .post('/onboarding',onboardingAccess)
@@ -140,6 +147,10 @@ const app = express()
   .get('/get-collar-history/:collar_id', api.getCollarChangeHistory)
   .post('/upsert-collar', api.upsertCollar)
   .post('/change-animal-collar', api.assignOrUnassignCritterCollar)
+  // permissions
+  .get('/permission-request', api.getPermissionRequests)
+  .post('/submit-permission-request', api.submitPermissionRequest)
+  .post('/execute-permission-request', api.approveOrDenyPermissionRequest)
   // users
   .get('/get-udf', api.getUDF)
   .get('/get-user',api.getUser)

@@ -8,7 +8,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { filterFromRequestParams, getUserIdentifier, MISSING_IDIR } from '../database/requests';
+import { filterFromRequestParams, getUserIdentifier } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { ChangeCritterCollarProps } from '../types/collar';
 import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
@@ -44,12 +44,8 @@ const upsertCollar = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
   const collars = !Array.isArray(req.body) ? [req.body] : req.body;
-  const bulkResp: IBulkResponse = await upsertCollars(id, collars);
+  const bulkResp: IBulkResponse = await upsertCollars(getUserIdentifier(req) as string, collars);
   return res.send(bulkResp);
 };
 
@@ -77,11 +73,6 @@ const assignOrUnassignCritterCollar = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
-
   const body: ChangeCritterCollarProps = req.body;
   const { collar_id, animal_id, valid_from, valid_to } = body.data;
 
@@ -90,7 +81,7 @@ const assignOrUnassignCritterCollar = async function (
   }
 
   const db_fn_name = body.isLink ? pg_link_collar_fn : pg_unlink_collar_fn;
-  const params = [id, collar_id, animal_id];
+  const params = [getUserIdentifier(req), collar_id, animal_id];
   const errMsg = `failed to ${
     body.isLink ? 'attach' : 'remove'
   } device to critter ${animal_id}`;
@@ -143,12 +134,8 @@ const getAvailableCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
   const page = (req.query?.page || 1) as number;
-  const sql = getAvailableCollarSQL(id, filterFromRequestParams(req), page);
+  const sql = getAvailableCollarSQL(getUserIdentifier(req) as string, filterFromRequestParams(req), page);
   // console.log(sql);
   const { result, error, isError } = await query(
     sql,
@@ -203,12 +190,8 @@ const getAssignedCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
   const page = (req.query?.page || 1) as number;
-  const sql = getAssignedCollarSQL(id, filterFromRequestParams(req), page);
+  const sql = getAssignedCollarSQL(getUserIdentifier(req) as string, filterFromRequestParams(req), page);
   // console.log(sql)
   const { result, error, isError } = await query(
     sql,
@@ -227,12 +210,11 @@ const getCollarChangeHistory = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
   const collar_id = req.params?.collar_id;
-  if (!collar_id || !id) {
+  if (!collar_id) {
     return res.status(500).send(`collar_id and idir must be supplied in query`);
   }
-  const sql = constructFunctionQuery(pg_get_collar_history, [id, collar_id], false, S_API);
+  const sql = constructFunctionQuery(pg_get_collar_history, [getUserIdentifier(req), collar_id], false, S_API);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve collar history'

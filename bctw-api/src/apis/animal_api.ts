@@ -6,7 +6,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
+import { getUserIdentifier } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
@@ -43,10 +43,7 @@ const upsertAnimal = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
+  const id = getUserIdentifier(req) as string;
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
   const bulkResp: IBulkResponse = await upsertAnimals(id, animals);
   return res.send(bulkResp);
@@ -103,12 +100,9 @@ const getAnimals = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
+  const id = getUserIdentifier(req) as string;
   const page = (req.query?.page || 1) as number;
   const critterType = req.query?.critterType as eCritterFetchType;
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
   let sql;
   switch (critterType) {
     case eCritterFetchType.assigned:
@@ -165,8 +159,8 @@ const getAnimalHistory = async function (
   const id = getUserIdentifier(req);
   const page = (req.query?.page || 1) as number;
   const animal_id = req.params?.animal_id;
-  if (!animal_id || !id) {
-    return res.status(500).send(`animal_id and idir must be supplied`);
+  if (!animal_id) {
+    return res.status(500).send(`animal_id must be supplied`);
   }
   const sql = constructFunctionQuery(pg_get_critter_history, [id, animal_id], false, S_API);
   const { result, error, isError } = await query(
