@@ -1,7 +1,5 @@
-import pug from 'pug';
 import cors from 'cors';
 import http from 'http';
-import axios from 'axios';
 import helmet from 'helmet';
 import express, { Request, Response } from 'express';
 import multer from 'multer';
@@ -9,82 +7,13 @@ import * as api from './start';
 import {importCsv} from './import/csv';
 import { pgPool } from './database/pg';
 import { getUserIdentifier, MISSING_IDIR } from './database/requests';
+import { S_BCTW } from './constants';
 
 /* ## Server
   Run the server.
 */
 
 const upload = multer({dest: 'bctw-api/build/uploads'})
-
-const onboarding = (req,res) => {
-  const template = pug.compileFile('src/onboarding/index.pug')
-  const html = template();
-  res.status(200).send(html);
-};
-
-const onboardingAccess = async (req,res) => {
-  const email = req.body?.email;
-  // Reject if no email
-  if (!email) return res.status(406).send('No email supplied');
-
-  // Get all the environment variable dependencies
-  const tokenUrl = `${process.env.BCTW_CHES_AUTH_URL}/protocol/openid-connect/token`;
-  const apiUrl = `${process.env.BCTW_CHES_API_URL}/api/v1/email`;
-  const username = process.env.BCTW_CHES_USERNAME;
-  const password = process.env.BCTW_CHES_PASSWORD;
-  const fromEmail = process.env.BCTW_CHES_FROM_EMAIL;
-  const toEmail = process.env.BCTW_CHES_TO_EMAIL;
-
-  // Create the authorization hash
-  const prehash = Buffer.from(`${username}:${password}`,'utf8')
-    .toString('base64');
-  const hash = `Basic ${prehash}`;
-
-  const tokenParcel = await axios.post(
-    tokenUrl,
-    'grant_type=client_credentials',
-    {headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Authorization": hash
-    }
-  });
-
-  const pretoken = tokenParcel.data?.access_token;
-  if (!pretoken) return res.status(500).send('Authentication failed');
-  const token = `Bearer ${pretoken}`;
-
-  const emailMessage = `
-    Access to the BC Telemetry Warehouse has be requested by
-    <a href="mailto:${email}">${email}</a>.
-  `
-  const emailPayload = {
-    subject: 'Access request for the BC Telemetry Warehouse',
-    priority: 'normal',
-    encoding: 'utf-8',
-    bodyType: 'html',
-    body: emailMessage,
-    from: fromEmail,
-    to: [toEmail],
-    cc: [],
-    bcc: [],
-    delayTS: 0
-  }
-
-  axios.post(
-    apiUrl,
-    emailPayload,
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token
-      }
-    }
-  ).then((response) => {
-    res.status(200).send('Email was sent');
-  }).catch((error) => {
-    res.status(500).send('Email failed');
-  })
-};
 
 const app = express()
   .use(helmet())
@@ -102,36 +31,30 @@ const app = express()
   //   }
   //   return next() 
   // })
-  app.all('*', function (req: Request, res: Response, next) {
-    const userIdentifier = getUserIdentifier(req);
-    if (!userIdentifier) {
-      return res.status(500).send(MISSING_IDIR);
+  .all('*', async (req: Request,res: Response, next) => {
+    /**
+     * If you get here you have a valid IDIR.
+     * Check if the user is registerd in the database.
+     * If yes.... Pass through.
+     * Else... Deny access
+    */
+    const idir = getUserIdentifier(req);
+    if (!idir) {
+      res.status(500).send(MISSING_IDIR); // reject
     }
-    return next()
-  })
-  .get('/onboarding',onboarding)
-  .post('/onboarding',onboardingAccess)
-  // .all('*', async (req,res,next) => {
-  //   /**
-  //    * If you get here you have a valid IDIR.
-  //    * Check if the user is registerd in the database.
-  //    * If yes.... Pass through.
-  //    * Else... Direct to the onboarding page.
-  //    */
-  //   const idir = req.query.idir;
-  //   const sql = 'select idir from bctw.user'
-  //   const client = await pgPool.connect();
-  //   const result = await client.query(sql);
-  //   const idirs = result.rows.map((row) => row.idir);
-  //   const registered = (idirs.indexOf(idir) > 0) ? true : false;
+    const sql = `select idir from ${S_BCTW}.user`;
+    const client = await pgPool.connect();
+    const result = await client.query(sql);
+    const idirs = result.rows.map((row) => row.idir);
+    const registered = idirs.includes(idir);
 
-  //   if (registered) {
-  //     next(); // pass through
-  //   } else {
-  //     res.redirect('/onboarding'); // to onboarding page
-  //   }
-  //   client?.release();
-  // })
+    if (registered) {
+      next(); // pass through
+    } else {
+      res.status(403).send('Unauthorized'); // reject
+    }
+    client?.release();
+  })
   // critters
   .get('/get-animals', api.getAnimals)
   .get('/get-critters',api.getDBCritters)
