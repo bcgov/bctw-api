@@ -75,15 +75,18 @@ const app = express()
   .post('/submit-permission-request', api.submitPermissionRequest)
   .post('/execute-permission-request', api.approveOrDenyPermissionRequest)
   // users
-  .get('/get-udf', api.getUDF)
   .get('/get-user',api.getUser)
   .get('/get-users',api.getUsers)
   .get('/get-user-role',api.getUserRole)
-  .get('/get-critter-access/:user', api.getUserCritterAccess)
-  .get('/get-user-alerts', api.getUserTelemetryAlerts)
   .post('/add-user', api.addUser)
+  // user access
+  .get('/get-critter-access/:user', api.getUserCritterAccess)
   .post('/assign-critter-to-user', api.assignCritterToUser)
+  // udf
   .post('/add-udf', api.upsertUDF)
+  .get('/get-udf', api.getUDF)
+  // alerts
+  .get('/get-user-alerts', api.getUserTelemetryAlerts)
   .post('/update-user-alert', api.updateUserTelemetryAlert)
   // codes
   .get('/get-code', api.getCode)

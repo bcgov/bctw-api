@@ -102,4 +102,4 @@ DELETE http://localhost:3000/animal/{{critter1}}?idir={{idir}} HTTP/1.1
 DELETE http://localhost:3000/animal/{{critterCanChange}}?idir={{idir}} HTTP/1.1
 
 ###
-http://localhost:3000/critter/{{existing_critter}}?idir={{idir}}
+http://localhost:3000/animal/{{existing_critter}}?idir={{idir}}

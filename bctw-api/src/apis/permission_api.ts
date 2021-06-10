@@ -89,7 +89,7 @@ const getPermissionRequests = async function (
   res: Response
 ): Promise<Response> {
   const sql = constructGetQuery({
-    base: `select * from ${S_API}.permission_requests_v`,
+    base: `select * from ${S_API}.permission_requests_v where not is_expired`,
   });
   const { result, error } = await query(sql);
   return handleResponse(res, result?.rows, error);
@@ -102,7 +102,7 @@ const getPermissionRequests = async function (
 const approveOrDenyPermissionRequest = async function (
   req: Request,
   res: Response
-): Promise<unknown> {
+): Promise<Response> {
   const userIdentifier = getUserIdentifier(req) as string;
   const { request_id, is_grant }: IExecuteRequest = req.body;
   const sql = constructFunctionQuery(fn_execute_perm_request, [

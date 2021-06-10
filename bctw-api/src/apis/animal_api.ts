@@ -88,10 +88,10 @@ const _getUnassignedCritterSql = (idir: string) =>
 // generate SQL for retrieving an individual animal, regardless of collar assignment status
 const _getCritterSql = (idir: string, critter_id: string) =>
   `SELECT 
-    a.*
-    ${fn_get_user_animal_permission}('${idir}', ${critter_id}) AS "permission_type"
+    a.*,
+    ${fn_get_user_animal_permission}('${idir}', '${critter_id}') AS "permission_type"
   FROM ${S_API}.animal_v a
-  WHERE ua.animal_id = ANY(${fn_user_critter_access_array}('${idir}'))
+  WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))
   AND a.critter_id = '${critter_id}'`;
 
 /*
