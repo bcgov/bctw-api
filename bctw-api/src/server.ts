@@ -72,6 +72,7 @@ const app = express()
   .post('/change-animal-collar', api.assignOrUnassignCritterCollar)
   // permissions
   .get('/permission-request', api.getPermissionRequests)
+  .get('/permission-history', api.getGrantedPermissionHistory)
   .post('/submit-permission-request', api.submitPermissionRequest)
   .post('/execute-permission-request', api.approveOrDenyPermissionRequest)
   // users

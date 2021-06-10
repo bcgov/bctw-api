@@ -173,15 +173,12 @@ const assignCritterToUser = async function (
 ): Promise<Response> {
   const id = getUserIdentifier(req);
   const fn_name = 'grant_critter_to_user';
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
   const body: IUserCritterPermission[] = req.body;
   const promises = body.map((cp) => {
     const { userId, access } = cp;
     /*  todo: fixme:! animal_id vs critter_id
       the getUserCritterAccess endpoint returns animal_id, so the frontend uses 'animal.id' as its unique
-      identifier and posts 'id' for new assignments. since the database routine parses the permission json as a
+      identifier and posts 'id' for new assignments. since the database routine parses the permission JSON as a
       user_animal_access table row, and this table uses animal_id,
       need to remap the id to animal_id coming from the frontend
     */

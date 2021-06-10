@@ -12,7 +12,7 @@ import {
   upsertCollar,
 } from './apis/collar_api';
 import { getCritterTracks, getDBCritters, getLastPings, getPingExtent } from './apis/map_api';
-import { approveOrDenyPermissionRequest, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
+import { approveOrDenyPermissionRequest, getGrantedPermissionHistory, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
 import {
   addUser,
   assignCritterToUser,
@@ -123,4 +123,5 @@ export {
   approveOrDenyPermissionRequest, 
   submitPermissionRequest,
   getPermissionRequests,
+  getGrantedPermissionHistory,
 };

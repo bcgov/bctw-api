@@ -5,7 +5,7 @@ import {
   constructGetQuery,
   query,
 } from '../database/query';
-import { getUserIdentifier } from '../database/requests';
+import { getUserIdentifier, handleResponse } from '../database/requests';
 import { eCritterPermission } from '../types/user';
 
 const fn_submit_perm_request = 'submit_permission_request';
@@ -98,6 +98,9 @@ const getPermissionRequests = async function (
 /**
  * endpoint for an admin to deny or approve a request
  * @param body @type {IExecuteRequest}
+ * note: todo: 
+ * the result of whether a request was approved/denied isn't currently stored
+ * should it be?
  */
 const approveOrDenyPermissionRequest = async function (
   req: Request,
@@ -115,22 +118,31 @@ const approveOrDenyPermissionRequest = async function (
 };
 
 /**
- * a better response handler
- * todo: use everywhere?
+ * allows animal owners to view permissions they've granted
+ * the view queried column "requested_by" is the idir/bceid,
+ * which is why it can be queried directly. Note that there 
+ * isn't a 'denied' history, since denied requests are simply expired
+ * and no entries are inserted to the user_animal_assignment table. 
+ * 
+ * note: may need more info from permission table?
  */
-const handleResponse = async function (
-  res: Response,
-  result: unknown,
-  error: Error
+const getGrantedPermissionHistory = async function (
+  req: Request,
+  res: Response
 ): Promise<Response> {
-  if (error) {
-    return res.status(500).send(error.message);
-  }
-  return res.send(result);
+  const userIdentifier = getUserIdentifier(req) as string;
+  const page = (req.query?.page || 1) as number;
+  const sql = constructGetQuery({
+    base: `select * from ${S_API}.user_animal_assignment_v where requested_by = '${userIdentifier}'`,
+    page,
+  });
+  const { result, error } = await query(sql);
+  return handleResponse(res, result?.rows, error);
 };
 
 export {
   approveOrDenyPermissionRequest,
+  getGrantedPermissionHistory,
   getPermissionRequests,
   submitPermissionRequest,
 };
