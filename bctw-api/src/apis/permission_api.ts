@@ -12,8 +12,7 @@ const fn_submit_perm_request = 'submit_permission_request';
 const fn_execute_perm_request = 'execute_permission_request';
 
 interface ICritterPermissionRequest {
-  // fixme: // note: this is either the critter_id or the actual animal_id
-  animal_id: string;
+  critter_id: string;
   permission_type: eCritterPermission;
   wlh_id?: string;
 }

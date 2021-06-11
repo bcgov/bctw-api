@@ -10,10 +10,10 @@ content-type: application/json
   "animal_id": "test123",
   "animal_status": "A",
   "juvenile_at_heel": "N",
-  "species": "unicorn",
   "sex": "M",
   "wlh_id": "abc123",
-  "nickname": "shimmer"
+  "nickname": "shimmer",
+  "species": "Grey Wolf"
 }
 
 ### add more than one animal
@@ -25,7 +25,6 @@ content-type: application/json
     "animal_id": "test123",
     "animal_status": "P",
     "juvenile_at_heel": "Y",
-    "species": "caribou",
     "sex": "M",
     "wlh_id": "abc1233",
     "nickname": "shimmer"
@@ -47,7 +46,7 @@ content-type: application/json
 {
   "critter_id": "{{critter1}}",
   "animal_id": "test123",
-  "animal_status": "X",
+  "animal_status": "M",
   "sex": "M",
   "wlh_id": "abc123",
   "nickname": "shimmer"
@@ -78,10 +77,7 @@ content-type: application/json
 ]
 
 ### get critter history 
-http://localhost:3000/get-animal-history/{{critter2}}?idir={{idir}}
-
-### get all critters (requires admin)
-http://localhost:3000/get-animals?idir={{idir}}
+http://localhost:3000/get-animal-history/{{critter1}}?idir={{idir}}
 
 ### get assigned critters
 http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
@@ -96,10 +92,10 @@ http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=unassigned
 http://localhost:3000/get-assignment-history/{{critter2}}?idir={{idir}}
 
 ### delete individual - fail (no permission)
-DELETE http://localhost:3000/animal/{{critter1}}?idir={{idir}} HTTP/1.1
+DELETE http://localhost:3000/animal/{{critter1}}?idir={{idirtest3}} HTTP/1.1
 
 ### should succeed
-DELETE http://localhost:3000/animal/{{critterCanChange}}?idir={{idir}} HTTP/1.1
+DELETE http://localhost:3000/animal/{{critter1}}?idir={{idir}} HTTP/1.1
 
-###
+### retrieve specific critter
 http://localhost:3000/animal/{{existing_critter}}?idir={{idir}}

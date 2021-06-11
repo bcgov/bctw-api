@@ -151,8 +151,8 @@ const getUserCritterAccess = async function (
 
 interface ICritterAccess {
   critter_id: string;
-  animal_id?: string;
   permission_type: eCritterPermission;
+  animal_id?: string;
   valid_from?: Date;
   valid_to?: Date;
 }
@@ -162,7 +162,7 @@ interface IUserCritterPermission {
 }
 
 /**
- * @param req.body an object with @interface IUserCritterPermission
+ * @param req.body an object with @type {IUserCritterPermission}
  * @param req.body.userId: the user receiving the permission
  * @param req.body.access the crtter access type being granted
  * @returns list of successful assignments
@@ -176,19 +176,8 @@ const assignCritterToUser = async function (
   const body: IUserCritterPermission[] = req.body;
   const promises = body.map((cp) => {
     const { userId, access } = cp;
-    /*  todo: fixme:! animal_id vs critter_id
-      the getUserCritterAccess endpoint returns animal_id, so the frontend uses 'animal.id' as its unique
-      identifier and posts 'id' for new assignments. since the database routine parses the permission JSON as a
-      user_animal_access table row, and this table uses animal_id,
-      need to remap the id to animal_id coming from the frontend
-    */
-    const mapAnimalId = access.map((a) => ({ animal_id: a.critter_id, permission_type: a.permission_type }));
-    const sql = constructFunctionQuery(fn_name, [id, userId, mapAnimalId], true);
-    return query(
-      sql,
-      `failed to grant user with id ${userId} access to animals`,
-      true
-    );
+    const sql = constructFunctionQuery(fn_name, [id, userId, access], true);
+    return query(sql, `failed to grant user with id ${userId} access to animals`, true);
   });
   const resolved = await Promise.all(promises);
   const errors = resolved
@@ -199,7 +188,6 @@ const assignCritterToUser = async function (
     .filter((a) => a);
   return res.send({ errors, results });
 };
-
 
 type UDF = {
   udf_id: number;
