@@ -2,7 +2,7 @@ import csv from 'csv-parser';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
 
-import { upsertAnimal, upsertAnimals } from '../apis/animal_api';
+import { upsertAnimal, _upsertAnimal } from '../apis/animal_api';
 import { addCode } from '../apis/code_api';
 import { pg_link_collar_fn, upsertCollar, upsertCollars } from '../apis/collar_api';
 import { constructFunctionQuery, momentNow, queryAsyncAsTransaction } from '../database/query';
@@ -101,7 +101,7 @@ const handleBulkMetadata = async (
     ret.results.push({'success': `${collarResults.results.length} devices were successfully added`});
   }
   // then the critter metadata
-  const animalResults = await upsertAnimals(idir, rows);
+  const animalResults = await _upsertAnimal(idir, rows);
   if (animalResults.errors.length) {
     return res.send(animalResults);
   } else {
@@ -191,7 +191,7 @@ const handleCollarCritterLink = async (
 };
 
 /** 
-  the main endpoint. workflow is:
+  the main endpoint for bulk importing via CSV file. workflow is:
     1) call @function parseCsv function which handles the file parsing
     2) once finished, pass any parsed rows to their handler functions and perform the upserts 
     3) delete the uploaded csv file
@@ -243,7 +243,7 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
           .send('import failed - rows did not match any known BCTW type');
       }
     } catch (e) {
-      res.status(500).send(e.message);
+      res.status(500).send(e);
     } finally {
       cleanupUploadsDir(file.path);
     }

@@ -55,8 +55,7 @@ const deleteUser = async function (
 }
 
 /**
- *
- * @returns a string version of user role
+ * @returns the user role as a string
  */
 const getUserRole = async function (
   req: Request,
@@ -79,8 +78,8 @@ const getUserRole = async function (
 };
 
 /**
- * @param idir idir of user to retrieve
- * includes user role type
+ * @param idir - the user to retrieve
+ * @returns @type {User} includes user role type
  */
 const getUser = async function (
   req: Request,
@@ -107,16 +106,14 @@ const getUser = async function (
 };
 
 /**
- * @returns list of all users stored in the database, must be admin role
+ * @returns list of all @type {User} users 
+ * will throw if @param id is not an administrator
  */
 const getUsers = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const id = getUserIdentifier(req);
-  if (!id) {
-    return res.status(500).send(MISSING_IDIR);
-  }
   const fn_name = 'get_users';
   const sql = constructFunctionQuery(fn_name, [id], false, S_API);
   const { result, error, isError } = await query(sql, 'failed to query users');
@@ -127,13 +124,16 @@ const getUsers = async function (
 };
 
 /**
- * @returns a list of critters the user has access to
+ * @returns a list of critters the user has at least 'obesrver' access to
+ * @param req.user IDIR of the user to get acccess for
+ * @param filters array of @type {eCritterPermission} to retrieve
+ * @returns list of @type {Animal} and attached device properties
  */
 const getUserCritterAccess = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { user } = req.params; // identifier of the user that the access is being requested for
+  const { user } = req.params;
   const page = (req.query.page || 0) as number;
   const perms = (req.query?.filters as string).split(',') ?? [];
   if (!user) {
@@ -141,7 +141,6 @@ const getUserCritterAccess = async function (
   }
   const base = constructFunctionQuery(fn_user_critter_access_json, [user, perms], false, S_API);
   const sql = constructGetQuery(page === 0 ? {base} : {base, page});
-  // console.log('getUserCritterAccess', sql);
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);
@@ -219,6 +218,8 @@ const upsertUDF = async function (
 
 /**
  * retrieves UDFs for the user specified in @param req.idir
+ * similar to the @function upsertUDF, this currently retrieves groups
+ * of critter IDs for the provided user
  */
 const getUDF = async function (
   req: Request,

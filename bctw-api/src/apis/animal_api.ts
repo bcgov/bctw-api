@@ -18,7 +18,7 @@ const pg_get_history = 'get_animal_collar_assignment_history';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
 
 // split so it can be used directly in the bulk import
-const upsertAnimals = async function (
+const _upsertAnimal = async function (
   userIdentifier: string,
   animals: Animal[]
 ): Promise<IBulkResponse> {
@@ -34,10 +34,10 @@ const upsertAnimals = async function (
 }
 
 /**
- * body can be single or array of Animals, since db function handles this in a bulk fashion, create the proper bulk response
+ * body can be single or array of Animals
  * @param req 
  * @param res 
- * @returns 
+ * @returns the upserted @type {Animal} list
  */
 const upsertAnimal = async function (
   req: Request,
@@ -45,12 +45,12 @@ const upsertAnimal = async function (
 ): Promise<Response> {
   const id = getUserIdentifier(req) as string;
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const bulkResp: IBulkResponse = await upsertAnimals(id, animals);
+  const bulkResp: IBulkResponse = await _upsertAnimal(id, animals);
   return res.send(bulkResp);
 };
 
 /**
- * 
+ * deletes an animal
  * @param userIdentifier 
  * @param critterIds 
  * @param res 
@@ -67,7 +67,7 @@ const deleteAnimal = async function (
 };
 
 // generate SQL for retrieving animals that are attached to a device
-const _getAssignedCritterSql = (idir: string) =>
+const _getAssignedCritterSQL = (idir: string) =>
   `SELECT
       c.device_id,
       c.collar_id,
@@ -78,15 +78,15 @@ const _getAssignedCritterSql = (idir: string) =>
     WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))`
 
 // generate SQL for retrieving animals that are not attached to a device
-const _getUnassignedCritterSql = (idir: string) =>
+const _getUnassignedCritterSQL = (idir: string) =>
   `SELECT
     cuc.*,
     ${fn_get_user_animal_permission}('${idir}', cuc.critter_id) AS "permission_type"
   FROM bctw_dapi_v1.currently_unattached_critters_v cuc
   WHERE cuc.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))`;
 
-// generate SQL for retrieving an individual animal, regardless of collar assignment status
-const _getCritterSql = (idir: string, critter_id: string) =>
+// SQL for retrieving an individual animal, regardless of collar assignment status
+const _getCritterSQL = (idir: string, critter_id: string) =>
   `SELECT 
     a.*,
     ${fn_get_user_animal_permission}('${idir}', '${critter_id}') AS "permission_type"
@@ -94,7 +94,9 @@ const _getCritterSql = (idir: string, critter_id: string) =>
   WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))
   AND a.critter_id = '${critter_id}'`;
 
-/*
+/**
+ * retrieves a list of @type {Animal}, based on the user's permissions
+ * and the @param critterType specified
  */
 const getAnimals = async function (
   req: Request,
@@ -106,13 +108,13 @@ const getAnimals = async function (
   let sql;
   switch (critterType) {
     case eCritterFetchType.assigned:
-      sql = constructGetQuery({ base: _getAssignedCritterSql(id), page })
+      sql = constructGetQuery({ base: _getAssignedCritterSQL(id), page })
       break;
     case eCritterFetchType.unassigned:
-      sql = constructGetQuery({ base: _getUnassignedCritterSql(id), page });
+      sql = constructGetQuery({ base: _getUnassignedCritterSQL(id), page });
       break;
     default:
-      sql = constructGetQuery({ base: _getCritterSql(id, req.params.id)})
+      sql = constructGetQuery({ base: _getCritterSQL(id, req.params.id)})
   }
   const { result, error, isError } = await query(
     sql,
@@ -124,9 +126,10 @@ const getAnimals = async function (
   return res.send(result.rows);
 };
 
-/*
-  for the given animal id, retrieves current and past collars assigned to it. 
-*/
+/**
+ * @param req.params.animal_id the critter_id of the history to retrieve
+ * @returns the device attachment history
+ */
 const getCollarAssignmentHistory = async function (
   req: Request,
   res: Response
@@ -150,7 +153,7 @@ const getCollarAssignmentHistory = async function (
 };
 
 /**
- * retrieves a history of changes made to a critter
+ * retrieves a history of metadata changes made to a animal
  */
 const getAnimalHistory = async function (
   req: Request,
@@ -176,7 +179,7 @@ const getAnimalHistory = async function (
 export {
   deleteAnimal,
   upsertAnimal,
-  upsertAnimals,
+  _upsertAnimal,
   getAnimals,
   getAnimalHistory,
   getCollarAssignmentHistory,

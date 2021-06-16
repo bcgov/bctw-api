@@ -104,10 +104,11 @@ const assignOrUnassignCritterCollar = async function (
  * @returns a list of collars that are not attached to a critter that the user created. 
  * If the user has admin role they can see all unattached collars
  */
+const deviceIDSort = 'c.device_id desc';
 const getAvailableCollarSQL = function (
   idir: string,
-  filter?: IFilter,
-  page?: number
+  page: number,
+  filter?: IFilter
 ): string {
   const base = `
     SELECT 
@@ -121,12 +122,7 @@ const getAvailableCollarSQL = function (
       OR ${S_BCTW}.get_user_role('${idir}') = 'administrator')
   `;
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
-  const sql = constructGetQuery({
-    base: base,
-    filter: strFilter,
-    order: 'c.device_id desc',
-    page,
-  });
+  const sql = constructGetQuery({ base, filter: strFilter, order: deviceIDSort, page });
   return sql;
 };
 
@@ -135,7 +131,7 @@ const getAvailableCollars = async function (
   res: Response
 ): Promise<Response> {
   const page = (req.query?.page || 1) as number;
-  const sql = getAvailableCollarSQL(getUserIdentifier(req) as string, filterFromRequestParams(req), page);
+  const sql = getAvailableCollarSQL(getUserIdentifier(req) as string, page, filterFromRequestParams(req));
   // console.log(sql);
   const { result, error, isError } = await query(
     sql,
@@ -157,8 +153,8 @@ const getAvailableCollars = async function (
  */
 const getAssignedCollarSQL = function (
   idir: string,
-  filter?: IFilter,
-  page?: number
+  page: number,
+  filter?: IFilter
 ): string {
   const base = `
     SELECT 
@@ -173,12 +169,7 @@ const getAssignedCollarSQL = function (
   if (filter && filter.id) {
     filterStr = `AND c.collar_id = '${filter.id}'`;
   }
-  const sql = constructGetQuery({
-    base: base,
-    order: 'c.device_id DESC',
-    filter: filterStr,
-    page,
-  });
+  const sql = constructGetQuery({ base, order: deviceIDSort, filter: filterStr, page });
   return sql;
 };
 
@@ -191,8 +182,7 @@ const getAssignedCollars = async function (
   res: Response
 ): Promise<Response> {
   const page = (req.query?.page || 1) as number;
-  const sql = getAssignedCollarSQL(getUserIdentifier(req) as string, filterFromRequestParams(req), page);
-  // console.log(sql)
+  const sql = getAssignedCollarSQL(getUserIdentifier(req) as string, page, filterFromRequestParams(req));
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve assigned collars'

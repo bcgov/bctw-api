@@ -47,6 +47,7 @@ interface IPermissionRequest extends ICritterPermissionRequest {
  */
 interface IExecuteRequest extends Pick<IPermissionRequest, 'request_id'> {
   is_grant: boolean; // whether or not to approve or deny
+  was_denied_reason: string;
 }
 
 /**
@@ -88,7 +89,7 @@ const getPermissionRequests = async function (
   res: Response
 ): Promise<Response> {
   const sql = constructGetQuery({
-    base: `select * from ${S_API}.permission_requests_v where not is_expired`,
+    base: `select * from ${S_API}.permission_requests_v where was_granted is null`,
   });
   const { result, error } = await query(sql);
   return handleResponse(res, result?.rows, error);
@@ -106,11 +107,12 @@ const approveOrDenyPermissionRequest = async function (
   res: Response
 ): Promise<Response> {
   const userIdentifier = getUserIdentifier(req) as string;
-  const { request_id, is_grant }: IExecuteRequest = req.body;
+  const { request_id, is_grant, was_denied_reason }: IExecuteRequest = req.body;
   const sql = constructFunctionQuery(fn_execute_perm_request, [
     userIdentifier,
     request_id,
     is_grant,
+    was_denied_reason
   ]);
   const { result, error } = await query(sql);
   return handleResponse(res, result?.rows, error);
@@ -118,12 +120,9 @@ const approveOrDenyPermissionRequest = async function (
 
 /**
  * allows animal owners to view permissions they've granted
- * the view queried column "requested_by" is the idir/bceid,
- * which is why it can be queried directly. Note that there 
- * isn't a 'denied' history, since denied requests are simply expired
- * and no entries are inserted to the user_animal_assignment table. 
- * 
- * note: may need more info from permission table?
+ * the view queried column "requested_by" is the IDIR/BCEID,
+ * which is why it can be queried directly.
+ * this does show 'pending' requests that an admin has not approved yet
  */
 const getGrantedPermissionHistory = async function (
   req: Request,
@@ -132,7 +131,7 @@ const getGrantedPermissionHistory = async function (
   const userIdentifier = getUserIdentifier(req) as string;
   const page = (req.query?.page || 1) as number;
   const sql = constructGetQuery({
-    base: `select * from ${S_API}.user_animal_assignment_v where requested_by = '${userIdentifier}'`,
+    base: `select * from ${S_API}.permission_requests_v where requested_by = '${userIdentifier}'`,
     page,
   });
   const { result, error } = await query(sql);
