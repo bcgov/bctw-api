@@ -32,8 +32,7 @@ const getUserIdentifier = (req: Request): string | undefined => {
 }
 
 /**
- * a better response handler
- * todo: use everywhere?
+ * a response handler
  */
 const handleResponse = async function (
   res: Response,

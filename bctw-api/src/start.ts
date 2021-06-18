@@ -24,6 +24,7 @@ import {
   getUsers,
   upsertUDF,
 } from './apis/user_api';
+import { emailEndpoint } from './apis/email';
 import { MISSING_IDIR } from './database/requests';
 import { getExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
@@ -124,4 +125,5 @@ export {
   submitPermissionRequest,
   getPermissionRequests,
   getGrantedPermissionHistory,
+  emailEndpoint,
 };
