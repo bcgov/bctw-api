@@ -21,7 +21,7 @@ interface ICritterPermissionRequest
 }
 
 /**
- * the object an owner submits for a request
+ * the object an manager submits for a request
  */
 interface IPermissionRequestInput {
   user_email_list: string[];
@@ -56,7 +56,7 @@ interface IExecuteRequest extends Pick<IPermissionRequest, 'request_id'> {
 }
 
 /**
- * endpoint for an owner to submit a permission request.
+ * endpoint for a manager to submit a permission request.
  * @param critter_permissions_list is an array, but the database function
  * splits each critter permission into it's own request
  */
@@ -124,7 +124,7 @@ const approveOrDenyPermissionRequest = async function (
   ]);
   const { result, error, isError } = await query(sql, '', true);
   const row = !isError ? getRowResults(result, fn_execute_perm_request)[0] : undefined;
-  // send an email notification if the request was denied to the owner
+  // send an email notification if the request was denied to the manager
   if (!isError&& !is_grant) {
     handlePermissionDeniedEmail(row as IPermissionRequest);
   }
@@ -132,7 +132,7 @@ const approveOrDenyPermissionRequest = async function (
 };
 
 /**
- * allows owners to view permissions they've granted
+ * allows managers to view permissions they've granted
  * the view queried column "requested_by" is the IDIR/BCEID,
  * which is why it can be queried directly.
  * this does show 'pending' requests that an admin has not approved yet
@@ -154,7 +154,7 @@ const getGrantedPermissionHistory = async function (
 const DISABLE_PERMISSION_EMAIL = process.env.DISABLE_PERMISSION_EMAILS === 'true';
 /**
  * send request submitted notification to the admin, notifying them
- * that an owner has a pending permission request
+ * that a manager has a pending permission request
  */
 const handlePermissionSubmittedEmail = async (rows: IPermissionRequest[]): Promise<void> => {
   if (DISABLE_PERMISSION_EMAIL|| !rows.length) {
@@ -178,8 +178,8 @@ const handlePermissionSubmittedEmail = async (rows: IPermissionRequest[]): Promi
 }
 
 /**
- * send denied request notification to the owner
- * todo: should owners get notifications when granted?
+ * send denied request notification to the manager
+ * todo: should managers get notifications when granted?
  * todo: should the users that were actually granted the permissions get notified?
  */
 const handlePermissionDeniedEmail = async (request: IPermissionRequest): Promise<void> => {

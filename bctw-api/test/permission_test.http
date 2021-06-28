@@ -16,7 +16,7 @@ content-type: application/json
   "user_email_list": ["{{invalid_email}}", "{{valid_email}}"],
   "critter_permissions_list": [
     {"critter_id" : "{{critter1}}", "permission_type": "view"},
-    {"critter_id" : "{{critter2}}", "permission_type": "subowner"}
+    {"critter_id" : "{{critter2}}", "permission_type": "editor"}
   ]
 }
 
@@ -28,7 +28,7 @@ content-type: application/json
   "user_email_list": ["{{valid_email}}"],
   "critter_permissions_list": [
     {"critter_id" : "{{critter1}}", "permission_type": "view"},
-    {"critt_id" : "{{critter2}}", "permission_type": "subowner"}
+    {"critt_id" : "{{critter2}}", "permission_type": "editor"}
   ]
 }
 
@@ -40,7 +40,7 @@ content-type: application/json
   "user_email_list": ["{{valid_email}}"],
   "critter_permissions_list": [
     {"critter_id" : "{{critter1}}", "permission_type": "view"},
-    {"critter_id" : "{{critter2}}", "permission_type": "subowner"}
+    {"critter_id" : "{{critter2}}", "permission_type": "editor"}
   ]
 }
 

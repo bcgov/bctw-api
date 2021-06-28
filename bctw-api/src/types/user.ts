@@ -17,8 +17,8 @@ enum UserRole {
 }
 
 enum eCritterPermission {
-  owner = 'owner', // the user created this object
-  subowner = 'subowner',
+  manager = 'manager', // the user created this object
+  editor = 'editor',
   view = 'viewer',
   none = 'none',
   admin = ''

@@ -229,7 +229,7 @@ const getUDF = async function (
   const udf_type = req.query.type as string;
   const sql = 
   `select * from ${S_API}.user_defined_fields_v
-  where user_id = bctw.get_user_id('${id}')
+  where user_id = ${fn_get_user_id}('${id}')
   and type = '${udf_type}'`;
   const { result, error, isError } = await query(sql, '');
   if (isError) {
