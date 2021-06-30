@@ -37,5 +37,5 @@
     "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
   },
   "exclude": ["**/*.test.ts", "build/*"],
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/apis/delme"]
 }
