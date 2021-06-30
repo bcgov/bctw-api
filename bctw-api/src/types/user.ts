@@ -5,6 +5,8 @@ interface IUserInput {
   idir: string,
   bceid: string,
   email: string,
+  firstname: string,
+  lastname: string
 }
 
 type User = BCTWBaseType & IUserInput;
