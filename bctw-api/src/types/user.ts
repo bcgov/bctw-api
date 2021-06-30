@@ -5,6 +5,8 @@ interface IUserInput {
   idir: string,
   bceid: string,
   email: string,
+  firstname: string,
+  lastname: string
 }
 
 type User = BCTWBaseType & IUserInput;
@@ -17,8 +19,8 @@ enum UserRole {
 }
 
 enum eCritterPermission {
-  owner = 'owner', // the user created this object
-  subowner = 'subowner',
+  manager = 'manager', // the user created this object
+  editor = 'editor',
   view = 'viewer',
   none = 'none',
   admin = ''

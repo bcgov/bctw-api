@@ -72,18 +72,22 @@ const app = express()
   .post('/change-animal-collar', api.assignOrUnassignCritterCollar)
   // permissions
   .get('/permission-request', api.getPermissionRequests)
+  .get('/permission-history', api.getGrantedPermissionHistory)
   .post('/submit-permission-request', api.submitPermissionRequest)
   .post('/execute-permission-request', api.approveOrDenyPermissionRequest)
   // users
-  .get('/get-udf', api.getUDF)
   .get('/get-user',api.getUser)
   .get('/get-users',api.getUsers)
   .get('/get-user-role',api.getUserRole)
-  .get('/get-critter-access/:user', api.getUserCritterAccess)
-  .get('/get-user-alerts', api.getUserTelemetryAlerts)
   .post('/add-user', api.addUser)
+  // user access
+  .get('/get-critter-access/:user', api.getUserCritterAccess)
   .post('/assign-critter-to-user', api.assignCritterToUser)
+  // udf
   .post('/add-udf', api.upsertUDF)
+  .get('/get-udf', api.getUDF)
+  // alerts
+  .get('/get-user-alerts', api.getUserTelemetryAlerts)
   .post('/update-user-alert', api.updateUserTelemetryAlert)
   // codes
   .get('/get-code', api.getCode)
@@ -99,6 +103,7 @@ const app = express()
   .delete('/:type/:id', api.deleteType)
   // generic getter for multiple types
   .get('/:type/:id', api.getType)
+  // .post('/email', api.emailEndpoint)
   // Health check
   .get('/health', (_,res) => res.send('healthy'))
   .get('*', api.notFound);

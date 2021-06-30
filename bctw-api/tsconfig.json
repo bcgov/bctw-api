@@ -25,6 +25,7 @@
     // "rootDirs": [],                        /* List of root folders whose combined content represents the structure of the project at runtime. */
     // "typeRoots": [],                       /* List of folders to include type definitions from. */
     // "types": [],                           /* Type declaration files to be included in compilation. */
+    "types": ["@types/jest"],
     // "allowSyntheticDefaultImports": true,  /* Allow default imports from modules with no default export. This does not affect code emit, just typechecking. */
 
     /* Source Map Options */
@@ -36,6 +37,11 @@
     "skipLibCheck": true,                     /* Skip type checking of declaration files. */
     "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
   },
+<<<<<<< HEAD
   "exclude": ["**/*.test.ts", "build/*"],
   "include": ["src/**/*.ts", "src/apis/delme"]
+=======
+  "exclude": ["test/*.test.ts", "build/*"],
+  "include": ["src/**/*.ts"]
+>>>>>>> e16a19978275ed794499f7081e2a500579ab9e0e
 }

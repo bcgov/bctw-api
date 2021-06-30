@@ -1,7 +1,7 @@
-import { Request, Response } from "express";
-import { S_API } from "../constants";
-import { constructFunctionQuery, constructGetQuery, getRowResults, query } from "../database/query";
-import { getUserIdentifier, MISSING_IDIR } from "../database/requests";
+import { Request, Response } from 'express';
+import { S_API } from '../constants';
+import { constructFunctionQuery, constructGetQuery, getRowResults, query } from '../database/query';
+import { getUserIdentifier } from '../database/requests';
 
 /**
  * retrieves telemetry alerts from the database 

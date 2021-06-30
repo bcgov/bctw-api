@@ -12,7 +12,7 @@ import {
   upsertCollar,
 } from './apis/collar_api';
 import { getCritterTracks, getDBCritters, getLastPings, getPingExtent } from './apis/map_api';
-import { approveOrDenyPermissionRequest, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
+import { approveOrDenyPermissionRequest, getGrantedPermissionHistory, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
 import {
   addUser,
   assignCritterToUser,
@@ -24,6 +24,7 @@ import {
   getUsers,
   upsertUDF,
 } from './apis/user_api';
+import { emailEndpoint } from './apis/email';
 import { MISSING_IDIR } from './database/requests';
 import { getExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
@@ -123,4 +124,6 @@ export {
   approveOrDenyPermissionRequest, 
   submitPermissionRequest,
   getPermissionRequests,
+  getGrantedPermissionHistory,
+  emailEndpoint,
 };

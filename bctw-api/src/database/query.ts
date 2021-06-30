@@ -180,14 +180,16 @@ const _getPrimaryKey = (table: string): string => {
   }
 };
 
-/// given a page number, return a string with the limit offset
+// given a page number, return a string with the limit offset
+// note: disabling this for now
 const paginate = (pageNumber: number): string => {
   if (isNaN(pageNumber)) {
     return '';
   }
   const limit = 10;
   const offset = limit * pageNumber - limit;
-  return `limit ${limit} offset ${offset};`;
+  // return `limit ${limit} offset ${offset};`;
+  return ``;
 };
 
 /*

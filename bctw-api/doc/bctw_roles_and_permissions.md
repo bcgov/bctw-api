@@ -46,7 +46,3 @@ Permission types fall into two categories:
 1. An admin needs to be able to change object ownership, how?
 1. emailing requests to admin?
 1. how important is it for the admin to be able to edit the owner permission requests?
-
-## To implement
-* modify data table component to search or group by ex: population unit
-* 

@@ -31,9 +31,23 @@ const getUserIdentifier = (req: Request): string | undefined => {
   return id ?? undefined;
 }
 
+/**
+ * a response handler
+ */
+const handleResponse = async function (
+  res: Response,
+  result: unknown,
+  error: Error
+): Promise<Response> {
+  if (error) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result);
+};
 
 export {
   getUserIdentifier,
   filterFromRequestParams,
   MISSING_IDIR,
+  handleResponse,
 }

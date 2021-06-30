@@ -33,7 +33,8 @@ const getCode = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, pg_get_code_fn));
+  const results = getRowResults(result, pg_get_code_fn)[0];
+  return res.send(results);
 };
 
 /**

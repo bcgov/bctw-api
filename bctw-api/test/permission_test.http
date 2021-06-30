@@ -5,7 +5,7 @@
 @valid_email = {{email_valid}}
 @valid_email2 = {{email_valid2}}
 
-@request_id_valid = 6
+@request_id_valid = 28
 @request_id_invalid = 7
 
 ### submit a request - should fail as one of the email addresses DNE
@@ -15,8 +15,8 @@ content-type: application/json
 {
   "user_email_list": ["{{invalid_email}}", "{{valid_email}}"],
   "critter_permissions_list": [
-    {"animal_id" : "{{critter1}}", "permission_type": "view"},
-    {"animal_id" : "{{critter2}}", "permission_type": "subowner"}
+    {"critter_id" : "{{critter1}}", "permission_type": "view"},
+    {"critter_id" : "{{critter2}}", "permission_type": "editor"}
   ]
 }
 
@@ -27,8 +27,8 @@ content-type: application/json
 {
   "user_email_list": ["{{valid_email}}"],
   "critter_permissions_list": [
-    {"animal_id" : "{{critter1}}", "permission_type": "view"},
-    {"animl_id" : "{{critter2}}", "permission_type": "subowner"}
+    {"critter_id" : "{{critter1}}", "permission_type": "view"},
+    {"critt_id" : "{{critter2}}", "permission_type": "editor"}
   ]
 }
 
@@ -39,15 +39,25 @@ content-type: application/json
 {
   "user_email_list": ["{{valid_email}}"],
   "critter_permissions_list": [
-    {"animal_id" : "{{critter1}}", "permission_type": "view"},
-    {"animal_id" : "{{critter2}}", "permission_type": "subowner"}
+    {"critter_id" : "{{critter1}}", "permission_type": "view"},
+    {"critter_id" : "{{critter2}}", "permission_type": "editor"}
   ]
 }
 
 ### get existing requests
 GET http://localhost:3000/permission-request?idir={{idir}} HTTP/1.1
 
-### handle a request 
+### deny a request, should trigger email if enabled
+POST http://localhost:3000/execute-permission-request?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "request_id": "{{request_id_valid}}",
+  "is_grant": false,
+  "was_denied_reason": "not allowed"
+}
+
+### approve a request
 POST http://localhost:3000/execute-permission-request?idir={{idir}} HTTP/1.1
 content-type: application/json
 
