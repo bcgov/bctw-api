@@ -238,6 +238,14 @@ const getUDF = async function (
   return res.send(result.rows);
 }
 
+const getUserAccess = async function (
+  req: Request,
+  res: Response
+){
+  const domain = req.query.domain; 
+  const user = req.query.user; 
+}
+
 export {
   addUser,
   getUserRole,
@@ -245,6 +253,7 @@ export {
   getUDF,
   getUser,
   getUsers,
+  getUserAccess,
   getUserCritterAccess,
   upsertUDF,
   deleteUser,

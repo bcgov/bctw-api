@@ -75,6 +75,7 @@ const app = express()
   .get('/permission-history', api.getGrantedPermissionHistory)
   .post('/submit-permission-request', api.submitPermissionRequest)
   .post('/execute-permission-request', api.approveOrDenyPermissionRequest)
+  .get('/userAccess', api.getUserAccess)
   // users
   .get('/get-user',api.getUser)
   .get('/get-users',api.getUsers)

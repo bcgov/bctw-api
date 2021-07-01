@@ -22,6 +22,7 @@ import {
   getUserCritterAccess,
   getUserRole,
   getUsers,
+  getUserAccess,
   upsertUDF,
 } from './apis/user_api';
 import { emailEndpoint } from './apis/email';
@@ -112,6 +113,7 @@ export {
   getUserRole,
   getUser,
   getUsers,
+  getUserAccess,
   getUserTelemetryAlerts,
   getType,
   getUDF,
