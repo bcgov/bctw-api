@@ -242,8 +242,12 @@ const getUserAccess = async function (
   req: Request,
   res: Response
 ){
-  const domain = req.query.domain; 
-  const user = req.query.user; 
+  const domain = req.query['onboard-domain']; 
+  const user = req.query['onboard-user']; 
+  console.log('domain',domain)
+  console.log('user',user)
+  // TODO: Query database for access permissions
+  res.send('yo')
 }
 
 export {

@@ -46,7 +46,9 @@ const app = express()
     const client = await pgPool.connect();
     const result = await client.query(sql);
     const idirs = result.rows.map((row) => row.idir);
+    console.log('idirs',idirs)
     const registered = idirs.includes(idir);
+    console.log('registered',registered)
 
     if (registered) {
       next(); // pass through
@@ -75,7 +77,7 @@ const app = express()
   .get('/permission-history', api.getGrantedPermissionHistory)
   .post('/submit-permission-request', api.submitPermissionRequest)
   .post('/execute-permission-request', api.approveOrDenyPermissionRequest)
-  .get('/userAccess', api.getUserAccess)
+  .get('/user-access', api.getUserAccess)
   // users
   .get('/get-user',api.getUser)
   .get('/get-users',api.getUsers)
