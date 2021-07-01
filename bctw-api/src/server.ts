@@ -46,9 +46,7 @@ const app = express()
     const client = await pgPool.connect();
     const result = await client.query(sql);
     const idirs = result.rows.map((row) => row.idir);
-    console.log('idirs',idirs)
     const registered = idirs.includes(idir);
-    console.log('registered',registered)
 
     if (registered) {
       next(); // pass through
