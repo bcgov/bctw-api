@@ -238,16 +238,29 @@ const getUDF = async function (
   return res.send(result.rows);
 }
 
+/**
+ * ## getUserAccess
+ * This is for onboarding purposes. Takes the domain (idir/bceid)
+ * and user name and returns the status of onboarding.
+ * @param req Express request object
+ * @param res Express response object
+ * @returns Promise
+ */
 const getUserAccess = async function (
   req: Request,
   res: Response
-){
+): Promise<Response> {
   const domain = req.query['onboard-domain']; 
   const user = req.query['onboard-user']; 
-  console.log('domain',domain)
-  console.log('user',user)
-  // TODO: Query database for access permissions
-  res.send('yo')
+  const sql = `select access where ${domain} = '${user}'`
+
+  const { result, error, isError } = await query(sql, '');
+
+  // If there's an error return a 500, otherwise return the results
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows);
 }
 
 export {
