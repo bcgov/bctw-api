@@ -51,7 +51,7 @@ const app = express()
     if (registered) {
       next(); // pass through
     } else {
-      res.status(403).send('Unauthorized'); // reject
+      // res.status(403).send('Unauthorized'); // reject
     }
     client?.release();
   })

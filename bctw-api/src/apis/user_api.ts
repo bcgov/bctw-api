@@ -252,7 +252,7 @@ const getUserAccess = async function (
 ): Promise<Response> {
   const domain = req.query['onboard-domain']; 
   const user = req.query['onboard-user']; 
-  const sql = `select access where ${domain} = '${user}'`
+  const sql = `select access from bctw.user where ${domain} = '${user}'`
 
   const { result, error, isError } = await query(sql, '');
 
@@ -260,7 +260,7 @@ const getUserAccess = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(result.rows);
+  return res.send(result.rows[0]);
 }
 
 export {
