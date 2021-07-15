@@ -53,7 +53,7 @@ docker run --rm -p 3000:3000 -it bctw-api /bin/bash
 
 10. You should see a message similar to `Forwarding from 127.0.0.1:5432 -> 5432`.
 
-## Start the API Server
+## Start the API server
 
 11. Use NPM to start an instance of API server.
 ```
