@@ -1,8 +1,9 @@
 # Windows Environment Setup 
 ### Prerequisites ###
-* Windows 10 Pro or Enterprise
-* Docker Desktop for Windows
-* If running in VMWare Workstation or Player 15.5, you must enable the "Virtualize Intel VT-x/EPT or AMD-V/RVI" feature under "Processors" in the virtual machine settings.
+- Windows 10 Pro or Enterprise
+- Docker Desktop for Windows
+  - https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe
+- If running in VMWare Workstation or Player 15.5, you must enable the "Virtualize Intel VT-x/EPT or AMD-V/RVI" feature under "Processors" in the virtual machine settings.
 
 ## Build the Docker image
 
