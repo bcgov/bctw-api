@@ -1,4 +1,5 @@
-# Windows Environment Setup 
+# Windows Environment Setup #
+
 ### Prerequisites ###
 - Windows 10 Pro or Enterprise
 - Docker Desktop for Windows
