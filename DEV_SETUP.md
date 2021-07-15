@@ -20,15 +20,15 @@
 * Open a Command Prompt (administrator privileges not needed).
 * Execute the following two commands:
 ```
-cd {project_root}/bctw-api
-docker build -t bctw-api .
+  cd {project_root}/bctw-api
+  docker build -t bctw-api .
 ```
 
 ## Start the Docker image
 
 4. In a Command Prompt, execute the following command:
 ```
-docker run --rm -p 3000:3000 -it bctw-api /bin/bash
+  docker run --rm -p 3000:3000 -it bctw-api /bin/bash
 ```
 5. Login to the OCP4 console using your GitHub credentials . Click the question mark icon (?) in the top right side of the app bar, select **Command Line Tools**, and then **Copy Login Command**.
 
@@ -36,20 +36,20 @@ docker run --rm -p 3000:3000 -it bctw-api /bin/bash
 
 1. Back in the Command Prompt, paste the login command, prepending a `./`.
 ```
-./oc login --token=<some_token> --server=<some_server>
+  ./oc login --token=<some_token> --server=<some_server>
 ```
 
 ## Port forward the database connection
 
 8. Get the name of the current database pod.
 ```
-./oc get pods
+  ./oc get pods
 ```
 #### The database pod name starts with `bctw-db-1-...` ####
 
 9. Port forward local connections on port 5432 to the database pod. 
 ```
-./oc port-forward <database_pod_name> 5432:5432 &
+  ./oc port-forward <database_pod_name> 5432:5432 &
 ```
 #### Note the trailing ampersand. ####
 
@@ -59,10 +59,10 @@ docker run --rm -p 3000:3000 -it bctw-api /bin/bash
 
 11. Use NPM to start an instance of API server.
 ```
-npm run start
+  npm run start
 ```
 
 12. After a few moments, you should see a message indicating that the API server was able to connect to the port-forwarded database.
 ```
-postgres server successfully connected at localhost:5432
+  postgres server successfully connected at localhost:5432
 ```
