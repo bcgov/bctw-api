@@ -57,7 +57,7 @@
 
 ## Start the API server
 
-11. Use NPM to start an instance of API server.
+11. Use npm to start an instance of API server.
 ```
   npm run start
 ```
