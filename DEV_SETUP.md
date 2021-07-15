@@ -16,11 +16,11 @@
 
 #### Note the double `bctw-api\bctw-api` folder! ####
 
-3. Build the Docker image. Make sure the `oc` executable is already in the `{project_root}/bctw-api` folder or the **build will fail**.
+3. Build the Docker image. Make sure the `oc` executable is already in the `{project_root}\bctw-api\` folder or the **build will fail**.
 * Open a Command Prompt (administrator privileges not needed).
 * Execute the following two commands:
 ```
-  cd {project_root}/bctw-api
+  cd {project_root}\bctw-api
   docker build -t bctw-api .
 ```
 
