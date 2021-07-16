@@ -21,7 +21,7 @@
 * Open a Command Prompt (administrator privileges not needed).
 * Execute the following two commands:
 ```
-  cd {project_root}\bctw-api
+  cd {project_root}\bctw-api -- e.. C:\src\bctw-api\bctw-api\
   docker build -t bctw-api .
 ```
 
