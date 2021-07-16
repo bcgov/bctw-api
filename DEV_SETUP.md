@@ -11,17 +11,18 @@
 
 1. Login to the OCP4 console using your GitHub credentials and click the question mark icon (?) in the top right side of the app bar, then click **Command Line Tools**.
  
-1. Download the command line tools for **Linux**, even if you are running Windows. Using an appropriate archive tool (like 7-Zip), unzip the `oc` executable to your `{project_root}\bctw-api\` folder.
+1. Download the command line tools for **Linux**, even if you are running Windows. Using an appropriate archive tool (like 7-Zip), unzip the `oc` executable to your `{source_folder}\bctw-api\bctw-api\` folder.
 
-> Example: C:\src\bctw-api\bctw-api
+> Example: C:\src\bctw-api\bctw-api\
 
-#### Note the double `bctw-api\bctw-api` folder! ####
+#### Note the double `bctw-api\bctw-api` folder!!! ####
 
-3. Build the Docker image. Make sure the `oc` executable is already in the `{project_root}\bctw-api\` folder or the **build will fail**.
-* Open a Command Prompt (administrator privileges not needed).
-* Execute the following two commands:
+3. Build the Docker image.
+- Make sure the `oc` executable is already in the `{source_folder}\bctw-api\bctw-api\` folder or the **build will fail**.
+- Open a Command Prompt (administrator privileges not needed).
+- Execute the following two commands:
 ```
-  cd {project_root}\bctw-api -- e.. C:\src\bctw-api\bctw-api\
+  cd {source_folder}\bctw-api\bctw-api
   docker build -t bctw-api .
 ```
 
