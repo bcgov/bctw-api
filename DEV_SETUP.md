@@ -1,18 +1,19 @@
 # Windows Environment Setup #
 
 ### Prerequisites ###
+
 - Windows 10 Pro or Enterprise
 - Docker Desktop for Windows
   - https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe
-- If running in VMWare Workstation or Player 15.5, you must enable the "Virtualize Intel VT-x/EPT or AMD-V/RVI" feature under "Processors" in the virtual machine settings.
+- If running in VMWare Workstation or Player 15.5, you **must** enable the "Virtualize Intel VT-x/EPT or AMD-V/RVI" feature under "Processors" in the virtual machine settings.
 
 ## Build the Docker image
 
 1. Login to the OCP4 console using your GitHub credentials and click the question mark icon (?) in the top right side of the app bar, then click **Command Line Tools**.
  
-1. Download the command line tools for **Linux**, even if you are running Windows. Using an appropriate archive tool (like 7-Zip), unzip the `oc` executable to your `{project_root}/bctw-api` directory.
+1. Download the command line tools for **Linux**, even if you are running Windows. Using an appropriate archive tool (like 7-Zip), unzip the `oc` executable to your `{project_root}\bctw-api\` folder.
 
-> Example: C:\Src\bctw-api\bctw-api
+> Example: C:\src\bctw-api\bctw-api
 
 #### Note the double `bctw-api\bctw-api` folder! ####
 
@@ -57,12 +58,9 @@
 
 ## Start the API server
 
-11. Use npm to start an instance of API server.
+11. Start the API server:
 ```
   npm run start
 ```
-
-12. After a few moments, you should see a message indicating that the API server was able to connect to the port-forwarded database.
-```
-  postgres server successfully connected at localhost:5432
-```
+Uou should see a message indicating that the API server is up and connected to the database:
+> postgres server successfully connected at localhost:5432
