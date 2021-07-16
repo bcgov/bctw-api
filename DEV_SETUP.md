@@ -7,18 +7,23 @@
   - https://desktop.docker.com/win/stable/amd64/Docker%20Desktop%20Installer.exe
 - If running in VMWare Workstation or Player 15.5, you **must** enable the "Virtualize Intel VT-x/EPT or AMD-V/RVI" feature under "Processors" in the virtual machine settings.
 
-## Build the Docker image
+### Outcomes ###
+
+- Docker Desktop for Windows will be installed.
+- Port forwarding will be established between the local system and the BCTW database in OCP4.
+
+## Build the Docker image (one time) ##
 
 1. Login to the OCP4 console using your GitHub credentials and click the question mark icon (?) in the top right side of the app bar, then click **Command Line Tools**.
  
-1. Download the command line tools for **Linux**, even if you are running Windows. Using an appropriate archive tool (like 7-Zip), unzip the `oc` executable to your `{source_folder}\bctw-api\bctw-api\` folder.
+1. Download the command line tools for **Linux**, even if you are running Windows. Using an appropriate archive tool (like 7-Zip), unzip the `oc` executable to your **{source_folder}\bctw-api\bctw-api\\** folder.
 
 > Example: C:\src\bctw-api\bctw-api\
 
 #### Note the double `bctw-api\bctw-api` folder!!! ####
 
 3. Build the Docker image.
-- Make sure the `oc` executable is already in the `{source_folder}\bctw-api\bctw-api\` folder or the **build will fail**.
+- Make sure the `oc` executable is already in the **{source_folder}\bctw-api\bctw-api\\** folder or the ***build will fail***.
 - Open a Command Prompt (administrator privileges not needed).
 - Execute the following two commands:
 ```
@@ -26,7 +31,7 @@
   docker build -t bctw-api .
 ```
 
-## Start the Docker image
+## Start the Docker image ##
 
 4. In a Command Prompt, execute the following command:
 ```
