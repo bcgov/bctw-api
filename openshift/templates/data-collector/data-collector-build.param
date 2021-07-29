@@ -5,7 +5,7 @@
 #=========================================================
 NAME=data-collector
 GIT_REPO_URL=https://github.com/bcgov/bctw-api.git
-GIT_REF=master
+GIT_REF=main
 SOURCE_CONTEXT_DIR=/data-collector
 SOURCE_IMAGE_KIND=DockerImage
 SOURCE_IMAGE_NAME=centos/nodejs-12-centos7
