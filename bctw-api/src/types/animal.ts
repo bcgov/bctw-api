@@ -15,7 +15,7 @@ export interface IAnimal extends BCTWBaseType {
   capture_utm_northing: number;
   capture_utm_zone: number;
   animal_colouration: string;
-  ear_tag_id: string;
+  ear_tag_id: string; // TODO: to be removed
   ear_tag_left_colour: string;
   // TODO: ear_tag_left_id: string;
   ear_tag_right_colour: string;
