@@ -158,7 +158,9 @@ const getAssignedCollarSQL = function (
 ): string {
   const base = `
     SELECT 
-      ca.animal_id || '/' || ca.wlh_id as "(WLH_ID/Animal ID)",
+      ca.wlh_id || '/' || ca.animal_id as "(WLH_ID/Animal ID)",
+      ca.wlh_id as "WLH_ID",
+      ca.animal_id as "Animal_ID",
       c.*,
       ${pg_get_collar_permission}('${idir}', c.collar_id) AS "permission_type"
     FROM ${S_API}.currently_attached_collars_v ca
