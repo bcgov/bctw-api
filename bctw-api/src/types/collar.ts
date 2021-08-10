@@ -9,7 +9,6 @@ export interface ICollar extends BCTWBaseType {
   device_deployment_status: string;
   device_id: number;
   device_make: string;
-  device_malfunction_type: string;
   device_model: string;
   device_type: string;
   dropoff_device_id: number;
@@ -17,11 +16,16 @@ export interface ICollar extends BCTWBaseType {
   dropoff_frequency_unit: string;
   // first_activation_month: number;
   // first_activation_year: number;
-  fix_rate: number;
+  // fix_interval: number;
+  // fix_interval_unit: string;
+  fix_rate: number; // TODO: remove
   fix_success_rate: number;
   frequency_unit: string;
   malfunction_date: Date;
-  purchase_comment: string; // TODO: remove
+  malfunction_type: string;
+  // offline_date: Date;
+  // offline_type: string;
+  // purchase_comment: string; // TODO: remove
   purchase_month: number; // TODO: remove
   purchase_year: number; // TODO: remove
   retrieval_date: Date;
@@ -41,7 +45,6 @@ export class Collar implements ICollar {
   device_deployment_status: string;
   device_id: number;
   device_make: string;
-  device_malfunction_type: string;
   device_model: string;
   device_status: string;
   device_type: string;
@@ -50,11 +53,16 @@ export class Collar implements ICollar {
   dropoff_frequency_unit: string;
   // first_activation_month: number;
   // first_activation_year: number;
-  fix_rate: number;
+  // fix_interval: number;
+  // fix_interval_unit: string;
+  fix_rate: number; // TODO: remove
   fix_success_rate: number;
   frequency: number;
   frequency_unit: string;
   malfunction_date: Date;
+  malfunction_type: string;
+  // offline_date: Date;
+  // offline_type: string;
   purchase_comment: string; // TODO: remove
   purchase_month: number; // TODO: remove
   purchase_year: number; // TODO: remove
