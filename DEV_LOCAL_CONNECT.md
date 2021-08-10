@@ -1,6 +1,7 @@
 
 
 ## Connect Database Application To BCTW Openshift Postgres Server
+### This works for local database application, as well as Citrix.
 1.	Login into the OCP4 console using Github credentials and click the question mark icon (?) in the top right corner, then click Command Line Tools
 2.	Download oc for windows x86_64, once downloaded place in a folder called c:\oc
 3.	Open command prompt, does not have to be administrator
@@ -24,7 +25,8 @@ oc get pods
 10. Port forward local connect to the database pod. If you know the port you want to forward to locally, use option 1, else use option 2.
 
 Option 1\
-Enter known port in ####
+Enter known port in ####\
+Should be 5432 in most cases
 ```	
 oc port-forward <database_pod_name> ####:5432 &
 ```
@@ -43,10 +45,5 @@ localhost:####
 ```
 
 ### Note! You will have read/write access if using the bctw login. Proceed carefully, use copy of database locally for development or experimenting!
-## Connect Local Postgres to Citrix FME
 
-```
-  cd {source_folder}\bctw-api\bctw-api
-  docker build -t bctw-api .
-```
 
