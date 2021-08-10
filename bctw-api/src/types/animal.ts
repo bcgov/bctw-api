@@ -1,5 +1,6 @@
 import { BCTWBaseType } from './base_types';
 export interface IAnimal extends BCTWBaseType {
+//  animal_comment: string;
   animal_id: string;
   animal_status: string;
   capture_date: Date;
@@ -45,11 +46,12 @@ export interface IAnimal extends BCTWBaseType {
   species: string;
   sex: string;
   translocation: boolean;
-  user_comment: string;
+  user_comment: string; // TODO: remove
   wlh_id: string;
 }
 
 export class Animal implements IAnimal {
+//  animal_comment: string;
   critter_id: string;
   critter_transaction_id: string;
   animal_id: string;
@@ -97,7 +99,7 @@ export class Animal implements IAnimal {
   species: string;
   translocation: boolean;
   wlh_id: string;
-  user_comment: string;
+  user_comment: string; // TODO: remove
   valid_from: Date;
   valid_to: Date;
 }
