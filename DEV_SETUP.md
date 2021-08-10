@@ -68,5 +68,5 @@
 ```
   npm run start
 ```
-Uou should see a message indicating that the API server is up and connected to the database:
+You should see a message indicating that the API server is up and connected to the database:
 > postgres server successfully connected at localhost:5432
