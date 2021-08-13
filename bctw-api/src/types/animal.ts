@@ -22,7 +22,9 @@ export interface IAnimal extends BCTWBaseType {
   ear_tag_right_colour: string;
   // ear_tag_right_id: string;
   estimated_age: number;
-  juvenile_at_heel: string;
+  // juvenile_at_heel: boolean;
+  juvenile_at_heel: string; // TODO: remove
+  // juvenile_at_heel_count: number;
   life_stage: string;
   mortality_comment: string;
   mortality_date: Date;
@@ -73,7 +75,9 @@ export class Animal implements IAnimal {
   ear_tag_right_colour: string;
 //  ear_tag_right_id: string;
   estimated_age: number;
-  juvenile_at_heel: string;
+  // juvenile_at_heel: boolean;
+  juvenile_at_heel: string; // TODO: remove
+  // juvenile_at_heel_count: number; 
   life_stage: string;
   map_colour: string;
   mortality_comment: string;
