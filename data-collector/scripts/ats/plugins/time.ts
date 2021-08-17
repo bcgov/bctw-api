@@ -3,6 +3,10 @@ const dayjs = require('dayjs')
 var utc = require('dayjs/plugin/utc')
 var timezone = require('dayjs/plugin/timezone');
 
+/** 
+ * contains time helper functions
+ */
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 

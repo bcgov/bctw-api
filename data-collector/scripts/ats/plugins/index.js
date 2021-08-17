@@ -10,7 +10,7 @@ const execa = require('execa');
 // ***********************************************************
 
 /**
- * @type {Cypress.PluginConfig}
+ * Cypress specific configuration for allowing the process to run headless
  */
 module.exports = async (on, config) => {
   on('task', downloads(on, config));

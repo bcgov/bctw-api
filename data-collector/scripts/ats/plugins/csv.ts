@@ -9,6 +9,9 @@ import { parseAsCT, parseAsLocal } from './time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
 
+/**
+ * helper functions for transforming the CSV files to JSON
+ */
 
 // get fully qualified paths of files in supplied directory
 const getPaths = async (pathToDir): Promise<string[]> => {
@@ -68,16 +71,15 @@ const createMergedRecord = (
 };
 
 /**
- * combines entries from both files into a single bctw.ats_collar_data record
- * in the sample data looked at so far, the cumulative_d file has more entries on a given
- * day than the transmission record does. Assuming these records are important, this function
- * iterates these and looks for a matching record with the same device_id and day in the
- * transmission log.
- * Sometimes there are more than one transmission per day -
- * Assuming that the:
- * temperature record is the event when the collar takes a reading
- * transmission record is when the collar transmitted the events to the satellite
- *  The function looks for the closest transmission AFTER the reading event
+ * Combines entries from both files into a single bctw.ats_collar_data record.
+ * In the sample data looked at so far, the cumulative_d file has more entries on a given
+ * day than the transmission record does. 
+ * This function iterates the device event log and looks for a matching record with the same device_id 
+ * and day in the transmission log.
+ * Sometimes there are more than one transmission per day. In this case, assuming that the:
+ *   temperature record is the event when the collar takes a reading
+ *   transmission record is when the collar transmitted the events to the satellite
+ * The function looks for the closest transmission AFTER the reading event
  * @param transmissionData
  * @param deviceData
  * @returns an array of merged data
@@ -93,7 +95,9 @@ const mergeATSData = (
     const sameDayTransmissions = transmissionData.filter((t) => {
       // transmission timestamps are in central time
       const isSameDay = tempRowDate.isSame(parseAsCT(t.DateCT), 'day');
-      console.log(`${tempRowDate.format()} ${parseAsCT(t.DateCT).format()} ${isSameDay}`)
+      // debugging line logging the device event and transmission timestamps, and if they are considered
+      // to be on the same day
+      console.log(`device event: ${tempRowDate.format()} transmission: ${parseAsCT(t.DateCT).format()} ${isSameDay}`)
       return t.CollarSerialNumber === record.CollarSerialNumber && isSameDay;
     });
 

@@ -9,6 +9,11 @@ const rimraf = promisify(require('rimraf'));
 let port = 0;
 let client = null;
 
+/**
+ * main entry point for the last Cypress test, which is called after the transmission 
+ * and device event data CSV files have been downloaded.
+ */
+
 module.exports = (on, config) => {
   const downloadPath = path.resolve(config.projectRoot, './downloads');
 
@@ -58,8 +63,9 @@ module.exports = (on, config) => {
     port = ensureRdpPort(args);
   });
 
+  // called if files were successfully downloaded and parsed into JSON
   const mergeAndInsert = async (data: IDeviceReadingEvent[], transmissionData: ITransmissionEvent[]) => {
-    // retrieve timestamp of last successfull entry
+    // retrieve timestamp of last successfull entry to the ATS raw data table
     const lastEntry = await getTimestampOfLastCollarEntry();
     console.log(`last successfull insertion to ATS table was ${lastEntry.format()}`);
 
@@ -81,7 +87,7 @@ module.exports = (on, config) => {
     return null;
   }
 
-  // exported to be called as a cypress task after collar data is downloaded
+  // exported to be called as a Cypress task after collar data is downloaded
   async function handleParseAndInsert() {
     const paths = await getPaths(downloadPath);
 

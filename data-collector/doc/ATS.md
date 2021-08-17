@@ -5,11 +5,9 @@
 ### Disclaimers:
 * using `Cypress` to do this is not the intended use of the framework
 * file downloads are not supported natively in `Cypress`. When the button is clicked to download the data, `Cypress` expects a new page to load. The test is failing after a timeout (as seen in the Cronjob logs), and there isn't currently a way to catch / handle this properly. 
-<!-- * the data-collector image was changed to use a Debian image with the required Cypress dependencies installed. The Lotek and Vectronics jobs have been tested and still work on the Debian container.  -->
-<!-- * the IDs of the form elements are hardcoded, which is one of the reasons this will break if the site is changed. -->
 ### How it works:
 * The Cronjob can be created the same way as the Vectronics/Lotek jobs. (see README.md)
-* The Cronjob attempts to do the following:
+* The Cronjob does the following:
   1. visits the ATS site and logs in with credentials supplied via environment variables.
   1. simulates click events on two buttons that download the collar event and transmission data.
   1. downloads the files to a local folder
@@ -23,7 +21,10 @@
 * Cypress is running a headless version of `Chromium` to perform the tests
 * The chromium binary is installed via npm
 * Additional setup that allows the Docker container user to run Cypress and have write access to the working directory is performed in the Dockerfile
-* The process is run from a child node process in scripts/ats.js in order to supply Node environment variables to Cypress.
+* The process is run from a child Node process in scripts/ats.js in order to supply Node environment variables to Cypress.
+* The `scripts/ats` directory structure is organized in a way that Cypress expects:  
+      * `scripts/ats/integration/`: the actual test file 
+      * `scripts/ats/plugins/`: supporting plugins, including _download.ts_ and _csv.ts_ which contain the bulk of the logic for merging and processing the transmission and device CSV files.
 
 ### Running Cypress
 #### Running in a docker container:
@@ -54,7 +55,7 @@
 1. Use the "cypress-headed" or "cypress" npm scripts to start. You can also swap to another browser with the -b flag. The "headed" version will open the Cypress Test Runner UI.
 
 #### Other potential gotchas
-1. data-collector module is mostly Typescript now, make sure to start `npm run watch` to compile it before running tests.
+1. data-collector module is now Typescript, start `npm run watch` to compile it before running tests.
 1. exporting PGP keys for retrieving credentials - simplest way to do this is from a file.
 ```
    export VENDOR_API_CREDENTIALS_KEY=`cat .env-pkey`

@@ -5,6 +5,10 @@ import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
 import { queryAsync, transactionify } from '../../db';
 
+/**
+ * contains functionality for interacting with the BCTW database 
+ */
+
 // returns null instead of NaN
 const parseFloatFromJSON = (val: string) => {
   const ret = parseFloat(val);
