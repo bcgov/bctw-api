@@ -5,7 +5,7 @@ import {
   IDeviceReadingEvent,
   ITransmissionEvent,
 } from '../types';
-import { parseAsCT, parseAsLocal } from './time';
+import { isWithin24Hrs, parseAsCT, parseAsLocal } from './time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
 
@@ -74,8 +74,9 @@ const createMergedRecord = (
  * Combines entries from both files into a single bctw.ats_collar_data record.
  * In the sample data looked at so far, the cumulative_d file has more entries on a given
  * day than the transmission record does. 
- * This function iterates the device event log and looks for a matching record with the same device_id 
- * and day in the transmission log.
+ * This function iterates the device event log and looks for a matching transmission record that:
+ *   have the same device ID
+ *   has a transmission timestamp that AFTER the device event timestamp that within 24 hours 
  * Sometimes there are more than one transmission per day. In this case, assuming that the:
  *   temperature record is the event when the collar takes a reading
  *   transmission record is when the collar transmitted the events to the satellite
@@ -90,33 +91,33 @@ const mergeATSData = (
 ): IATSRow[] => {
   const validEntries: IATSRow[] = [];
   deviceData.forEach((record: IDeviceReadingEvent) => {
-    const tempRowDate = parseDateFromEventData(record);
+    const tsDeviceEvent = parseDateFromEventData(record);
 
     const sameDayTransmissions = transmissionData.filter((t) => {
       // transmission timestamps are in central time
-      const isSameDay = tempRowDate.isSame(parseAsCT(t.DateCT), 'day');
-      // debugging line logging the device event and transmission timestamps, and if they are considered
-      // to be on the same day
-      console.log(`device event: ${tempRowDate.format()} transmission: ${parseAsCT(t.DateCT).format()} ${isSameDay}`)
-      return t.CollarSerialNumber === record.CollarSerialNumber && isSameDay;
+      const tsTransmissionEvent = parseAsCT(t.DateCT);
+      // is this transmission within 24 hours after the device event?
+      const isMatch = isWithin24Hrs(tsDeviceEvent, tsTransmissionEvent);
+      // log the device event and transmission timestamps
+      console.log(`device event: ${tsDeviceEvent.format()} transmission: ${tsTransmissionEvent.format()} ${isMatch}`)
+      return t.CollarSerialNumber === record.CollarSerialNumber && isMatch;
     });
 
     if (!sameDayTransmissions.length) {
-      console.log(`no transmissions found on same day ${tempRowDate.format()}`)
+      console.log(`no transmissions found on same day ${tsDeviceEvent.format()}`)
       return;
     }
 
-    // sort by ascending date then find the closest transmission
-    // after the collar event occurred
+    // sort by ascending date then find the closest transmission after the collar event occurred
     const closest = sameDayTransmissions
       .sort((a, b) => dayjs(a.DateCT) - dayjs(b.DateCT))
-      .filter((mtr) => dayjs(mtr.DateCT).isAfter(tempRowDate));
+      .filter((mtr) => dayjs(mtr.DateCT).isAfter(tsDeviceEvent));
 
     const closestTransmissionAfter = closest.length
       ? closest[0]
       : sameDayTransmissions[0];
       
-    console.log(`collar ${record.CollarSerialNumber}: data timestamp ${tempRowDate.format()}, transmission timestamp ${closestTransmissionAfter.DateCT}`);
+    console.log(`collar ${record.CollarSerialNumber}: data timestamp ${tsDeviceEvent.format()}, transmission timestamp ${closestTransmissionAfter.DateCT}`);
 
     const mergedRecord: IATSRow = createMergedRecord(
       record,

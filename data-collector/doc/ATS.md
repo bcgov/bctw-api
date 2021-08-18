@@ -25,7 +25,7 @@
 * The `scripts/ats` directory structure is organized in a way that Cypress expects:  
       * `scripts/ats/integration/`: the actual test file 
       * `scripts/ats/plugins/`: supporting plugins, including _download.ts_ and _csv.ts_ which contain the bulk of the logic for merging and processing the transmission and device CSV files.
-
+* see the `mergeATSData` function comment in _csv.ts_ for the logic in how the transmissions and device events are matched.
 ### Running Cypress
 #### Running in a docker container:
 1. Open a terminal and cd into the data-collector directory
