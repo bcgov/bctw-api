@@ -99,12 +99,12 @@ const mergeATSData = (
       // is this transmission within 24 hours after the device event?
       const isMatch = isWithin24Hrs(tsDeviceEvent, tsTransmissionEvent);
       // log the device event and transmission timestamps
-      console.log(`device event: ${tsDeviceEvent.format()} transmission: ${tsTransmissionEvent.format()} ${isMatch}`)
+      // console.log(`device event: ${tsDeviceEvent.format()} transmission: ${tsTransmissionEvent.format()} ${isMatch}`)
       return t.CollarSerialNumber === record.CollarSerialNumber && isMatch;
     });
 
     if (!sameDayTransmissions.length) {
-      console.log(`no transmissions found on same day ${tsDeviceEvent.format()}`)
+      console.log(`no transmissions found within 24 hours after the device event - ${tsDeviceEvent.format()}`)
       return;
     }
 

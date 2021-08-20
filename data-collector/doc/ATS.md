@@ -29,6 +29,7 @@
 ### Running Cypress
 #### Running in a docker container:
 1. Open a terminal and cd into the data-collector directory
+1. Similar to the API development setup, copy the oc command line tools into the data-collector directory. See _DEV_SETUP.md_ for more details.
 1. If a local downloads directory exists, remove it to ensure Docker can grant the correct positions
 1. Build the image
    ```
@@ -38,16 +39,22 @@
    ```
    docker run -it data-collector /bin/bash
    ```
-1. export the environment variables
+1. export the environment variables. Exporting the private key for retrieving credentials - the simplest way to do this is from a file in the same directory.
    ```
-   export POSTGRES_SERVER_HOST='host'
-   export VENDOR_API_CREDENTIALS_KEY='secret'
+   export POSTGRES_DB=
+   export POSTGRES_USER=
+   export POSTGRES_PASSWORD=
+   export ATS_API_CREDENTIAL_NAME=
+   export VENDOR_API_CREDENTIALS_KEY=`cat .env-pkey`
    ...
+   ```
+1. port forward the database connection using the oc command line tools in the background
+   ```
+   oc port-forward PODNAME 5432:5432 &
    ```
 1. Run the npm `Cypress` scripts
    ```
    npm run ats
-   npm run cypress
    ```
 
 #### Running Cypress locally
@@ -56,7 +63,3 @@
 
 #### Other potential gotchas
 1. data-collector module is now Typescript, start `npm run watch` to compile it before running tests.
-1. exporting PGP keys for retrieving credentials - simplest way to do this is from a file.
-```
-   export VENDOR_API_CREDENTIALS_KEY=`cat .env-pkey`
-```

@@ -8,4 +8,5 @@ downloads
 cypress
 build
 scripts/test/csv/*
+oc
 .env*
