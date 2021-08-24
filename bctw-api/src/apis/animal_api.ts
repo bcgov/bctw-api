@@ -12,9 +12,8 @@ import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { fn_user_critter_access_array } from './user_api';
 
-const pg_upsert_animal_fn = 'upsert_animal';
+export const pg_upsert_animal_fn = 'upsert_animal';
 const pg_get_critter_history = 'get_animal_history';
-const pg_get_history = 'get_animal_collar_assignment_history';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
 
 // split so it can be used directly in the bulk import
@@ -126,31 +125,6 @@ const getAnimals = async function (
   return res.send(result.rows);
 };
 
-/**
- * @param req.params.animal_id the critter_id of the history to retrieve
- * @returns the device attachment history
- */
-const getCollarAssignmentHistory = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
-  const id = getUserIdentifier(req);
-  const critterId = req.params.animal_id as string;
-  if (!critterId) {
-    return res
-      .status(500)
-      .send('must supply animal id to retrieve collar history');
-  }
-  const sql = constructFunctionQuery(pg_get_history, [id, critterId]);
-  const { result, error, isError } = await query(
-    sql,
-    `failed to get collar history`
-  );
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  return res.send(getRowResults(result, pg_get_history));
-};
 
 /**
  * retrieves a history of metadata changes made to a animal
@@ -182,6 +156,5 @@ export {
   _upsertAnimal,
   getAnimals,
   getAnimalHistory,
-  getCollarAssignmentHistory,
   pg_get_critter_history,
 };

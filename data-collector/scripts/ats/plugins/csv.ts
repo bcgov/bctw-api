@@ -117,7 +117,7 @@ const mergeATSData = (
       ? closest[0]
       : sameDayTransmissions[0];
       
-    console.log(`collar ${record.CollarSerialNumber}: data timestamp ${tsDeviceEvent.format()}, transmission timestamp ${closestTransmissionAfter.DateCT}`);
+    console.log(`device ${record.CollarSerialNumber} event at ${tsDeviceEvent.format()}, closest transmission at ${closestTransmissionAfter.DateCT}`);
 
     const mergedRecord: IATSRow = createMergedRecord(
       record,

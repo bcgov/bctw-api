@@ -74,16 +74,3 @@ export class Collar implements ICollar {
   valid_to: Date;
   vendor_activation_status: boolean; // TODO: remove
 }
-
-interface ChangeCollarData {
-  collar_id: string;
-  animal_id: string;
-  valid_from: Date | string;
-  valid_to?: Date;
-}
-interface ChangeCritterCollarProps {
-  isLink: boolean;
-  data: ChangeCollarData;
-}
-
-export { ChangeCollarData, ChangeCritterCollarProps };

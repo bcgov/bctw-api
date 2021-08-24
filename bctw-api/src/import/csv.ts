@@ -4,13 +4,13 @@ import * as fs from 'fs';
 
 import { upsertAnimal, _upsertAnimal } from '../apis/animal_api';
 import { addCode } from '../apis/code_api';
-import { pg_link_collar_fn, upsertCollar, upsertCollars } from '../apis/collar_api';
+import { upsertCollar, upsertCollars } from '../apis/collar_api';
 import { constructFunctionQuery, momentNow, queryAsyncAsTransaction } from '../database/query';
 import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
 import { Animal, IAnimal } from '../types/animal';
 import { CodeInput } from '../types/code';
 import { HistoricalTelemetryInput } from '../types/point';
-import { ChangeCollarData, Collar, ICollar } from '../types/collar';
+import { Collar, ICollar } from '../types/collar';
 import {
   IAnimalDeviceMetadata,
   IBulkResponse,
@@ -22,6 +22,8 @@ import {
 } from '../types/import_types';
 import { cleanupUploadsDir, mapCsvHeader, removeEmptyProps, rowToCsv } from './import_helpers';
 import { upsertPointTelemetry } from '../apis/map_api';
+import { pg_link_collar_fn } from '../apis/attachment_api';
+import { ChangeCollarData } from '../types/attachment';
 
 /**
  * parses the csv file
@@ -156,7 +158,7 @@ const handleCollarCritterLink = async (
         }
         const body: ChangeCollarData = {
           collar_id: matchingCollar.collar_id,
-          animal_id: savedCritter.critter_id,
+          critter_id: savedCritter.critter_id,
           // an attachment begins at the animal capture date
           valid_from: savedCritter.capture_date ?? momentNow(),
           /* 

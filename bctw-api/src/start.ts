@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
 
 import { getUserTelemetryAlerts, updateUserTelemetryAlert } from './apis/alert_api';
-import { deleteAnimal, getAnimalHistory, getAnimals, getCollarAssignmentHistory, upsertAnimal } from './apis/animal_api';
+import { deleteAnimal, getAnimalHistory, getAnimals, upsertAnimal } from './apis/animal_api';
 import { addCode, addCodeHeader, getCode, getCodeHeaders } from './apis/code_api';
 import {
-  assignOrUnassignCritterCollar,
   deleteCollar,
   getAssignedCollars,
   getAvailableCollars,
@@ -29,6 +28,7 @@ import { emailEndpoint } from './apis/email';
 import { MISSING_IDIR } from './database/requests';
 import { getExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
+import { assignOrUnassignCritterCollar, getCollarAssignmentHistory } from './apis/attachment_api';
 
 /* ## notFound
   Catch-all router for any request that does not have an endpoint defined.

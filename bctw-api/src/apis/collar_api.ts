@@ -10,16 +10,14 @@ import {
 } from '../database/query';
 import { filterFromRequestParams, getUserIdentifier } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
-import { ChangeCritterCollarProps } from '../types/collar';
 import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
 import { IFilter, TelemetryTypes } from '../types/query';
 
 const pg_upsert_collar = 'upsert_collar';
-const pg_link_collar_fn = 'link_collar_to_animal';
-const pg_unlink_collar_fn = 'unlink_collar_to_animal';
 const pg_get_collar_history = 'get_collar_history';
 const pg_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
 
+// split to be exported and used in bulk/csv endpoints
 const upsertCollars = async function(
   userIdentifier: string,
   rows: IAnimalDeviceMetadata[]
@@ -63,39 +61,6 @@ const deleteCollar = async function (
   const sql = constructFunctionQuery(fn_name, [userIdentifier, collarIds]);
   const { result, error, isError } = await query(sql, '', true);
   return isError ? res.status(500).send(error.message) : res.status(200).send();
-};
-
-/**
- * handles critter collar assignment/unassignment
- * @returns result of assignment row from the collar_animal_assignment table
- */
-const assignOrUnassignCritterCollar = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
-  const body: ChangeCritterCollarProps = req.body;
-  const { collar_id, animal_id, valid_from, valid_to } = body.data;
-
-  if (!collar_id || !animal_id) {
-    return res.status(500).send('collar_id & animal_id must be supplied');
-  }
-
-  const db_fn_name = body.isLink ? pg_link_collar_fn : pg_unlink_collar_fn;
-  const params = [getUserIdentifier(req), collar_id, animal_id];
-  const errMsg = `failed to ${
-    body.isLink ? 'attach' : 'remove'
-  } device to critter ${animal_id}`;
-
-  const functionParams = body.isLink
-    ? [...params, valid_from, valid_to]
-    : [...params, valid_to];
-  const sql = constructFunctionQuery(db_fn_name, functionParams);
-  const { result, error, isError } = await query(sql, errMsg, true);
-
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  return res.send(getRowResults(result, db_fn_name));
 };
 
 /**
@@ -221,10 +186,8 @@ export {
   upsertCollar,
   upsertCollars,
   deleteCollar,
-  assignOrUnassignCritterCollar,
   getAssignedCollars,
   getAvailableCollars,
   getCollarChangeHistory,
   pg_get_collar_history,
-  pg_link_collar_fn,
 };
