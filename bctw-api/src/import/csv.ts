@@ -23,7 +23,7 @@ import {
 import { cleanupUploadsDir, mapCsvHeader, removeEmptyProps, rowToCsv } from './import_helpers';
 import { upsertPointTelemetry } from '../apis/map_api';
 import { pg_link_collar_fn } from '../apis/attachment_api';
-import { ChangeCollarData } from '../types/attachment';
+import { IAttachDeviceProps } from '../types/attachment';
 
 /**
  * parses the csv file
@@ -156,17 +156,19 @@ const handleCollarCritterLink = async (
           });
           return;
         }
-        const body: ChangeCollarData = {
+        // const body: IAttachDeviceProps = {
+        // fixme: todo:
+        const body = {
           collar_id: matchingCollar.collar_id,
           critter_id: savedCritter.critter_id,
           // an attachment begins at the animal capture date
-          valid_from: savedCritter.capture_date ?? momentNow(),
+          // valid_from: savedCritter.capture_date ?? momentNow(),
           /* 
             and is considered ended if any of the following dates are present:
             a) the mortality date
             b) the collar retrieval date
           */
-          valid_to: savedCritter.mortality_date ?? c.row.retrieval_date,
+          // valid_to: savedCritter.mortality_date ?? c.row.retrieval_date,
         };
         const params = [idir, ...Object.values(body)];
         const sql = constructFunctionQuery(pg_link_collar_fn, params);

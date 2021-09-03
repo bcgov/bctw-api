@@ -28,7 +28,7 @@ import { emailEndpoint } from './apis/email';
 import { MISSING_IDIR } from './database/requests';
 import { getExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
-import { assignOrUnassignCritterCollar, getCollarAssignmentHistory } from './apis/attachment_api';
+import { attachDevice, getCollarAssignmentHistory, unattachDevice, updateDataLife } from './apis/attachment_api';
 
 /* ## notFound
   Catch-all router for any request that does not have an endpoint defined.
@@ -95,7 +95,9 @@ export {
   addUser,
   approveOrDenyPermissionRequest, 
   assignCritterToUser,
-  assignOrUnassignCritterCollar,
+  attachDevice, 
+  unattachDevice,
+  updateDataLife,
   deleteType,
   emailEndpoint,
   getAnimalHistory,

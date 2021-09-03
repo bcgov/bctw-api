@@ -31,47 +31,6 @@ content-type: application/json
 ### retrive collar history
 http://localhost:3000/get-collar-history/{{collar1}}?idir={{idir}}
 
-##### collar assignment tests
-# should fail - already attached in dev
-POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "isLink": true,
-  "data": {
-    "collar_id": "{{collar1}}",
-    "animal_id": "{{critter1}}",
-    "valid_from": "{{today}}"
-  }
-}
-
-### should work
-POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "isLink": true,
-  "data": {
-    "collar_id": "{{free_collar}}",
-    "animal_id": "{{critter_no_collar}}",
-    "valid_from": "{{today}}"
-  }
-}
-
-### unlinking collar
-# should succeed
-POST http://localhost:3000/change-animal-collar?idir={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-  "isLink": false,
-  "data": {
-    "collar_id": "{{attached_to_critter1}}",
-    "animal_id": "{{critter1}}",
-    "valid_from": "{{today}}"
-  }
-}
-
 ### collar queries
 # get available collars
 http://localhost:3000/get-available-collars?idir={{idir}}
@@ -90,3 +49,6 @@ DELETE http://localhost:3000/collar/{{existing_collar2}}?idir={{idir}} HTTP/1.1
 
 ###
 http://localhost:3000/collar/{{existing_collar}}?idir={{idir}}
+
+###
+http://localhost:3000/get-assigned-collars?idir=jcraven

@@ -1,0 +1,223 @@
+## device assignment tests
+@start =  2021-08-01 09:00:00
+@dl_start = 2021-08-03 12:00:00
+@deviceDNE = 2f89d0df-1304-481b-9fc7-9504c481955a
+@attached_animal = 6aea4243-95c6-4174-9061-f797632f530b
+@available_device = 2cf72143-1af0-4ffb-b443-90362905365c
+@attached_device = edd34394-84e3-470b-8221-720ea316d61e
+# critter that does have attachment history but is currently unattached
+@available_animal = 6c2f186c-3f52-443a-93b5-982d05095728
+
+# valid attachment - valid_from of 2020-02-13
+@cur_valid_assignment = 3d61e0e1-1578-49f3-b398-499a2e1ef7b6
+
+### fail - attachment already exists
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{attached_collar}}",
+    "critter_id": "{{attached_critter}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "{{dl_start}}"
+}
+
+### fail - device doesnt exist
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{deviceDNE}}",
+    "critter_id": "{{attached_critter}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "{{dl_start}}"
+}
+
+### fail - critter DNE
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{attached_collar}}",
+    "critter_id": "{{deviceDNE}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "{{dl_start}}"
+}
+
+### fail - device is unattached but critter is attached to another device
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{available_device}}",
+    "critter_id": "{{attached_animal}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "{{dl_start}}"
+}
+
+### fail - critter is available but device is already attached 
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{attached_device}}",
+    "critter_id": "{{available_animal}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "{{dl_start}}"
+}
+
+### should succeed - only providing data life start / actual start
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{available_device}}",
+    "critter_id": "{{available_animal}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "{{dl_start}}"
+}
+
+### should succeed - providing all values
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{available_device}}",
+    "critter_id": "{{available_animal}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "{{dl_start}}",
+    "actual_end": "2022-01-01",
+    "data_life_end": "2022-01-01"
+
+}
+
+### should fail - data life start must be after actual
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{available_device}}",
+    "critter_id": "{{available_animal}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "2021-08-01 08:00:00"
+}
+
+### should fail - data life end must be before actual end
+POST http://localhost:3000/attach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "collar_id": "{{available_device}}",
+    "critter_id": "{{available_animal}}",
+    "actual_start": "{{start}}",
+    "data_life_start": "{{dl_start}}",
+    "actual_end": "2022-01-01",
+    "data_life_end": "2022-01-02"
+}
+
+### device unattachment tests
+
+### should fail - provided with end dates that are before the data_life_start
+# data_life_start is 2020-02-13
+POST http://localhost:3000/unattach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{cur_valid_assignment}}",
+    "actual_end": "2019-01-01",
+    "data_life_end": "2019-01-02"
+}
+
+### should fail - data life end must be before actual end
+POST http://localhost:3000/unattach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{cur_valid_assignment}}",
+    "actual_end": "2022-01-01",
+    "data_life_end": "2022-01-02"
+}
+
+### should succeed
+POST http://localhost:3000/unattach-device?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{cur_valid_assignment}}",
+    "actual_end": "2022-01-01",
+    "data_life_end": "2021-12-31"
+}
+
+### changing data life start/end tests
+
+### fail - attachment DNE, pass a collar_id as an assignment_id
+POST http://localhost:3000/update-data-life?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{available_animal}}",
+    "data_life_start": "2022-01-01",
+    "data_life_end": "2021-12-31"
+}
+
+### fail - attempt to change data life end when the device is still attached
+### assignment details: valid_from, attachment_start are both 2020-02-13 00:00:00
+POST http://localhost:3000/update-data-life?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{cur_valid_assignment}}",
+    "data_life_start": "2022-01-01",
+    "data_life_end": "2021-12-31"
+}
+
+### fail - data life start is before actual start
+POST http://localhost:3000/update-data-life?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{cur_valid_assignment}}",
+    "data_life_start": "2020-02-12 09:33:00"
+}
+### succeed - change only start with valid data life start
+POST http://localhost:3000/update-data-life?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{cur_valid_assignment}}",
+    "data_life_start": "2022-02-12 09:33:00"
+}
+
+###
+@expired_attachment = e207bffa-aed1-4ece-8763-d119bfaa1407 
+# ^ details valid from 2019-02-08, valid_to 2019-03-03
+### should fail, data life end is after actual end
+POST http://localhost:3000/update-data-life?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{expired_attachment}}",
+    "data_life_end": "2022-02-12 09:33:00"
+}
+
+### succeed - change only end
+POST http://localhost:3000/update-data-life?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{expired_attachment}}",
+    "data_life_end": "2019-02-12 09:33:00"
+}
+
+### succeed - change both
+POST http://localhost:3000/update-data-life?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+    "assignment_id": "{{expired_attachment}}",
+    "data_life_start": "2019-02-10",
+    "data_life_end": "2019-02-12 09:33:00"
+}
+
+### todo: test - permission related - user IS not admin and datalife HAS BEEN changed
+### todo: test - permission related - user IS not admin and datalife HAS NOT BEEN changed

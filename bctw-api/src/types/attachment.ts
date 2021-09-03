@@ -3,16 +3,26 @@
  * attach or unattach a device from an animal
  */
 
-interface ChangeCollarData {
-  collar_id: string;
-  critter_id: string;
-  valid_from: Date | string;
-  valid_to?: Date | string;
-  data_life_was_updated?: boolean;
-}
-interface ChangeCritterCollarProps {
-  isLink: boolean;
-  data: ChangeCollarData;
+interface IDataLifeEndProps {
+  attachment_end?: Date | string;
+  data_life_end?: Date | string;
 }
 
-export type { ChangeCollarData, ChangeCritterCollarProps };
+interface IAttachDeviceProps extends IDataLifeEndProps {
+  collar_id: string;
+  critter_id: string;
+  attachment_start: Date | string;
+  data_life_start: Date | string;
+}
+
+// make data life end props required when unattaching a device
+interface IRemoveDeviceProps extends Required<IDataLifeEndProps> {
+  assignment_id: string;
+}
+
+interface IChangeDataLifeProps extends Pick<IRemoveDeviceProps, 'assignment_id'> {
+  data_life_start: Date | string;
+  data_life_end: Date | string;
+}
+
+export type { IAttachDeviceProps, IRemoveDeviceProps, IChangeDataLifeProps };

@@ -7,7 +7,7 @@ import {
   QResult,
   TelemetryTypes,
 } from '../types/query';
-import { pgPool, ROLLBACK } from './pg';
+import { pgPool } from './pg';
 // a set of helper functions for constructing db queries
 
 /**
@@ -165,7 +165,7 @@ const query = async (
 };
 
 const transactionify = (sql: string): string => {
-  return ROLLBACK ? `begin;\n${sql};\nrollback;` : sql;
+  return process.env.ROLLBACK ? `begin;${sql};rollback;` : sql;
 };
 
 // hardcoded primary key getter given a table name

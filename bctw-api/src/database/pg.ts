@@ -37,5 +37,4 @@ pgPool.on('connect', (client: PoolClient): void => {
 export {
   isProd,
   pgPool,
-  ROLLBACK
 };
