@@ -1,7 +1,6 @@
 # create references to Critter IDs in projectroot/.vscode/settings.json
-@critter1 = {{existing_critter}}
-@critter2 = {{existing_critter2}}
-@critterCanChange = {{critter_with_change_permission}}
+@critter1_attached = 6aea4243-95c6-4174-9061-f797632f530b
+@critter2_unattached = eea66d98-1ea0-4fd5-9550-fa056efb2672
 ### add a new animal
 POST http://localhost:3000/upsert-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
@@ -79,17 +78,14 @@ content-type: application/json
 ### get critter history 
 http://localhost:3000/get-animal-history/{{critter1}}?idir={{idir}}
 
-### get assigned critters
+### get critters with attached device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
 
-### get unassigned
+### get critters without device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned
 
 ### get unassigned - page 2
 http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=unassigned
-
-### assignmenthistory
-http://localhost:3000/get-assignment-history/{{critter2}}?idir={{idir}}
 
 ### delete individual - fail (no permission)
 DELETE http://localhost:3000/animal/{{critter1}}?idir={{idirtest3}} HTTP/1.1
@@ -98,4 +94,7 @@ DELETE http://localhost:3000/animal/{{critter1}}?idir={{idirtest3}} HTTP/1.1
 DELETE http://localhost:3000/animal/{{critter1}}?idir={{idir}} HTTP/1.1
 
 ### retrieve specific critter
-http://localhost:3000/animal/{{existing_critter}}?idir={{idir}}
+http://localhost:3000/animal/{{critter1_attached}}?idir={{idir}}
+
+### fixme: no current way to fetch specific unattached animal
+http://localhost:3000/animal/{{critter2_unattached}}?idir={{idir}}

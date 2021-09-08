@@ -22,7 +22,11 @@ const _upsertAnimal = async function (
   animals: Animal[]
 ): Promise<IBulkResponse> {
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  const sql = constructFunctionQuery(pg_upsert_animal_fn, [userIdentifier, animals], true);
+  const sql = constructFunctionQuery(
+    pg_upsert_animal_fn,
+    [userIdentifier, animals],
+    true
+  );
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
@@ -30,12 +34,12 @@ const _upsertAnimal = async function (
     createBulkResponse(bulkResp, getRowResults(result, pg_upsert_animal_fn)[0]);
   }
   return bulkResp;
-}
+};
 
 /**
  * body can be single or array of Animals
- * @param req 
- * @param res 
+ * @param req
+ * @param res
  * @returns the upserted @type {Animal} list
  */
 const upsertAnimal = async function (
@@ -50,9 +54,9 @@ const upsertAnimal = async function (
 
 /**
  * deletes an animal
- * @param userIdentifier 
- * @param critterIds 
- * @param res 
+ * @param userIdentifier
+ * @param critterIds
+ * @param res
  */
 const deleteAnimal = async function (
   userIdentifier: string,
@@ -66,15 +70,17 @@ const deleteAnimal = async function (
 };
 
 // generate SQL for retrieving animals that are attached to a device
-const _getAssignedCritterSQL = (idir: string) =>
+const _getAssignedCritterSQL = (idir: string, critter_id?: string) =>
   `SELECT
-      c.device_id,
-      c.collar_id,
+      c.assignment_id, c.device_id, c.collar_id,
+      c.attachment_start, c.data_life_start,
+      c.data_life_end, c.attachment_end,
       a.*,
       ${fn_get_user_animal_permission}('${idir}', a.critter_id) AS "permission_type"
     FROM ${S_API}.currently_attached_collars_v c
     JOIN ${S_API}.animal_v a ON c.critter_id = a.critter_id
-    WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))`
+    WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))
+    ${critter_id ? ` AND a.critter_id = '${critter_id}'` : ''}`;
 
 // generate SQL for retrieving animals that are not attached to a device
 const _getUnassignedCritterSQL = (idir: string) =>
@@ -83,15 +89,6 @@ const _getUnassignedCritterSQL = (idir: string) =>
     ${fn_get_user_animal_permission}('${idir}', cuc.critter_id) AS "permission_type"
   FROM bctw_dapi_v1.currently_unattached_critters_v cuc
   WHERE cuc.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))`;
-
-// SQL for retrieving an individual animal, regardless of collar assignment status
-const _getCritterSQL = (idir: string, critter_id: string) =>
-  `SELECT 
-    a.*,
-    ${fn_get_user_animal_permission}('${idir}', '${critter_id}') AS "permission_type"
-  FROM ${S_API}.animal_v a
-  WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${idir}'))
-  AND a.critter_id = '${critter_id}'`;
 
 /**
  * retrieves a list of @type {Animal}, based on the user's permissions
@@ -105,26 +102,21 @@ const getAnimals = async function (
   const page = (req.query?.page || 1) as number;
   const critterType = req.query?.critterType as eCritterFetchType;
   let sql;
-  switch (critterType) {
-    case eCritterFetchType.assigned:
-      sql = constructGetQuery({ base: _getAssignedCritterSQL(id), page })
-      break;
-    case eCritterFetchType.unassigned:
-      sql = constructGetQuery({ base: _getUnassignedCritterSQL(id), page });
-      break;
-    default:
-      sql = constructGetQuery({ base: _getCritterSQL(id, req.params.id)})
+  if (critterType === eCritterFetchType.unassigned) {
+    sql = constructGetQuery({ base: _getUnassignedCritterSQL(id), page });
+  } else if (critterType === eCritterFetchType.assigned) {
+    sql = constructGetQuery({ base: _getAssignedCritterSQL(id), page });
+  } else if (typeof req.params?.id === 'string') {
+    sql = constructGetQuery({
+      base: _getAssignedCritterSQL(id, req.params.id),
+    });
   }
-  const { result, error, isError } = await query(
-    sql,
-    `failed to query critters`
-  );
+  const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(result.rows);
 };
-
 
 /**
  * retrieves a history of metadata changes made to a animal
@@ -139,9 +131,14 @@ const getAnimalHistory = async function (
   if (!animal_id) {
     return res.status(500).send(`animal_id must be supplied`);
   }
-  const sql = constructFunctionQuery(pg_get_critter_history, [id, animal_id], false, S_API);
+  const sql = constructFunctionQuery(
+    pg_get_critter_history,
+    [id, animal_id],
+    false,
+    S_API
+  );
   const { result, error, isError } = await query(
-    constructGetQuery({base: sql, page}),
+    constructGetQuery({ base: sql, page }),
     'failed to retrieve critter history'
   );
   if (isError) {
