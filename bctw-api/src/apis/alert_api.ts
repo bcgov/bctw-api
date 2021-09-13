@@ -15,7 +15,7 @@ const getUserTelemetryAlerts = async function (
   const fn_name = 'get_user_telemetry_alerts';
   const base = constructFunctionQuery(fn_name, [id], false, S_API);
   const sql = constructGetQuery({ base });
-  const { result, error, isError } = await query(sql, '');
+  const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }

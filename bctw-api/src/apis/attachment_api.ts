@@ -11,7 +11,7 @@ import { IAttachDeviceProps, IRemoveDeviceProps, IChangeDataLifeProps } from '..
  * contains API endpoints that handle the animal/device attachment
  */
 
-const pg_get_history = 'get_animal_collar_assignment_history';
+const pg_get_attachment_history = 'get_animal_collar_assignment_history';
 const pg_unlink_collar_fn = 'unlink_collar_to_animal';
 const pg_link_collar_fn = 'link_collar_to_animal';
 const pg_update_data_life_fn = 'update_attachment_data_life';
@@ -55,6 +55,7 @@ const unattachDevice = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
+  console.log(sql);
   return res.send(getRowResults(result, pg_unlink_collar_fn)[0]);
 }
 
@@ -95,12 +96,12 @@ const getCollarAssignmentHistory = async function (
       .status(500)
       .send('must supply critter_id to retrieve collar history');
   }
-  const sql = constructFunctionQuery(pg_get_history, [getUserIdentifier(req), critterId]);
+  const sql = constructFunctionQuery(pg_get_attachment_history, [getUserIdentifier(req), critterId]);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, pg_get_history));
+  return res.send(getRowResults(result, pg_get_attachment_history));
 };
 
 export {
