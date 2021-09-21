@@ -30,6 +30,9 @@ const attachDevice = async function (
   if (!collar_id || !critter_id) {
     return res.status(500).send('collar_id & animal_id must be supplied');
   }
+  if (!attachment_start) {
+    return res.status(500).send('must supply attachment start');
+  }
   const sql = constructFunctionQuery(pg_link_collar_fn, [getUserIdentifier(req), collar_id, critter_id, attachment_start, data_life_start, attachment_end, data_life_end]);
   const { result, error, isError } = await query(sql, '', true);
 

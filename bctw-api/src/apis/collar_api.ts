@@ -122,16 +122,18 @@ const getAssignedCollarSQL = function (
   filter?: IFilter
 ): string {
   const base = `
-    SELECT 
-      ca.wlh_id || '/' || ca.animal_id as "(WLH_ID/Animal ID)",
-      ca.wlh_id as "WLH_ID",
-      ca.animal_id as "Animal_ID",
-      c.*,
-      ${pg_get_collar_permission}('${idir}', c.collar_id) AS "permission_type"
-    FROM ${S_API}.currently_attached_collars_v ca
-    JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
-    WHERE ca.critter_id = ANY(${S_BCTW}.get_user_critter_access('${idir}'))
-  `;
+  SELECT 
+    ca.assignment_id,
+    ca.attachment_start, ca.attachment_end,
+    ca.data_life_start, ca.data_life_end,
+    c.*,
+    ${pg_get_collar_permission}('${idir}', c.collar_id) AS "permission_type",
+    a.*
+  FROM ${S_API}.currently_attached_collars_v ca
+  JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
+  JOIN ${S_API}.animal_v a ON a.critter_id = ca.critter_id
+  WHERE ca.critter_id = ANY(${S_BCTW}.get_user_critter_access('${idir}'))`;
+
   let filterStr = '';
   if (filter && filter.id) {
     filterStr = `AND c.collar_id = '${filter.id}'`;

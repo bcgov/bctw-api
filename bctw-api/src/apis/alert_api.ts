@@ -34,7 +34,7 @@ const updateUserTelemetryAlert = async function (
   const id = getUserIdentifier(req);
   const fn_name = 'update_user_telemetry_alert';
   const sql = constructFunctionQuery(fn_name, [id, req.body], true);
-  const { result, error, isError } = await query(sql, '');
+  const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
