@@ -10,7 +10,5 @@ const callback = (err) => {
   }
 };
 
-const sql = `refresh materialized view vendor_merge_view_no_critter;`;
-// deprecated
-// refresh materialized view last_pings_view;
+const sql = `refresh materialized view vendor_merge_view_no_critter; refresh materialized view latest_transmissions`;
 pgPool.query(sql, callback);

@@ -16,6 +16,7 @@ import { IFilter, TelemetryTypes } from '../types/query';
 const pg_upsert_collar = 'upsert_collar';
 const pg_get_collar_history = 'get_collar_history';
 const pg_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
+const pg_get_last_transmission = `${S_BCTW}.get_last_device_transmission`;
 
 // split to be exported and used in bulk/csv endpoints
 const upsertCollars = async function(
@@ -128,7 +129,8 @@ const getAssignedCollarSQL = function (
     ca.data_life_start, ca.data_life_end,
     c.*,
     ${pg_get_collar_permission}('${idir}', c.collar_id) AS "permission_type",
-    a.*
+    a.*,
+    ${pg_get_last_transmission}(c.collar_id) as "last_transmission_date"
   FROM ${S_API}.currently_attached_collars_v ca
   JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
   JOIN ${S_API}.animal_v a ON a.critter_id = ca.critter_id
