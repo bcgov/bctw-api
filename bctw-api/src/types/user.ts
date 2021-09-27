@@ -6,7 +6,9 @@ interface IUserInput {
   bceid: string,
   email: string,
   firstname: string,
-  lastname: string
+  lastname: string,
+  access: string,
+  phone: string
 }
 
 type User = BCTWBaseType & IUserInput;
@@ -15,6 +17,7 @@ type User = BCTWBaseType & IUserInput;
 enum UserRole {
   administrator = 'administrator',
   owner = 'owner',
+  editor = 'editor',
   observer = 'observer'
 }
 
@@ -31,4 +34,4 @@ export {
   User,
   UserRole,
   eCritterPermission,
-} 
+}
