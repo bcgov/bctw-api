@@ -34,8 +34,8 @@ const handleOnboardingRequest = async function (
   res: Response
 ): Promise<Response>{
   const fn_name = 'handle_onboarding_request';
-  const { onboarding_id, status, role } = req.body as IHandleOnboardRequestInput;
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), onboarding_id, status, role]);
+  const { onboarding_id, access, user_role } = req.body as IHandleOnboardRequestInput;
+  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), onboarding_id, access, user_role]);
   const { result, error, isError } = await query(sql, undefined, true);
   if (isError) {
     return res.status(500).send(error.message);

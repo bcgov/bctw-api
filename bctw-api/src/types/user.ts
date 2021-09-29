@@ -25,8 +25,6 @@ interface IOnboardInput extends Pick<IUserInput, 'firstname' | 'lastname' | 'pho
 // represents what an admin passes to grant/deny an onboard request
 interface IHandleOnboardRequestInput extends Pick<IOnboardInput, 'access' | 'user_role'> {
   onboarding_id: number;
-  status: OnboardingStatus,
-  role: eUserRole,
 }
 
 type User = BCTWBaseType & IUserInput;

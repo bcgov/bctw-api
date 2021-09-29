@@ -110,8 +110,8 @@ content-type: application/json
 
 {
 	"onboarding_id": 99,
-	"status": "granted",
-	"role": "observer"
+	"access": "granted",
+	"user_role": "observer"
 }
 
 ### should fail - invalid access type
@@ -120,8 +120,8 @@ content-type: application/json
 
 {
 	"onboarding_id": "{{pending_request_id}}",
-	"status": "{{badaccess}}",
-	"role": "observer"
+	"access": "{{badaccess}}",
+	"user_role": "observer"
 }
 
 ### should fail - invalid access type
@@ -130,8 +130,8 @@ content-type: application/json
 
 {
 	"onboarding_id": "{{pending_request_id}}",
-	"status": "{{granted}}",
-	"role": "{{badrole}}"
+	"access": "{{granted}}",
+	"user_role": "{{badrole}}"
 }
 ### should succeed with value false (denied)
 POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
@@ -139,8 +139,8 @@ content-type: application/json
 
 {
 	"onboarding_id": "{{pending_request_id}}",
-	"status": "{{denied}}",
-	"role":  "{{validrole}}"
+	"access": "{{denied}}",
+	"user_role":  "{{validrole}}"
 }
 ### should suceed with true (granted)
 POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
@@ -148,6 +148,6 @@ content-type: application/json
 
 {
 	"onboarding_id": "{{pending_request_id}}",
-	"status": "{{granted}}",
-	"role": "{{validrole}}"
+	"access": "{{granted}}",
+	"user_role": "{{validrole}}"
 }

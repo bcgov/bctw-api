@@ -132,21 +132,24 @@ const getUsers = async function (
  * @param req.user IDIR of the user to get acccess for
  * @param filters array of @type {eCritterPermission} to retrieve
  * @returns list of @type {Animal} and attached device properties
+ * todo: fix paging
  */
 const getUserCritterAccess = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const { user } = req.params;
-  const { page, filters } = req.query;
-  // todo: fix paging
-  const permissionFilter = filters ? String(filters).split(',') : undefined;
-  const params = [user];
-  if (permissionFilter) {
-    params.push(...permissionFilter);
-  }
   if (!user) {
     return res.status(500).send(`must supply user parameter`);
+  }
+  const params: (string | string[])[] = [user];
+  /**
+   * permission filters are appended to the query, ex '?editor,owner'
+   * split the string into an array so the query can handle it
+   */
+  const { filters } = req.query;
+  if (filters) {
+    params.push(String(filters).split(','));
   }
   const base = constructFunctionQuery(fn_user_critter_access_json, params, false, S_API);
   const sql = constructGetQuery({base});
