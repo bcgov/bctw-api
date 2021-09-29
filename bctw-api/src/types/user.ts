@@ -1,13 +1,14 @@
 import { BCTWBaseType } from './base_types';
 
 interface IUserInput {
-  id: number,
-  idir: string,
-  bceid: string,
-  email: string,
-  firstname: string,
-  lastname: string
+  id: number;
+  idir: string;
+  bceid: string;
+  email: string;
+  firstname: string;
+  lastname: string;
   phone: number;
+  access: string; // note: deprecated
 }
 
 type DomainType = 'idir' | 'bceid';
@@ -34,6 +35,7 @@ type User = BCTWBaseType & IUserInput;
 enum eUserRole {
   administrator = 'administrator',
   owner = 'owner',
+  editor = 'editor',
   observer = 'observer'
 }
 
