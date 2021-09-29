@@ -18,6 +18,7 @@ const upload = multer({dest: 'bctw-api/build/uploads'})
 
 // only these urls can pass through unauthorized
 const unauthorizedURLs: Record<string, string> = {
+  status: '/get-onboard-status',
   submit: '/submit-onboarding-request',
   route: '/onboarding',
 };
@@ -78,7 +79,7 @@ const app = express()
   .get('/get-user-role',api.getUserRole)
   .post('/add-user', api.upsertUser)
   // onboarding
-  // .get('/user-access', api.getUserAccess) // note: no longer in use?
+  .get(unauthorizedURLs.status, api.getUserOnboardStatus)
   .get('/onboarding-requests', api.getOnboardingRequests)
   .post(unauthorizedURLs.submit, api.submitOnboardingRequest)
   .post('/handle-onboarding-request', api.handleOnboardingRequest)

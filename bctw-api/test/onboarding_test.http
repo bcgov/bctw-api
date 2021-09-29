@@ -111,7 +111,7 @@ content-type: application/json
 {
 	"onboarding_id": 99,
 	"access": "granted",
-	"user_role": "observer"
+	"role_type": "observer"
 }
 
 ### should fail - invalid access type
@@ -121,7 +121,7 @@ content-type: application/json
 {
 	"onboarding_id": "{{pending_request_id}}",
 	"access": "{{badaccess}}",
-	"user_role": "observer"
+	"role_type": "observer"
 }
 
 ### should fail - invalid access type
@@ -131,7 +131,7 @@ content-type: application/json
 {
 	"onboarding_id": "{{pending_request_id}}",
 	"access": "{{granted}}",
-	"user_role": "{{badrole}}"
+	"role_type": "{{badrole}}"
 }
 ### should succeed with value false (denied)
 POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
@@ -140,7 +140,7 @@ content-type: application/json
 {
 	"onboarding_id": "{{pending_request_id}}",
 	"access": "{{denied}}",
-	"user_role":  "{{validrole}}"
+	"role_type":  "{{validrole}}"
 }
 ### should suceed with true (granted)
 POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
@@ -149,5 +149,13 @@ content-type: application/json
 {
 	"onboarding_id": "{{pending_request_id}}",
 	"access": "{{granted}}",
-	"user_role": "{{validrole}}"
+	"role_type": "{{validrole}}"
 }
+
+# onboard status test
+
+### fail: no status 
+http://localhost:3000/get-onboard-status?idir={{idir}}
+
+###
+http://localhost:3000/get-onboard-status?bceid=hithere

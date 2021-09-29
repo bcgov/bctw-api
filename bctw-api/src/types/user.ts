@@ -19,11 +19,11 @@ interface IOnboardInput extends Pick<IUserInput, 'firstname' | 'lastname' | 'pho
   identifier: string;
   domain: DomainType;
   access: OnboardingStatus;
-  user_role: eUserRole;
+  role_type: eUserRole;
 }
 
 // represents what an admin passes to grant/deny an onboard request
-interface IHandleOnboardRequestInput extends Pick<IOnboardInput, 'access' | 'user_role'> {
+interface IHandleOnboardRequestInput extends Pick<IOnboardInput, 'access' | 'role_type'> {
   onboarding_id: number;
 }
 

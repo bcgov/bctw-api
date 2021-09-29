@@ -28,7 +28,7 @@ import { getUserIdentifier, MISSING_USERNAME } from './database/requests';
 import { getExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
 import { attachDevice, getCollarAssignmentHistory, unattachDevice, updateDataLife } from './apis/attachment_api';
-import { getOnboardingRequests, getUserAccess, handleOnboardingRequest, submitOnboardingRequest } from './apis/onboarding_api';
+import { getOnboardingRequests, getUserOnboardStatus, submitOnboardingRequest, handleOnboardingRequest } from './apis/onboarding_api';
 
 /* ## notFound
   Catch-all router for any request that does not have an endpoint defined.
@@ -118,7 +118,7 @@ export {
   getType,
   getUDF,
   getUser,
-  getUserAccess,
+  getUserOnboardStatus,
   getUserCritterAccess,
   getUserRole,
   getUsers,

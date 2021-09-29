@@ -6,7 +6,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { getUserIdentifier } from '../database/requests';
+import { getUserIdentifier, getUserIdentifierDomain } from '../database/requests';
 import { IHandleOnboardRequestInput } from '../types/user';
 
 /**
@@ -34,8 +34,8 @@ const handleOnboardingRequest = async function (
   res: Response
 ): Promise<Response>{
   const fn_name = 'handle_onboarding_request';
-  const { onboarding_id, access, user_role } = req.body as IHandleOnboardRequestInput;
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), onboarding_id, access, user_role]);
+  const { onboarding_id, access, role_type } = req.body as IHandleOnboardRequestInput;
+  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), onboarding_id, access, role_type]);
   const { result, error, isError } = await query(sql, undefined, true);
   if (isError) {
     return res.status(500).send(error.message);
@@ -56,31 +56,29 @@ const getOnboardingRequests = async function (req: Request, res:Response): Promi
 };
 
 /**
- * ## getUserAccess
- * This is for onboarding purposes. Takes the domain (idir/bceid)
- * and user name and returns the status of onboarding.
+ * for onboarding purposes. Takes the domain and identifier (username) and returns the status of onboarding.
+ * returns an access object that has a @type {OnboardingStatus}
  */
-// fixme: deprecated??
-const getUserAccess = async function (
+const getUserOnboardStatus = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const domain = req.query['onboard-domain']; 
-  const user = req.query['onboard-user']; 
-  const sql = `select access from bctw.user where ${domain} = '${user}'`
-
-  const { result, error, isError } = await query(sql, '');
-
+  const [domain, identifier ] = getUserIdentifierDomain(req);
+  const sql = `select access from bctw.onboarding where domain = '${domain}' and identifier = '${identifier}'`;
+  const { result, error, isError } = await query(sql);
   // If there's an error return a 500, otherwise return the results
   if (isError) {
     return res.status(500).send(error.message);
+  }
+  if (!result.rowCount) {
+    return res.status(500).send('could not find onboard status')
   }
   return res.send(result.rows[0]);
 }
 
 export {
   getOnboardingRequests,
-  getUserAccess,
+  getUserOnboardStatus ,
   handleOnboardingRequest,
   submitOnboardingRequest,
 };
