@@ -1,18 +1,37 @@
 import { BCTWBaseType } from './base_types';
 
 interface IUserInput {
-  user_id: string,
+  id: number,
   idir: string,
   bceid: string,
   email: string,
   firstname: string,
   lastname: string
+  phone: number;
+}
+
+type DomainType = 'idir' | 'bceid';
+type OnboardingStatus = 'pending' | 'granted' | 'denied';
+
+// represents the submission for an onboard request
+interface IOnboardInput extends Pick<IUserInput, 'firstname' | 'lastname' | 'phone' | 'email'> {
+  identifier: string;
+  domain: DomainType;
+  access: OnboardingStatus;
+  user_role: eUserRole;
+}
+
+// represents what an admin passes to grant/deny an onboard request
+interface IHandleOnboardRequestInput extends Pick<IOnboardInput, 'access' | 'user_role'> {
+  onboarding_id: number;
+  status: OnboardingStatus,
+  role: eUserRole,
 }
 
 type User = BCTWBaseType & IUserInput;
 
 // used to represent user role type
-enum UserRole {
+enum eUserRole {
   administrator = 'administrator',
   owner = 'owner',
   observer = 'observer'
@@ -28,7 +47,10 @@ enum eCritterPermission {
 
 export {
   IUserInput,
+  IOnboardInput,
   User,
-  UserRole,
+  eUserRole,
   eCritterPermission,
+  IHandleOnboardRequestInput,
+  DomainType
 } 

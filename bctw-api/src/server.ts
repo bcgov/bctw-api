@@ -5,55 +5,49 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
 import {importCsv} from './import/csv';
+import { getUserIdentifierDomain, MISSING_USERNAME, parseURL } from './database/requests';
+import { fn_get_user_id_domain } from './apis/user_api';
+import { constructFunctionQuery, getRowResults, query } from './database/query';
 import { pgPool } from './database/pg';
-import { getUserIdentifier, MISSING_IDIR } from './database/requests';
-import { S_BCTW } from './constants';
 
-/* ## Server
+/*
   Run the server.
 */
 
 const upload = multer({dest: 'bctw-api/build/uploads'})
+
+// only these urls can pass through unauthorized
+const unauthorizedURLs: Record<string, string> = {
+  submit: '/submit-onboarding-request',
+  route: '/onboarding',
+};
 
 const app = express()
   .use(helmet())
   .use(cors())
   .use(express.urlencoded({ extended: true }))
   .use(express.json())
-  // app.all('*', function (req, res, next) {
-  //   const isUserSwapTest = process.env.TESTING_USERS;
-  //   if (isUserSwapTest !== 'true') {
-  //     return next()
-  //   }
-  //   const query = req.query;
-  //   if (query.idir && query.testUser) {
-  //     req.query = Object.assign(req.query, {idir: query.testUser})
-  //   }
-  //   return next() 
-  // })
   .all('*', async (req: Request,res: Response, next) => {
-    /**
-     * If you get here you have a valid IDIR.
-     * Check if the user is registerd in the database.
-     * If yes.... Pass through.
-     * Else... Deny access
-    */
-    const idir = getUserIdentifier(req);
-    if (!idir) {
-      res.status(500).send(MISSING_IDIR); // reject
+    // determine if user is authorized
+    const [domain, identifier ] = getUserIdentifierDomain(req);
+    if (!domain) {
+      res.status(500).send('must specify domain type');
     }
-    const sql = `select idir from ${S_BCTW}.user`;
-    const client = await pgPool.connect();
-    const result = await client.query(sql);
-    const idirs = result.rows.map((row) => row.idir);
-    const registered = idirs.includes(idir);
-
-    if (registered) {
+    if (!identifier) {
+      res.status(500).send(MISSING_USERNAME); // reject
+    }
+    const sql = constructFunctionQuery(fn_get_user_id_domain, [domain, identifier]);
+    // fetch the domain/username user ID
+    const { result } = await query(sql);
+    const userid = getRowResults(result, fn_get_user_id_domain);
+    // valid users will have an integer id
+    if (typeof userid === 'number') {
       next(); // pass through
+    } else if(typeof userid !== 'number' && Object.values(unauthorizedURLs).includes(parseURL(req))){
+      next() // also pass through for new onboarding requests
     } else {
-      // res.status(403).send('Unauthorized'); // reject
+      res.status(403).send('Unauthorized'); // reject
     }
-    client?.release();
   })
   // critters
   .get('/get-animals', api.getAnimals)
@@ -78,12 +72,16 @@ const app = express()
   .get('/permission-history', api.getGrantedPermissionHistory)
   .post('/submit-permission-request', api.submitPermissionRequest)
   .post('/execute-permission-request', api.approveOrDenyPermissionRequest)
-  .get('/user-access', api.getUserAccess)
   // users
   .get('/get-user',api.getUser)
   .get('/get-users',api.getUsers)
   .get('/get-user-role',api.getUserRole)
-  .post('/add-user', api.addUser)
+  .post('/add-user', api.upsertUser)
+  // onboarding
+  // .get('/user-access', api.getUserAccess) // note: no longer in use?
+  .get('/onboarding-requests', api.getOnboardingRequests)
+  .post(unauthorizedURLs.submit, api.submitOnboardingRequest)
+  .post('/handle-onboarding-request', api.handleOnboardingRequest)
   // user access
   .get('/get-critter-access/:user', api.getUserCritterAccess)
   .post('/assign-critter-to-user', api.assignCritterToUser)

@@ -5,8 +5,8 @@ import * as fs from 'fs';
 import { upsertAnimal, _upsertAnimal } from '../apis/animal_api';
 import { addCode } from '../apis/code_api';
 import { upsertCollar, upsertCollars } from '../apis/collar_api';
-import { constructFunctionQuery, momentNow, queryAsyncAsTransaction } from '../database/query';
-import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
+import { constructFunctionQuery, queryAsyncAsTransaction } from '../database/query';
+import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
 import { Animal, IAnimal } from '../types/animal';
 import { CodeInput } from '../types/code';
 import { HistoricalTelemetryInput } from '../types/point';
@@ -209,7 +209,7 @@ const handleCollarCritterLink = async (
 const importCsv = async function (req: Request, res: Response): Promise<void> {
   const id = getUserIdentifier(req);
   if (!id) {
-    res.status(500).send(MISSING_IDIR);
+    res.status(500).send(MISSING_USERNAME);
   }
   const file = req.file;
   if (!file) {

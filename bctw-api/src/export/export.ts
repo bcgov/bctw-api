@@ -3,7 +3,7 @@ import { pg_get_critter_history } from '../apis/animal_api';
 import { pg_get_collar_history } from '../apis/collar_api';
 import { S_API } from '../constants';
 import { constructFunctionQuery, query } from '../database/query';
-import { MISSING_IDIR } from '../database/requests';
+import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
 
 enum eExportType {
   all = 'all',
@@ -41,20 +41,20 @@ const getExportData = async function (
 ): Promise<Response> {
   // console.log(req.body);
   const { type, range, collar_ids, critter_ids } = req.body;
-  const idir = req.query.idir as string;
-  if (!idir) {
-    return res.status(500).send(MISSING_IDIR);
+  const username = getUserIdentifier(req) ;
+  if (!username) {
+    return res.status(500).send(MISSING_USERNAME);
   }
   const sqlStrings: string[] = [];
   switch (type) {
     case eExportType.animal:
-      critter_ids.forEach(i => sqlStrings.push(animalSQL(idir, i, range)))
+      critter_ids.forEach(i => sqlStrings.push(animalSQL(username, i, range)))
       break;
     case eExportType.collar:
-      collar_ids.forEach(i => sqlStrings.push(deviceSQL(idir, i, range)))
+      collar_ids.forEach(i => sqlStrings.push(deviceSQL(username, i, range)))
       break;
     case eExportType.movement:
-      collar_ids.forEach(i => sqlStrings.push(movementSQL(idir, i, range)))
+      collar_ids.forEach(i => sqlStrings.push(movementSQL(username, i, range)))
       break;
   }
   const promises = sqlStrings.map(s => query(s, ''));

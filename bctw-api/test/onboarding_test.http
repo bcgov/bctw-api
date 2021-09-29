@@ -1,0 +1,153 @@
+@badrole = adminstrato
+@badaccess = notpending
+@validrole = owner
+@validaccess = pending
+@granted = granted
+@denied = denied
+
+# note: pending_request_id is set in .vscode/settings.json
+
+
+### fail - username already exists
+POST http://localhost:3000/submit-onboarding-request?bceid={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+	"domain": "idir"
+	
+}
+
+### fail - missing "identifier" field
+POST http://localhost:3000/submit-onboarding-request?idir=hithere HTTP/1.1
+content-type: application/json
+
+{
+	"domain": "idir",
+	"access": "{{validaccess}}",
+	"lastname": "test",
+	"firstname": "bill",
+	"phone": "321-123-1232",
+	"email": "test@mail.com",
+	"role_type": "{{validrole}}"
+}
+
+### fail - invalid role
+POST http://localhost:3000/submit-onboarding-request?idir=hithere HTTP/1.1
+content-type: application/json
+
+{
+	"domain": "idir",
+	"access": "{{validaccess}}",
+	"lastname": "test",
+	"firstname": "bill",
+	"phone": "321-123-1232",
+	"email": "test@mail.com",
+	"role_type": "{{badrole}}",
+	"identifier": "hithere"
+}
+
+### fail - invalid access
+POST http://localhost:3000/submit-onboarding-request?idir=hithere HTTP/1.1
+content-type: application/json
+
+{
+	"domain": "idir",
+	"access": "{{badaccess}}",
+	"lastname": "test",
+	"firstname": "bill",
+	"phone": "321-123-1232",
+	"email": "test@mail.com",
+	"role_type": "{{validrole}}",
+	"identifier": "hithere"
+}
+
+### should fail - this request exists
+POST http://localhost:3000/submit-onboarding-request?idir=hithere HTTP/1.1
+content-type: application/json
+
+{
+	"domain": "bceid",
+	"access": "{{validaccess}}",
+	"lastname": "test",
+	"firstname": "bill",
+	"phone": "321-123-1232",
+	"email": "test@mail.com",
+	"role_type": "{{validrole}}",
+	"identifier": "hithere"
+}
+
+### should succeed 
+POST http://localhost:3000/submit-onboarding-request?idir=imanewguy HTTP/1.1
+content-type: application/json
+
+{
+	"domain": "idir",
+	"access": "{{validaccess}}",
+	"lastname": "test",
+	"firstname": "bill",
+	"phone": "321-123-1232",
+	"email": "test@mail.com",
+	"role_type": "{{validrole}}",
+	"identifier": "imanewguy"
+}
+
+### retrieve existing requests
+http://localhost:3000/onboarding-requests?idir={{idir}}
+
+### should fail with unauthorized
+POST http://localhost:3000/handle-onboarding-request?idir=imanewguy HTTP/1.1
+content-type: application/json
+
+{
+	"domain": "idir"
+}
+
+### onboarding request admin handling a submission
+
+### should fail - id DNE
+POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+	"onboarding_id": 99,
+	"status": "granted",
+	"role": "observer"
+}
+
+### should fail - invalid access type
+POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+	"onboarding_id": "{{pending_request_id}}",
+	"status": "{{badaccess}}",
+	"role": "observer"
+}
+
+### should fail - invalid access type
+POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+	"onboarding_id": "{{pending_request_id}}",
+	"status": "{{granted}}",
+	"role": "{{badrole}}"
+}
+### should succeed with value false (denied)
+POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+	"onboarding_id": "{{pending_request_id}}",
+	"status": "{{denied}}",
+	"role":  "{{validrole}}"
+}
+### should suceed with true (granted)
+POST http://localhost:3000/handle-onboarding-request?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+	"onboarding_id": "{{pending_request_id}}",
+	"status": "{{granted}}",
+	"role": "{{validrole}}"
+}

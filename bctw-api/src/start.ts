@@ -13,7 +13,7 @@ import {
 import { getCritterTracks, getDBCritters, getLastPings, getPingExtent } from './apis/map_api';
 import { approveOrDenyPermissionRequest, getGrantedPermissionHistory, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
 import {
-  addUser,
+  upsertUser,
   assignCritterToUser,
   deleteUser,
   getUDF,
@@ -21,14 +21,14 @@ import {
   getUserCritterAccess,
   getUserRole,
   getUsers,
-  getUserAccess,
   upsertUDF,
 } from './apis/user_api';
 import { emailEndpoint } from './apis/email';
-import { MISSING_IDIR } from './database/requests';
+import { getUserIdentifier, MISSING_USERNAME } from './database/requests';
 import { getExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
 import { attachDevice, getCollarAssignmentHistory, unattachDevice, updateDataLife } from './apis/attachment_api';
+import { getOnboardingRequests, getUserAccess, handleOnboardingRequest, submitOnboardingRequest } from './apis/onboarding_api';
 
 /* ## notFound
   Catch-all router for any request that does not have an endpoint defined.
@@ -63,9 +63,9 @@ const deleteType = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req.query.idir as string;
-  if (!idir) {
-    return res.status(500).send(MISSING_IDIR);
+  const username = getUserIdentifier(req);
+  if (!username) {
+    return res.status(500).send(MISSING_USERNAME);
   }
   const { id, type } = req.params;
   const { ids } = req.body;
@@ -77,11 +77,11 @@ const deleteType = async function (
   }
   switch (type) {
     case 'animal':
-      return deleteAnimal(idir, toDelete, res);
+      return deleteAnimal(username, toDelete, res);
     case 'collar':
-      return deleteCollar(idir, toDelete, res);
+      return deleteCollar(username, toDelete, res);
     case 'user':
-      return deleteUser(idir, id, res);
+      return deleteUser(username, id, res);
     default:
       return res
         .status(404)
@@ -92,7 +92,7 @@ const deleteType = async function (
 export {
   addCode,
   addCodeHeader,
-  addUser,
+  upsertUser,
   approveOrDenyPermissionRequest, 
   assignCritterToUser,
   attachDevice, 
@@ -130,4 +130,7 @@ export {
   upsertAnimal,
   upsertCollar,
   upsertUDF,
+  getOnboardingRequests,
+  handleOnboardingRequest,
+  submitOnboardingRequest,
 };

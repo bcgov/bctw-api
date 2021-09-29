@@ -33,7 +33,7 @@ const getCode = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  const results = getRowResults(result, pg_get_code_fn)[0];
+  const results = getRowResults(result, pg_get_code_fn);
   return res.send(results);
 };
 
@@ -88,7 +88,7 @@ const addCodeHeader = async function (
   } else {
     createBulkResponse(
       bulkResp,
-      getRowResults(result, pg_add_code_header_fn)[0]
+      getRowResults(result, pg_add_code_header_fn)
     );
   }
   return res.send(bulkResp);
@@ -115,7 +115,7 @@ const addCode = async function (
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
-    createBulkResponse(bulkResp, getRowResults(result, pg_add_code_fn)[0]);
+    createBulkResponse(bulkResp, getRowResults(result, pg_add_code_fn));
   }
   return res.send(bulkResp);
 };

@@ -47,14 +47,11 @@ content-type: application/json
 ### should succeed with my idir
 GET http://localhost:3000/get-users?idir={{idir}}
 
-### should throw with idirtest2 - not an admin
-GET http://localhost:3000/get-users?idir={{idirtest2}}
-
 ### should succeed
-GET http://localhost:3000/get-critter-access/{{idir}}
+GET http://localhost:3000/get-critter-access/{{idir}}?idir={{idir}}
 
 ### should fail
-GET http://localhost:3000/get-critter-access/sdf
+GET http://localhost:3000/get-critter-access/sdf?idir={{idir}}
 
 ### Get user with role info
 GET http://localhost:3000/get-user?idir={{idir}}
@@ -83,10 +80,10 @@ content-type: application/json
 }
 
 ### delete individual - fail (no permission)
-DELETE http://localhost:3000/user/19?idir={{idirtest3}} HTTP/1.1
+DELETE http://localhost:3000/user/19?idir=dne HTTP/1.1
 
 ### delete individual - fail
-DELETE http://localhost:3000/user/19?idir={{idirDNE}} HTTP/1.1
+DELETE http://localhost:3000/user/1900?idir={{idir}} HTTP/1.1
 
 ### delete individual - success
 DELETE http://localhost:3000/user/19?idir={{idir}} HTTP/1.1

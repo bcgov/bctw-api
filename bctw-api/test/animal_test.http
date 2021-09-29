@@ -1,4 +1,4 @@
-# create references to Critter IDs in projectroot/.vscode/settings.json
+# note: create references to Critter IDs in projectroot/.vscode/settings.json
 @critter1_attached = 6aea4243-95c6-4174-9061-f797632f530b
 @critter2_unattached = eea66d98-1ea0-4fd5-9550-fa056efb2672
 ### add a new animal
@@ -21,33 +21,29 @@ content-type: application/json
 [
   {
     "animal_id": "test123",
-    "animal_status": "P",
+    "animal_status": "ALIVE",
     "juvenile_at_heel": "Y",
-    "sex": "M",
-    "wlh_id": "abc1233",
-    "nickname": "shimmer"
+    "sex": "MALE",
+    "wlh_id": "abc1233"
   },
   {
-    "animal_id": "test1234",
-    "animal_status": "M",
+    "animal_id": "test321",
+    "animal_status": "ALIVE",
     "juvenile_at_heel": "N",
-    "sex": "F",
-    "wlh_id": "abc123",
-    "nickname": "unknown"
+    "sex": "FEMALE",
+    "wlh_id": "abc123"
   }
 ]
 
 ### update existing animal
+# previous: animal_id: "111", animal_status: "Alive"
 POST http://localhost:3000/upsert-animal?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
-  "critter_id": "{{critter1}}",
+  "critter_id": "{{critter1_attached}}",
   "animal_id": "test123",
-  "animal_status": "M",
-  "sex": "M",
-  "wlh_id": "abc123",
-  "nickname": "shimmer"
+  "animal_status": "Mortality"
 }
 
 ### update multiple animals
@@ -57,25 +53,21 @@ content-type: application/json
 [
   {
     "animal_id": "test123",
-    "animal_status": "A",
-    "calf_at_heel": true,
-    "sex": "M",
-    "wlh_id": "abc123",
-    "nickname": "shimmer",
-    "critter_id": "{{critter1}}"
+    "wlh_id": "newwlhid",
+    "critter_id": "{{critter1_attached}}"
   },
   {
     "animal_id": "test123",
-    "animal_status": "A",
-    "sex": "M",
-    "wlh_id": "abc123",
-    "nickname": "shimmer",
-    "critter_id": "{{critter2}}"
+    "wlh_id": "newwlhid",
+    "critter_id": "{{critter2_unattached}}"
   }
 ]
 
 ### get critter history 
-http://localhost:3000/get-animal-history/{{critter1}}?idir={{idir}}
+http://localhost:3000/get-animal-history/{{critter1_attached}}?idir={{idir}}
+
+### get history fail: no permission
+http://localhost:3000/get-animal-history/{{critter1_attached}}?bceid={{bceid1}}
 
 ### get critters with attached device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
@@ -83,14 +75,11 @@ http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
 ### get critters without device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned
 
-### get unassigned - page 2
-http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=unassigned
-
 ### delete individual - fail (no permission)
-DELETE http://localhost:3000/animal/{{critter1}}?idir={{idirtest3}} HTTP/1.1
+DELETE http://localhost:3000/animal/{{critter1_attached}}?bceid={{bceid1}} HTTP/1.1
 
 ### should succeed
-DELETE http://localhost:3000/animal/{{critter1}}?idir={{idir}} HTTP/1.1
+DELETE http://localhost:3000/animal/{{critter1_attached}}?idir={{idir}} HTTP/1.1
 
 ### retrieve specific critter
 http://localhost:3000/animal/{{critter1_attached}}?idir={{idir}}

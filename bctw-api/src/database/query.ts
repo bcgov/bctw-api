@@ -95,19 +95,20 @@ const to_pg_obj = (obj: Record<string, unknown>): string => {
 };
 
 /*
- function handles dev and prod query result parsing
+ handles dev and prod query result parsing
 */
 const getRowResults = (
   data: QueryResult | QueryResult[],
   functionName: string
-): QueryResultRow[] => {
+): QueryResultRow | QueryResultRow[] => {
   if (Array.isArray(data)) {
     const filtered = data.find((result) => result.command === 'SELECT');
     if (!filtered) {
       return [];
     } else return _getQueryResult(filtered, functionName);
   }
-  return _getQueryResult(data, functionName);
+  const ret = _getQueryResult(data, functionName);
+  return ret.length > 1 ? ret : ret[0];
 };
 
 const _getQueryResult = (data: QueryResult, fn: string) => {

@@ -7,7 +7,7 @@ import { QResult } from '../types/query';
 import { IBulkResponse } from '../types/import_types';
 import { Collar } from '../types/collar';
 import { S_BCTW } from '../constants';
-import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
+import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
 const readPromise = promisify(readFile);
 
 const VECT_KEY_UPSERT_FN = `upsert_vectronic_key`;
@@ -95,7 +95,7 @@ const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Pr
   const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   if (!id) {
-    bulkResp.errors.push({ row: '', error: MISSING_IDIR, rownum: 0 });
+    bulkResp.errors.push({ row: '', error: MISSING_USERNAME, rownum: 0 });
     return res.send(bulkResp);
   }
   const files = req.files as Express.Multer.File[];

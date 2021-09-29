@@ -6,22 +6,23 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { getUserIdentifier, MISSING_IDIR } from '../database/requests';
-import { eCritterPermission, IUserInput, UserRole } from '../types/user';
+import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
+import { eCritterPermission, IUserInput, eUserRole } from '../types/user';
 
 interface IUserProps {
   user: IUserInput;
-  role: UserRole;
+  role: eUserRole;
 }
 const fn_user_critter_access_json = 'get_user_critter_access_json';
-const fn_user_critter_access_array = `${S_BCTW}.get_user_critter_access`;
-const fn_get_user_id = `${S_BCTW}.get_user_id`;
+const fn_user_critter_access_array = `get_user_critter_access`;
+const fn_get_user_id = `get_user_id`;
+const fn_get_user_id_domain = `get_user_id_with_domain`;
 /**
  * adds or updates a new user. in order to update - the bctw.user.id field
  * must be present in the JSON. 
  * @returns the JSON record reprenting the row in the user table
  */
-const addUser = async function (
+const upsertUser = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
@@ -32,8 +33,9 @@ const addUser = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name)[0]);
+  return res.send(getRowResults(result, fn_name));
 };
+
 
 /**
  * expires a user
@@ -47,11 +49,11 @@ const deleteUser = async function (
 ): Promise<Response> {
   const fn_name = 'delete_user';
   const sql = constructFunctionQuery(fn_name, [idir, idToDelete]);
-  const { result, error, isError } = await query(sql);
+  const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name)[0]);
+  return res.send(getRowResults(result, fn_name));
 }
 
 /**
@@ -63,7 +65,7 @@ const getUserRole = async function (
 ): Promise<Response> {
   const id = getUserIdentifier(req);
   if (!id) {
-    return res.status(500).send(MISSING_IDIR);
+    return res.status(500).send(MISSING_USERNAME);
   }
   const fn_name = 'get_user_role';
   const sql = constructFunctionQuery(fn_name, [id]);
@@ -74,12 +76,14 @@ const getUserRole = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name)[0]);
+  return res.send(getRowResults(result, fn_name));
 };
 
 /**
  * @param idir - the user to retrieve
  * @returns @type {User} includes user role type
+ * fixme: since this uses the request query params
+ * it can only fetch the "current" user object.
  */
 const getUser = async function (
   req: Request,
@@ -87,7 +91,7 @@ const getUser = async function (
 ): Promise<Response> {
   const id = getUserIdentifier(req);
   if (!id) {
-    return res.status(500).send(MISSING_IDIR);
+    return res.status(500).send(MISSING_USERNAME);
   }
   const fn_name = 'get_user';
   const sql = constructFunctionQuery(fn_name, [id], false, S_API);
@@ -101,7 +105,7 @@ const getUser = async function (
     }
     return res.status(500).send(error.message);
   }
-  const results = getRowResults(result, fn_name)[0];
+  const results = getRowResults(result, fn_name);
   return res.send(results);
 };
 
@@ -120,7 +124,7 @@ const getUsers = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name)[0]);
+  return res.send(getRowResults(result, fn_name));
 };
 
 /**
@@ -134,13 +138,18 @@ const getUserCritterAccess = async function (
   res: Response
 ): Promise<Response> {
   const { user } = req.params;
-  const page = (req.query.page || 0) as number;
-  const perms = (req.query?.filters as string).split(',') ?? [];
+  const { page, filters } = req.query;
+  // todo: fix paging
+  const permissionFilter = filters ? String(filters).split(',') : undefined;
+  const params = [user];
+  if (permissionFilter) {
+    params.push(...permissionFilter);
+  }
   if (!user) {
     return res.status(500).send(`must supply user parameter`);
   }
-  const base = constructFunctionQuery(fn_user_critter_access_json, [user, perms], false, S_API);
-  const sql = constructGetQuery(page === 0 ? {base} : {base, page});
+  const base = constructFunctionQuery(fn_user_critter_access_json, params, false, S_API);
+  const sql = constructGetQuery({base});
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);
@@ -205,15 +214,13 @@ const upsertUDF = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const idir = req.query.idir as string;
-  const udf = req.body as UDF;
   const fn_name = 'upsert_udf';
-  const sql = constructFunctionQuery(fn_name, [idir, udf], true, S_BCTW);
+  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), req.body], true, S_BCTW);
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name)[0]);
+  return res.send(getRowResults(result, fn_name));
 }
 
 /**
@@ -228,9 +235,11 @@ const getUDF = async function (
   const id = getUserIdentifier(req);
   const udf_type = req.query.type as string;
   const sql = 
-  `select * from ${S_API}.user_defined_fields_v
-  where user_id = ${fn_get_user_id}('${id}')
-  and type = '${udf_type}'`;
+  `
+    SELECT * FROM ${S_API}.user_defined_fields_v
+    WHERE user_id = ${fn_get_user_id}('${id}')
+    AND type = '${udf_type}'
+  `;
   const { result, error, isError } = await query(sql, '');
   if (isError) {
     return res.status(500).send(error.message);
@@ -238,42 +247,18 @@ const getUDF = async function (
   return res.send(result.rows);
 }
 
-/**
- * ## getUserAccess
- * This is for onboarding purposes. Takes the domain (idir/bceid)
- * and user name and returns the status of onboarding.
- * @param req Express request object
- * @param res Express response object
- * @returns Promise
- */
-const getUserAccess = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
-  const domain = req.query['onboard-domain']; 
-  const user = req.query['onboard-user']; 
-  const sql = `select access from bctw.user where ${domain} = '${user}'`
-
-  const { result, error, isError } = await query(sql, '');
-
-  // If there's an error return a 500, otherwise return the results
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  return res.send(result.rows[0]);
-}
 
 export {
-  addUser,
+  upsertUser,
   getUserRole,
   assignCritterToUser,
   getUDF,
   getUser,
   getUsers,
-  getUserAccess,
   getUserCritterAccess,
   upsertUDF,
   deleteUser,
   fn_user_critter_access_array,
-  fn_get_user_id
+  fn_get_user_id,
+  fn_get_user_id_domain,
 };

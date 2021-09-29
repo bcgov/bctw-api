@@ -18,7 +18,7 @@ content-type: application/json
 {
     "collar_id": "{{attached_collar}}",
     "critter_id": "{{attached_critter}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "{{dl_start}}"
 }
 
@@ -29,7 +29,7 @@ content-type: application/json
 {
     "collar_id": "{{deviceDNE}}",
     "critter_id": "{{attached_critter}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "{{dl_start}}"
 }
 
@@ -40,7 +40,7 @@ content-type: application/json
 {
     "collar_id": "{{attached_collar}}",
     "critter_id": "{{deviceDNE}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "{{dl_start}}"
 }
 
@@ -51,7 +51,7 @@ content-type: application/json
 {
     "collar_id": "{{available_device}}",
     "critter_id": "{{attached_animal}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "{{dl_start}}"
 }
 
@@ -62,7 +62,7 @@ content-type: application/json
 {
     "collar_id": "{{attached_device}}",
     "critter_id": "{{available_animal}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "{{dl_start}}"
 }
 
@@ -73,7 +73,7 @@ content-type: application/json
 {
     "collar_id": "{{available_device}}",
     "critter_id": "{{available_animal}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "{{dl_start}}"
 }
 
@@ -84,9 +84,9 @@ content-type: application/json
 {
     "collar_id": "{{available_device}}",
     "critter_id": "{{available_animal}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "{{dl_start}}",
-    "actual_end": "2022-01-01",
+    "attachment_end": "2022-01-01",
     "data_life_end": "2022-01-01"
 
 }
@@ -98,7 +98,7 @@ content-type: application/json
 {
     "collar_id": "{{available_device}}",
     "critter_id": "{{available_animal}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "2021-08-01 08:00:00"
 }
 
@@ -109,9 +109,9 @@ content-type: application/json
 {
     "collar_id": "{{available_device}}",
     "critter_id": "{{available_animal}}",
-    "actual_start": "{{start}}",
+    "attachment_start": "{{start}}",
     "data_life_start": "{{dl_start}}",
-    "actual_end": "2022-01-01",
+    "attachment_end": "2022-01-01",
     "data_life_end": "2022-01-02"
 }
 
@@ -124,7 +124,7 @@ content-type: application/json
 
 {
     "assignment_id": "{{cur_valid_assignment}}",
-    "actual_end": "2019-01-01",
+    "attachment_end": "2019-01-01",
     "data_life_end": "2019-01-02"
 }
 
@@ -134,7 +134,7 @@ content-type: application/json
 
 {
     "assignment_id": "{{cur_valid_assignment}}",
-    "actual_end": "2022-01-01",
+    "attachment_end": "2022-01-01",
     "data_life_end": "2022-01-02"
 }
 
@@ -144,7 +144,7 @@ content-type: application/json
 
 {
     "assignment_id": "{{cur_valid_assignment}}",
-    "actual_end": "2022-01-01",
+    "attachment_end": "2022-01-01",
     "data_life_end": "2021-12-31"
 }
 
