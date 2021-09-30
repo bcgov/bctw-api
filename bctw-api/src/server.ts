@@ -47,7 +47,7 @@ const app = express()
     } else if(typeof userid !== 'number' && Object.values(unauthorizedURLs).includes(parseURL(req))){
       next() // also pass through for new onboarding requests
     } else {
-      res.status(403).send('Unauthorized'); // reject
+      res.status(401).send('Unauthorized'); // reject
     }
   })
   // critters
