@@ -71,6 +71,7 @@ const getUserOnboardStatus = async function (
     return res.status(500).send(error.message);
   }
   if (!result.rowCount) {
+    // fixme: ..why 500 for this?
     return res.status(500).send('could not find onboard status')
   }
   return res.send(result.rows[0]);

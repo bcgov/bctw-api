@@ -5,7 +5,7 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
 import {importCsv} from './import/csv';
-import { getUserIdentifierDomain, MISSING_USERNAME, parseURL } from './database/requests';
+import { getUserIdentifierDomain, matchAny, MISSING_USERNAME } from './database/requests';
 import { fn_get_user_id_domain } from './apis/user_api';
 import { constructFunctionQuery, getRowResults, query } from './database/query';
 import { pgPool } from './database/pg';
@@ -20,7 +20,7 @@ const upload = multer({dest: 'bctw-api/build/uploads'})
 const unauthorizedURLs: Record<string, string> = {
   status: '/get-onboard-status',
   submit: '/submit-onboarding-request',
-  route: '/onboarding',
+  // route: 'onboarding',
 };
 
 const app = express()
@@ -40,11 +40,11 @@ const app = express()
     const sql = constructFunctionQuery(fn_get_user_id_domain, [domain, identifier]);
     // fetch the domain/username user ID
     const { result } = await query(sql);
-    const userid = getRowResults(result, fn_get_user_id_domain);
-    // valid users will have an integer id
-    if (typeof userid === 'number') {
+    // valid users will have an integer user id
+    const registered = typeof getRowResults(result, fn_get_user_id_domain) === 'number';
+    if (registered) {
       next(); // pass through
-    } else if(typeof userid !== 'number' && Object.values(unauthorizedURLs).includes(parseURL(req))){
+    } else if(!registered && matchAny(req.url, Object.values(unauthorizedURLs))){
       next() // also pass through for new onboarding requests
     } else {
       res.status(401).send('Unauthorized'); // reject

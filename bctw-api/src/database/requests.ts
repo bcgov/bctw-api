@@ -60,10 +60,17 @@ const handleResponse = async function (
   return res.send(result);
 };
 
-// returns the "base" url in the request without appended query
-const parseURL = (req: Request): string => {
-  const url: string = req.url;
-  return url.indexOf('?') === -1 ? url : url.split('?')[0];
+/**
+ * determines if a request @param url matches one of @param potentialMatches
+ * @returns boolean
+ */
+const matchAny = (url: string, potentialMatches: string[]): boolean => {
+  for (let i = 0; i < potentialMatches.length; i++) {
+    if (url.match(potentialMatches[i])) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export {
@@ -72,5 +79,5 @@ export {
   filterFromRequestParams,
   MISSING_USERNAME,
   handleResponse,
-  parseURL,
+  matchAny,
 }
