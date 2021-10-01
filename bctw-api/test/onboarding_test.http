@@ -7,17 +7,7 @@
 
 # note: pending_request_id is set in .vscode/settings.json
 
-
-### fail - username already exists
-POST http://localhost:3000/submit-onboarding-request?bceid={{idir}} HTTP/1.1
-content-type: application/json
-
-{
-	"domain": "idir"
-	
-}
-
-### fail - missing "identifier" field
+### fail - missing username field
 POST http://localhost:3000/submit-onboarding-request?idir=hithere HTTP/1.1
 content-type: application/json
 
@@ -43,7 +33,7 @@ content-type: application/json
 	"phone": "321-123-1232",
 	"email": "test@mail.com",
 	"role_type": "{{badrole}}",
-	"identifier": "hithere"
+	"username": "hithere"
 }
 
 ### fail - invalid access
@@ -58,7 +48,7 @@ content-type: application/json
 	"phone": "321-123-1232",
 	"email": "test@mail.com",
 	"role_type": "{{validrole}}",
-	"identifier": "hithere"
+	"username": "hithere"
 }
 
 ### should fail - this request exists
@@ -73,7 +63,7 @@ content-type: application/json
 	"phone": "321-123-1232",
 	"email": "test@mail.com",
 	"role_type": "{{validrole}}",
-	"identifier": "hithere"
+	"username": "hithere"
 }
 
 ### should succeed 
@@ -88,7 +78,7 @@ content-type: application/json
 	"phone": "321-123-1232",
 	"email": "test@mail.com",
 	"role_type": "{{validrole}}",
-	"identifier": "imanewguy"
+	"username": "imanewguy"
 }
 
 ### retrieve existing requests

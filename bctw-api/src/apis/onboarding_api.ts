@@ -17,7 +17,7 @@ const submitOnboardingRequest = async function (
   res: Response
 ): Promise<Response> {
   const fn_name = 'submit_onboarding_request';
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), req.body]);
+  const sql = constructFunctionQuery(fn_name, [req.body]);
   const { result, error, isError } = await query(sql, undefined, true);
   if (isError) {
     return res.status(500).send(error.message);
@@ -56,7 +56,7 @@ const getOnboardingRequests = async function (req: Request, res:Response): Promi
 };
 
 /**
- * for onboarding purposes. Takes the domain and identifier (username) and returns the status of onboarding.
+ * for onboarding purposes. Takes the domain and username and returns the status of onboarding.
  * returns an access object that has a @type {OnboardingStatus}
  */
 const getUserOnboardStatus = async function (
@@ -64,15 +64,14 @@ const getUserOnboardStatus = async function (
   res: Response
 ): Promise<Response> {
   const [domain, identifier ] = getUserIdentifierDomain(req);
-  const sql = `select access from bctw.onboarding where domain = '${domain}' and identifier = '${identifier}'`;
+  const sql = `select access from bctw.onboarding where domain = '${domain}' and username = '${identifier}'`;
   const { result, error, isError } = await query(sql);
   // If there's an error return a 500, otherwise return the results
   if (isError) {
     return res.status(500).send(error.message);
   }
   if (!result.rowCount) {
-    // fixme: ..why 500 for this?
-    return res.status(500).send('could not find onboard status')
+    return res.send(null);
   }
   return res.send(result.rows[0]);
 }

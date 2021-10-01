@@ -16,7 +16,7 @@ type OnboardingStatus = 'pending' | 'granted' | 'denied';
 
 // represents the submission for an onboard request
 interface IOnboardInput extends Pick<IUserInput, 'firstname' | 'lastname' | 'phone' | 'email'> {
-  identifier: string;
+  username: string;
   domain: DomainType;
   access: OnboardingStatus;
   role_type: eUserRole;
