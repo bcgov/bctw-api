@@ -1,10 +1,13 @@
-@critter1 = {{existing_critter}}
-@attached_to_critter1 = {{collar_attached_to_critter1}}
-@critter_no_collar = {{critter_with_change_permission}}
-@collar1 = {{existing_collar}}
-@collar2 = {{existing_collar2}}
-@collarDNE = {{collar_dne}}
-@unattached_collar = {{free_collar}}
+# @critter1 = {{existing_critter}}
+# @attached_to_critter1 = {{collar_attached_to_critter1}}
+# @critter_no_collar = {{critter_with_change_permission}}
+# @collar1 = {{existing_collar}}
+# @collar2 = {{existing_collar2}}
+# @collarDNE = {{collar_dne}}
+@unattached_collar = 850c08bd-91b6-4690-9f6f-a04488ac97f9
+@attached_collar = caadd5e9-ba2b-430f-bb7c-d5567bcb5a24
+@invalid_collar = eaadd5e9-ba2b-430f-bb7c-d5567bcb5a24
+
 @today = {{$datetime iso8601}}
 ### add collar
 # this device id already exists - should update model and deployment status
@@ -23,32 +26,29 @@ content-type: application/json
 ]
 
 ### attempt to update a vectronic collar that doesnt have a corresponding keyx entry should fail
-POST http://localhost:3000/upsert-collar?idir={{idir}} HTTP/1.1
-content-type: application/json
+# POST http://localhost:3000/upsert-collar?idir={{idir}} HTTP/1.1
+# content-type: application/json
 
-{ "device_id": "{{vect_collar_no_keyx}}", "device_make": "Vectronic", "frequency": 291.33, "device_model": "collar9000" }
+# { "device_id": "{{vect_collar_no_keyx}}", "device_make": "Vectronic", "frequency": 291.33, "device_model": "collar9000" }
 
 ### retrive collar history
-http://localhost:3000/get-collar-history/{{collar1}}?idir={{idir}}
+# http://localhost:3000/get-collar-history/{{collar1}}?idir={{idir}}
 
 ### collar queries
 # get available collars
 http://localhost:3000/get-available-collars?idir={{idir}}
 
-### get paged available collars
-http://localhost:3000/get-available-collars?idir={{idir}}&page=2
-
 ### get assigned collars
 http://localhost:3000/get-assigned-collars?idir={{idir}}
 
-### get assigned collars page 2
-http://localhost:3000/get-assigned-collars?idir={{idir}}&page=2
-
 ### - should pass
-DELETE http://localhost:3000/collar/{{existing_collar2}}?idir={{idir}} HTTP/1.1
+DELETE http://localhost:3000/collar/{{attached_collar}}?idir={{idir}} HTTP/1.1
 
-###
-http://localhost:3000/collar/{{existing_collar}}?idir={{idir}}
+### fail to retrieve an device that DNE
+http://localhost:3000/device/{{invalid_collar}}?idir={{idir}}
 
-###
-http://localhost:3000/get-assigned-collars?idir=jcraven
+### retrieve a specific attached device
+http://localhost:3000/device/{{attached_collar}}?idir={{idir}}
+
+### retrieve a specific unattached device
+http://localhost:3000/device/{{unattached_collar}}?idir={{idir}}

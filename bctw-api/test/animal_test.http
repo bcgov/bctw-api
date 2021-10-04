@@ -81,8 +81,8 @@ DELETE http://localhost:3000/animal/{{critter1_attached}}?bceid={{bceid1}} HTTP/
 ### should succeed
 DELETE http://localhost:3000/animal/{{critter1_attached}}?idir={{idir}} HTTP/1.1
 
-### retrieve specific critter
+### retrieve specific critter (attached to a device)
 http://localhost:3000/animal/{{critter1_attached}}?idir={{idir}}
 
-### fixme: no current way to fetch specific unattached animal
+### retrieve specific critter (not attached to a device)
 http://localhost:3000/animal/{{critter2_unattached}}?idir={{idir}}

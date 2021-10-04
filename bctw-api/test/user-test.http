@@ -1,48 +1,98 @@
 @my_idir = {{idir}}
-@critter_no_access = {{existing_critter}}
-@critter_with_access = {{critter_with_change_permission}}
-### get role - should fail user with idir stuff DNE
+# @critter_no_access = {{existing_critter}}
+# @critter_with_access = {{critter_with_change_permission}}
+
+# get role - should fail user with idir stuff DNE
 http://localhost:3000/get-user-role?idir=stuff
 
 ### should return administrator
 http://localhost:3000/get-user-role?idir={{idir}}
 
-###
-POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
+### fail - unauthorized idir 
+POST http://localhost:3000/add-user?idir=xyz HTTP/1.1
 content-type: application/json
 
 {
   "user": {
-    "idir": "someguy",
     "email": "someguy@qt.com",
-    "bceid": "test1"
+    "domain": "idir"
   },
   "role": "administrator"
 }
 
-### should fail invalid role type
+### fail - missing username
 POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
 {
   "user": {
-    "idir": "someguy",
-    "email": "someguy@qt.com"
+    "email": "someguy@qt.com",
+    "domain": "idir"
+  },
+  "role": "administrator"
+}
+### fail - missing domain
+POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "user": {
+    "username": "test1",
+    "email": "someguy@qt.com",
+  },
+  "role": "administrator"
+}
+
+### fail - invalid role type
+POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "user": {
+    "email": "someguy@qt.com",
+    "username": "test001",
+    "domain": "idir"
+  },
+  "role": "administrat"
+}
+### fail - username exists
+POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "user": {
+    "email": "someguy@qt.com",
+    "username": "{{idir}}",
+    "domain": "idir"
   },
   "role": "administrat"
 }
 
-### should succeed
-POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
+### success
+POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
 content-type: application/json
 
-[{
-  "userId": "1",
-  "access": [{
-    "critter_id": "{{critter_no_access}}",
-    "permission_type": "change"
-  }]
-}]
+{
+  "user": {
+    "username": "test1",
+    "domain": "bceid",
+    "email": "someguy@qt.com",
+    "bceid": "test1"
+  },
+  "role": "observer"
+}
+
+### should succeed
+# POST http://localhost:3000/assign-critter-to-user?idir={{idir}} HTTP/1.1
+# content-type: application/json
+
+# [{
+#   "userId": "1",
+#   "access": [{
+#     "critter_id": "{{critter_no_access}}",
+#     "permission_type": "change"
+#   }]
+# }]
 
 ### should succeed with my idir
 GET http://localhost:3000/get-users?idir={{idir}}

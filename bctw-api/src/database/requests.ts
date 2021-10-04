@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { IFilter } from "../types/query";
+import { IFilter, QResult } from "../types/query";
 
 const MISSING_USERNAME = 'must supply user identifier';
 
@@ -61,6 +61,13 @@ const handleResponse = async function (
 };
 
 /**
+ * a response error handler 
+ */
+const handleQueryError = async (result: QResult, res: Response): Promise<Response> => {
+  return res.status(500).send(result?.error.message);
+}
+
+/**
  * determines if a request @param url matches one of @param potentialMatches
  * @returns boolean
  */
@@ -78,6 +85,7 @@ export {
   getUserIdentifier,
   filterFromRequestParams,
   MISSING_USERNAME,
+  handleQueryError,
   handleResponse,
   matchAny,
 }

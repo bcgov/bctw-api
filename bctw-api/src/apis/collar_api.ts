@@ -8,15 +8,17 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { filterFromRequestParams, getUserIdentifier } from '../database/requests';
+import { filterFromRequestParams, getUserIdentifier, handleQueryError } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
 import { IFilter, TelemetryTypes } from '../types/query';
+import { cac_v } from './animal_api';
+import { fn_user_critter_access_array } from './user_api';
 
 const pg_upsert_collar = 'upsert_collar';
 const pg_get_collar_history = 'get_collar_history';
 const pg_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
-const pg_get_last_transmission = `${S_BCTW}.get_last_device_transmission`;
+const deviceIDSort = 'c.device_id desc';
 
 // split to be exported and used in bulk/csv endpoints
 const upsertCollars = async function(
@@ -65,40 +67,43 @@ const deleteCollar = async function (
 };
 
 /**
- * @param idir
- * @param page
  * @returns a list of collars that are not attached to a critter that the user created. 
  * If the user has admin role they can see all unattached collars
  */
-const deviceIDSort = 'c.device_id desc';
-const getAvailableCollarSQL = function (
-  idir: string,
+
+const getUnattachedDeviceSQL = function (
+  username: string,
   page: number,
-  filter?: IFilter
+  filter?: IFilter,
+  getAllProps = false,
+  collar_id?: string
 ): string {
   const base = `
     SELECT 
-      c.*,
-      ${pg_get_collar_permission}('${idir}', c.collar_id) AS "permission_type"
+      ${getAllProps ? 'c.*,' : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_model, c.activation_status,'}
+      ${pg_get_collar_permission}('${username}', c.collar_id) AS "permission_type"
     FROM ${S_API}.collar_v c 
     WHERE c.collar_id not in (
-      SELECT collar_id FROM ${S_API}.currently_attached_collars_v)
+      SELECT collar_id FROM ${cac_v})
     AND (
-      c.owned_by_user_id = ${S_BCTW}.get_user_id('${idir}') 
-      OR ${S_BCTW}.get_user_role('${idir}') = 'administrator')
-  `;
+      c.owned_by_user_id = ${S_BCTW}.get_user_id('${username}') 
+      OR ${S_BCTW}.get_user_role('${username}') = 'administrator'
+    )
+    ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
+
   const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
   const sql = constructGetQuery({ base, filter: strFilter, order: deviceIDSort, page });
   return sql;
 };
+
+const getLastPingSQL = `(SELECT date_recorded FROM latest_transmissions WHERE collar_id = ca.collar_id) as "last_transmission_date"`;
 
 const getAvailableCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const page = (req.query?.page || 1) as number;
-  const sql = getAvailableCollarSQL(getUserIdentifier(req) as string, page, filterFromRequestParams(req));
-  // console.log(sql);
+  const sql = getUnattachedDeviceSQL(getUserIdentifier(req) as string, page, filterFromRequestParams(req));
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve available collars'
@@ -110,31 +115,30 @@ const getAvailableCollars = async function (
 };
 
 /**
- * @param idir
- * @param filter
- * @param page
  * @returns a list of collars that have a critter attached.
  * access control is included, so the user will only see collars that have a critter
  * that they are allowed to view
  */
-const getAssignedCollarSQL = function (
-  idir: string,
+const getAttachedDeviceSQL = function (
+  username: string,
   page: number,
-  filter?: IFilter
+  filter?: IFilter,
+  getAllProps = false,
+  collar_id?: string
 ): string {
   const base = `
   SELECT 
     ca.assignment_id,
-    ca.attachment_start, ca.attachment_end,
-    ca.data_life_start, ca.data_life_end,
-    c.*,
-    ${pg_get_collar_permission}('${idir}', c.collar_id) AS "permission_type",
+    ca.attachment_start, ca.attachment_end, ca.data_life_start, ca.data_life_end,
+    ${getAllProps ? 'c.*,' : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_model, c.activation_status,'}
+    ${pg_get_collar_permission}('${username}', c.collar_id) AS "permission_type",
     a.*,
-    ${pg_get_last_transmission}(c.collar_id) as "last_transmission_date"
-  FROM ${S_API}.currently_attached_collars_v ca
+    ${getLastPingSQL}
+  FROM ${cac_v} ca
   JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
   JOIN ${S_API}.animal_v a ON a.critter_id = ca.critter_id
-  WHERE ca.critter_id = ANY(${S_BCTW}.get_user_critter_access('${idir}'))`;
+  WHERE ca.critter_id = ANY(${S_BCTW}.${fn_user_critter_access_array}('${username}'))
+  ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
 
   let filterStr = '';
   if (filter && filter.id) {
@@ -144,16 +148,12 @@ const getAssignedCollarSQL = function (
   return sql;
 };
 
-/**
- * 
- * @returns 
- */
 const getAssignedCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const page = (req.query?.page || 1) as number;
-  const sql = getAssignedCollarSQL(getUserIdentifier(req) as string, page, filterFromRequestParams(req));
+  const sql = getAttachedDeviceSQL(getUserIdentifier(req) as string, page, filterFromRequestParams(req));
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve assigned collars'
@@ -162,6 +162,27 @@ const getAssignedCollars = async function (
     return res.status(500).send(error.message);
   }
   return res.send(result.rows);
+};
+
+/**
+ * retrieve an individual collar 
+ */
+const getCollar = async function (
+  username: string,
+  collar_id: string,
+  res: Response
+): Promise<Response> {
+  const isAttached = await query(`select 1 from ${cac_v} where collar_id = '${collar_id}'`);
+  if (isAttached.isError) {
+    return handleQueryError(isAttached, res);
+  }
+  const sql = isAttached.result.rowCount > 0 
+    ? getAttachedDeviceSQL(username, 0, undefined, true, collar_id) : getUnattachedDeviceSQL(username, 0, undefined, true, collar_id)
+  const { result, error, isError } = await query(sql);
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows[0]);
 };
 
 /**
@@ -190,6 +211,7 @@ export {
   upsertCollar,
   upsertCollars,
   deleteCollar,
+  getCollar,
   getAssignedCollars,
   getAvailableCollars,
   getCollarChangeHistory,

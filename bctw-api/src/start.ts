@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 
 import { getUserTelemetryAlerts, updateUserTelemetryAlert } from './apis/alert_api';
-import { deleteAnimal, getAnimalHistory, getAnimals, upsertAnimal } from './apis/animal_api';
+import { deleteAnimal, getAnimal, getAnimalHistory, getAnimals, upsertAnimal } from './apis/animal_api';
 import { addCode, addCodeHeader, getCode, getCodeHeaders } from './apis/code_api';
 import {
   deleteCollar,
   getAssignedCollars,
   getAvailableCollars,
+  getCollar,
   getCollarChangeHistory,
   upsertCollar,
 } from './apis/collar_api';
@@ -44,15 +45,20 @@ const notFound = function (req: Request, res: Response): Response {
  * @param req.type : animal or device
  * @param req.query.id : uuid identifier of the object
  */
-const getType = function (req: Request, res: Response): Promise<Response> {
+const getType = async function (req: Request, res: Response): Promise<Response> {
+  const { type, id } = req.params;
+  const username = getUserIdentifier(req);
+  if (!type || !id || ! username) {
+    return res.status(500).send('must supply critter_id');
+  }
   const params = req.params;
   switch (params.type) {
     case 'animal':
-      return getAnimals(req, res);
+      return getAnimal(username, id, res);
     case 'device':
-      return getAssignedCollars(req, res);
+      return getCollar(username, id, res);
     default:
-      return new Promise(() => null);
+      return res.status(500).send(`invalid type '${type}'`)
   }
 };
 

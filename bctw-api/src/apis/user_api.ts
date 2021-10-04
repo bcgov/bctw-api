@@ -17,6 +17,7 @@ const fn_user_critter_access_json = 'get_user_critter_access_json';
 const fn_user_critter_access_array = `get_user_critter_access`;
 const fn_get_user_id = `get_user_id`;
 const fn_get_user_id_domain = `get_user_id_with_domain`;
+const fn_upsert_user = 'upsert_user';
 /**
  * adds or updates a new user. in order to update - the bctw.user.id field
  * must be present in the JSON. 
@@ -27,13 +28,12 @@ const upsertUser = async function (
   res: Response
 ): Promise<Response> {
   const { user, role }: IUserProps = req.body;
-  const fn_name = 'upsert_user';
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), user, role]);
+  const sql = constructFunctionQuery(fn_upsert_user, [getUserIdentifier(req), user, role]);
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name));
+  return res.send(getRowResults(result, fn_upsert_user)[0]);
 };
 
 
