@@ -1,13 +1,12 @@
 import { Request, Response } from 'express';
-import { QueryResult } from 'pg';
 import { S_BCTW, S_API } from '../constants';
 import { pgPool } from '../database/pg';
-import { queryAsync, constructFunctionQuery, getRowResults, query } from '../database/query';
+import { query, constructFunctionQuery, getRowResults } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
 import { IBulkResponse } from '../types/import_types';
 import { HistoricalTelemetryInput } from '../types/point';
 
-/** getDBCritters
+/**
  * Request all collars the user has access to.
  */
 const getDBCritters = function (req: Request, res: Response): void {
@@ -30,7 +29,7 @@ const getDBCritters = function (req: Request, res: Response): void {
   pgPool.query(sql, done);
 };
 
-/** getCritterTracks
+/**
  * Request all the critter tracks with an date interval
  * These geometries are build on the fly.
  */
@@ -83,10 +82,7 @@ const getCritterTracks = async function (
       population_unit,
       species;
   `;
-  const { result, error, isError } = await query(
-    sql,
-    `unable to retrive critter tracks`
-  );
+  const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -99,53 +95,51 @@ const getCritterTracks = async function (
 };
 
 /* ## getPingExtent
+  note: deprecated
   Request the min and max dates of available collar pings
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
-  @param next {function} Node/Express function for flow control
  */
-const getPingExtent = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
-  const sql = `
-    select
-      max(date_recorded) "max",
-      min(date_recorded) "min"
-    from
-      vendor_merge_view_no_critter
-  `;
-  let data: QueryResult;
-  try {
-    data = await queryAsync(sql);
-  } catch (e) {
-    return res.status(500).send(`Failed to query database: ${e}`);
-  }
-  return res.send(data.rows[0]);
-};
+// const getPingExtent = async function (
+//   req: Request,
+//   res: Response
+// ): Promise<Response> {
+//   const sql = `
+//     select
+//       max(date_recorded) "max",
+//       min(date_recorded) "min"
+//     from
+//       vendor_merge_view_no_critter
+//   `;
+//   let data: QResult;
+//   try {
+//     data = await query(sql);
+//   } catch (e) {
+//     return res.status(500).send(`Failed to query database: ${e}`);
+//   }
+//   return res.send(data.rows[0]);
+// };
 
 /**
- * getLastPings:
+ * note: deprecated
  * retrieves the last known location of collars that you have access to
  * currently only returns collars that are attached to a critter
  */
-const getLastPings = async function (req: Request, res: Response): Promise<Response> {
-  const fn_name = 'get_last_critter_pings';
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
-  const { result, error, isError } = await query(
-    sql,
-    `unable to retrive critter tracks`
-  );
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  const features = getRowResults(result, fn_name);
-  const featureCollection = {
-    type: 'FeatureCollection',
-    features: features,
-  };
-  return res.send(featureCollection); 
-};
+// const getLastPings = async function (req: Request, res: Response): Promise<Response> {
+//   const fn_name = 'get_last_critter_pings';
+//   const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
+//   const { result, error, isError } = await query(
+//     sql,
+//     `unable to retrive critter tracks`
+//   );
+//   if (isError) {
+//     return res.status(500).send(error.message);
+//   }
+//   const features = getRowResults(result, fn_name);
+//   const featureCollection = {
+//     type: 'FeatureCollection',
+//     features: features,
+//   };
+//   return res.send(featureCollection); 
+// };
 
 /**
  * not exposed to API - currently only accessible through bulk CSV import
@@ -176,7 +170,7 @@ const upsertPointTelemetry = async function (userIdentifier: string, records: Hi
 export {
   getCritterTracks,
   getDBCritters,
-  getLastPings,
-  getPingExtent,
+  // getLastPings,
+  // getPingExtent,
   upsertPointTelemetry,
 }

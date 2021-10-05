@@ -11,7 +11,7 @@ import {
 import { filterFromRequestParams, getUserIdentifier, handleQueryError } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
-import { IFilter, TelemetryTypes } from '../types/query';
+import { IFilter, TelemetryType } from '../types/query';
 import { cac_v } from './animal_api';
 import { fn_user_critter_access_array } from './user_api';
 
@@ -91,7 +91,7 @@ const getUnattachedDeviceSQL = function (
     )
     ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
 
-  const strFilter = appendSqlFilter(filter || {}, TelemetryTypes.collar, 'c', true);
+  const strFilter = appendSqlFilter(filter || {}, TelemetryType.collar, 'c', true);
   const sql = constructGetQuery({ base, filter: strFilter, order: deviceIDSort, page });
   return sql;
 };

@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import { upsertAnimal, _upsertAnimal } from '../apis/animal_api';
 import { addCode } from '../apis/code_api';
 import { upsertCollar, upsertCollars } from '../apis/collar_api';
-import { constructFunctionQuery, queryAsyncAsTransaction } from '../database/query';
+import { constructFunctionQuery, query } from '../database/query';
 import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
 import { Animal, IAnimal } from '../types/animal';
 import { CodeInput } from '../types/code';
@@ -172,7 +172,7 @@ const handleCollarCritterLink = async (
         };
         const params = [idir, ...Object.values(body)];
         const sql = constructFunctionQuery(pg_link_collar_fn, params);
-        const result = await queryAsyncAsTransaction(sql);
+        const result = await query(sql);
         return result;
       }
     })

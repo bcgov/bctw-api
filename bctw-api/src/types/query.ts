@@ -19,7 +19,7 @@ interface IConstructQueryParameters {
   page?: number,
 }
 
-enum TelemetryTypes {
+enum TelemetryType {
   animal = 'animal',
   collar = 'collar',
   user = 'user'
@@ -32,5 +32,5 @@ export {
   IConstructQueryParameters,
   IFilter,
   QueryResultCbFn,
-  TelemetryTypes,
+  TelemetryType,
 }

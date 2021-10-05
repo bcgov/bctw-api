@@ -38,7 +38,7 @@ content-type: application/json
 {
   "user": {
     "username": "test1",
-    "email": "someguy@qt.com",
+    "email": "someguy@qt.com"
   },
   "role": "administrator"
 }
@@ -65,7 +65,7 @@ content-type: application/json
     "username": "{{idir}}",
     "domain": "idir"
   },
-  "role": "administrat"
+  "role": "administrator"
 }
 
 ### success
@@ -78,6 +78,20 @@ content-type: application/json
     "domain": "bceid",
     "email": "someguy@qt.com",
     "bceid": "test1"
+  },
+  "role": "observer"
+}
+
+### update existing user
+POST http://localhost:3000/add-user?idir={{idir}} HTTP/1.1
+content-type: application/json
+
+{
+  "user": {
+    "id": 1,
+    "username": "{{idir}}",
+    "email": "newemail@test.net",
+    "domain": "idir"
   },
   "role": "observer"
 }

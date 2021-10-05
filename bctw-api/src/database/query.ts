@@ -1,14 +1,14 @@
-import moment from 'moment';
 import { QueryResult, QueryResultRow } from 'pg';
 import { S_BCTW } from '../constants';
 import {
   IConstructQueryParameters,
   IFilter,
   QResult,
-  TelemetryTypes,
+  TelemetryType,
 } from '../types/query';
 import { pgPool } from './pg';
-// a set of helper functions for constructing db queries
+
+// helper functions for constructing db queries
 
 /**
  * @param IConstructQueryParameters
@@ -73,9 +73,8 @@ const constructFunctionQuery = (
 const to_pg_array = (arr: number[] | string[]): string =>
   `'{${arr.join(',')}}'`;
 
+// uses a psql builtin function to convert a js date object
 const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
-
-const momentNow = (): string => moment().format('YYYY-MM-DD HH:mm:ss');
 
 // stringifies a single object into a psql friendly array of objects
 const obj_to_pg_array = (objOrArray: Record<string, unknown>): string => {
@@ -83,20 +82,19 @@ const obj_to_pg_array = (objOrArray: Record<string, unknown>): string => {
   return `'${JSON.stringify(asArr)}'`;
 };
 
-// converts an empty string to null, otherwise returns the string
-const to_pg_str = (str: string): string | null => {
-  if (!str) return "''";
-  return `'${str}'`;
-};
+// returns the str surrounded by single quotes
+const to_pg_str = (str: string): string => (str ? `'${str}'` : "''");
 
-/// returns object in psql format '{}'
+// returns object in psql format '{}'
 const to_pg_obj = (obj: Record<string, unknown>): string => {
   return `'${JSON.stringify(obj)}'`;
 };
 
-/*
- handles dev and prod query result parsing
-*/
+/**
+ * handles dev and prod query result parsing
+ * @param data the query results to parse
+ * @param functionName the name of the psql routine/function
+ */
 const getRowResults = (
   data: QueryResult | QueryResult[],
   functionName: string
@@ -111,22 +109,13 @@ const getRowResults = (
   return ret.length > 1 ? ret : ret[0];
 };
 
+//
 const _getQueryResult = (data: QueryResult, fn: string) => {
   return data.rows.map((row: QueryResultRow) => row[fn]);
 };
 
+//
 const queryAsync = async (sql: string): Promise<QueryResult> => {
-  const client = await pgPool.connect();
-  let res: QueryResult;
-  try {
-    res = await client.query(sql);
-  } finally {
-    client.release();
-  }
-  return res;
-};
-
-const queryAsyncAsTransaction = async (sql: string): Promise<QueryResult> => {
   const client = await pgPool.connect();
   let res: QueryResult;
   try {
@@ -155,9 +144,7 @@ const query = async (
   let result, error;
   let isError = false;
   try {
-    result = asTransaction
-      ? await queryAsyncAsTransaction(transactionify(sql))
-      : await queryAsync(sql);
+    result = await queryAsync(asTransaction ? transactionify(sql) : sql);
   } catch (e) {
     isError = true;
     error = new Error(`${msgIfErr ?? ''} ${e}`);
@@ -165,16 +152,19 @@ const query = async (
   return { result, error, isError };
 };
 
+/**
+ * if environment variable ROLLBACK is set, don't commit transactions
+ */
 const transactionify = (sql: string): string => {
   return process.env.ROLLBACK ? `begin;${sql};rollback;` : sql;
 };
 
 // hardcoded primary key getter given a table name
-const _getPrimaryKey = (table: string): string => {
-  switch (table) {
-    case TelemetryTypes.animal:
+const _getPrimaryKey = (t: TelemetryType): string => {
+  switch (t) {
+    case TelemetryType.animal:
       return 'critter_id';
-    case TelemetryTypes.collar:
+    case TelemetryType.collar:
       return 'collar_id';
     default:
       return '';
@@ -182,7 +172,7 @@ const _getPrimaryKey = (table: string): string => {
 };
 
 // given a page number, return a string with the limit offset
-// note: disabling this for now
+// note: disabled
 const paginate = (pageNumber: number): string => {
   if (isNaN(pageNumber)) {
     return '';
@@ -190,14 +180,15 @@ const paginate = (pageNumber: number): string => {
   const limit = 10;
   const offset = limit * pageNumber - limit;
   // return `limit ${limit} offset ${offset};`;
-  return ``;
+  return '';
 };
 
-/*
+/**
+ * todo: doc & improve
  */
 const appendSqlFilter = (
   filter: IFilter,
-  table: string,
+  table: TelemetryType,
   tableAlias?: string,
   containsWhere = false
 ): string => {
@@ -214,10 +205,7 @@ const appendSqlFilter = (
 export {
   getRowResults,
   query,
-  queryAsync,
-  queryAsyncAsTransaction,
   constructFunctionQuery,
   constructGetQuery,
-  momentNow,
   appendSqlFilter,
 };

@@ -11,7 +11,7 @@ import {
   getCollarChangeHistory,
   upsertCollar,
 } from './apis/collar_api';
-import { getCritterTracks, getDBCritters, getLastPings, getPingExtent } from './apis/map_api';
+import { getCritterTracks, getDBCritters } from './apis/map_api';
 import { approveOrDenyPermissionRequest, getGrantedPermissionHistory, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
 import {
   upsertUser,
@@ -118,9 +118,7 @@ export {
   getDBCritters,
   getExportData,
   getGrantedPermissionHistory,
-  getLastPings,
   getPermissionRequests,
-  getPingExtent,
   getType,
   getUDF,
   getUser,
