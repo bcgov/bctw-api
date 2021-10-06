@@ -40,8 +40,6 @@ const _upsertAnimal = async function (
 
 /**
  * body can be single or array of Animals
- * @param req
- * @param res
  * @returns the upserted @type {Animal} list
  */
 const upsertAnimal = async function (

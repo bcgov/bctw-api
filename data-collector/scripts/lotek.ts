@@ -1,10 +1,11 @@
 import needle from 'needle';
-import { getLastAlertTimestamp, pgPool, queryAsync } from './db';
+import { getIsDuplicateAlert, getLastAlertTimestamp, pgPool, queryAsync } from './db';
 const dayjs = require('dayjs');
 import { eVendorType, retrieveCredentials } from './credentials';
 import { ILotekAlert } from './types';
 import { formatNowUtc, nowUtc } from './ats/plugins/time';
 
+const ALERT_TABLE = 'telemetry_sensor_alert';
 // Store the access token globally
 let tokenConfig = {};
 let lotekUrl: string;
@@ -156,7 +157,9 @@ const getAllCollars = async function () {
 };
 
 /**
- *
+ * fetches Lotek alerts, filters out any alerts that are alerts older than either: 
+ *  a) the last Lotek alert added to the telemetry table. 
+ *  b) if no lotek alerts were found in the alert table, returns alerts fetched within the past week (7 days)
  */
 const getAlerts = async () => {
   const url = `${lotekUrl}/alerts`;
@@ -165,7 +168,7 @@ const getAlerts = async () => {
     console.error(`error retrieving results from Lotek alert API: ${error}`);
     return;
   }
-  const lastAlert = await getLastAlertTimestamp(eVendorType.lotek) ?? dayjs().subtract(20, 'd').format('YYYY-MM-DDTHH:mm:ss');
+  const lastAlert = await getLastAlertTimestamp(ALERT_TABLE, eVendorType.lotek) ?? dayjs().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
   const filtered: ILotekAlert[] = body.filter((alert) => dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert)));
   console.log( `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`);
   insertAlerts(filtered);
@@ -184,34 +187,40 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     insert into bctw.telemetry_sensor_alert (
       "device_id",
       "device_make",
-      "timeid",
       "alert_type",
       "valid_from"
     ) values
   `;
-  const values: string[] = [];
-  // todo: if alert triggered for this device within the last 36 hours, don't insert duplicate
-  // "cooldown" period
+  const newAlerts: string[] = [];
+
   for (const alert of alerts) {
-    // are there other types of alerts?
-    if (alert.dtTimestampCancel === timestampNotCanceled && alert.strAlertType === 'Mortality') {
-      values.push(`(
-        ${alert.nDeviceID},
-        'Lotek',
-        '${alert.nDeviceID}_${alert.dtTimestamp}',
+    const {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType} = alert;
+    
+    // if alert triggered for this device within the last 36 hours, the "cooldown period", skip this alert
+    const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek);
+    if (isDuplicateAlert) {
+      console.log(`alert with device_id ${nDeviceID} already found within the cooldown period, skip. ${JSON.stringify(alert)}`)
+      continue;
+    }
+
+    if (dtTimestampCancel === timestampNotCanceled && strAlertType === 'Mortality') {
+      newAlerts.push(`(
+        ${nDeviceID},
+        '${eVendorType.lotek}',
         'mortality',
-        '${alert.dtTimestamp}'
+        '${dtTimestamp}'
       )`);
     }
   }
-  if (!values.length) {
+
+  if (!newAlerts.length) {
     console.log('no new Lotek alerts detected');
     return;
   }
 
-  // console.log(`valid alerts found ${JSON.stringify(alerts)}`)
-  const sql = sqlPreamble + values.join(",") + ` on conflict (timeid) do nothing`;
-  console.log(`${dayjs().format()}: Entering ` + values.length + " alert records");
+  console.log(`valid alerts found ${JSON.stringify(alerts)}`)
+  const sql = sqlPreamble + newAlerts.join(',');
+  console.log(`${dayjs().format()}: Inserting ` + newAlerts.length + " alert records");
   await queryAsync(sql);
 };
 
@@ -222,10 +231,9 @@ const setToken = (data) => {
   };
 };
 
-/* ## getToken
-  Get the authentication token from the API
-  Feed the token into the collar aquisitiona
-  and iteration function
+/**
+ * Get the authentication token from the API
+ * Feed the token into the collar aquisition and iteration function
 */
 const getToken = async function () {
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
@@ -239,17 +247,16 @@ const getToken = async function () {
     console.log(`unable to retrieve Lotek vendor credentials using identifier ${credential_name_id}`)
     return;
   }
-  // set the API url
+  // set the global API url variable
   lotekUrl = url;
 
   const data = `username=${username}&password=${password}&grant_type=password`;
   const loginURL = `${url}/user/login`;
-  console.log(loginURL);
   const config = { content_type: 'application/x-www-form-urlencoded' };
 
   const { body, error } = await needle('post', loginURL, data, config);
   if (error) {
-    console.error(`unable to retrieve login token ${error}`);
+    console.error(`unable to retrieve lotek API login token ${error}`);
   }
   setToken(body);
 

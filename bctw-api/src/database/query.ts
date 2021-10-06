@@ -94,19 +94,22 @@ const to_pg_obj = (obj: Record<string, unknown>): string => {
  * handles dev and prod query result parsing
  * @param data the query results to parse
  * @param functionName the name of the psql routine/function
+ * fixme: thought it would be a good idea to return results with single
+ * objects not in an array but its just leading to inconsistent behavior
  */
 const getRowResults = (
   data: QueryResult | QueryResult[],
   functionName: string
 ): QueryResultRow | QueryResultRow[] => {
+  let filtered;
   if (Array.isArray(data)) {
-    const filtered = data.find((result) => result.command === 'SELECT');
+    filtered = data.find((result) => result.command === 'SELECT');
     if (!filtered) {
       return [];
-    } else return _getQueryResult(filtered, functionName);
-  }
-  const ret = _getQueryResult(data, functionName);
-  return ret.length > 1 ? ret : ret[0];
+    } 
+  } 
+  const ret = _getQueryResult(filtered ?? data, functionName);
+  return ret.length === 0 ? [] : ret.length > 1 ? ret : ret[0];
 };
 
 //

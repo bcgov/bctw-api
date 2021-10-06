@@ -2,9 +2,8 @@ const env = Cypress.env();
 const createSelector = (innerText) => `span:contains('${innerText}')`;
 
 /**
- * contains the actual "tests" that the Cypress process will attempt to run
+ * contains the "tests" that Cypress will run
 */
-
 describe('ATS Test', () => {
   const {
     ATS_URL,
@@ -37,8 +36,10 @@ describe('ATS Test', () => {
     cy.get(ATS_PASSWORD_FIELD_ID).type(ATS_PASSWORD);
     cy.get(ATS_LOGIN_FORM_ID).submit();
 
-    // no way to catch this error, so this test WILL fail
-    // because always Cypress expects a new page to be loaded when the button is clicked
+    /**
+     * at the time of implementation, there is no way to catch this error, so this test will fail.
+     * Cypress always expects a new page to be loaded when the button is clicked
+     */
     cy.get(downloadTransmissionsSelector).parent().click();
   });
 

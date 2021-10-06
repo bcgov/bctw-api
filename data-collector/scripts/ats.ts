@@ -10,6 +10,10 @@ const ATS_USERNAME_FIELD_ID = process.env.ATS_USERNAME_FIELD_ID || '#username';
 const ATS_PASSWORD_FIELD_ID = process.env.ATS_PASSWORD_FIELD_ID || '#password';
 const ATS_LOGIN_FORM_ID = process.env.ATS_LOGIN_FORM_ID || '#ctl01';
 
+/**
+ * spawn cypress as a child process, why? to pass the node environment variables
+ * debugging note: additionally pass '--no-exit' when debugging locally to have Cypress not exit immediately
+ */
 const spawnProcess = async () => {
     // the row identifier in the encrypted table, passed as a parameter to retrieve credentials function
     const credential_name_id = process.env.ATS_API_CREDENTIAL_NAME;
@@ -26,8 +30,6 @@ const spawnProcess = async () => {
     const envString = `ATS_URL=${url},ATS_USERNAME_FIELD_ID=${ATS_USERNAME_FIELD_ID},ATS_PASSWORD_FIELD_ID=${ATS_PASSWORD_FIELD_ID},ATS_LOGIN_FORM_ID=${ATS_LOGIN_FORM_ID},ATS_PASSWORD=${password},ATS_USERNAME=${username}`;
     console.log(`environment variables passed to Cypress: ${envString}`);
 
-    // spawn cypress as a child process, why? to pass the node environment variables
-    // debugging note: additionally pass '--no-exit' when debugging locally to have Cypress not exit immediately
     const cypress = spawn('cypress', ['run', '-b', 'chromium', '--headless', '--env', envString]);
 
     cypress.stdout.on('data', data => console.log(`stdout: ${data}`));

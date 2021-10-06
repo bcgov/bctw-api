@@ -34,15 +34,41 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
   return data;
 }
 
-// retrieve the timestamp of the last alert added
-const getLastAlertTimestamp = async (device_make: eVendorType): Promise<Dayjs> => {
-  const sql = `select valid_from from bctw.telemetry_sensor_alert where device_make = '${device_make}'
-  order by valid_from desc limit 1`;
+/**
+ * returns the @type {Dayjs} timestamp of the last alert inserted to the alert table of device_make @type {eVendorType} 
+ * if none are found, returns null
+ */
+const getLastAlertTimestamp = async (alert_table: string, device_make: eVendorType): Promise<Dayjs | null> => {
+  const sql = `select valid_from from ${alert_table} where device_make = '${device_make}' order by valid_from desc limit 1`;
   const result = await queryAsync(sql);
-  return result.rowCount > 0 ? dayjs(result.rows[0]['valid_from']) : dayjs().utc().subtract(1, 'd');
+  return result.rowCount > 0 ? dayjs(result.rows[0]['valid_from']) : null;
 }
+
+/**
+ * @returns a bool depending on if there is an existing alert present in the 
+ * telemetry alert table where:
+ *    a) the device ID and device make match
+ *    b) the alert was created less than 36 hours ago (within the cooldown period)
+ */
+const getIsDuplicateAlert = async (alert_table: string, device_id: number, device_make: eVendorType): Promise<boolean> => {
+  const sql = `
+    select 1 from ${alert_table}
+    where device_make = '${device_make}'
+    and device_id = ${device_id}
+    and is_valid(valid_to)
+    and valid_from >= now() - INTERVAL '36 hours'
+  `;
+  const result = await queryAsync(sql);
+  if (result.rowCount) {
+    const exists = result.rows[0];
+    return !!exists;
+  } else {
+    return false;
+  }
+}
+
 
 // dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
 
-export { pgPool, isProd, queryAsync, getLastAlertTimestamp, transactionify }
+export { pgPool, isProd, queryAsync, getLastAlertTimestamp, getIsDuplicateAlert, transactionify }

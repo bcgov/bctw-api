@@ -1,4 +1,3 @@
-# note: create references to Critter IDs in projectroot/.vscode/settings.json
 @critter1_attached = 6aea4243-95c6-4174-9061-f797632f530b
 @critter2_unattached = eea66d98-1ea0-4fd5-9550-fa056efb2672
 ### add a new animal

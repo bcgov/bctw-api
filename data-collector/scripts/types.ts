@@ -1,4 +1,7 @@
-interface ILotekAlert {
+/**
+ * Lotek has a separate API for retrieving alerts
+ */
+export interface ILotekAlert {
   nDeviceID: number;
   strAlertType: string; //"Mortality",
   dtTimestamp: string;  // "2019-04-08T15:59:09",
@@ -7,8 +10,4 @@ interface ILotekAlert {
   longitude: number;
   strVirtualFenceType: unknown;
   strReleaseCodeOrTransmitterID: unknown;
-}
-
-export type {
-  ILotekAlert
 }
