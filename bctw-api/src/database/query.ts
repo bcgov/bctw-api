@@ -94,7 +94,7 @@ const to_pg_obj = (obj: Record<string, unknown>): string => {
  * handles dev and prod query result parsing
  * @param data the query results to parse
  * @param functionName the name of the psql routine/function
- * @param returnSingleAsObject returns the first element in the result array 
+ * @param returnSingleAsObject returns the first element in the result array
  * if there is only one result
  */
 const getRowResults = (
@@ -102,26 +102,35 @@ const getRowResults = (
   functionName: string,
   returnSingleAsObject = false
 ): QueryResultRow | QueryResultRow[] => {
-let filtered;
-if (Array.isArray(data)) {
-  filtered = data.find((result) => result.command === 'SELECT');
-  if (!filtered) {
-    return [];
+  let filtered;
+  if (Array.isArray(data)) {
+    filtered = data.find((result) => result.command === 'SELECT');
+    if (!filtered) {
+      return [];
+    }
   }
-}
-const ret = _getQueryResult(filtered ?? data, functionName);
-return ret.length === 0
-  ? []
-  : ret.length > 1
-  ? ret
-  : returnSingleAsObject
-  ? ret[0]
-  : ret;
+  const ret = _getQueryResult(filtered ?? data, functionName).filter(
+    (r) => r !== null
+  );
+  return ret.length === 0
+    ? []
+    : ret.length > 1
+    ? ret
+    : returnSingleAsObject
+    ? ret[0]
+    : ret;
 };
 
 //
 const _getQueryResult = (data: QueryResult, fn: string) => {
-  return data.rows.map((row: QueryResultRow) => row[fn]);
+  const ret = data.rows.map((row: QueryResultRow) => row[fn]);
+  if (!ret.some((v) => Array.isArray(v))) {
+    return ret;
+  }
+  const flattened = ret.reduce((prev, curr) =>
+    Array.isArray(curr) ? [...prev, ...curr] : [...prev, curr]
+  );
+  return flattened;
 };
 
 //
