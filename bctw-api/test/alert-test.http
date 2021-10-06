@@ -1,0 +1,12 @@
+# get alerts
+http://localhost:3000/get-user-alerts?idir={{idir}}
+
+
+### fail - 
+POST http://localhost:3000/update-user-alert?idir=xyz HTTP/1.1
+content-type: application/json
+
+{
+}
+
+### -

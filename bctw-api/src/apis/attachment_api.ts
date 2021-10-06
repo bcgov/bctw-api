@@ -39,7 +39,7 @@ const attachDevice = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, pg_link_collar_fn)[0]);
+  return res.send(getRowResults(result, pg_link_collar_fn, true));
 }
 
 /**
@@ -59,7 +59,7 @@ const unattachDevice = async function (
     return res.status(500).send(error.message);
   }
   console.log(sql);
-  return res.send(getRowResults(result, pg_unlink_collar_fn)[0]);
+  return res.send(getRowResults(result, pg_unlink_collar_fn, true));
 }
 
 /**
@@ -82,7 +82,7 @@ const updateDataLife = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, pg_update_data_life_fn)[0]);
+  return res.send(getRowResults(result, pg_update_data_life_fn, true));
 }
 
 /**

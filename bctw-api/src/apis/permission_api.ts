@@ -79,7 +79,7 @@ const submitPermissionRequest = async function (
   const { result, error } = await query(sql, '', true);
   if (!error) {
     // send email notification to the admin
-    const rows = getRowResults(result, fn_submit_perm_request)[0];
+    const rows = getRowResults(result, fn_submit_perm_request, true);
     handlePermissionSubmittedEmail(rows as IPermissionRequest[]);
   }
   const data =
@@ -123,7 +123,7 @@ const approveOrDenyPermissionRequest = async function (
     was_denied_reason
   ]);
   const { result, error, isError } = await query(sql, '', true);
-  const row = !isError ? getRowResults(result, fn_execute_perm_request)[0] : undefined;
+  const row = !isError ? getRowResults(result, fn_execute_perm_request, true) : undefined;
   // send an email notification if the request was denied to the manager
   if (!isError&& !is_grant) {
     handlePermissionDeniedEmail(row as IPermissionRequest);

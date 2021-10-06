@@ -19,7 +19,7 @@ const getUserTelemetryAlerts = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name)[0]);
+  return res.send(getRowResults(result, fn_name));
 }
 
 /**
@@ -38,7 +38,7 @@ const updateUserTelemetryAlert = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name)[0]);
+  return res.send(getRowResults(result, fn_name, true));
 }
 
 export { getUserTelemetryAlerts, updateUserTelemetryAlert }

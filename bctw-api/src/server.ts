@@ -40,7 +40,7 @@ const app = express()
     // fetch the domain/username user ID
     const { result } = await query(sql);
     // valid users will have an integer user id
-    const registered = typeof getRowResults(result, fn_get_user_id_domain) === 'number';
+    const registered = typeof getRowResults(result, fn_get_user_id_domain, true) === 'number';
     if (registered) {
       next(); // pass through
     } else if (!registered && matchAny(req.url, Object.values(unauthorizedURLs))) {
