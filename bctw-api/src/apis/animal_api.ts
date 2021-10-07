@@ -33,7 +33,7 @@ const _upsertAnimal = async function (
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
-    createBulkResponse(bulkResp, getRowResults(result, pg_upsert_animal_fn)[0]);
+    createBulkResponse(bulkResp, getRowResults(result, pg_upsert_animal_fn));
   }
   return bulkResp;
 };

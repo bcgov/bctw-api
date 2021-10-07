@@ -38,7 +38,8 @@ const updateUserTelemetryAlert = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_name, true));
+  // don't return individual result object in this case as the db can handle more than one
+  return res.send(getRowResults(result, fn_name));
 }
 
 export { getUserTelemetryAlerts, updateUserTelemetryAlert }
