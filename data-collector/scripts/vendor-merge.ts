@@ -10,5 +10,9 @@ const callback = (err) => {
   }
 };
 
-const sql = `refresh materialized view vendor_merge_view_no_critter; refresh materialized view latest_transmissions`;
+const sql = `
+  refresh materialized view vendor_merge_view_no_critter;
+  refresh materialized view latest_transmissions;
+  call bctw.proc_check_for_missing_telemetry();
+`;
 pgPool.query(sql, callback);
