@@ -63,22 +63,22 @@ const getUserOnboardStatus = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const [domain, identifier ] = getUserIdentifierDomain(req);
-  const sql = `select access from bctw.onboarding where domain = '${domain}' and username = '${identifier}'`;
-  const { result, error, isError } = await query(sql);
-  // If there's an error return a 500, otherwise return the results
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  if (!result.rowCount) {
-    return res.send(null);
-  }
-  return res.send(result.rows[0]);
+const [domain, identifier] = getUserIdentifierDomain(req);
+const sql = `select access, email, valid_from, valid_to from bctw.onboarding where domain = '${domain}' and username = '${identifier}'`;
+const { result, error, isError } = await query(sql);
+// If there's an error return a 500, otherwise return the results
+if (isError) {
+  return res.status(500).send(error.message);
+}
+if (!result.rowCount) {
+  return res.send(null);
+}
+return res.send(result.rows[0]);
 }
 
 export {
   getOnboardingRequests,
-  getUserOnboardStatus ,
+  getUserOnboardStatus,
   handleOnboardingRequest,
   submitOnboardingRequest,
 };

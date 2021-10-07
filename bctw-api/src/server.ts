@@ -18,8 +18,7 @@ const upload = multer({ dest: 'bctw-api/build/uploads' });
 // only these urls can pass through unauthorized
 const unauthorizedURLs: Record<string, string> = {
   status: '/get-onboard-status',
-  submit: '/submit-onboarding-request',
-  // route: 'onboarding',
+  submit: '/submit-onboarding-request'
 };
 
 const app = express()

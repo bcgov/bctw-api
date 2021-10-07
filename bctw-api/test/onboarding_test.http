@@ -63,7 +63,7 @@ content-type: application/json
 	"phone": "321-123-1232",
 	"email": "test@mail.com",
 	"role_type": "{{validrole}}",
-	"username": "hithere"
+	"username": "{{onboard_username_exists}}"
 }
 
 ### should succeed 
@@ -79,6 +79,20 @@ content-type: application/json
 	"email": "test@mail.com",
 	"role_type": "{{validrole}}",
 	"username": "imanewguy"
+}
+
+### although this request exists, this should succeed 
+### as the request is in denied state.
+POST http://localhost:3000/submit-onboarding-request?idir=imanewguy HTTP/1.1
+content-type: application/json
+
+{
+	"domain": "bceid",
+	"access": "{{validaccess}}",
+	"phone": "321-123-1232",
+	"email": "test@mail.com",
+	"role_type": "{{validrole}}",
+	"username": "{{onboard_username_exists_but_denied}}"
 }
 
 ### retrieve existing requests
@@ -149,3 +163,6 @@ http://localhost:3000/get-onboard-status?idir={{idir}}
 
 ###
 http://localhost:3000/get-onboard-status?bceid=hithere
+
+### should be denied
+http://localhost:3000/get-onboard-status?bceid=kmb_bctw_observer3
