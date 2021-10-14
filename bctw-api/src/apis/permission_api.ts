@@ -158,6 +158,7 @@ const DISABLE_PERMISSION_EMAIL = process.env.DISABLE_PERMISSION_EMAILS === 'true
  */
 const handlePermissionSubmittedEmail = async (rows: IPermissionRequest[]): Promise<void> => {
   if (DISABLE_PERMISSION_EMAIL|| !rows.length) {
+    console.log('handlePermissionSubmittedEmail: emails disabled, exiting')
     return;
   }
   const request = rows[0];

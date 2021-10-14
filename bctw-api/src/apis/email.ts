@@ -49,6 +49,7 @@ const sendEmail = async (
 ): Promise<void> => {
   const hash = createAuthHash();
   const emailFrom = EMAIL_ENV.fromEmail;
+  console.log(`email to: ${emailTo} env config: ${JSON.stringify(EMAIL_ENV)}`)
 
   const tokenParcel = await axios.post(
     completeTokenURL,

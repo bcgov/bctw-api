@@ -7,7 +7,8 @@ if (!isProd) {
 }
 const pgPort = +(isProd ? process.env.POSTGRES_SERVER_PORT ?? 5432 : 5432) as number;
 const pgHost = (isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost') as string;
-const ROLLBACK = (process.env.ROLLBACK ?? true) && !isProd;
+// always commit if in production
+const ROLLBACK = (process.env.ROLLBACK === 'true') && !isProd;
 
 console.log('node env:', process.env.NODE_ENV);
 console.log('database port', pgPort);

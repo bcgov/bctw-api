@@ -196,10 +196,10 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
   for (const alert of alerts) {
     const {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType} = alert;
     
-    // if alert triggered for this device within the last 36 hours, the "cooldown period", skip this alert
+    // if there is already an alert for this device, skip it
     const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek);
     if (isDuplicateAlert) {
-      console.log(`alert with device_id ${nDeviceID} already found within the cooldown period, skip. ${JSON.stringify(alert)}`)
+      console.log(`alert with device_id ${nDeviceID} already found, skip. ${JSON.stringify(alert)}`)
       continue;
     }
 

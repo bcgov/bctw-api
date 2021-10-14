@@ -46,9 +46,7 @@ const getLastAlertTimestamp = async (alert_table: string, device_make: eVendorTy
 
 /**
  * @returns a bool depending on if there is an existing alert present in the 
- * telemetry alert table where:
- *    a) the device ID and device make match
- *    b) the alert was created less than 36 hours ago (within the cooldown period)
+ * telemetry alert table where the device ID and device make match
  */
 const getIsDuplicateAlert = async (alert_table: string, device_id: number, device_make: eVendorType): Promise<boolean> => {
   const sql = `
@@ -56,7 +54,6 @@ const getIsDuplicateAlert = async (alert_table: string, device_id: number, devic
     where device_make = '${device_make}'
     and device_id = ${device_id}
     and is_valid(valid_to)
-    and valid_from >= now() - INTERVAL '36 hours'
   `;
   const result = await queryAsync(sql);
   if (result.rowCount) {
