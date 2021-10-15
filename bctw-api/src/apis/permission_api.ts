@@ -79,7 +79,7 @@ const submitPermissionRequest = async function (
   const { result, error } = await query(sql, '', true);
   if (!error) {
     // send email notification to the admin
-    const rows = getRowResults(result, fn_submit_perm_request, true);
+    const rows = getRowResults(result, fn_submit_perm_request);
     handlePermissionSubmittedEmail(rows as IPermissionRequest[]);
   }
   const data =
@@ -157,15 +157,19 @@ const DISABLE_PERMISSION_EMAIL = process.env.DISABLE_PERMISSION_EMAILS === 'true
  * that a manager has a pending permission request
  */
 const handlePermissionSubmittedEmail = async (rows: IPermissionRequest[]): Promise<void> => {
-  if (DISABLE_PERMISSION_EMAIL|| !rows.length) {
+  if (DISABLE_PERMISSION_EMAIL) {
     console.log('handlePermissionSubmittedEmail: emails disabled, exiting')
     return;
+  }
+  if (!rows?.length) {
+    console.log('handlePermissionSubmittedEmail: no requests to process, exiting');
   }
   const request = rows[0];
   // these details will be the same for all rows
   const { requested_by_email, requested_by_name, request_comment } = request;
   const requested_for = rows.map(r => r.requested_for_email).join(', ');
   const cp = rows.map(r => `<i>WLH ID:</i> ${r.wlh_id}, <i>Animal ID:</i> ${r.animal_id}, <i>Species:</i> ${r.species}, <i>permission requested:</i> ${r.permission_type}`);
+
   const content = 
   `<div>
     <b>Requester is:</b> ${requested_by_name ?? requested_by_email}<br>
@@ -185,6 +189,11 @@ const handlePermissionSubmittedEmail = async (rows: IPermissionRequest[]): Promi
  */
 const handlePermissionDeniedEmail = async (request: IPermissionRequest): Promise<void> => {
   if (DISABLE_PERMISSION_EMAIL || !request) {
+    console.log('handlePermissionDeniedEmail: emails disabled, exiting')
+    return;
+  }
+  if (!request) {
+    console.log('handlePermissionDeniedEmail: no denied request to process, exiting')
     return;
   }
   // confirm requester's email exists
