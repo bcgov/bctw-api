@@ -14,7 +14,7 @@ import { sendEmail } from './email';
 const fn_submit_perm_request = 'submit_permission_request';
 const fn_execute_perm_request = 'execute_permission_request';
 
-interface ICritterPermissionRequest 
+interface ICritterPermissionRequest
   extends Pick<Animal, 'critter_id' | 'wlh_id' | 'animal_id' | 'species'> {
   critter_id: string;
   permission_type: eCritterPermission;
@@ -99,7 +99,7 @@ const getPermissionRequests = async function (
   res: Response
 ): Promise<Response> {
   const sql = constructGetQuery({
-    base: `select * from ${S_API}.permission_requests_v where was_granted is null`,
+    base: `select * from ${S_API}.permission_requests_v where status = 'pending'`,
   });
   const { result, error } = await query(sql);
   return handleResponse(res, result?.rows, error);
@@ -120,12 +120,14 @@ const approveOrDenyPermissionRequest = async function (
     userIdentifier,
     request_id,
     is_grant,
-    was_denied_reason
+    was_denied_reason,
   ]);
-  const { result, error, isError } = await query(sql, '', true);
-  const row = !isError ? getRowResults(result, fn_execute_perm_request, true) : undefined;
+  const { result, error, isError } = await query(sql, '', );
+  const row = !isError
+    ? getRowResults(result, fn_execute_perm_request, true)
+    : undefined;
   // send an email notification if the request was denied to the manager
-  if (!isError&& !is_grant) {
+  if (!isError && !is_grant) {
     handlePermissionDeniedEmail(row as IPermissionRequest);
   }
   return handleResponse(res, row, error);
@@ -151,14 +153,17 @@ const getGrantedPermissionHistory = async function (
   return handleResponse(res, result?.rows, error);
 };
 
-const DISABLE_PERMISSION_EMAIL = process.env.DISABLE_PERMISSION_EMAILS === 'true';
+const DISABLE_PERMISSION_EMAIL =
+  process.env.DISABLE_PERMISSION_EMAILS === 'true';
 /**
  * send request submitted notification to the admin, notifying them
  * that a manager has a pending permission request
  */
-const handlePermissionSubmittedEmail = async (rows: IPermissionRequest[]): Promise<void> => {
+const handlePermissionSubmittedEmail = async (
+  rows: IPermissionRequest[]
+): Promise<void> => {
   if (DISABLE_PERMISSION_EMAIL) {
-    console.log('handlePermissionSubmittedEmail: emails disabled, exiting')
+    console.log('handlePermissionSubmittedEmail: emails disabled, exiting');
     return;
   }
   if (!rows?.length) {
@@ -167,33 +172,41 @@ const handlePermissionSubmittedEmail = async (rows: IPermissionRequest[]): Promi
   const request = rows[0];
   // these details will be the same for all rows
   const { requested_by_email, requested_by_name, request_comment } = request;
-  const requested_for = rows.map(r => r.requested_for_email).join(', ');
-  const cp = rows.map(r => `<i>WLH ID:</i> ${r.wlh_id}, <i>Animal ID:</i> ${r.animal_id}, <i>Species:</i> ${r.species}, <i>permission requested:</i> ${r.permission_type}`);
+  const requested_for = rows.map((r) => r.requested_for_email).join(', ');
+  const cp = rows.map(
+    (r) =>
+      `<i>WLH ID:</i> ${r.wlh_id}, <i>Animal ID:</i> ${r.animal_id}, <i>Species:</i> ${r.species}, <i>permission requested:</i> ${r.permission_type}`
+  );
 
-  const content = 
-  `<div>
+  const content = `<div>
     <b>Requester is:</b> ${requested_by_name ?? requested_by_email}<br>
     <b>The request is for:</b> ${requested_for}<br>
-    ${request_comment ? `<b>the request comment is:</b> ${request_comment}</b><br>` : ''}
+    ${
+      request_comment
+        ? `<b>the request comment is:</b> ${request_comment}</b><br>`
+        : ''
+    }
     <b>To get access to:</b><br>
-    ${cp.map(permission => `${permission}<br>`)}
+    ${cp.map((permission) => `${permission}<br>`)}
   </div>
   `;
   sendEmail(content, 'Animal permission request submitted');
-}
+};
 
 /**
  * send denied request notification to the manager
  * todo: should managers get notifications when granted?
  * todo: should the users that were actually granted the permissions get notified?
  */
-const handlePermissionDeniedEmail = async (request: IPermissionRequest): Promise<void> => {
+const handlePermissionDeniedEmail = async (
+  request: IPermissionRequest
+): Promise<void> => {
   if (DISABLE_PERMISSION_EMAIL || !request) {
-    console.log('handlePermissionDeniedEmail: emails disabled, exiting')
+    console.log('handlePermissionDeniedEmail: emails disabled, exiting');
     return;
   }
   if (!request) {
-    console.log('handlePermissionDeniedEmail: no denied request to process, exiting')
+    console.log('handlePermissionDeniedEmail: no denied request to process, exiting');
     return;
   }
   // confirm requester's email exists
@@ -202,8 +215,7 @@ const handlePermissionDeniedEmail = async (request: IPermissionRequest): Promise
     console.log('could not find requestors email address');
     return;
   }
-  const content = 
-  `
+  const content = `
   <div>
     Your permission request was <b>denied</b>, you may need to resubmit it.<br><br>
     <b>The reason was:</b> ${request.was_denied_reason}<br>
@@ -213,8 +225,12 @@ const handlePermissionDeniedEmail = async (request: IPermissionRequest): Promise
       <b>to:</b> ${request.wlh_id ?? request.animal_id} (${request.species});
   </div>
   `;
-  sendEmail(content, `Animal permission request ${request.request_id} denied`, requested_by_email);
-}
+  sendEmail(
+    content,
+    `Animal permission request ${request.request_id} denied`,
+    requested_by_email
+  );
+};
 
 export {
   approveOrDenyPermissionRequest,
