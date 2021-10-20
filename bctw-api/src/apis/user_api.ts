@@ -228,26 +228,19 @@ const upsertUDF = async function (
 
 /**
  * retrieves UDFs for the user specified in @param req.idir
- * similar to the @function upsertUDF, this currently retrieves groups
- * of critter IDs for the provided user
+ * similar to the @function upsertUDF
  */
 const getUDF = async function (
   req: Request,
   res: Response
 ) : Promise<Response> {
-  const id = getUserIdentifier(req);
-  const udf_type = req.query.type as string;
-  const sql = 
-  `
-    SELECT * FROM ${S_API}.user_defined_fields_v
-    WHERE user_id = ${fn_get_user_id}('${id}')
-    AND type = '${udf_type}'
-  `;
-  const { result, error, isError } = await query(sql, '');
+  const fn_name = 'get_udf';
+  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), req.query.type]);
+  const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(result.rows);
+  return res.send(getRowResults(result, fn_name));
 }
 
 

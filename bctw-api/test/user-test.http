@@ -126,10 +126,18 @@ GET http://localhost:3000/get-user?idir={{idirDNE}}
 ### Get alerts
 GET http://localhost:3000/get-user-alerts?idir={{idir}}
 
-### get critter groups
+### get critter groups udfs for idir user
 GET http://localhost:3000/get-udf?idir={{idir}}&type=critter_group
+### get collective unit udfs for idir user
+GET http://localhost:3000/get-udf?idir={{idir}}&type=collective_unit
 
-###
+### get collective unit udfs for bceid user
+GET http://localhost:3000/get-udf?bceid=kmb_bctw_editor3&type=collective_unit
+
+### get critter group udfs for bceid user
+GET http://localhost:3000/get-udf?bceid=kmb_bctw_editor3&type=critter_group
+
+### add a udf
 POST http://localhost:3000/add-udf?idir={{idir}} HTTP/1.1
 content-type: application/json
 
