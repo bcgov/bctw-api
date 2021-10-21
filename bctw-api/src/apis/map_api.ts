@@ -10,10 +10,9 @@ import { HistoricalTelemetryInput } from '../types/point';
  * Request all collars the user has access to.
  */
 const getDBCritters = function (req: Request, res: Response): void {
-  const {idir, start, end, unassigned } = req.query;
+  const {start, end, unassigned } = req.query;
   const fn_name = unassigned === 'true' ? 'get_unattached_telemetry' : 'get_telemetry';
-  const sql = `select geojson from ${S_BCTW}.${fn_name}('${idir}', '${start}', '${end}')`;
-  console.log('SQL: ', sql);
+  const sql = `select geojson from ${S_BCTW}.${fn_name}('${getUserIdentifier(req)}', '${start}', '${end}')`;
 
   const done = function (err, data) {
     if (err) {

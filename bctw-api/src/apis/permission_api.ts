@@ -122,7 +122,7 @@ const approveOrDenyPermissionRequest = async function (
     is_grant,
     was_denied_reason,
   ]);
-  const { result, error, isError } = await query(sql, '', );
+  const { result, error, isError } = await query(sql, '', true);
   const row = !isError
     ? getRowResults(result, fn_execute_perm_request, true)
     : undefined;

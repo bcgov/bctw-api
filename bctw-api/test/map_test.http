@@ -1,0 +1,12 @@
+
+# get pings with a bceid
+GET http://localhost:3000/get-critters?start=2021-10-11&end=2021-10-18&unassigned=false&bceid=kmb_bctw_editor3 HTTP/1.1
+
+### get pings with idir 
+GET http://localhost:3000/get-critters?start=2021-10-11&end=2021-10-18&unassigned=false&idir={{idir}} HTTP/1.1
+
+### get tracks with bceid
+GET http://localhost:3000/get-critter-tracks?start=2021-10-11&end=2021-10-18&unassigned=false&bceid=kmb_bctw_editor3 HTTP/1.1
+
+### get tracks with idir
+GET http://localhost:3000/get-critter-tracks?start=2021-10-11&end=2021-10-18&unassigned=false&idir={{idir}} HTTP/1.1
