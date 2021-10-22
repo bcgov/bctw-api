@@ -12,31 +12,10 @@ import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { fn_user_critter_access_array } from './user_api';
 
-export const pg_upsert_animal_fn = 'upsert_animal';
-const pg_get_critter_history = 'get_animal_history';
+const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
-// currently attached collars
-export const cac_v = `${S_API}.currently_attached_collars_v`;
-
-// split so it can be used directly in the bulk import
-const _upsertAnimal = async function (
-  userIdentifier: string,
-  animals: Animal[]
-): Promise<IBulkResponse> {
-  const bulkResp: IBulkResponse = { errors: [], results: [] };
-  const sql = constructFunctionQuery(
-    pg_upsert_animal_fn,
-    [userIdentifier, animals],
-    true
-  );
-  const { result, error, isError } = await query(sql, '', true);
-  if (isError) {
-    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
-  } else {
-    createBulkResponse(bulkResp, getRowResults(result, pg_upsert_animal_fn));
-  }
-  return bulkResp;
-};
+const fn_get_critter_history = 'get_animal_history';
+const cac_v = `${S_API}.currently_attached_collars_v`;
 
 /**
  * body can be single or array of Animals
@@ -46,9 +25,15 @@ const upsertAnimal = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req) as string;
+  const bulkResp: IBulkResponse = { errors: [], results: [] };
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const bulkResp: IBulkResponse = await _upsertAnimal(id, animals);
+  const sql = constructFunctionQuery(fn_upsert_animal, [getUserIdentifier(req), animals], true);
+  const { result, error, isError } = await query(sql, '', true);
+  if (isError) {
+    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
+  } else {
+    createBulkResponse(bulkResp, getRowResults(result, fn_upsert_animal));
+  }
   return res.send(bulkResp);
 };
 
@@ -149,7 +134,7 @@ const getAnimalHistory = async function (
     return res.status(500).send(`animal_id must be supplied`);
   }
   const sql = constructFunctionQuery(
-    pg_get_critter_history,
+    fn_get_critter_history,
     [id, animal_id],
     false,
     S_API
@@ -161,15 +146,15 @@ const getAnimalHistory = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, pg_get_critter_history));
+  return res.send(getRowResults(result, fn_get_critter_history));
 };
 
 export {
   deleteAnimal,
   upsertAnimal,
-  _upsertAnimal,
   getAnimal,
   getAnimals,
   getAnimalHistory,
-  pg_get_critter_history,
+  fn_get_critter_history,
+  cac_v
 };

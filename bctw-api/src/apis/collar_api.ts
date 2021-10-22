@@ -8,37 +8,23 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { filterFromRequestParams, getUserIdentifier, handleQueryError } from '../database/requests';
+import {
+  filterFromRequestParams,
+  getUserIdentifier,
+  handleQueryError,
+} from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
-import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
+import { IBulkResponse } from '../types/import_types';
 import { IFilter, TelemetryType } from '../types/query';
 import { cac_v } from './animal_api';
 import { fn_user_critter_access_array } from './user_api';
 
-const pg_upsert_collar = 'upsert_collar';
-const pg_get_collar_history = 'get_collar_history';
-const pg_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
+const fn_upsert_collar = 'upsert_collar';
+const fn_get_collar_history = 'get_collar_history';
+const fn_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
 const deviceIDSort = 'c.device_id desc';
 
-// split to be exported and used in bulk/csv endpoints
-const upsertCollars = async function(
-  userIdentifier: string,
-  rows: IAnimalDeviceMetadata[]
-): Promise<IBulkResponse> {
-  const bulkResp: IBulkResponse = { errors: [], results: [] };
-  const sql = constructFunctionQuery(pg_upsert_collar, [userIdentifier, rows], true);
-  const { result, error, isError } = await query(sql, '', true);
-  if (isError) {
-    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
-  } else {
-    createBulkResponse(bulkResp, getRowResults(result, pg_upsert_collar)[0]);
-  }
-  return bulkResp;
-}
-
 /**
- * @param idir user idir
- * @param collar a list of collars
  * @returns the result of the insert/upsert in the bulk rseponse format
  */
 const upsertCollar = async function (
@@ -46,7 +32,18 @@ const upsertCollar = async function (
   res: Response
 ): Promise<Response> {
   const collars = !Array.isArray(req.body) ? [req.body] : req.body;
-  const bulkResp: IBulkResponse = await upsertCollars(getUserIdentifier(req) as string, collars);
+  const bulkResp: IBulkResponse = { errors: [], results: [] };
+  const sql = constructFunctionQuery(
+    fn_upsert_collar,
+    [getUserIdentifier(req), collars],
+    true
+  );
+  const { result, error, isError } = await query(sql, '', true);
+  if (isError) {
+    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
+  } else {
+    createBulkResponse(bulkResp, getRowResults(result, fn_upsert_collar)[0]);
+  }
   return res.send(bulkResp);
 };
 
@@ -67,7 +64,7 @@ const deleteCollar = async function (
 };
 
 /**
- * @returns a list of collars that are not attached to a critter that the user created. 
+ * @returns a list of collars that are not attached to a critter that the user created.
  * If the user has admin role they can see all unattached collars
  */
 
@@ -80,8 +77,12 @@ const getUnattachedDeviceSQL = function (
 ): string {
   const base = `
     SELECT 
-      ${getAllProps ? 'c.*,' : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_model, c.activation_status,'}
-      ${pg_get_collar_permission}('${username}', c.collar_id) AS "permission_type"
+      ${
+        getAllProps
+          ? 'c.*,'
+          : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_model, c.activation_status,'
+      }
+      ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type"
     FROM ${S_API}.collar_v c 
     WHERE c.collar_id not in (
       SELECT collar_id FROM ${cac_v})
@@ -91,8 +92,18 @@ const getUnattachedDeviceSQL = function (
     )
     ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
 
-  const strFilter = appendSqlFilter(filter || {}, TelemetryType.collar, 'c', true);
-  const sql = constructGetQuery({ base, filter: strFilter, order: deviceIDSort, page });
+  const strFilter = appendSqlFilter(
+    filter || {},
+    TelemetryType.collar,
+    'c',
+    true
+  );
+  const sql = constructGetQuery({
+    base,
+    filter: strFilter,
+    order: deviceIDSort,
+    page,
+  });
   return sql;
 };
 
@@ -103,7 +114,11 @@ const getAvailableCollars = async function (
   res: Response
 ): Promise<Response> {
   const page = (req.query?.page || 1) as number;
-  const sql = getUnattachedDeviceSQL(getUserIdentifier(req) as string, page, filterFromRequestParams(req));
+  const sql = getUnattachedDeviceSQL(
+    getUserIdentifier(req) as string,
+    page,
+    filterFromRequestParams(req)
+  );
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve available collars'
@@ -130,8 +145,12 @@ const getAttachedDeviceSQL = function (
   SELECT 
     ca.assignment_id,
     ca.attachment_start, ca.attachment_end, ca.data_life_start, ca.data_life_end,
-    ${getAllProps ? 'c.*,' : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_model, c.activation_status,'}
-    ${pg_get_collar_permission}('${username}', c.collar_id) AS "permission_type",
+    ${
+      getAllProps
+        ? 'c.*,'
+        : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_model, c.activation_status,'
+    }
+    ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type",
     a.*,
     ${getLastPingSQL}
   FROM ${cac_v} ca
@@ -144,7 +163,12 @@ const getAttachedDeviceSQL = function (
   if (filter && filter.id) {
     filterStr = `AND c.collar_id = '${filter.id}'`;
   }
-  const sql = constructGetQuery({ base, order: deviceIDSort, filter: filterStr, page });
+  const sql = constructGetQuery({
+    base,
+    order: deviceIDSort,
+    filter: filterStr,
+    page,
+  });
   return sql;
 };
 
@@ -153,7 +177,11 @@ const getAssignedCollars = async function (
   res: Response
 ): Promise<Response> {
   const page = (req.query?.page || 1) as number;
-  const sql = getAttachedDeviceSQL(getUserIdentifier(req) as string, page, filterFromRequestParams(req));
+  const sql = getAttachedDeviceSQL(
+    getUserIdentifier(req) as string,
+    page,
+    filterFromRequestParams(req)
+  );
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve assigned collars'
@@ -165,19 +193,23 @@ const getAssignedCollars = async function (
 };
 
 /**
- * retrieve an individual collar 
+ * retrieve an individual collar
  */
 const getCollar = async function (
   username: string,
   collar_id: string,
   res: Response
 ): Promise<Response> {
-  const isAttached = await query(`select 1 from ${cac_v} where collar_id = '${collar_id}'`);
+  const isAttached = await query(
+    `select 1 from ${cac_v} where collar_id = '${collar_id}'`
+  );
   if (isAttached.isError) {
     return handleQueryError(isAttached, res);
   }
-  const sql = isAttached.result.rowCount > 0 
-    ? getAttachedDeviceSQL(username, 0, undefined, true, collar_id) : getUnattachedDeviceSQL(username, 0, undefined, true, collar_id)
+  const sql =
+    isAttached.result.rowCount > 0
+      ? getAttachedDeviceSQL(username, 0, undefined, true, collar_id)
+      : getUnattachedDeviceSQL(username, 0, undefined, true, collar_id);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
@@ -196,7 +228,12 @@ const getCollarChangeHistory = async function (
   if (!collar_id) {
     return res.status(500).send(`collar_id and idir must be supplied in query`);
   }
-  const sql = constructFunctionQuery(pg_get_collar_history, [getUserIdentifier(req), collar_id], false, S_API);
+  const sql = constructFunctionQuery(
+    fn_get_collar_history,
+    [getUserIdentifier(req), collar_id],
+    false,
+    S_API
+  );
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve collar history'
@@ -204,16 +241,15 @@ const getCollarChangeHistory = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, pg_get_collar_history));
+  return res.send(getRowResults(result, fn_get_collar_history));
 };
 
 export {
   upsertCollar,
-  upsertCollars,
   deleteCollar,
   getCollar,
   getAssignedCollars,
   getAvailableCollars,
   getCollarChangeHistory,
-  pg_get_collar_history,
+  fn_get_collar_history,
 };

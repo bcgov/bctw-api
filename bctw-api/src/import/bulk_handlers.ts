@@ -1,4 +1,7 @@
 import { QueryResultRow } from 'pg';
+import { constructFunctionQuery, getRowResults, query } from '../database/query';
+import { IAnimal } from '../types/animal';
+import { ICollar } from '../types/collar';
 import { IBulkResponse, IImportError } from '../types/import_types';
 
 const doResultsHaveErrors = (row: QueryResultRow | QueryResultRow[]): boolean => {
@@ -21,4 +24,26 @@ const createBulkResponse = (ret: IBulkResponse, row: QueryResultRow | QueryResul
   }
 };
 
-export { createBulkResponse };
+const fn_upsert_bulk_animal = 'upsert_animal_bulk';
+const fn_upsert_bulk_collar = 'upsert_collar_bulk';
+/**
+ * upserts bulk animals or devices via csv
+ */
+const upsertBulk = async function (
+  username: string,
+  rows: IAnimal[] | ICollar[],
+  type: 'animal' | 'device' 
+): Promise<IBulkResponse> {
+  const fn_name = type === 'animal' ? fn_upsert_bulk_animal : fn_upsert_bulk_collar;
+  const bulkResp: IBulkResponse = { errors: [], results: [] };
+  const sql = constructFunctionQuery(fn_name, [username, rows], true);
+  const { result, error, isError } = await query(sql, '', true);
+  if (isError) {
+    bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
+  } else {
+    createBulkResponse(bulkResp, getRowResults(result, fn_name));
+  }
+  return bulkResp;
+};
+
+export { createBulkResponse, upsertBulk };

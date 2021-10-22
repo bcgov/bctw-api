@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { pg_get_critter_history } from '../apis/animal_api';
-import { pg_get_collar_history } from '../apis/collar_api';
+import { fn_get_critter_history } from '../apis/animal_api';
+import { fn_get_collar_history } from '../apis/collar_api';
 import { S_API } from '../constants';
 import { constructFunctionQuery, query } from '../database/query';
 import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
@@ -30,10 +30,10 @@ const movementSQL = (idir: string, id: string, range: MapRange): string =>
   makeQuery(pg_movement_history, idir, id, range);
 
 const animalSQL = (idir: string, id: string, range: MapRange): string => 
-  makeQuery(pg_get_critter_history, idir, id, range);
+  makeQuery(fn_get_critter_history, idir, id, range);
 
 const deviceSQL = (idir: string, id: string, range: MapRange): string => 
-  makeQuery(pg_get_collar_history, idir, id, range);
+  makeQuery(fn_get_collar_history, idir, id, range);
 
 const getExportData = async function (
   req: Request,

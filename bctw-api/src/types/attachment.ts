@@ -25,4 +25,7 @@ interface IChangeDataLifeProps extends Pick<IRemoveDeviceProps, 'assignment_id'>
   data_life_end: Date | string;
 }
 
-export type { IAttachDeviceProps, IRemoveDeviceProps, IChangeDataLifeProps };
+// specifically for the bulk handlers, when a 'historical' attachment can be imported
+type HistoricalAttachmentProps = IAttachDeviceProps & IDataLifeEndProps;
+
+export type { IAttachDeviceProps, IRemoveDeviceProps, IChangeDataLifeProps, HistoricalAttachmentProps };

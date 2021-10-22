@@ -1,14 +1,9 @@
 import csv from 'csv-parser';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
-
-import { upsertAnimal, _upsertAnimal } from '../apis/animal_api';
-import { addCode } from '../apis/code_api';
-import { upsertCollar, upsertCollars } from '../apis/collar_api';
 import { constructFunctionQuery, query } from '../database/query';
-import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
+import { getUserIdentifier } from '../database/requests';
 import { Animal, IAnimal } from '../types/animal';
-import { CodeInput } from '../types/code';
 import { HistoricalTelemetryInput } from '../types/point';
 import { Collar, ICollar } from '../types/collar';
 import {
@@ -16,30 +11,39 @@ import {
   IBulkResponse,
   ICrittersWithDevices,
   isAnimal,
-  isCode,
+  isAnimalAndDevice,
   isCollar,
   isHistoricalTelemtry,
 } from '../types/import_types';
 import { cleanupUploadsDir, mapCsvHeader, removeEmptyProps, rowToCsv } from './import_helpers';
 import { upsertPointTelemetry } from '../apis/map_api';
 import { pg_link_collar_fn } from '../apis/attachment_api';
-import { IAttachDeviceProps } from '../types/attachment';
+import { HistoricalAttachmentProps } from '../types/attachment';
+import dayjs from 'dayjs';
+import { upsertBulk } from './bulk_handlers';
+
+type ParsedCSVResult = {
+  both: IAnimalDeviceMetadata[];
+  animals: IAnimal[];
+  collars: ICollar[];
+  points: HistoricalTelemetryInput[];
+}
 
 /**
  * parses the csv file
  * @param file
  * @param callback called when parsing completed
- * @returns an object containing arrays of records that were parsed
+ * @returns {ParsedCSVResult} an object containing arrays of records that were parsed
  */
-const parseCsv = async (
+const parseCSV = async (
   file: Express.Multer.File,
-  callback: (rowObj: Record<string, unknown[]>) => void
+  callback: (rowObj: ParsedCSVResult) => void
 ) => {
-  const codes: CodeInput[] = [];
+  const both: IAnimalDeviceMetadata[] = [];
   const animals: IAnimal[] = [];
   const collars: ICollar[] = [];
   const points: HistoricalTelemetryInput[] = []; 
-  const ret = { codes, animals, collars, points };
+  const ret: ParsedCSVResult = { both, animals, collars, points };
 
   fs.createReadStream(file.path)
     .pipe(
@@ -52,17 +56,19 @@ const parseCsv = async (
     .on('data', (row: Record<string, unknown>) => {
       // remove any null values from the row
       const crow = removeEmptyProps(row);
-      if (isCode(crow)) {
-        codes.push(crow);
+
+      if (isAnimalAndDevice(crow)) {
+        both.push(crow);
         return;
       }
+
       if (isHistoricalTelemtry(crow)) {
         points.push(crow);
         return;
       }
-      // a row can contain both animal and collar metadata
       if (isAnimal(crow)) {
         animals.push(crow);
+        return;
       }
       if (isCollar(crow)) {
         collars.push(crow);
@@ -70,60 +76,61 @@ const parseCsv = async (
     })
     .on('end', async () => {
       console.log(
-        `CSV file ${file.path} processed\ncodes: ${codes.length},\ncritters: ${animals.length},\ncollars: ${collars.length}\ntelemetry: ${points.length}`
+        `CSV file ${file.path} processed\ncritters: ${animals.length},\ncollars: ${collars.length}\ntelemetry: ${points.length}`
       );
       await callback(ret);
     });
 };
 
 /**
- * handles the insertion of CSV rows that are considered to contain animal and device metadata
- * if device_id is present in the row, attempt to attach it before sending the response
- * @param idir the idir of the user performing the upload
- * @param rows the parsed CSV rows to be added to db
- * @returns the response object with a bulk response object
+ * handles the insertion of CSV rows that both contain animal and device metadata
+ * if device_id is present in the row, attach it before sending the response
+ * @param username - the user performing the upload
+ * @param rows - the parsed to be inserted
+ * @returns {IBulkResponse}
  */
 const handleBulkMetadata = async (
-  res: Response,
-  idir: string,
+  username: string,
   rows: IAnimalDeviceMetadata[]
-): Promise<Response> => {
-  // list of animals that need to have the collar attached
+): Promise<IBulkResponse> => {
+  // list of animals that need to have the device attached
   const animalsWithDevices: ICrittersWithDevices[] = rows
     .map((row, idx) => ({ rowIndex: idx, row }))
     .filter((r) => r.row.device_id);
   
   const ret: IBulkResponse = {errors: [], results: []};
 
-  // upsert the collar metadata first
-  const collarResults = await upsertCollars(idir, rows);
+  /**
+   * perform the upserts in order of device => animal => device/animal attachment
+   * if any errors are encountered at each step, return the @type {IBulkResponse} 
+   * object immediately
+   */
+
+  const collarResults = await upsertBulk(username, rows, 'device');
   if (collarResults.errors.length) {
-    return res.send(collarResults);
+    return collarResults;
   } else {
     ret.results.push({'success': `${collarResults.results.length} devices were successfully added`});
   }
-  // then the critter metadata
-  const animalResults = await _upsertAnimal(idir, rows);
+
+  const animalResults = await upsertBulk(username, rows, 'animal');
   if (animalResults.errors.length) {
-    return res.send(animalResults);
+    return animalResults;
   } else {
     ret.results.push({'success': `${animalResults.results.length} animals were successfully added`});
   }
+
   // if there were no errors until this point, attach the collars to the critters
-  if (
-    animalsWithDevices.length &&
-    !collarResults.errors.length &&
-    !animalResults.errors.length
-  ) {
+  if (animalsWithDevices.length && !collarResults.errors.length && !animalResults.errors.length) {
     await handleCollarCritterLink(
-      idir,
+      username,
       animalResults.results as Animal[],
       collarResults.results as Collar[],
       animalsWithDevices,
       ret
     );
   }
-  return res.send(ret);
+  return ret;
 };
 
 /**
@@ -134,7 +141,7 @@ const handleBulkMetadata = async (
  * @param bulkResp the bulk response object
  */
 const handleCollarCritterLink = async (
-  idir: string,
+  username: string,
   critterResults: Animal[],
   collarResults: Collar[],
   crittersWithCollars: ICrittersWithDevices[],
@@ -156,23 +163,29 @@ const handleCollarCritterLink = async (
           });
           return;
         }
-        // const body: IAttachDeviceProps = {
-        // fixme: todo:
-        const body = {
+        /**
+         * ignore data life start/end here
+         * 
+         * an attachment begins at the animal capture date, or is defaulted to the current timestamp
+         * 
+         * the attachment is considered ended if one of the following dates are present:
+         * a) the mortality date
+         * b) the collar retrieval date
+         */
+        const attachment_start = savedCritter.capture_date ?? dayjs();
+        const attachment_end = savedCritter.mortality_date ?? c.row.retrieval_date ?? null;
+
+        const body: HistoricalAttachmentProps = {
           collar_id: matchingCollar.collar_id,
           critter_id: savedCritter.critter_id,
-          // an attachment begins at the animal capture date
-          // valid_from: savedCritter.capture_date ?? momentNow(),
-          /* 
-            and is considered ended if any of the following dates are present:
-            a) the mortality date
-            b) the collar retrieval date
-          */
-          // valid_to: savedCritter.mortality_date ?? c.row.retrieval_date,
+          attachment_start,
+          data_life_start: attachment_start,
+          attachment_end,
+          data_life_end: attachment_start
         };
-        const params = [idir, ...Object.values(body)];
-        const sql = constructFunctionQuery(pg_link_collar_fn, params);
-        const result = await query(sql);
+        const fnParams = [username, ...Object.values(body)];
+        const sql = constructFunctionQuery(pg_link_collar_fn, fnParams);
+        const result = await query(sql, '', true);
         return result;
       }
     })
@@ -202,57 +215,43 @@ const handleCollarCritterLink = async (
 
   * see the @function bctw.upsert_animal and @function bctw.upsert_collar for more details
   * the database functions will attempt to convert text versions of columns
-  * that are stored as codes into their code IDs, but will revert to null if 
-  * a column if it can't be found. Ex. device_make: 'Vectronics' should be 'Vectronic',
-  * and this value would end up as null in the collar record
+  * that are stored as codes into their code IDs, and will throw an error if 
+  * it can't be found. Ex. device_make: 'Vectronics' should be 'Vectronic'
 */
 const importCsv = async function (req: Request, res: Response): Promise<void> {
-  const id = getUserIdentifier(req);
-  if (!id) {
-    res.status(500).send(MISSING_USERNAME);
-  }
+  const id = getUserIdentifier(req) as string;
   const file = req.file;
   if (!file) {
     res.status(500).send('failed: csv file not found');
   }
 
-  const onFinishedParsing = async (rows: Record<string, any[]>) => {
-    const { codes, animals, collars, points } = rows;
+  // define the callback to pass to the csv parser
+  const onFinishedParsing = async (obj: ParsedCSVResult) => {
+    const { animals, collars, points, both } = obj;
+    // couldn't identify anything to import
+    if (![...animals, ...collars, ...points, ...both].length) {
+      return res.status(404).send('import failed - rows did not match any known type');
+    }
     try {
-      if (codes.length) {
-        req.body.codes = codes; // add parsed codes to the request
-        return await addCode(req, res);
-      } 
-      // when there is historical telemetry points
+      let r = {} as IBulkResponse;
       if (points.length) {
-        const r: IBulkResponse = await upsertPointTelemetry(id as string, points);
-        return res.send(r);
+        r = await upsertPointTelemetry(id, points);
+      } else if (both.length) {
+        r = await handleBulkMetadata(id, both);
+      } else if (collars.length) {
+        r = await upsertBulk(id, collars, 'device');
+      } else if (animals.length) {
+        r = await upsertBulk(id, animals, 'device');
       }
-      // when there is only collar metadata
-      if (collars.length && !animals.length) {
-        req.body = collars; // add parsed devices to the request
-        return await upsertCollar(req, res);
-      }
-      // when there is only animal metadata
-      if (animals.length && !collars.length) {
-        req.body = animals;
-        return await upsertAnimal(req, res);
-      }
-      // otherwise, assuming csv rows contain device and animal metadata
-      if (animals.length) {
-        handleBulkMetadata(res, id as string, animals);
-      } else {
-        return res
-          .status(404)
-          .send('import failed - rows did not match any known BCTW type');
-      }
+      // return the bulk results object
+      return res.send(r);
     } catch (e) {
       res.status(500).send(e);
     } finally {
       cleanupUploadsDir(file.path);
     }
   };
-  await parseCsv(file, onFinishedParsing);
+  await parseCSV(file, onFinishedParsing);
 };
 
 export { importCsv };

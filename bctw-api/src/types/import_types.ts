@@ -1,48 +1,41 @@
 import { QueryResultRow } from 'pg';
 import { Animal as IAnimal } from './animal';
-import { CodeHeaderInput, CodeInput } from './code';
 import { ICollar } from './collar';
 import { HistoricalTelemetryInput } from './point';
 
 const isAnimal = (row: Record<string, unknown>): boolean => {
-  if (row.animal_id || row.wlh_id || row.animal_status) {
+  if (row.critter_id || row.animal_id || row.wlh_id || row.animal_status) {
     return true;
   }
   return false;
 };
 
 const isCollar = (row: Record<string, unknown>): boolean => {
-  if (row.device_id) {
+  if (row.collar_id || row.device_id) {
     return true;
   }
   return false;
 };
 
-const isCode = (row: Record<string, unknown>): row is CodeInput => {
-  const r = row as unknown as CodeInput;
-  if (r.code_name && r.code_header) {
-    return true;
-  }
-  return false;
-};
-
-const isCodeHeader = (row: Record<string, unknown>): row is CodeHeaderInput => {
-  const r = row as unknown as CodeHeaderInput;
-  if (r.code_header_name && r.code_header_description && r.code_header_title) {
-    return true;
-  }
-  return false;
+const isAnimalAndDevice = (row: Record<string, unknown>): boolean => {
+  return !!(row.device_id && (row.animal_id || row.wlh_id));
 };
 
 // a csv row must contain all properties to be considered a point
 // todo: historical telemetry for vhf collars may not have a device ID, but may have a frequency?
 const isHistoricalTelemtry = <T>(row: T): boolean => {
-  const r = row as unknown as HistoricalTelemetryInput;
-  if (r.date_recorded && r.device_vendor && r.latitude && r.longitude && (r.frequency || r.device_id)) {
+  const r = (row as unknown) as HistoricalTelemetryInput;
+  if (
+    r.date_recorded &&
+    r.device_vendor &&
+    r.latitude &&
+    r.longitude &&
+    (r.frequency || r.device_id)
+  ) {
     return true;
   }
   return false;
-}
+};
 
 export interface IImportError {
   error: string;
@@ -56,16 +49,10 @@ export interface IBulkResponse {
 }
 
 export interface ICrittersWithDevices {
-  rowIndex: number,
-  row: IAnimalDeviceMetadata
+  rowIndex: number;
+  row: IAnimalDeviceMetadata;
 }
 
-export {
-  isAnimal,
-  isCollar,
-  isCodeHeader,
-  isCode,
-  isHistoricalTelemtry,
-};
+export { isAnimalAndDevice, isAnimal, isCollar, isHistoricalTelemtry };
 
 export interface IAnimalDeviceMetadata extends IAnimal, ICollar {}
