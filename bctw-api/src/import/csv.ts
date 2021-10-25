@@ -61,7 +61,6 @@ const parseCSV = async (
         both.push(crow);
         return;
       }
-
       if (isHistoricalTelemtry(crow)) {
         points.push(crow);
         return;
@@ -213,7 +212,6 @@ const handleCollarCritterLink = async (
     2) once finished, pass any parsed rows to their handler functions and perform the upserts 
     3) delete the uploaded csv file
 
-  * see the @function bctw.upsert_animal and @function bctw.upsert_collar for more details
   * the database functions will attempt to convert text versions of columns
   * that are stored as codes into their code IDs, and will throw an error if 
   * it can't be found. Ex. device_make: 'Vectronics' should be 'Vectronic'
@@ -241,7 +239,7 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
       } else if (collars.length) {
         r = await upsertBulk(id, collars, 'device');
       } else if (animals.length) {
-        r = await upsertBulk(id, animals, 'device');
+        r = await upsertBulk(id, animals, 'animal');
       }
       // return the bulk results object
       return res.send(r);

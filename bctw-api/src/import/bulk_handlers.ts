@@ -24,8 +24,7 @@ const createBulkResponse = (ret: IBulkResponse, row: QueryResultRow | QueryResul
   }
 };
 
-const fn_upsert_bulk_animal = 'upsert_animal_bulk';
-const fn_upsert_bulk_collar = 'upsert_collar_bulk';
+const fn_upsert_bulk = 'upsert_bulk';
 /**
  * upserts bulk animals or devices via csv
  */
@@ -34,14 +33,13 @@ const upsertBulk = async function (
   rows: IAnimal[] | ICollar[],
   type: 'animal' | 'device' 
 ): Promise<IBulkResponse> {
-  const fn_name = type === 'animal' ? fn_upsert_bulk_animal : fn_upsert_bulk_collar;
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  const sql = constructFunctionQuery(fn_name, [username, rows], true);
+  const sql = constructFunctionQuery(fn_upsert_bulk, [username, type, rows], true);
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
-    createBulkResponse(bulkResp, getRowResults(result, fn_name));
+    createBulkResponse(bulkResp, getRowResults(result, fn_upsert_bulk));
   }
   return bulkResp;
 };
