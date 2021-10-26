@@ -200,18 +200,10 @@ const assignCritterToUser = async function (
   return res.send({ errors, results });
 };
 
-type UDF = {
-  udf_id: number;
-  user_id: number;
-  type: string;
-  key: string;
-  value: string;
-}
-
 /**
- * currently used to save user animal groups, this function
+ * used to save user animal groups and collective units this 
  * calls a database routine that will replace the udf with the contents
- * of the @param req.body
+ * of the @param req.body for the udf type provided
  */
 const upsertUDF = async function (
   req: Request,

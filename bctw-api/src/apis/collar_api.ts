@@ -59,7 +59,7 @@ const deleteCollar = async function (
 ): Promise<Response> {
   const fn_name = 'delete_collar';
   const sql = constructFunctionQuery(fn_name, [userIdentifier, collarIds]);
-  const { result, error, isError } = await query(sql, '', true);
+  const { error, isError } = await query(sql, '', true);
   return isError ? res.status(500).send(error.message) : res.status(200).send();
 };
 
@@ -80,7 +80,7 @@ const getUnattachedDeviceSQL = function (
       ${
         getAllProps
           ? 'c.*,'
-          : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_model, c.activation_status,'
+          : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status,'
       }
       ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type"
     FROM ${S_API}.collar_v c 
@@ -148,10 +148,10 @@ const getAttachedDeviceSQL = function (
     ${
       getAllProps
         ? 'c.*,'
-        : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_model, c.activation_status,'
+        : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status,'
     }
     ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type",
-    a.*,
+    a.critter_id, a.animal_id, a.wlh_id,
     ${getLastPingSQL}
   FROM ${cac_v} ca
   JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id

@@ -50,15 +50,14 @@ const deleteAnimal = async function (
 ): Promise<Response> {
   const fn_name = 'delete_animal';
   const sql = constructFunctionQuery(fn_name, [userIdentifier, critterIds]);
-  const { result, error, isError } = await query(sql, '', true);
+  const { error, isError } = await query(sql, '', true);
   return isError ? res.status(500).send(error.message) : res.status(200).send();
 };
 
 // generate SQL for retrieving animals that are attached to a device
 const _getAssignedCritterSQL = (username: string, critter_id?: string, getAllProps = false) =>
-// todo: re-add frequency
   `SELECT
-      c.assignment_id, c.device_id, c.collar_id,
+      c.assignment_id, c.device_id, c.collar_id, c.frequency,
       c.attachment_start, c.data_life_start, c.data_life_end, c.attachment_end,
       ${getAllProps ? 'a.*,' : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'}
       ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
