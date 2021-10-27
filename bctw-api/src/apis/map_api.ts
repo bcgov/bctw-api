@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { S_BCTW, S_API } from '../constants';
+import { S_BCTW } from '../constants';
 import { pgPool } from '../database/pg';
 import { query, constructFunctionQuery, getRowResults } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
@@ -40,7 +40,7 @@ const getCritterTracks = async function (
   if (!start || !end) {
     return res.status(404).send('Must have a valid start and end date');
   }
-  const userStr = getUserIdentifier(req);
+  const username = getUserIdentifier(req);
   const sql = unassigned === 'true' ? 
   `
     select
@@ -53,7 +53,7 @@ const getCritterTracks = async function (
       'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
     ) as "geojson"
   from
-    ${S_BCTW}.get_unattached_telemetry('${userStr}', '${start}', '${end}')
+    get_unattached_telemetry('${username}', '${start}', '${end}')
   where
     st_asText(geom) <> 'POINT(0 0)'
   group by
@@ -72,7 +72,7 @@ const getCritterTracks = async function (
         'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
       ) as "geojson"
     from
-      ${S_BCTW}.get_telemetry('${userStr}', '${start}', '${end}')
+      get_telemetry('${username}', '${start}', '${end}')
     where
       critter_id is not null and
       st_asText(geom) <> 'POINT(0 0)'
@@ -147,7 +147,6 @@ const getCritterTracks = async function (
  * view vendor_merge_view is refreshed, currently only scheduled once a day.
  * If a record that has the same device ID and date_recorded are added, 
  * it will be considered a duplicate and not inserted. No errors will be thrown.
- * @param userIdentifier user idir/bceid
  * @param records array of @type {HistoricalTelemetryInput}
  * @returns a bulkresponse object
  * todo: may contain frequency instead of device_id?

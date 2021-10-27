@@ -3,7 +3,7 @@ import { fn_get_critter_history } from '../apis/animal_api';
 import { fn_get_collar_history } from '../apis/collar_api';
 import { S_API } from '../constants';
 import { constructFunctionQuery, query } from '../database/query';
-import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
+import { getUserIdentifier } from '../database/requests';
 
 enum eExportType {
   all = 'all',
@@ -18,22 +18,23 @@ type MapRange = {
 }
 
 const pg_movement_history = 'get_movement_history';
-const makeQuery = (query: string, idir: string, id: string, range: MapRange) => {
-  const params = [idir, id];
+
+const makeQuery = (query: string, username: string, id: string, range: MapRange) => {
+  const params = [username, id];
   if (range) {
     params.push(...[range.start, range.end])
   }
   return constructFunctionQuery(query, params, false, S_API);
 }
 
-const movementSQL = (idir: string, id: string, range: MapRange): string => 
-  makeQuery(pg_movement_history, idir, id, range);
+const movementSQL = (user: string, id: string, range: MapRange): string => 
+  makeQuery(pg_movement_history, user, id, range);
 
-const animalSQL = (idir: string, id: string, range: MapRange): string => 
-  makeQuery(fn_get_critter_history, idir, id, range);
+const animalSQL = (user: string, id: string, range: MapRange): string => 
+  makeQuery(fn_get_critter_history, user, id, range);
 
-const deviceSQL = (idir: string, id: string, range: MapRange): string => 
-  makeQuery(fn_get_collar_history, idir, id, range);
+const deviceSQL = (user: string, id: string, range: MapRange): string => 
+  makeQuery(fn_get_collar_history, user, id, range);
 
 const getExportData = async function (
   req: Request,
@@ -43,7 +44,7 @@ const getExportData = async function (
   const { type, range, collar_ids, critter_ids } = req.body;
   const username = getUserIdentifier(req) ;
   if (!username) {
-    return res.status(500).send(MISSING_USERNAME);
+    return res.status(500).send('username not provided');
   }
   const sqlStrings: string[] = [];
   switch (type) {

@@ -47,17 +47,16 @@ const upsertCollar = async function (
 };
 
 /**
- * @param userIdentifier - idir
  * @param collarIds - collars to delete
  * @returns boolean value on whether delete was successful
  */
 const deleteCollar = async function (
-  userIdentifier: string,
+  username: string,
   collarIds: string[],
   res: Response
 ): Promise<Response> {
   const fn_name = 'delete_collar';
-  const sql = constructFunctionQuery(fn_name, [userIdentifier, collarIds]);
+  const sql = constructFunctionQuery(fn_name, [username, collarIds]);
   const { error, isError } = await query(sql, '', true);
   return isError ? res.status(500).send(error.message) : res.status(200).send();
 };
@@ -214,7 +213,7 @@ const getCollarChangeHistory = async function (
 ): Promise<Response> {
   const collar_id = req.params?.collar_id;
   if (!collar_id) {
-    return res.status(500).send(`collar_id and idir must be supplied in query`);
+    return res.status(500).send(`collar_id must be supplied`);
   }
   const sql = constructFunctionQuery(
     fn_get_collar_history,

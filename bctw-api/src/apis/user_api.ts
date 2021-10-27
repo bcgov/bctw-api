@@ -43,12 +43,12 @@ const upsertUser = async function (
  * @returns a boolean indicating if the deletion was successful
 */
 const deleteUser = async function (
-  idir: string,
+  username: string,
   idToDelete: string,
   res: Response
 ): Promise<Response> {
   const fn_name = 'delete_user';
-  const sql = constructFunctionQuery(fn_name, [idir, idToDelete]);
+  const sql = constructFunctionQuery(fn_name, [username, idToDelete]);
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
@@ -80,29 +80,17 @@ const getUserRole = async function (
 };
 
 /**
- * @param idir - the user to retrieve
  * @returns @type {User} includes user role type
- * fixme: since this uses the request query params
- * it can only fetch the "current" user object.
+ * note: since this uses the request query params it can only fetch the "current" user object.
  */
 const getUser = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
-  if (!id) {
-    return res.status(500).send(MISSING_USERNAME);
-  }
   const fn_name = 'get_user';
-  const sql = constructFunctionQuery(fn_name, [id], false, S_API);
-  const { result, error, isError } = await query(
-    sql,
-    'failed to query user role'
-  );
+  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
+  const { result, error, isError } = await query(sql);
   if (isError) {
-    if (error.message.includes('couldnt find user')) {
-      return res.status(401).send(`Unauthorized, user with IDIR ${id} does not exist`);
-    }
     return res.status(500).send(error.message);
   }
   const results = getRowResults(result, fn_name, true);
@@ -117,9 +105,8 @@ const getUsers = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
   const fn_name = 'get_users';
-  const sql = constructFunctionQuery(fn_name, [id], false, S_API);
+  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
   const { result, error, isError } = await query(sql, 'failed to query users');
   if (isError) {
     return res.status(500).send(error.message);
@@ -129,7 +116,7 @@ const getUsers = async function (
 
 /**
  * @returns a list of critters the user has at least 'obesrver' access to
- * @param req.user IDIR of the user to get acccess for
+ * @param req.user username to get acccess for
  * @param filters array of @type {eCritterPermission} to retrieve
  * @returns list of @type {Animal} and attached device properties
  */
@@ -181,12 +168,11 @@ const assignCritterToUser = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const id = getUserIdentifier(req);
   const fn_name = 'grant_critter_to_user';
   const body: IUserCritterPermission[] = req.body;
   const promises = body.map((cp) => {
     const { userId, access } = cp;
-    const sql = constructFunctionQuery(fn_name, [id, userId, access], true);
+    const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), userId, access], true);
     return query(sql, `failed to grant user with id ${userId} access to animals`, true);
   });
   const resolved = await Promise.all(promises);
@@ -218,7 +204,7 @@ const upsertUDF = async function (
 }
 
 /**
- * retrieves UDFs for the user specified in @param req.idir
+ * retrieves UDFs for the user specified
  * similar to the @function upsertUDF
  */
 const getUDF = async function (

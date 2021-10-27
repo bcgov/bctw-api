@@ -143,10 +143,9 @@ const getGrantedPermissionHistory = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const userIdentifier = getUserIdentifier(req) as string;
   const page = (req.query?.page || 1) as number;
   const sql = constructGetQuery({
-    base: `select * from ${S_API}.permission_requests_v where requested_by = '${userIdentifier}'`,
+    base: `select * from ${S_API}.permission_requests_v where requested_by = '${getUserIdentifier(req)}'`,
     page,
   });
   const { result, error } = await query(sql);
