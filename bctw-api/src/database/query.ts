@@ -191,21 +191,19 @@ const _getPrimaryKey = (t: TelemetryType): string => {
 };
 
 // given a page number, return a string with the limit offset
-// note: disabled
 const paginate = (pageNumber: number): string => {
   if (isNaN(pageNumber)) {
     return '';
   }
-  const limit = 10;
+  const limit = 30;
   const offset = limit * pageNumber - limit;
-  // return `limit ${limit} offset ${offset};`;
-  return '';
+  return `limit ${limit} offset ${offset};`;
 };
 
 /**
  * todo: doc & improve
  */
-const appendSqlFilter = (
+const appendFilter = (
   filter: IFilter,
   table: TelemetryType,
   tableAlias?: string,
@@ -226,5 +224,5 @@ export {
   query,
   constructFunctionQuery,
   constructGetQuery,
-  appendSqlFilter,
+  appendFilter,
 };

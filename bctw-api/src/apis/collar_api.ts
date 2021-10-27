@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { S_API, S_BCTW } from '../constants';
 
 import {
-  appendSqlFilter,
   constructFunctionQuery,
   constructGetQuery,
   getRowResults,
@@ -15,7 +14,7 @@ import {
 } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IBulkResponse } from '../types/import_types';
-import { IFilter, TelemetryType } from '../types/query';
+import { IFilter } from '../types/query';
 import { cac_v } from './animal_api';
 import { fn_user_critter_access_array } from './user_api';
 
@@ -92,18 +91,7 @@ const getUnattachedDeviceSQL = function (
     )
     ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
 
-  const strFilter = appendSqlFilter(
-    filter || {},
-    TelemetryType.collar,
-    'c',
-    true
-  );
-  const sql = constructGetQuery({
-    base,
-    filter: strFilter,
-    order: deviceIDSort,
-    page,
-  });
+  const sql = constructGetQuery({ base, order: deviceIDSort, page });
   return sql;
 };
 

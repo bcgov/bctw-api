@@ -59,45 +59,13 @@ class VectronicKeyxRow implements IKeyX {
   }
 }
 
-// new collar device from a keyx file
-class VectronicDevice implements Pick<Collar, 'device_id' | 'device_deployment_status' | 'device_make' | 'satellite_network'> {
-  device_id: number;
-  device_deployment_status: string;
-  device_make: string;
-  satellite_network: string;
-
-  constructor(keyx: IKeyX) {
-    this.device_id = +keyx.idcollar;
-    this.satellite_network = keyx.comtype;
-    this.device_deployment_status = 'Not Deployed';
-    this.device_make = 'Vectronic';
-  }
-}
-
-const getCodeValueSQL = (header: string, description: string): string => 
-  `${S_BCTW}.get_code_value('${header}', '${description}')`;
-
-const createDeviceSQL = (keyx: IKeyX[], idir: string): string => {
-  const newDevices = keyx.map(k => new VectronicDevice(k));
-  return `insert into ${S_BCTW}.collar
-  (device_id, satellite_network, device_deployment_status, device_make, created_by_user_id)
-  values ${newDevices.map(nd => {
-    return `(${nd.device_id}, ${getCodeValueSQL('satellite_network', nd.satellite_network)}, ${getCodeValueSQL('device_deployment_status', nd.device_deployment_status)}, ${getCodeValueSQL('device_make', nd.device_make)}, ${S_BCTW}.get_user_id('${idir}'))`
-  })} returning *`;
-}
-
 /**
  * exposed as an API for handling the bulk import of Vectronic .keyx registration collars
  * parses the .keyx files and inserts results to the bctw.api_vectronics_collar_data table
  * to allow the data-collector module to retrieve telemetry records for the device
  */
 const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Promise<Response<IBulkResponse>> => {
-  const id = getUserIdentifier(req);
   const bulkResp: IBulkResponse = { errors: [], results: [] };
-  if (!id) {
-    bulkResp.errors.push({ row: '', error: MISSING_USERNAME, rownum: 0 });
-    return res.send(bulkResp);
-  }
   const files = req.files as Express.Multer.File[];
   const promises: Promise<QResult>[]= [];
 
@@ -110,9 +78,9 @@ const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Pr
     for (let idx = 0; idx < files.length; idx++) {
       const file = await readPromise(files[idx].path, {encoding: 'utf-8'});
       console.log('parseVectronicKeyRegistrationXML xml file read:', file);
-      const asJson = await new xml2js.Parser().parseStringPromise(file);
-      const k = new VectronicKeyxRow(asJson as IKeyXAsJson);
-      const sql = constructFunctionQuery(VECT_KEY_UPSERT_FN, [k.idcollar, k.comtype, k.idcom, k.collarkey, k.collartype], false);
+      const asJson: IKeyXAsJson = await new xml2js.Parser().parseStringPromise(file);
+      const { idcollar, comtype, idcom, collarkey, collartype } = new VectronicKeyxRow(asJson);
+      const sql = constructFunctionQuery(VECT_KEY_UPSERT_FN, [idcollar, comtype, idcom, collarkey, collartype], false);
       promises.push(query(sql, '', true))
     }
   }
@@ -122,24 +90,11 @@ const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Pr
   }
   const resolved = await Promise.all(promises);
   const errors = resolved.filter(r => r.isError).map(e => e.error);
-  // if there were errors registering the collars, return early
   if (errors.length) {
-    const errs = errors.map(e => {
-      return {row: '', error: e.message, rownum: 0};
-    })
-    bulkResp.errors.push(...errs);
-    return res.send(bulkResp);
+    bulkResp.errors.push(...errors.map(e => ({row: '', error: e.message, rownum: 0})));
   }
-  const results = resolved.filter(r => !r.isError).map(e => getRowResults(e.result, VECT_KEY_UPSERT_FN)[0]) as IKeyX[];
+  const results = resolved.filter(r => !r.isError).map(e => getRowResults(e.result, VECT_KEY_UPSERT_FN, true)) as IKeyX[];
   bulkResp.results.push(...results);
-  // note: disabling this as the collar will be created on metadata csv imports anyway?
-  // if registration was successful, generate sql to create new collar devices
-  // const newCollarSQL = createDeviceSQL(results, id);
-  // const ret = await query(newCollarSQL, '', false);
-  // if (ret.isError) {
-  //   bulkResp.errors.push({row: '', error: ret.error.message, rownum: -1});
-  // }
-  // bulkResp.results.push(...ret.result.rows);
   return res.send(bulkResp);
 };
 

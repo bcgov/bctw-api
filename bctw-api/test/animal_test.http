@@ -71,6 +71,9 @@ http://localhost:3000/get-animal-history/{{critter1_attached}}?bceid={{bceid1}}
 ### get critters with attached device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
 
+###
+http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=assigned
+
 ### get critters without device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned
 

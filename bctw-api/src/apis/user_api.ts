@@ -132,7 +132,6 @@ const getUsers = async function (
  * @param req.user IDIR of the user to get acccess for
  * @param filters array of @type {eCritterPermission} to retrieve
  * @returns list of @type {Animal} and attached device properties
- * todo: fix paging
  */
 const getUserCritterAccess = async function (
   req: Request,
@@ -153,7 +152,7 @@ const getUserCritterAccess = async function (
   }
   const base = constructFunctionQuery(fn_user_critter_access_json, params, false, S_API);
   const sql = constructGetQuery({base});
-  const { result, error, isError } = await query(sql, '');
+  const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
