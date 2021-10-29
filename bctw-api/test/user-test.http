@@ -111,8 +111,10 @@ content-type: application/json
 ### should succeed with my idir
 GET http://localhost:3000/get-users?idir={{idir}}
 
+# animal access permissions
+
 ### should succeed
-GET http://localhost:3000/get-critter-access/{{idir}}?idir={{idir}}
+GET http://localhost:3000/get-critter-access/{{idir}}?idir={{idir}}&keys=animal_id&term=68
 
 ### should fail
 GET http://localhost:3000/get-critter-access/sdf?idir={{idir}}

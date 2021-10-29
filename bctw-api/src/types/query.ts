@@ -6,9 +6,9 @@ export type QResult = {
   isError: boolean;
 };
 
-interface IFilter {
-  id?: string;
-  ids?: string[];
+type SearchFilter = {
+  keys: string[];
+  term: string;
 }
 
 interface IConstructQueryParameters {
@@ -30,7 +30,7 @@ type QueryResultCbFn = (err: Error, result?: QueryResult) => void
 
 export {
   IConstructQueryParameters,
-  IFilter,
   QueryResultCbFn,
   TelemetryType,
+  SearchFilter,
 }

@@ -34,12 +34,21 @@ content-type: application/json
 ### retrive collar history
 # http://localhost:3000/get-collar-history/{{collar1}}?idir={{idir}}
 
-### collar queries
-# get available collars
+
+### get unattached collars
 http://localhost:3000/get-available-collars?idir={{idir}}
+
+### get unattached collars with search term
+http://localhost:3000/get-available-collars?idir={{idir}}&column=device_id&keys=frequency&term=42
 
 ### get assigned collars
 http://localhost:3000/get-assigned-collars?idir={{idir}}
+
+### get assigned collars with filter
+http://localhost:3000/get-assigned-collars?idir={{idir}}&keys=animal_id&term=68
+
+### get assigned collars with filter
+http://localhost:3000/get-assigned-collars?idir={{idir}}&keys=animal_id&term=68&keys=wlh_id
 
 ### - should pass
 DELETE http://localhost:3000/collar/{{attached_collar}}?idir={{idir}} HTTP/1.1

@@ -1,25 +1,27 @@
-import { Request, Response } from "express";
-import { IFilter, QResult } from "../types/query";
+import { Request, Response } from 'express';
+import { QResult, SearchFilter } from '../types/query';
 
 const MISSING_USERNAME = 'must supply user identifier';
 
-// parses the request parameters or request query parameters to
-// create an IFilter
-const filterFromRequestParams = (req: Request): IFilter => {
-  let keys: string[] = Object.keys(req.params);
-  if (!keys.length) {
-    keys = Object.keys(req.query);
-  } 
-  if (keys.includes('id')) {
-    return {
-      id: req.params.id ?? req.query.id,
-    }
-  } else if (keys.includes('ids')) {
-    return {
-      ids: <string[]><unknown>req.params.ids
+/**
+ * parses the request query for 'column' and 'search' fields
+ * @returns {SearchFilter}
+ */
+const getFilterFromRequest = (req: Request): SearchFilter | undefined => {
+  const { query } = req;
+  const o = {} as SearchFilter;
+
+  for (const [key, value] of Object.entries(query)) {
+    if ((['keys', 'term'] as (keyof SearchFilter)[]).includes(key as keyof SearchFilter)) {
+      const k = String(key);
+      if (key === 'keys') {
+        o[k] = typeof value === 'string' ? [value] : Array.isArray(value) ? value : null;
+      } else if (key === 'term') {
+        o[k] = value;
+      }
     }
   }
-  return {};
+  return o.keys && o.term ? o : undefined;
 }
 
 /**
@@ -83,7 +85,7 @@ const matchAny = (url: string, potentialMatches: string[]): boolean => {
 export {
   getUserIdentifierDomain,
   getUserIdentifier,
-  filterFromRequestParams,
+  getFilterFromRequest,
   MISSING_USERNAME,
   handleQueryError,
   handleResponse,

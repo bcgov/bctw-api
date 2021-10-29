@@ -2,9 +2,8 @@ import { QueryResult, QueryResultRow } from 'pg';
 import { S_BCTW } from '../constants';
 import {
   IConstructQueryParameters,
-  IFilter,
+  SearchFilter,
   QResult,
-  TelemetryType,
 } from '../types/query';
 import { pgPool } from './pg';
 
@@ -21,7 +20,10 @@ const constructGetQuery = ({
   group,
   page,
 }: IConstructQueryParameters): string => {
-  let sql = `${base} ${filter ?? ''} `;
+  let sql = base;
+  if (filter) {
+    sql += filter;
+  }
   if (group) {
     sql += `group by ${group.join()} `;
   }
@@ -45,7 +47,8 @@ const constructFunctionQuery = (
   fnName: string,
   params: any[],
   expectsObjAsArray = false,
-  schema = S_BCTW
+  schema = S_BCTW,
+  returnsTable = false
 ): string => {
   const newParams: any[] = [];
   params.forEach((p) => {
@@ -65,7 +68,7 @@ const constructFunctionQuery = (
       newParams.push(to_pg_obj(p));
     }
   });
-  return `select ${schema}.${fnName}(${newParams.join()})`;
+  return `select ${returnsTable ? '* from' : ''} ${schema}.${fnName}(${newParams.join()})`;
 };
 
 // converts a js array to the postgres format
@@ -178,18 +181,6 @@ const transactionify = (sql: string): string => {
   return process.env.ROLLBACK ? `begin;${sql};rollback;` : sql;
 };
 
-// hardcoded primary key getter given a table name
-const _getPrimaryKey = (t: TelemetryType): string => {
-  switch (t) {
-    case TelemetryType.animal:
-      return 'critter_id';
-    case TelemetryType.collar:
-      return 'collar_id';
-    default:
-      return '';
-  }
-};
-
 // given a page number, return a string with the limit offset
 const paginate = (pageNumber: number): string => {
   if (isNaN(pageNumber)) {
@@ -201,23 +192,52 @@ const paginate = (pageNumber: number): string => {
 };
 
 /**
- * todo: doc & improve
+ * appends a basic search string 
+ * @param filter the @type {SearchFilter}
+ * @param sqlBase the sql query
+ * @param hasAlias does the select have a table alias?
  */
 const appendFilter = (
-  filter: IFilter,
-  table: TelemetryType,
-  tableAlias?: string,
-  containsWhere = false
+  filter: SearchFilter | undefined,
+  sqlBase: string,
+  hasAlias: boolean | string
 ): string => {
-  if (!Object.keys(filter).length) {
-    return '';
+  let sql = '';
+  if (!filter) {
+    return sql;
   }
-  let sql = `${containsWhere ? 'and' : 'where'} ${tableAlias ?? table}.`;
-  if (filter.id) {
-    sql += `${_getPrimaryKey(table)} = ${filter.id}`;
+  const hasWhere = sqlBase.toLowerCase().indexOf('where') !== -1;
+  const { keys, term } = filter;
+  for (let i = 0; i < keys.length; i++) {
+    const col = keys[i];
+    const isFirst = i === 0;
+    const limiter = isFirst && !hasWhere ? ' WHERE' : !isFirst && hasWhere ? 'OR' : 'AND';
+    let alias;
+    if (typeof hasAlias === 'string') {
+      alias = hasAlias;
+    } else {
+      alias = hasAlias ? `${determineTableAlias(col)}` : '';
+    }
+    sql += `${limiter} LOWER(${alias}${col}::varchar) LIKE '%${term}%'`;
   }
+  console.log(`(${sql})`)
   return sql;
 };
+
+/**
+ * based on the @param columnName provided, 
+ * returns the table alias
+ * assumes collar table is 'c' and animal is 'a'
+ */
+const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
+  if (['animal_id', 'wlh_id', 'population_unit', 'animal_status'].includes(columnName)) {
+    return 'a.';
+  }
+  else if (['device_id', 'frequency', 'device_make'].includes(columnName)) {
+    return 'c.';
+  }
+  return '';
+}
 
 export {
   getRowResults,

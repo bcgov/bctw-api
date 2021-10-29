@@ -1,26 +1,33 @@
 import { Request, Response } from 'express';
 import { S_API, S_BCTW } from '../constants';
 import {
+  appendFilter,
   constructFunctionQuery,
   constructGetQuery,
   getRowResults,
   query,
 } from '../database/query';
-import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
+import {
+  getFilterFromRequest,
+  getUserIdentifier,
+  MISSING_USERNAME,
+} from '../database/requests';
 import { eCritterPermission, IUserInput, eUserRole } from '../types/user';
 
 interface IUserProps {
   user: IUserInput;
   role: eUserRole;
 }
-const fn_user_critter_access_json = 'get_user_critter_access_json';
+// bctw_api schema function that returns a table
+const fn_user_critter_access_json = 'get_user_critter_access';
+// bctw schema function that returns an array of critter_ids the user has access to
 const fn_user_critter_access_array = `get_user_critter_access`;
 const fn_get_user_id = `get_user_id`;
 const fn_get_user_id_domain = `get_user_id_with_domain`;
 const fn_upsert_user = 'upsert_user';
 /**
  * adds or updates a new user. in order to update - the bctw.user.id field
- * must be present in the JSON. 
+ * must be present in the JSON.
  * @returns the JSON record reprenting the row in the user table
  */
 const upsertUser = async function (
@@ -28,7 +35,11 @@ const upsertUser = async function (
   res: Response
 ): Promise<Response> {
   const { user, role }: IUserProps = req.body;
-  const sql = constructFunctionQuery(fn_upsert_user, [getUserIdentifier(req), user, role]);
+  const sql = constructFunctionQuery(fn_upsert_user, [
+    getUserIdentifier(req),
+    user,
+    role,
+  ]);
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
@@ -36,12 +47,11 @@ const upsertUser = async function (
   return res.send(getRowResults(result, fn_upsert_user, true));
 };
 
-
 /**
  * expires a user
  * @param idToDelete ID of the user to be removed
  * @returns a boolean indicating if the deletion was successful
-*/
+ */
 const deleteUser = async function (
   username: string,
   idToDelete: string,
@@ -54,7 +64,7 @@ const deleteUser = async function (
     return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, fn_name, true));
-}
+};
 
 /**
  * @returns the user role as a string
@@ -69,10 +79,7 @@ const getUserRole = async function (
   }
   const fn_name = 'get_user_role';
   const sql = constructFunctionQuery(fn_name, [id]);
-  const { result, error, isError } = await query(
-    sql,
-    'failed to query user role'
-  );
+  const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -88,7 +95,12 @@ const getUser = async function (
   res: Response
 ): Promise<Response> {
   const fn_name = 'get_user';
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
+  const sql = constructFunctionQuery(
+    fn_name,
+    [getUserIdentifier(req)],
+    false,
+    S_API
+  );
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
@@ -98,7 +110,7 @@ const getUser = async function (
 };
 
 /**
- * @returns list of all @type {User} users 
+ * @returns list of all @type {User} users
  * will throw if @param id is not an administrator
  */
 const getUsers = async function (
@@ -106,8 +118,13 @@ const getUsers = async function (
   res: Response
 ): Promise<Response> {
   const fn_name = 'get_users';
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
-  const { result, error, isError } = await query(sql, 'failed to query users');
+  const sql = constructFunctionQuery(
+    fn_name,
+    [getUserIdentifier(req)],
+    false,
+    S_API
+  );
+  const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -137,13 +154,19 @@ const getUserCritterAccess = async function (
   if (filters) {
     params.push(String(filters).split(','));
   }
-  const base = constructFunctionQuery(fn_user_critter_access_json, params, false, S_API);
-  const sql = constructGetQuery({base});
+  const base = constructFunctionQuery(
+    fn_user_critter_access_json,
+    params,
+    false,
+    S_API,
+    true
+  );
+  const sql = constructGetQuery({base, filter: appendFilter(getFilterFromRequest(req), base, false)});
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send(getRowResults(result, fn_user_critter_access_json));
+  return res.send(result.rows);
 };
 
 interface ICritterAccess {
@@ -172,7 +195,11 @@ const assignCritterToUser = async function (
   const body: IUserCritterPermission[] = req.body;
   const promises = body.map((cp) => {
     const { userId, access } = cp;
-    const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), userId, access], true);
+    const sql = constructFunctionQuery(
+      fn_name,
+      [getUserIdentifier(req), userId, access],
+      true
+    );
     return query(sql, `failed to grant user with id ${userId} access to animals`, true);
   });
   const resolved = await Promise.all(promises);
@@ -186,7 +213,7 @@ const assignCritterToUser = async function (
 };
 
 /**
- * used to save user animal groups and collective units this 
+ * used to save user animal groups and collective units this
  * calls a database routine that will replace the udf with the contents
  * of the @param req.body for the udf type provided
  */
@@ -195,31 +222,35 @@ const upsertUDF = async function (
   res: Response
 ): Promise<Response> {
   const fn_name = 'upsert_udf';
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), req.body], true, S_BCTW);
+  const sql = constructFunctionQuery(
+    fn_name,
+    [getUserIdentifier(req), req.body],
+    true,
+    S_BCTW
+  );
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, fn_name, true));
-}
+};
 
 /**
  * retrieves UDFs for the user specified
  * similar to the @function upsertUDF
  */
-const getUDF = async function (
-  req: Request,
-  res: Response
-) : Promise<Response> {
+const getUDF = async function (req: Request, res: Response): Promise<Response> {
   const fn_name = 'get_udf';
-  const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), req.query.type]);
+  const sql = constructFunctionQuery(fn_name, [
+    getUserIdentifier(req),
+    req.query.type,
+  ]);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, fn_name));
-}
-
+};
 
 export {
   upsertUser,

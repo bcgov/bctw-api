@@ -2,19 +2,20 @@ import { Request, Response } from 'express';
 import { S_API, S_BCTW } from '../constants';
 
 import {
+  appendFilter,
   constructFunctionQuery,
   constructGetQuery,
   getRowResults,
   query,
 } from '../database/query';
 import {
-  filterFromRequestParams,
+  getFilterFromRequest,
   getUserIdentifier,
   handleQueryError,
 } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IBulkResponse } from '../types/import_types';
-import { IFilter } from '../types/query';
+import { SearchFilter } from '../types/query';
 import { cac_v } from './animal_api';
 import { fn_user_critter_access_array } from './user_api';
 
@@ -69,7 +70,7 @@ const deleteCollar = async function (
 const getUnattachedDeviceSQL = function (
   username: string,
   page: number,
-  filter?: IFilter,
+  filter?: SearchFilter,
   getAllProps = false,
   collar_id?: string
 ): string {
@@ -90,7 +91,12 @@ const getUnattachedDeviceSQL = function (
     )
     ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
 
-  const sql = constructGetQuery({ base, order: deviceIDSort, page });
+  const sql = constructGetQuery({
+    base,
+    order: deviceIDSort,
+    page,
+    filter: filter ? appendFilter(filter, base, true) : '',
+  });
   return sql;
 };
 
@@ -104,7 +110,7 @@ const getAvailableCollars = async function (
   const sql = getUnattachedDeviceSQL(
     getUserIdentifier(req) as string,
     page,
-    filterFromRequestParams(req)
+    getFilterFromRequest(req)
   );
   const { result, error, isError } = await query(
     sql,
@@ -124,7 +130,7 @@ const getAvailableCollars = async function (
 const getAttachedDeviceSQL = function (
   username: string,
   page: number,
-  filter?: IFilter,
+  filter?: SearchFilter,
   getAllProps = false,
   collar_id?: string
 ): string {
@@ -146,14 +152,10 @@ const getAttachedDeviceSQL = function (
   WHERE ca.critter_id = ANY(${S_BCTW}.${fn_user_critter_access_array}('${username}'))
   ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
 
-  let filterStr = '';
-  if (filter && filter.id) {
-    filterStr = `AND c.collar_id = '${filter.id}'`;
-  }
   const sql = constructGetQuery({
     base,
     order: deviceIDSort,
-    filter: filterStr,
+    filter: filter ? appendFilter(filter, base, true) : '',
     page,
   });
   return sql;
@@ -167,12 +169,9 @@ const getAssignedCollars = async function (
   const sql = getAttachedDeviceSQL(
     getUserIdentifier(req) as string,
     page,
-    filterFromRequestParams(req)
+    getFilterFromRequest(req)
   );
-  const { result, error, isError } = await query(
-    sql,
-    'failed to retrieve assigned collars'
-  );
+  const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }

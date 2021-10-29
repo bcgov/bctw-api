@@ -66,19 +66,25 @@ content-type: application/json
 http://localhost:3000/get-animal-history/{{critter1_attached}}?idir={{idir}}
 
 ### get history fail: no permission
-http://localhost:3000/get-animal-history/{{critter1_attached}}?bceid={{bceid1}}
+# http://localhost:3000/get-animal-history/{{critter1_attached}}?bceid={{bceid1}}
 
-### get critters with attached device
+### get atached animals page 1
 http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
 
-###
+### get attached animals page 2
 http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=assigned
 
 ### get critters without device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned
 
+### get unassigned critters (search wolf species)
+http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned&keys=species&term=wolf
+
+### get unassigned critters (search animal ID)
+http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned&keys=animal_id&term=30
+
 ### delete individual - fail (no permission)
-DELETE http://localhost:3000/animal/{{critter1_attached}}?bceid={{bceid1}} HTTP/1.1
+# DELETE http://localhost:3000/animal/{{critter1_attached}}?bceid={{bceid1}} HTTP/1.1
 
 ### should succeed
 DELETE http://localhost:3000/animal/{{critter1_attached}}?idir={{idir}} HTTP/1.1
