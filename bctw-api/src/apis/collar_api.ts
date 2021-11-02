@@ -58,8 +58,11 @@ const deleteCollar = async function (
 ): Promise<Response> {
   const fn_name = 'delete_collar';
   const sql = constructFunctionQuery(fn_name, [username, collarIds]);
-  const { error, isError } = await query(sql, '', true);
-  return isError ? res.status(500).send(error.message) : res.status(200).send();
+  const {result, error, isError } = await query(sql, '', true);
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, fn_name, true));
 };
 
 /**
