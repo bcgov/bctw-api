@@ -71,8 +71,11 @@ http://localhost:3000/get-animal-history/{{critter1_attached}}?idir={{idir}}
 ### get atached animals page 1
 http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
 
-### get attached animals page 2
+### get atached animals page 2
 http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=assigned
+
+### get attached animals page 3
+http://localhost:3000/get-animals?idir={{idir}}&page=3&critterType=assigned
 
 ### get critters without device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned

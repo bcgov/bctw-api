@@ -28,7 +28,8 @@ const constructGetQuery = ({
     sql += `group by ${group.join()} `;
   }
   if (order) {
-    sql += `order by ${order} `;
+    const mapped = order.map( o => `${o.field} ${o.order ?? 'asc'}`)
+    sql += `order by ${mapped.join(', ')} `;
   }
   if (page) {
     sql += paginate(page);

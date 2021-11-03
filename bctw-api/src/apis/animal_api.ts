@@ -71,7 +71,7 @@ const _getAttachedSQL = (username: string, page: number, search?: SearchFilter, 
     WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${username}'))
     ${critter_id ? ` AND a.critter_id = '${critter_id}'` : ''}`;
     const filter =  search ? appendFilter(search, base, true) : '';
-    return constructGetQuery({ base, page, filter });
+    return constructGetQuery({ base, page, filter, order: [{field: 'c.attachment_start ', order: 'desc'}, {field: 'c.device_id'}]});
 }
 
 // generate SQL for retrieving animals that are not attached to a device
@@ -83,7 +83,7 @@ const _getUnattachedSQL = (username: string, page: number, search?: SearchFilter
   WHERE cuc.critter_id = ANY(${fn_user_critter_access_array}('${username}'))
   ${critter_id ? ` AND cuc.critter_id = '${critter_id}'` : ''}`;
   const filter =  search ? appendFilter(search, base, 'cuc.') : '';
-  return constructGetQuery({ base, page, filter });
+  return constructGetQuery({ base, page, filter, order: [{ field: 'cuc.valid_from ', order: 'desc' }, {field: 'cuc.wlh_id'}] });
 }
 
 /**

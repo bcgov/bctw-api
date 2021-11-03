@@ -11,10 +11,15 @@ type SearchFilter = {
   term: string;
 }
 
+export type Order = {
+  field: string;
+  order?: 'desc' | 'asc';
+}
+
 interface IConstructQueryParameters {
   base: string,
   filter?: string,
-  order?: string,
+  order?: Order[],
   group?: string[],
   page?: number,
 }

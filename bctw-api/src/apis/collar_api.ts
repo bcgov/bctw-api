@@ -15,14 +15,14 @@ import {
 } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IBulkResponse } from '../types/import_types';
-import { SearchFilter } from '../types/query';
+import { Order, SearchFilter } from '../types/query';
 import { cac_v } from './animal_api';
 import { fn_user_critter_access_array } from './user_api';
 
 const fn_upsert_collar = 'upsert_collar';
 const fn_get_collar_history = 'get_collar_history';
 const fn_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
-const deviceIDSort = 'c.device_id desc';
+const deviceIDSort: Order[] = [{field: 'c.valid_from', order: 'desc'}, {field:  'c.device_id ', }];
 
 /**
  * @returns the result of the insert/upsert in the bulk rseponse format
