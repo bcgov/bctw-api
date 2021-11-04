@@ -7,7 +7,9 @@ import {
   query,
 } from '../database/query';
 import { getUserIdentifier, getUserIdentifierDomain } from '../database/requests';
-import { IHandleOnboardRequestInput } from '../types/user';
+import { userOnboardRequest } from '../templates/email_templates';
+import { IHandleOnboardRequestInput, OnboardUserInput } from '../types/user';
+import { sendEmail } from './email';
 
 /**
  * handler for when a new user submits a request for access to BCTW
@@ -17,11 +19,14 @@ const submitOnboardingRequest = async function (
   res: Response
 ): Promise<Response> {
   const fn_name = 'submit_onboarding_request';
-  const sql = constructFunctionQuery(fn_name, [req.body]);
+  const body: OnboardUserInput = req.body;
+  const { user } = body;
+  const sql = constructFunctionQuery(fn_name, [user]);
   const { result, error, isError } = await query(sql, undefined, true);
   if (isError) {
     return res.status(500).send(error.message);
   }
+  sendEmail(userOnboardRequest(body), `Access request for the BC Telemetry Warehouse: ${user.username}`);
   return res.send(getRowResults(result, fn_name, true));
 };
 

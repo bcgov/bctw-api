@@ -8,7 +8,6 @@ interface IUserInput {
   firstname: string;
   lastname: string;
   phone: number;
-  access: string; // note: deprecated
 }
 
 type DomainType = 'idir' | 'bceid';
@@ -20,6 +19,22 @@ interface IOnboardInput extends Pick<IUserInput, 'firstname' | 'lastname' | 'pho
   domain: DomainType;
   access: OnboardingStatus;
   role_type: eUserRole;
+  reason: string;
+}
+
+interface IOnboardEmailDetails {
+  populationUnit?: string;
+  projectManager?: string;
+  projectName?: string;
+  projectRole?: string;
+  region?: string;
+  species?: string;
+}
+
+// what the API receives from the frontend for a new user request
+type OnboardUserInput = {
+  user: IOnboardInput;
+  emailInfo: IOnboardEmailDetails;
 }
 
 // represents what an admin passes to grant/deny an onboard request
@@ -48,6 +63,7 @@ enum eCritterPermission {
 export {
   IUserInput,
   IOnboardInput,
+  OnboardUserInput,
   User,
   eUserRole,
   eCritterPermission,

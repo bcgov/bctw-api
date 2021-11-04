@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { S_API } from '../constants';
+import { DISABLE_PERMISSION_EMAIL, S_API } from '../constants';
 import {
   constructFunctionQuery,
   constructGetQuery,
@@ -7,45 +7,14 @@ import {
   query,
 } from '../database/query';
 import { getUserIdentifier, handleResponse } from '../database/requests';
-import { Animal } from '../types/animal';
-import { eCritterPermission } from '../types/user';
+import { permissionDeniedEmail, permissionSubmittedEmail } from '../templates/email_templates';
+import { IPermissionRequest, IPermissionRequestInput } from '../types/permission';
 import { sendEmail } from './email';
 
 const fn_submit_perm_request = 'submit_permission_request';
 const fn_execute_perm_request = 'execute_permission_request';
 
-interface ICritterPermissionRequest
-  extends Pick<Animal, 'critter_id' | 'wlh_id' | 'animal_id' | 'species'> {
-  critter_id: string;
-  permission_type: eCritterPermission;
-}
 
-/**
- * the object an manager submits for a request
- */
-interface IPermissionRequestInput {
-  user_email_list: string[];
-  critter_permissions_list: ICritterPermissionRequest[];
-  request_comment: string;
-}
-
-/**
- * what an admin sees in the requests page.
- * retrieved from the API schema view permission_request_v
- */
-interface IPermissionRequest extends ICritterPermissionRequest {
-  request_id: number;
-  requested_by: string;
-  requested_by_email: string;
-  requested_by_name: string;
-  requested_date: Date;
-  request_comment: string;
-  requested_for_email: string;
-  requested_for_name: string;
-  was_denied_reason: string;
-  was_granted: boolean;
-  valid_to: Date;
-}
 
 /**
  * the object the admin submits to grant / denty a permission request
@@ -77,10 +46,13 @@ const submitPermissionRequest = async function (
     request_comment,
   ]);
   const { result, error } = await query(sql, '', true);
-  if (!error) {
+  if (!error && !DISABLE_PERMISSION_EMAIL) {
     // send email notification to the admin
     const rows = getRowResults(result, fn_submit_perm_request);
-    handlePermissionSubmittedEmail(rows as IPermissionRequest[]);
+    const template = permissionSubmittedEmail(rows as IPermissionRequest[]);
+    if (template) {
+      sendEmail(template, 'Animal permission request submitted');
+    }
   }
   const data =
     result?.rowCount > 0
@@ -99,7 +71,7 @@ const getPermissionRequests = async function (
   res: Response
 ): Promise<Response> {
   const sql = constructGetQuery({
-    base: `select * from ${S_API}.permission_requests_v where status = 'pending'`,
+    base: `select * from ${S_API}.permission_requests_v where status = 'pending' and valid_to is null`,
   });
   const { result, error } = await query(sql);
   return handleResponse(res, result?.rows, error);
@@ -127,8 +99,12 @@ const approveOrDenyPermissionRequest = async function (
     ? getRowResults(result, fn_execute_perm_request, true)
     : undefined;
   // send an email notification if the request was denied to the manager
-  if (!isError && !is_grant) {
-    handlePermissionDeniedEmail(row as IPermissionRequest);
+  if (!isError && !is_grant && !DISABLE_PERMISSION_EMAIL) {
+    const requestResult = row as IPermissionRequest;
+    const template = permissionDeniedEmail(requestResult);
+    if (template) {
+      sendEmail(template, `Animal permission request ${request_id} denied`, requestResult.requested_by_email);
+    }
   }
   return handleResponse(res, row, error);
 };
@@ -152,84 +128,7 @@ const getGrantedPermissionHistory = async function (
   return handleResponse(res, result?.rows, error);
 };
 
-const DISABLE_PERMISSION_EMAIL =
-  process.env.DISABLE_PERMISSION_EMAILS === 'true';
-/**
- * send request submitted notification to the admin, notifying them
- * that a manager has a pending permission request
- */
-const handlePermissionSubmittedEmail = async (
-  rows: IPermissionRequest[]
-): Promise<void> => {
-  if (DISABLE_PERMISSION_EMAIL) {
-    console.log('handlePermissionSubmittedEmail: emails disabled, exiting');
-    return;
-  }
-  if (!rows?.length) {
-    console.log('handlePermissionSubmittedEmail: no requests to process, exiting');
-  }
-  const request = rows[0];
-  // these details will be the same for all rows
-  const { requested_by_email, requested_by_name, request_comment } = request;
-  const requested_for = rows.map((r) => r.requested_for_email).join(', ');
-  const cp = rows.map(
-    (r) =>
-      `<i>WLH ID:</i> ${r.wlh_id}, <i>Animal ID:</i> ${r.animal_id}, <i>Species:</i> ${r.species}, <i>permission requested:</i> ${r.permission_type}`
-  );
 
-  const content = `<div>
-    <b>Requester is:</b> ${requested_by_name ?? requested_by_email}<br>
-    <b>The request is for:</b> ${requested_for}<br>
-    ${
-      request_comment
-        ? `<b>the request comment is:</b> ${request_comment}</b><br>`
-        : ''
-    }
-    <b>To get access to:</b><br>
-    ${cp.map((permission) => `${permission}<br>`)}
-  </div>
-  `;
-  sendEmail(content, 'Animal permission request submitted');
-};
-
-/**
- * send denied request notification to the manager
- * todo: should managers get notifications when granted?
- * todo: should the users that were actually granted the permissions get notified?
- */
-const handlePermissionDeniedEmail = async (
-  request: IPermissionRequest
-): Promise<void> => {
-  if (DISABLE_PERMISSION_EMAIL || !request) {
-    console.log('handlePermissionDeniedEmail: emails disabled, exiting');
-    return;
-  }
-  if (!request) {
-    console.log('handlePermissionDeniedEmail: no denied request to process, exiting');
-    return;
-  }
-  // confirm requester's email exists
-  const { requested_by_email } = request;
-  if (!requested_by_email) {
-    console.log('could not find requestors email address');
-    return;
-  }
-  const content = `
-  <div>
-    Your permission request was <b>denied</b>, you may need to resubmit it.<br><br>
-    <b>The reason was:</b> ${request.was_denied_reason}<br>
-    <b>You submitted the request on:</b> ${request.requested_date}<br>
-      <b>for the user with email:</b> ${request.requested_for_email}<br>
-      <b>to grant permission type:</b> ${request.permission_type}<br>
-      <b>to:</b> ${request.wlh_id ?? request.animal_id} (${request.species});
-  </div>
-  `;
-  sendEmail(
-    content,
-    `Animal permission request ${request.request_id} denied`,
-    requested_by_email
-  );
-};
 
 export {
   approveOrDenyPermissionRequest,
