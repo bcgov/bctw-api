@@ -69,7 +69,7 @@ const getUserOnboardStatus = async function (
   res: Response
 ): Promise<Response> {
 const [domain, identifier] = getUserIdentifierDomain(req);
-const sql = `select access, email, valid_from, valid_to from bctw.onboarding where domain = '${domain}' and username = '${identifier}'`;
+const sql = `select access, email, valid_from, valid_to from bctw.onboarding where domain = '${domain}' and username = '${identifier}' order by valid_from desc limit 1`;
 const { result, error, isError } = await query(sql);
 // If there's an error return a 500, otherwise return the results
 if (isError) {
