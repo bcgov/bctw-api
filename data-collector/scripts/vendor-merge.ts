@@ -1,5 +1,5 @@
-import moment from "moment";
-import { pgPool } from "./db";
+import moment from 'moment';
+import { pgPool } from './utils/db';
 
 const callback = (err) => {
   const now = moment().utc();

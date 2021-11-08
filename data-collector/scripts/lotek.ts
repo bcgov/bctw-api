@@ -1,9 +1,9 @@
 import needle from 'needle';
-import { getIsDuplicateAlert, getLastAlertTimestamp, pgPool, queryAsync } from './db';
+import { getIsDuplicateAlert, getLastAlertTimestamp, pgPool, queryAsync } from './utils/db';
 const dayjs = require('dayjs');
-import { eVendorType, retrieveCredentials } from './credentials';
-import { ILotekAlert } from './types';
-import { formatNowUtc, nowUtc } from './ats/plugins/time';
+import { eVendorType, retrieveCredentials } from './utils/credentials';
+import { ILotekAlert } from 'types/lotek';
+import { formatNowUtc, nowUtc } from './utils/time';
 
 const ALERT_TABLE = 'telemetry_sensor_alert';
 // Store the access token globally
@@ -171,6 +171,9 @@ const getAlerts = async () => {
   const lastAlert = await getLastAlertTimestamp(ALERT_TABLE, eVendorType.lotek) ?? dayjs().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
   const filtered: ILotekAlert[] = body.filter((alert) => dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert)));
   console.log( `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`);
+  if (filtered.length) {
+    return;
+  }
   insertAlerts(filtered);
 };
 
@@ -188,13 +191,15 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
       "device_id",
       "device_make",
       "alert_type",
+      "latitude",
+      "longitude",
       "valid_from"
     ) values
   `;
   const newAlerts: string[] = [];
 
   for (const alert of alerts) {
-    const {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType} = alert;
+    const {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType, latitude, longitude} = alert;
     
     // if there is already an alert for this device, skip it
     const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek);
@@ -208,6 +213,8 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
         ${nDeviceID},
         '${eVendorType.lotek}',
         'mortality',
+        ${latitude},
+        ${longitude},
         '${dtTimestamp}'
       )`);
     }

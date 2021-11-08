@@ -1,6 +1,6 @@
 import pg, {QueryResult } from 'pg';
 import { Dayjs } from 'dayjs';
-import { eVendorType } from 'credentials';
+import { eVendorType } from './credentials';
 const dayjs = require('dayjs')
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;

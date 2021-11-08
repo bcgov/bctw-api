@@ -5,7 +5,7 @@ import {
   IDeviceReadingEvent,
   ITransmissionEvent,
 } from '../types';
-import { isWithin24Hrs, parseAsCT, parseAsLocal } from './time';
+import { isWithin24Hrs, parseAsCT, parseAsLocal } from '../../utils/time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
 

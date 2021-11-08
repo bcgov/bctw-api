@@ -1,7 +1,7 @@
 const async = require('async'); // Async management
 import needle from 'needle';
 import moment from 'moment';
-import {pgPool} from './db';
+import { pgPool } from './utils/db';
 
 const disconnect = function (err) {
   pgPool.end();

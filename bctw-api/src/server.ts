@@ -8,6 +8,7 @@ import { importCsv } from './import/csv';
 import { getUserIdentifierDomain, matchAny, MISSING_USERNAME } from './database/requests';
 import { fn_get_user_id_domain } from './apis/user_api';
 import { constructFunctionQuery, getRowResults, query } from './database/query';
+import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 
 /*
@@ -121,4 +122,5 @@ http.createServer(app).listen(3000, () => {
     } else console.log(`postgres server successfully connected at ${server}`);
     client?.release();
   });
+  listenForTelemetryAlerts();
 });

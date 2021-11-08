@@ -1,4 +1,4 @@
-import { retrieveCredentials } from './credentials';
+import { retrieveCredentials } from './utils/credentials';
 import { spawn } from 'child_process'
 
 /** login form field IDs

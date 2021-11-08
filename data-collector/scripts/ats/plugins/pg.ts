@@ -1,9 +1,9 @@
 import { QueryResult } from 'pg';
 import { IATSRow } from '../types';
-import { formatNowUtc } from './time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
-import { queryAsync, transactionify } from '../../db';
+import { queryAsync, transactionify } from '../../utils/db';
+import { formatNowUtc } from '../../utils/time';
 
 /**
  * contains functionality for interacting with the BCTW database 
