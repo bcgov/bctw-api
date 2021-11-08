@@ -7,8 +7,8 @@ import {
   mergeATSData,
   parseCsv,
 } from '../ats/plugins/csv';
-import {getLastAlertTimestamp } from '../db';
-import {retrieveCredentials} from '../credentials';
+import { getLastAlertTimestamp } from '../utils/db';
+import {retrieveCredentials} from '../utils/credentials';
 
 const canParseCSVFiles = async () => {
   const testDownloadPath = path.resolve('.', 'scripts/test/csv');
