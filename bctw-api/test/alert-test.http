@@ -9,4 +9,12 @@ content-type: application/json
 {
 }
 
-### -
+### test user alert notifcation via email/sms
+# fail - missing email
+http://localhost:3000/test-alert-notif?idir={{idir}}&phone=123123}
+
+### fail - missing phone
+http://localhost:3000/test-alert-notif?idir={{idir}}&email=hithere@gmail.com
+
+###
+http://localhost:3000/test-alert-notif?idir={{idir}}&email={{email}}&phone={{phone}}

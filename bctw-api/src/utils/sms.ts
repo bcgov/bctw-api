@@ -1,21 +1,45 @@
 import axios, { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import {
-  GCMortalityTemplate,
+  GCMortalityTemplateSMS,
+  GCMortalityTemplateEmail,
   PGMortalityAlertEvent,
-  SMSResponse,
+  GCNotifyEmailPayload,
+  GCNotifySMSPayload,
+  GCNotifyResponse,
 } from '../types/sms';
 
 const SMS_ENV = {
   secret: process.env.BCTW_GCNOTIFY_API_SECRET_KEY,
   host: process.env.BCTW_GCNOTIFY_API_HOSTNAME,
-  endpoint: process.env.BCTW_GCNOTIFY_API_ENDPOINT_SMS,
-  // test_phone               : process.env.BCTW_GCNOTIFY_TEST_PHONE_NUMBER
+  endpointSMS: process.env.BCTW_GCNOTIFY_API_ENDPOINT_SMS,
+  endpointEmail: process.env.BCTW_GCNOTIFY_API_ENDPOINT_EMAIL,
 };
 
-const TEMPLATES = {
-  mortalityTemplate: process.env.BCTW_GCNOTIFY_TEMPLATE_SMS_MORTALITY,
-  // mortalityCanceledTemplate: process.env.BCTW_GCNOTIFY_TEMPLATE_SMS_MORTALITY_CANCELLED,
+const EMAIL_ENV = {
+  link: process.env.BCTW_PROD_URL,
+};
+
+const TEMPLATES_IDS = {
+  mortalityTemplateSMS: process.env.BCTW_GCNOTIFY_TEMPLATE_SMS_MORTALITY,
+  mortalityTemplateEmail: process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_MORTALITY,
+};
+
+/**
+ * creates the url and header to send to gcNotify 
+ * @param method the notification type
+ * @returns an array of url and header object
+ */
+const constructHeader = (method: 'sms' | 'email'): [string, Record<string, unknown>] => {
+  const { secret, host, endpointSMS: endpointSMS, endpointEmail } = SMS_ENV;
+  const uri = `${host}${method === 'sms' ? endpointSMS : endpointEmail}`;
+  const header = {
+    headers: {
+      Authorization: `ApiKey-v1 ${secret}`,
+      'Content-Type': 'application/json',
+    },
+  };
+  return [uri, header];
 };
 
 /**
@@ -28,25 +52,19 @@ const sendSMS = async function <T>(
   payload: T,
   template_id: string
 ): Promise<void> {
-  const smsPayload = {
+  const smsPayload: GCNotifySMSPayload<T> = {
     phone_number: phone,
     template_id,
     personalisation: payload,
   };
 
-  const { secret, host, endpoint } = SMS_ENV;
-  const uri = `${host}${endpoint}`;
-  const header = {
-    headers: {
-      Authorization: `ApiKey-v1 ${secret}`,
-      'Content-Type': 'application/json',
-    },
-  };
-
+  const [uri, header] = constructHeader('sms');
   try {
     const response = await axios.post(uri, smsPayload, header);
-    const data: SMSResponse = response.data;
-    console.log(`sendMortalitySMS response ${JSON.stringify(data.content, null, 2)}`);
+    const data: GCNotifyResponse = response.data;
+    console.log(
+      `sendMortalitySMS response ${JSON.stringify(data.content, null, 2)}`
+    );
   } catch (e) {
     console.error(
       `error sending sms to ${phone}: ${(e as AxiosError)?.toJSON()}`
@@ -55,47 +73,102 @@ const sendSMS = async function <T>(
 };
 
 /**
+ * @param email
+ * @param body
+ * @param template_id
+ */
+const sendEmail = async function <T>(
+  email_address: string,
+  body: T,
+  template_id: string
+): Promise<void> {
+  const emailPayload: GCNotifyEmailPayload<T> = {
+    email_address,
+    personalisation: body,
+    template_id,
+  };
+  const [uri, header] = constructHeader('email');
+  try {
+    const response = await axios.post(uri, emailPayload, header);
+    const data: GCNotifyResponse = response.data;
+    console.log(
+      `sendMortalityEmail response ${JSON.stringify(data.content, null, 2)}`
+    );
+  } catch (e) {
+    console.error(
+      `error sending sms to ${email_address}: ${(e as AxiosError)?.toJSON()}`
+    );
+  }
+};
+
+/**
  * @param alerts the array of raw event JSON from the pg notify event
  * converts @param alerts into the expected GC notify mortality template
- * calls @function sendMortalitySMS for each template.
+ * calls @function sendSMS and @function sendEmail for each template.
+ * note: there are no retries if there are any exceptions, errors are
+ * simply caught and logged
  */
-const handleMortalitySMS = async function (
+const handleMortalityAlert = async function (
   alerts: PGMortalityAlertEvent[]
 ): Promise<void> {
-  const templateID = TEMPLATES.mortalityTemplate;
-  if (!templateID) {
-    console.error('missing gc notify mortality template ID, exiting');
+  const smsID = TEMPLATES_IDS.mortalityTemplateSMS;
+  const emailID = TEMPLATES_IDS.mortalityTemplateEmail;
+
+  if (!smsID) {
+    console.error('missing gcNotify sms mortality template ID, exiting');
+    return;
+  }
+  if (!emailID) {
+    console.error('missing gcNotify email mortality template ID, exiting');
     return;
   }
   const templates: {
     phone: string;
-    template: GCMortalityTemplate;
+    email: string;
+    smsTemplate: GCMortalityTemplateSMS;
+    emailTemplate: GCMortalityTemplateEmail;
   }[] = alerts.map((a) => {
+    // construct a base template to be used for email and sms notifications
+    const base = {
+      animal_id: a.animal_id,
+      wlh_id: a.wlh_id,
+      species: a.species,
+      device_id: a.device_id,
+      frequency: a.frequency,
+      date_time: dayjs(a.date_time).format('YYYY-MM-DD HH:mm'),
+      latitude: a.latitude,
+      longitude: a.longitude,
+    };
+    // return an object that both email/sms handlers can use
     return {
       phone: a.phone,
-      template: {
-        animal_id: a.animal_id,
-        wlh_id: a.wlh_id,
-        species: a.species,
-        device_id: a.device_id,
-        frequency: a.frequency,
-        date_time: dayjs(a.date_time).format('YYYY-MM-DD HH:mm'),
-        latitude: a.latitude,
-        longitude: a.longitude,
+      email: a.email,
+      smsTemplate: base,
+      emailTemplate: {
+        ...base,
+        link: EMAIL_ENV.link ?? '',
+        firstname: a.firstname,
       },
     };
   });
-  const promises = templates.map(
+  const smsPromises = templates.map(
     (t) =>
       new Promise((resolve, reject) =>
-        sendSMS<GCMortalityTemplate>(t.phone, t.template, templateID)
+        sendSMS<GCMortalityTemplateSMS>(t.phone, t.smsTemplate, smsID)
       )
   );
-  Promise.allSettled(promises).then((results) =>
+  const emailPromises = templates.map(
+    (t) =>
+      new Promise((resolve, reject) =>
+        sendEmail<GCMortalityTemplateEmail>(t.email, t.emailTemplate, emailID)
+      )
+  );
+  // send sms notifications followed by emails
+  Promise.allSettled([...smsPromises, ...emailPromises]).then((results) =>
     results.forEach((result) => {
       console.log(result.status);
     })
   );
 };
 
-export default handleMortalitySMS;
+export default handleMortalityAlert;

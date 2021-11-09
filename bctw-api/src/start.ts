@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { getUserTelemetryAlerts, updateUserTelemetryAlert } from './apis/alert_api';
+import { getUserTelemetryAlerts, testAlertNotification, updateUserTelemetryAlert } from './apis/alert_api';
 import { deleteAnimal, getAnimal, getAnimalHistory, getAnimals, upsertAnimal } from './apis/animal_api';
 import { addCode, addCodeHeader, getCode, getCodeHeaders } from './apis/code_api';
 import {
@@ -127,6 +127,7 @@ export {
   getUserRole,
   getUsers,
   getUserTelemetryAlerts,
+  testAlertNotification,
   notFound,
   parseVectronicKeyRegistrationXML,
   submitPermissionRequest,

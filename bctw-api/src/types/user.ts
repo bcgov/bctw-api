@@ -7,7 +7,7 @@ interface IUserInput {
   email: string;
   firstname: string;
   lastname: string;
-  phone: number;
+  phone: string;
 }
 
 type DomainType = 'idir' | 'bceid';

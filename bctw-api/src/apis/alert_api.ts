@@ -1,7 +1,10 @@
+import dayjs from 'dayjs';
 import { Request, Response } from 'express';
 import { S_API } from '../constants';
 import { constructFunctionQuery, constructGetQuery, getRowResults, query } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
+import { PGMortalityAlertEvent } from '../types/sms';
+import handleMortalityAlert from '../utils/sms';
 
 /**
  * retrieves telemetry alerts from the database 
@@ -39,4 +42,36 @@ const updateUserTelemetryAlert = async function (
   return res.send(getRowResults(result, fn_name));
 }
 
-export { getUserTelemetryAlerts, updateUserTelemetryAlert }
+/**
+ * exposed to the API for user's to test the gcNotify service
+ * sends an SMS and email to the user
+ * @param req.query email/phone user's details
+ */
+const testAlertNotification = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const {phone, email } = req.query;
+  if (!phone || !email) {
+    return res.status(500).send('must provide email and phone as query params');
+  }
+  // this is only a test, provide a hardcoded body
+  const template: PGMortalityAlertEvent = {
+    animal_id: 'test_animal_id',
+    wlh_id: 'test_wlh_id',
+    species: 'Caribou',
+    device_id: 123123,
+    frequency: 155.1,
+    date_time: dayjs().format(),
+    latitude: 53.91,
+    longitude: 122.74,
+    firstname: 'user',
+    phone: String(phone),
+    email: String(email),
+    user_id: 9999
+  }
+  await handleMortalityAlert([template]);
+  return res.send(true);
+}
+
+export { getUserTelemetryAlerts, updateUserTelemetryAlert, testAlertNotification }

@@ -89,6 +89,7 @@ const app = express()
   .get('/get-udf', api.getUDF)
   // alerts
   .get('/get-user-alerts', api.getUserTelemetryAlerts)
+  .get('/test-alert-notif', api.testAlertNotification)
   .post('/update-user-alert', api.updateUserTelemetryAlert)
   // codes
   .get('/get-code', api.getCode)
@@ -122,5 +123,8 @@ http.createServer(app).listen(3000, () => {
     } else console.log(`postgres server successfully connected at ${server}`);
     client?.release();
   });
-  listenForTelemetryAlerts();
+  const disableAlerts = process.env.DISABLE_TELEMETRY_ALERTS;
+  if (!(disableAlerts === 'true')) {
+    listenForTelemetryAlerts();
+  }
 });

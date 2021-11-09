@@ -1,5 +1,5 @@
 import { PGMortalityAlertEvent } from '../types/sms';
-import handleMortalitySMS from '../utils/sms';
+import handleMortalityAlert from '../utils/sms';
 import { pgPool } from './pg';
 
 // postgres channel name for the mortality trigger
@@ -12,6 +12,12 @@ const MORT_CHANNEL = 'TRIGGER_ALERT_SMS';
  */
 const listenForTelemetryAlerts = async (): Promise<void> => {
   pgPool.connect((err, client) => {
+    if (err) {
+      console.error(`unable to start database listener: ${err}`)
+      return;
+    } else {
+      console.log('database telemetry alert listener started')
+    }
     client.on('error', (er: Error) => {
       console.error(`error in notify listener: ${JSON.stringify(er)}`);
     });
@@ -28,7 +34,7 @@ const listenForTelemetryAlerts = async (): Promise<void> => {
       const json: PGMortalityAlertEvent[] = JSON.parse(payload);
       console.log(`listenForTelemetryAlerts payload received, will attempt to send ${json?.length} messages`);
       if (Array.isArray(json) && json.length) {
-        handleMortalitySMS(json);
+        handleMortalityAlert(json);
       }
       // console.log('notif supplied!', data);
     });
