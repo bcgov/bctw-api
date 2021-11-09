@@ -1,5 +1,5 @@
 import { QueryResult } from 'pg';
-import { IATSRow } from '../types';
+import { IATSRow } from 'types/ats';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
 import { queryAsync, transactionify } from '../../utils/db';

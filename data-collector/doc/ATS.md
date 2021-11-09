@@ -48,9 +48,13 @@
    export VENDOR_API_CREDENTIALS_KEY=`cat .env-pkey`
    ...
    ```
+1. login to oc by retrieving the token from the OpenShift environment
+   ```
+   ./oc login --token ...
+   ```
 1. port forward the database connection using the oc command line tools in the background
    ```
-   oc port-forward PODNAME 5432:5432 &
+   ./oc port-forward PODNAME 5432:5432 &
    ```
 1. Run the npm `Cypress` scripts
    ```
@@ -62,4 +66,4 @@
 1. Use the "cypress-headed" or "cypress" npm scripts to start. You can also swap to another browser with the -b flag. The "headed" version will open the Cypress Test Runner UI.
 
 #### Other potential gotchas
-1. data-collector module is now Typescript, start `npm run watch` to compile it before running tests.
+1. data-collector module is written in Typescript, run `npm run watch` compile it before running tests.

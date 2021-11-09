@@ -46,7 +46,7 @@
       "console": "integratedTerminal",
       "envFile": "${workspaceFolder}/data-collector/.env",
       "internalConsoleOptions": "neverOpen",
-      "program": "${workspaceFolder}/data-collector/scripts/vectronic.ts",
+      "program": "${workspaceFolder}/data-collector/scripts/vectronics.ts",
       "runtimeExecutable": "${workspaceFolder}/data-collector/node_modules/nodemon/bin/nodemon.js",
       "env": {"TS_NODE_PROJECT": "${workspaceFolder}/data-collector/tsconfig.json"},
       "request": "launch",

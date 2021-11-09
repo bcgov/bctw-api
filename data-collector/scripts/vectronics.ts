@@ -17,9 +17,9 @@ const getAllCollars = function () {
 
   const done = function (err,data) {
     if (err) {
-      return console.error('Failed to fetch Vectronics collars: ',err);
+      return console.error('Failed to fetch Vectronics collars: ', err);
     }
-    async.concatSeries(data.rows,iterateCollars,disconnect);
+    async.concatSeries(data.rows, iterateCollars, disconnect);
   };
 
   pgPool.query(sql,done);

@@ -4,7 +4,7 @@ import {
   IATSRow,
   IDeviceReadingEvent,
   ITransmissionEvent,
-} from '../types';
+} from 'types/ats';
 import { isWithin24Hrs, parseAsCT, parseAsLocal } from '../../utils/time';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs')
