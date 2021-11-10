@@ -8,27 +8,6 @@ objects:
 - kind: ImageStream
   apiVersion: v1
   metadata:
-    name: ${SOURCE_IMAGE_NAME}
-    creationTimestamp: null
-    annotations:
-      description: Nodejs Base Image
-    labels:
-      shared: 'true'
-  spec:
-    lookupPolicy:
-      local: false
-    tags:
-    - name: ${SOURCE_IMAGE_TAG}
-      annotations: null
-      from:
-        kind: DockerImage
-        name: ${BASE_IMAGE_URL}
-      importPolicy: {}
-      referencePolicy:
-        type: Local
-- kind: ImageStream
-  apiVersion: v1
-  metadata:
     name: "${NAME}"
 - kind: BuildConfig
   apiVersion: v1
@@ -43,7 +22,7 @@ objects:
     - type: GitHub
       github:
         secretReference:
-          name: bctw-api-webhook
+          name: bctw-data-collector-webhook
     runPolicy: Serial
     source:
       type: Git
@@ -52,11 +31,14 @@ objects:
         ref: "${GIT_REF}"
       contextDir: "${SOURCE_CONTEXT_DIR}"
     strategy:
-      type: Source
-      sourceStrategy:
-        from:
-          kind: "${SOURCE_IMAGE_KIND}"
-          name: "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}"
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+    # strategy:
+    #   type: Source
+    #   sourceStrategy:
+    #     from:
+    #       kind: "${SOURCE_IMAGE_KIND}"
+    #       name: "${SOURCE_IMAGE_NAME}:${SOURCE_IMAGE_TAG}"
     output:
       to:
         kind: ImageStreamTag
@@ -73,7 +55,7 @@ parameters:
   displayName: Name
   description: The name assigned to all of the resources defined in this template.
   required: true
-  value: bctw-api
+  value: data-collector
 - name: GIT_REPO_URL
   displayName: Git Repo URL
   description: The URL to your GIT repo.
@@ -88,18 +70,18 @@ parameters:
   displayName: Source Context Directory
   description: The source context directory.
   required: true
-  value: "bctw-api"
+  value: "data-collector"
 - name: SOURCE_IMAGE_KIND
   displayName: Source Image Kind
   description: The 'kind' (type) of the  source image; typically ImageStreamTag, or
     DockerImage.
   required: true
-  value: ImageStreamTag
+  value: DockerImage
 - name: SOURCE_IMAGE_NAME
   displayName: Source Image Name
   description: The name of the source image.
   required: true
-  value: nodejs-12-base
+  value: centos/nodejs-12-centos7
 - name: SOURCE_IMAGE_TAG
   displayName: Source Image Tag
   description: The tag of the source image.
@@ -109,15 +91,12 @@ parameters:
   displayName: Output Image Tag
   description: The tag given to the built image.
   required: true
+  value: latest
 - name: CPU_REQUEST
   displayName: Resources CPU Request
   description: The resources CPU request (in cores) for this build.
   required: true
   value: 10m
-- name: BASE_IMAGE_URL
-  displayName: base image url
-  requried: true
-  value:  registry.redhat.io/rhscl/nodejs-12-rhel7
 - name: CPU_LIMIT
   displayName: Resources CPU Limit
   description: The resources CPU limit (in cores) for this build.
