@@ -6,7 +6,6 @@ import {
   PGMortalityAlertEvent,
   GCNotifyEmailPayload,
   GCNotifySMSPayload,
-  GCNotifyResponse,
 } from '../types/sms';
 
 const SMS_ENV = {
@@ -18,6 +17,7 @@ const SMS_ENV = {
 
 const EMAIL_ENV = {
   link: process.env.BCTW_PROD_URL,
+  email_reply_to_id: process.env.BCTW_GCNOTIFY_EMAIL_REPLY_TO_ID,
 };
 
 const TEMPLATES_IDS = {
@@ -26,11 +26,13 @@ const TEMPLATES_IDS = {
 };
 
 /**
- * creates the url and header to send to gcNotify 
+ * creates the url and header to send to gcNotify
  * @param method the notification type
  * @returns an array of url and header object
  */
-const constructHeader = (method: 'sms' | 'email'): [string, Record<string, unknown>] => {
+const constructHeader = (
+  method: 'sms' | 'email'
+): [string, Record<string, unknown>] => {
   const { secret, host, endpointSMS: endpointSMS, endpointEmail } = SMS_ENV;
   const uri = `${host}${method === 'sms' ? endpointSMS : endpointEmail}`;
   const header = {
@@ -59,17 +61,9 @@ const sendSMS = async function <T>(
   };
 
   const [uri, header] = constructHeader('sms');
-  try {
-    const response = await axios.post(uri, smsPayload, header);
-    const data: GCNotifyResponse = response.data;
-    console.log(
-      `sendMortalitySMS response ${JSON.stringify(data.content, null, 2)}`
-    );
-  } catch (e) {
-    console.error(
-      `error sending sms to ${phone}: ${(e as AxiosError)?.toJSON()}`
-    );
-  }
+  await axios.post(uri, smsPayload, header).catch((e: AxiosError) => {
+    console.error(`error sending sms to ${phone}: ${e.message}`);
+  });
 };
 
 /**
@@ -82,23 +76,24 @@ const sendEmail = async function <T>(
   body: T,
   template_id: string
 ): Promise<void> {
+  const { email_reply_to_id } = EMAIL_ENV;
+  if (!email_reply_to_id) {
+    console.error(
+      'couldnt find email_reply_to_id from env',
+      JSON.stringify(EMAIL_ENV)
+    );
+    return;
+  }
   const emailPayload: GCNotifyEmailPayload<T> = {
     email_address,
     personalisation: body,
     template_id,
+    email_reply_to_id,
   };
   const [uri, header] = constructHeader('email');
-  try {
-    const response = await axios.post(uri, emailPayload, header);
-    const data: GCNotifyResponse = response.data;
-    console.log(
-      `sendMortalityEmail response ${JSON.stringify(data.content, null, 2)}`
-    );
-  } catch (e) {
-    console.error(
-      `error sending sms to ${email_address}: ${(e as AxiosError)?.toJSON()}`
-    );
-  }
+  await axios.post(uri, emailPayload, header).catch((e: AxiosError) => {
+    console.error(`error sending email to ${email_address}: ${e.message}`);
+  });
 };
 
 /**
@@ -153,13 +148,13 @@ const handleMortalityAlert = async function (
   });
   const smsPromises = templates.map(
     (t) =>
-      new Promise((resolve, reject) =>
+      new Promise(() =>
         sendSMS<GCMortalityTemplateSMS>(t.phone, t.smsTemplate, smsID)
       )
   );
   const emailPromises = templates.map(
     (t) =>
-      new Promise((resolve, reject) =>
+      new Promise(() =>
         sendEmail<GCMortalityTemplateEmail>(t.email, t.emailTemplate, emailID)
       )
   );

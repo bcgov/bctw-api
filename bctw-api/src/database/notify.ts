@@ -1,5 +1,5 @@
 import { PGMortalityAlertEvent } from '../types/sms';
-import handleMortalityAlert from '../utils/sms';
+import handleMortalityAlert from '../utils/gcNotify';
 import { pgPool } from './pg';
 
 // postgres channel name for the mortality trigger

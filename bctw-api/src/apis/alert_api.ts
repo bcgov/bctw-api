@@ -4,7 +4,7 @@ import { S_API } from '../constants';
 import { constructFunctionQuery, constructGetQuery, getRowResults, query } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
 import { PGMortalityAlertEvent } from '../types/sms';
-import handleMortalityAlert from '../utils/sms';
+import handleMortalityAlert from '../utils/gcNotify';
 
 /**
  * retrieves telemetry alerts from the database 

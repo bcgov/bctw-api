@@ -55,9 +55,10 @@ type GCNotifyEmailPayload<T> = {
   email_address: string;
   personalisation: T;
   template_id: string;
+  email_reply_to_id: string;
 };
 
-type GCNotifySMSPayload<T> = Omit<GCNotifyEmailPayload<T>, 'email_address'> & {
+type GCNotifySMSPayload<T> = Omit<GCNotifyEmailPayload<T>, 'email_address' | 'email_reply_to_id'> & {
   phone_number: string;
 };
 
