@@ -114,6 +114,9 @@ GET http://localhost:3000/get-users?idir={{idir}}
 # animal access permissions
 
 ### should succeed
+GET http://localhost:3000/get-critter-access/{{idir}}?idir={{idir}}
+
+### should succeed with filter
 GET http://localhost:3000/get-critter-access/{{idir}}?idir={{idir}}&keys=animal_id&term=68
 
 ### should fail

@@ -12,7 +12,6 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
-import { fn_user_critter_access_array } from './user_api';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
@@ -61,29 +60,37 @@ const deleteAnimal = async function (
 
 // generate SQL for retrieving animals that are attached to a device
 const _getAttachedSQL = (username: string, page: number, search?: SearchFilter, critter_id?: string, getAllProps = false): string => {
-  const base = `SELECT
-      c.assignment_id, c.device_id, c.collar_id, c.frequency,
-      c.attachment_start, c.data_life_start, c.data_life_end, c.attachment_end,
-      ${getAllProps ? 'a.*,' : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'}
-      ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
-    FROM ${cac_v} c
-    JOIN ${S_API}.animal_v a ON c.critter_id = a.critter_id
-    WHERE a.critter_id = ANY(${fn_user_critter_access_array}('${username}'))
-    ${critter_id ? ` AND a.critter_id = '${critter_id}'` : ''}`;
-    const filter =  search ? appendFilter(search, base, true) : '';
-    return constructGetQuery({ base, page, filter, order: [{field: 'c.attachment_start ', order: 'desc'}, {field: 'c.device_id'}]});
+  const alias = 'attached';
+  const base = `
+    WITH ${alias} AS (
+      SELECT
+        c.assignment_id, c.device_id, c.collar_id, c.frequency,
+        c.attachment_start, c.data_life_start, c.data_life_end, c.attachment_end,
+        ${getAllProps ? 'a.*,' : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'}
+        ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
+      FROM ${cac_v} c
+      JOIN ${S_API}.animal_v a ON c.critter_id = a.critter_id
+    ) SELECT * from ${alias}
+      WHERE permission_type IS NOT NULL
+      ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
+    const filter =  search ? appendFilter(search, base, `${alias}.`, true) : '';
+    return constructGetQuery({ base, page, filter, order: [{field: `${alias}.attachment_start `, order: 'desc'}, {field: `${alias}.device_id`}]});
 }
 
 // generate SQL for retrieving animals that are not attached to a device
 const _getUnattachedSQL = (username: string, page: number, search?: SearchFilter, critter_id?: string, getAllProps = false): string => {
-  const base = `SELECT
-    ${getAllProps? 'cuc.*,' : 'cuc.critter_id, cuc.animal_id, cuc.species, cuc.wlh_id, cuc.animal_status, cuc.population_unit,'}
-    ${fn_get_user_animal_permission}('${username}', cuc.critter_id) AS "permission_type"
-  FROM bctw_dapi_v1.currently_unattached_critters_v cuc
-  WHERE cuc.critter_id = ANY(${fn_user_critter_access_array}('${username}'))
-  ${critter_id ? ` AND cuc.critter_id = '${critter_id}'` : ''}`;
-  const filter =  search ? appendFilter(search, base, 'cuc.') : '';
-  return constructGetQuery({ base, page, filter, order: [{ field: 'cuc.valid_from ', order: 'desc' }, {field: 'cuc.wlh_id'}] });
+  const alias = 'unattached';
+  const base = `
+    WITH ${alias} AS (
+      SELECT
+        ${getAllProps? 'cuc.*,' : 'cuc.critter_id, cuc.animal_id, cuc.species, cuc.wlh_id, cuc.animal_status, cuc.population_unit, cuc.valid_from,'}
+        ${fn_get_user_animal_permission}('${username}', cuc.critter_id) AS "permission_type"
+      FROM bctw_dapi_v1.currently_unattached_critters_v cuc
+    ) SELECT * from ${alias}
+      WHERE permission_type IS NOT NULL
+      ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
+  const filter =  search ? appendFilter(search, base, `${alias}.`, true) : '';
+  return constructGetQuery({ base, page, filter, order: [{ field: `${alias}.valid_from `, order: 'desc' }, {field: `${alias}.wlh_id`}] });
 }
 
 /**

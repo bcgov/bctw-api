@@ -132,7 +132,7 @@ const getUsers = async function (
 };
 
 /**
- * @returns a list of critters the user has at least 'obesrver' access to
+ * @returns a list of critters the user has at least 'observer' access to
  * @param req.user username to get acccess for
  * @param filters array of @type {eCritterPermission} to retrieve
  * @returns list of @type {Animal} and attached device properties
@@ -161,7 +161,7 @@ const getUserCritterAccess = async function (
     S_API,
     true
   );
-  const sql = constructGetQuery({base, filter: appendFilter(getFilterFromRequest(req), base, false)});
+  const sql = constructGetQuery({base, filter: appendFilter(getFilterFromRequest(req), base, false, false)});
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);

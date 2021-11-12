@@ -15,14 +15,12 @@ import {
 } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { IBulkResponse } from '../types/import_types';
-import { Order, SearchFilter } from '../types/query';
+import { SearchFilter } from '../types/query';
 import { cac_v } from './animal_api';
-import { fn_user_critter_access_array } from './user_api';
 
 const fn_upsert_collar = 'upsert_collar';
 const fn_get_collar_history = 'get_collar_history';
 const fn_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
-const deviceIDSort: Order[] = [{field: 'c.valid_from', order: 'desc'}, {field:  'c.device_id ', }];
 
 /**
  * @returns the result of the insert/upsert in the bulk rseponse format
@@ -96,9 +94,9 @@ const getUnattachedDeviceSQL = function (
 
   const sql = constructGetQuery({
     base,
-    order: deviceIDSort,
+    order: [{field: 'c.valid_from', order: 'desc'}, {field: 'c.device_id '}],
     page,
-    filter: filter ? appendFilter(filter, base, true) : '',
+    filter: filter ? appendFilter(filter, base, true, true) : '',
   });
   return sql;
 };
@@ -137,28 +135,30 @@ const getAttachedDeviceSQL = function (
   getAllProps = false,
   collar_id?: string
 ): string {
+  const alias = 'attached';
   const base = `
-  SELECT 
-    ca.assignment_id,
-    ca.attachment_start, ca.attachment_end, ca.data_life_start, ca.data_life_end,
-    ${
-      getAllProps
-        ? 'c.*,'
-        : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status,'
-    }
-    ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type",
-    a.critter_id, a.animal_id, a.wlh_id,
-    ${getLastPingSQL}
-  FROM ${cac_v} ca
-  JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
-  JOIN ${S_API}.animal_v a ON a.critter_id = ca.critter_id
-  WHERE ca.critter_id = ANY(${S_BCTW}.${fn_user_critter_access_array}('${username}'))
-  ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
+  WITH ${alias} AS (
+    SELECT 
+      ca.assignment_id,
+      ca.attachment_start, ca.attachment_end, ca.data_life_start, ca.data_life_end,
+      ${
+        getAllProps
+          ? 'c.*,'
+          : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status,'
+      }
+      ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type",
+      a.critter_id, a.animal_id, a.wlh_id,
+      ${getLastPingSQL}
+    FROM ${cac_v} ca
+    JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
+    JOIN ${S_API}.animal_v a ON a.critter_id = ca.critter_id
+  ) SELECT * FROM ${alias}
+  ${collar_id ? ` WHERE ${alias}.collar_id = '${collar_id}'` : ''}`;
 
   const sql = constructGetQuery({
     base,
-    order: deviceIDSort,
-    filter: filter ? appendFilter(filter, base, true) : '',
+    order: [{field: `${alias}.attachment_start`, order: 'desc'}, {field: `${alias}.device_id `}],
+    filter: filter ? appendFilter(filter, base, `${alias}.`, !!collar_id) : '',
     page,
   });
   return sql;

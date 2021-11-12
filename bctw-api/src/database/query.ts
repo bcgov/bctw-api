@@ -201,13 +201,13 @@ const paginate = (pageNumber: number): string => {
 const appendFilter = (
   filter: SearchFilter | undefined,
   sqlBase: string,
-  hasAlias: boolean | string
+  hasAlias: boolean | string,
+  hasWhere: boolean
 ): string => {
   let sql = '';
   if (!filter) {
     return sql;
   }
-  const hasWhere = sqlBase.toLowerCase().indexOf('where') !== -1;
   const { keys, term } = filter;
   for (let i = 0; i < keys.length; i++) {
     const col = keys[i];
@@ -221,7 +221,7 @@ const appendFilter = (
     }
     sql += `${limiter} LOWER(${alias}${col}::varchar) LIKE '%${term}%'`;
   }
-  console.log(`(${sql})`)
+  // console.log(`(${sql})`)
   return sql;
 };
 

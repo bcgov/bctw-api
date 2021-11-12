@@ -77,6 +77,12 @@ http://localhost:3000/get-animals?idir={{idir}}&page=2&critterType=assigned
 ### get attached animals page 3
 http://localhost:3000/get-animals?idir={{idir}}&page=3&critterType=assigned
 
+### get attached critters with filter (search wolf species)
+http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned&keys=species&term=wolf
+
+### get attached critters with filter (search animal ID)
+http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned&keys=animal_id&term=30
+
 ### get critters without device
 http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned
 
@@ -88,6 +94,7 @@ http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned&keys=spec
 
 ### get unassigned critters (search animal ID)
 http://localhost:3000/get-animals?idir={{idir}}&critterType=unassigned&keys=animal_id&term=30
+
 
 ### delete individual - fail (no permission)
 # DELETE http://localhost:3000/animal/{{critter1_attached}}?bceid={{bceid1}} HTTP/1.1
