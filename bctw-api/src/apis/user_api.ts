@@ -19,7 +19,7 @@ interface IUserProps {
   role: eUserRole;
 }
 // bctw_api schema function that returns a table
-const fn_user_critter_access_json = 'get_user_critter_access';
+const fn_user_critter_access = 'get_user_critter_access';
 // bctw schema function that returns an array of critter_ids the user has access to
 const fn_user_critter_access_array = `get_user_critter_access`;
 const fn_get_user_id = `get_user_id`;
@@ -155,7 +155,7 @@ const getUserCritterAccess = async function (
     params.push(String(filters).split(','));
   }
   const base = constructFunctionQuery(
-    fn_user_critter_access_json,
+    fn_user_critter_access,
     params,
     false,
     S_API,

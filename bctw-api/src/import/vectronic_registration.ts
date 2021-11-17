@@ -55,7 +55,7 @@ class VectronicKeyxRow implements IKeyX {
     this.collarkey = collar.key[0];
     this.idcom = collar.comIDList[0].comID[0]._;
     this.comtype = collar.comIDList[0].comID[0].$.comType;
-    this.collartype = collar.collarType[0];
+    this.collartype = collar?.collarType ? collar.collarType[0] : 0;
   }
 }
 
