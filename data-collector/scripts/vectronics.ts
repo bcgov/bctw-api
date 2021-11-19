@@ -32,7 +32,7 @@ const iterateCollars = function(collar, callback) {
   const weekAgo = moment().subtract(7,'d').format('YYYY-MM-DDTHH:mm:ss');
   const url = `${apiUrl}/${id}/gps?collarkey=${key}&afterScts=${weekAgo}`;
 
-  console.log(`Fetching data for ${id}`);
+  // console.log(`Fetching data for ${id}`);
 
   needle.get(url,(err,res,body) => {insertCollarRecords(err,body,collar,callback)});
 };
@@ -169,7 +169,7 @@ const insertCollarRecords = function(err,result,collar,callback) {
 
   const sqlPostamble = ' on conflict (idPosition) do nothing';
   const sql = sqlPreamble + values.join(',') + sqlPostamble;
-  console.log('Entering ' + values.length + ' records');
+  console.log(`Entering ${values.length} records for collar ${collar.idcollar}`);
   pgPool.query(sql,callback);
 }
 

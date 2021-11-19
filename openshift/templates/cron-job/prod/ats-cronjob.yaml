@@ -1,0 +1,119 @@
+---
+kind: 'Template'
+apiVersion: 'v1'
+metadata:
+  name: 'bctw-cronjob-ats'
+  annotations:
+    description: 'Cron job to call ATS API using Cypress'
+    tags: 'scheduler,cron job,external, ats'
+objects:
+  - kind: 'CronJob'
+    apiVersion: 'batch/v1beta1'
+    metadata:
+      name: '${JOB_NAME}'
+      namespace: ${NAMESPACE}
+      labels:
+        template: 'bctw-cronjob-ats'
+        cronjob: '${JOB_NAME}'
+    spec:
+      schedule: '${SCHEDULE}'
+      concurrencyPolicy: 'Forbid'
+      successfulJobsHistoryLimit: ${{SUCCESS_JOBS_HISTORY_LIMIT}}
+      failedJobsHistoryLimit: ${{FAILED_JOBS_HISTORY_LIMIT}}
+      jobTemplate:
+        metadata:
+          labels:
+            template: 'bctw-cronjob-ats'
+            cronjob: '${JOB_NAME}'
+        spec:
+          backoffLimit: ${{JOB_BACKOFF_LIMIT}}
+          template:
+            spec:
+              containers:
+                - name: '${JOB_NAME}'
+                  image: 'image-registry.openshift-image-registry.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}'
+                  command:
+                    - 'npm'
+                    - 'run'
+                    - 'ats'
+                  env:
+                  - name: NODE_ENV
+                    value: production
+                  - name: POSTGRES_SERVER_HOST
+                    value: bctw-db
+                  - name: POSTGRES_SERVER_PORT
+                    value: '5432'
+                  - name: POSTGRES_USER
+                    valueFrom:
+                      secretKeyRef:
+                        key: username
+                        name: bctw
+                  - name: POSTGRES_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: password
+                        name: bctw
+                  - name: POSTGRES_DB
+                    value: bctw
+                  - name: ATS_USERNAME_FIELD_ID
+                    value: '#username'
+                  - name: ATS_PASSWORD_FIELD_ID
+                    value: '#password'
+                  - name: ATS_LOGIN_FORM_ID
+                    value: '#ctl01'
+                  - name: VENDOR_API_CREDENTIALS_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: vendor-api-credentials-pkey
+                        key: key
+                  - name: ATS_API_CREDENTIAL_NAME
+                    valueFrom:
+                      secretKeyRef:
+                        name: ats-account-identifier-1 
+                        key: name
+              restartPolicy: 'Never'
+              terminationGracePeriodSeconds: 30
+              activeDeadlineSeconds: 220
+              dnsPolicy: 'ClusterFirst'
+parameters:
+  - name: 'NAMESPACE'
+    displayName: 'Namespace'
+    description: 'Name of the Namespace where to deploy the Scheduled Job'
+    value: '0dff19-prod'
+    required: true
+  - name: 'JOB_NAME'
+    displayName: 'Job Name'
+    description: 'Name of the Scheduled Job to Create.'
+    value: 'bctw-cronjob-ats'
+    required: true
+  - name: 'IMAGE_NAMESPACE'
+    displayName: 'Image Namespace'
+    description: 'The locate of the image to use for this cron job.'
+    value: '0dff19-tools'
+    required: true
+  - name: 'IMAGE_NAME'
+    displayName: 'Image Name'
+    description: 'The image name to use for this cron job.'
+    value: 'bctw-data-collector:dev'
+    required: true
+  - name: 'SCHEDULE'
+    displayName: 'Cron Schedule'
+    description: 'Cron Schedule to Execute the Job (in UTC)'
+    value: '0 1 * * *' # at one o'clock
+    # value: '*/5 * * * *' #every 5 minutes  
+    required: true
+  - name: 'SUCCESS_JOBS_HISTORY_LIMIT'
+    displayName: 'Successful Job History Limit'
+    description: 'The number of successful jobs that will be retained'
+    value: '3'
+    required: true
+  - name: 'FAILED_JOBS_HISTORY_LIMIT'
+    displayName: 'Failed Job History Limit'
+    description: 'The number of failed jobs that will be retained'
+    value: '3'
+    required: true
+  - name: 'JOB_BACKOFF_LIMIT'
+    displayName: 'Job Backoff Limit'
+    description: 'The number of attempts to try for a successful job outcome (default: 6)'
+    value: '0'
+    required: false
