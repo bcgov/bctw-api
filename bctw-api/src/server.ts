@@ -101,7 +101,7 @@ const app = express()
   .post('/import-csv', upload.single('csv'), importCsv)
   .post('/import-xml', upload.array('xml'), api.parseVectronicKeyRegistrationXML)
   // vendor
-  .post('/vectronic', api.fetchVectronicData)
+  .post('/fetch-telemetry', api.fetchVectronicData)
 
   // delete
   .delete('/:type', api.deleteType)

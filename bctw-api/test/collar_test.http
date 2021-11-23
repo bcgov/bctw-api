@@ -41,6 +41,9 @@ http://localhost:3000/get-available-collars?idir={{idir}}
 ### get unattached collars with search term
 http://localhost:3000/get-available-collars?idir={{idir}}&column=device_id&keys=frequency&term=42
 
+### get unattached collars with search term
+http://localhost:3000/get-available-collars?idir={{idir}}&keys=device_make&term=vectronic
+
 ### get assigned collars
 http://localhost:3000/get-assigned-collars?idir={{idir}}
 

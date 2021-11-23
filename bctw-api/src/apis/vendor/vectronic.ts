@@ -108,6 +108,9 @@ const fetchVectronicData = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
+  if (!VECT_API_URL) {
+    return res.status(500).send('VECTRONICS_URL is not set');
+  }
   const { ids, start, end } = req.body;
   if (typeof start !== 'string' || typeof end !== 'string' || !Array.isArray(ids)) {
     return res.status(500).send('must supply start, end, and device IDs');
