@@ -20,8 +20,6 @@ interface IUserProps {
 }
 // bctw_api schema function that returns a table
 const fn_user_critter_access = 'get_user_critter_access';
-// bctw schema function that returns an array of critter_ids the user has access to
-const fn_user_critter_access_array = `get_user_critter_access`;
 const fn_get_user_id = `get_user_id`;
 const fn_get_user_id_domain = `get_user_id_with_domain`;
 const fn_upsert_user = 'upsert_user';
@@ -262,7 +260,6 @@ export {
   getUserCritterAccess,
   upsertUDF,
   deleteUser,
-  fn_user_critter_access_array,
   fn_get_user_id,
   fn_get_user_id_domain,
 };

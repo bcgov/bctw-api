@@ -15,7 +15,7 @@ const getFilterFromRequest = (req: Request): SearchFilter | undefined => {
     if ((['keys', 'term'] as (keyof SearchFilter)[]).includes(key as keyof SearchFilter)) {
       const k = String(key);
       if (key === 'keys') {
-        o[k] = typeof value === 'string' ? [value] : Array.isArray(value) ? value : null;
+        o[k] = typeof value === 'string' ? value.split(','): Array.isArray(value) ? value : null;
       } else if (key === 'term') {
         o[k] = value;
       }

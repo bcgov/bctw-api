@@ -68,6 +68,12 @@ http://localhost:3000/get-animal-history/{{critter1_attached}}?idir={{idir}}
 ### get history fail: no permission
 # http://localhost:3000/get-animal-history/{{critter1_attached}}?bceid={{bceid1}}
 
+### get all assigned animals (pass 0 or undefined as page)
+http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
+
+### get atached animals page 1
+http://localhost:3000/get-animals?idir={{idir}}&page=1&critterType=assigned
+
 ### get atached animals page 1
 http://localhost:3000/get-animals?idir={{idir}}&critterType=assigned
 

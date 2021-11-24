@@ -107,7 +107,7 @@ const getAvailableCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const page = (req.query?.page || 1) as number;
+  const page = (req.query?.page || 0) as number;
   const sql = getUnattachedDeviceSQL(
     getUserIdentifier(req) as string,
     page,
@@ -168,7 +168,7 @@ const getAssignedCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const page = (req.query?.page || 1) as number;
+  const page = (req.query?.page || 0) as number;
   const sql = getAttachedDeviceSQL(
     getUserIdentifier(req) as string,
     page,

@@ -182,9 +182,12 @@ const transactionify = (sql: string): string => {
   return process.env.ROLLBACK ? `begin;${sql};rollback;` : sql;
 };
 
-// given a page number, return a string with the limit offset
+/**
+ * @returns {string} with the limit offset
+ * if @param pageNumber is NaN or 0, don't paginate
+ */
 const paginate = (pageNumber: number): string => {
-  if (isNaN(pageNumber)) {
+  if (isNaN(pageNumber) || pageNumber === 0) {
     return '';
   }
   const limit = 30;
@@ -219,9 +222,9 @@ const appendFilter = (
     } else {
       alias = hasAlias ? `${determineTableAlias(col)}` : '';
     }
-    sql += `${limiter} LOWER(${alias}${col}::varchar) LIKE '%${term}%'`;
+    sql += `${limiter} LOWER(${alias}${col}::varchar) LIKE '%${term}%' `;
   }
-  // console.log(`(${sql})`)
+  // console.log(keys, sql)
   return sql;
 };
 

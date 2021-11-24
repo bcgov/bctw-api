@@ -102,7 +102,7 @@ const getAnimals = async function (
   res: Response
 ): Promise<Response> {
   const username = getUserIdentifier(req) as string;
-  const page     = (req.query.page || 1) as number;
+  const page     = (req.query.page || 0) as number;
   const type     = req.query.critterType as eCritterFetchType;
   const search   = getFilterFromRequest(req);
   let sql;
