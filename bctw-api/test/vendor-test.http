@@ -1,8 +1,8 @@
-post http://localhost:3000/vectronic?idir={{idir}}
+post http://localhost:3000/fetch-telemetry?idir={{idir}}
 content-type: application/json
 
 {
-  "ids": [42136],
-  "start":"2021-10-01" ,
+  "ids": [42136,34710],
+  "start":"2021-10-15" ,
   "end": "2021-11-01"
 }

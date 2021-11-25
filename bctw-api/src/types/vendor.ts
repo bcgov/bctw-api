@@ -7,6 +7,14 @@ export type APIVectronicData = {
   idcollar: number;
 };
 
+/** object returned from a successful call to the
+ * vendor_insert_raw_vectronic pg function
+*/
+export type VectronicDataResponse = {
+  device_id: number;
+  records_found: number;
+}
+
 /**
  * object returned from the Vectronic API call
  */

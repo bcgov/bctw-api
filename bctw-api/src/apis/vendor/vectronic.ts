@@ -1,8 +1,12 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { Request, Response } from 'express';
-import { query } from '../../database/query';
-import { APIVectronicData, VectronicRawTelemetry } from '../../types/vendor';
+import { getRowResults, query } from '../../database/query';
+import {
+  APIVectronicData,
+  VectronicDataResponse,
+  VectronicRawTelemetry,
+} from '../../types/vendor';
 
 const VECT_API_URL = process.env.VECTRONICS_URL;
 // format the API expects timestamps
@@ -54,22 +58,31 @@ const _fetchVectronicTelemetry = async function (
 };
 
 /**
- * inserts @param rows of @type {VectronicRawTelemetry[]} into the 
+ * inserts @param rows of @type {VectronicRawTelemetry[]} into the
  * raw vectronic telemetry table.
+ * @returns {VectronicDataResponse}
  */
-const _insertVectronicRecords = async function (rows: VectronicRawTelemetry[]): Promise<number | void> {
+const _insertVectronicRecords = async function (
+  rows: VectronicRawTelemetry[]
+): Promise<VectronicDataResponse> {
+  const fn_name = 'vendor_insert_raw_vectronic2';
   const records = rows.filter((e) => e && e.idPosition);
-  console.log(`Entering ${records.length} records for collar ${records[0].idCollar}`);
-  const sql = `select vendor_insert_raw_vectronic('[${records.map(v => JSON.stringify(_toTableRow(v))).join()}]')`; 
-  const {isError, error, result } = await query(sql, '', true);
+  // console.log(`Entering ${records.length} records for collar ${records[0].idCollar}`);
+
+  const sql = `select ${fn_name}('[${records
+    .map((v) => JSON.stringify(_toTableRow(v)))
+    .join()}]')`;
+  const { isError, error, result } = await query(sql, '', true);
+
   if (isError) {
-    console.error(`_insertVectronicRecords error: ${error.message}`)
-    return;
+    console.error(`_insertVectronicRecords error: ${error.message}`);
+    return { device_id: rows[0].idCollar, records_found: 0 };
   }
-  return result.rowCount;
+  const insertResult = getRowResults(result, fn_name, true);
+  return insertResult as VectronicDataResponse;
 };
 
-// database table has lowercase keys :(
+// database table has lowercase column names :(
 const _toTableRow = (telemetry: VectronicRawTelemetry) => {
   const ret = {};
   for (const [key, value] of Object.entries(telemetry)) {
@@ -77,32 +90,42 @@ const _toTableRow = (telemetry: VectronicRawTelemetry) => {
     ret[lower] = value;
   }
   return ret;
-}
+};
 
 /**
  * main entry point of the vectronic routine
+ * workflow:
+  * fetch the collar keys used in the API url from db
+  * call the vendor API
+  * call db handler for inserting response telemetry
  */
 const _performManualVectronicUpdate = async (
   start: string,
   end: string,
   device_ids: number[] = []
-): Promise<void> => {
-  // retrieve the collar keys from the api_vectronics_collar_data table 
+): Promise<VectronicDataResponse[]> => {
+  // retrieve the collar keys from the api_vectronics_collar_data table
   const vectCollars = await _getVectronicAPIKeys(device_ids);
   if (!vectCollars.length) {
     console.error('no vectronic api rows found');
   }
   // call the vectronic api with the collar key info
-  const promisesAPI = vectCollars.map((v) => _fetchVectronicTelemetry(v, start, end));
+  const promisesAPI = vectCollars.map((v) =>
+    _fetchVectronicTelemetry(v, start, end)
+  );
   const apiResults = await Promise.all(promisesAPI);
 
   // for any successful api results, insert them into the vectronics_collar_data table.
-  const promisesDb = apiResults.map((r: VectronicRawTelemetry[]) => _insertVectronicRecords(r))
+  const promisesDb = apiResults.map((r: VectronicRawTelemetry[]) =>
+    _insertVectronicRecords(r)
+  );
   const dbResults = await Promise.all(promisesDb);
+  return dbResults;
 };
 
 /**
- * the endpoint exposed to the api for manually triggering the api fetching of vectronic telemetry 
+ * the endpoint exposed to the BCTW API for manually 
+ * triggering the api fetching of vectronic telemetry
  */
 const fetchVectronicData = async function (
   req: Request,
@@ -112,11 +135,15 @@ const fetchVectronicData = async function (
     return res.status(500).send('VECTRONICS_URL is not set');
   }
   const { ids, start, end } = req.body;
-  if (typeof start !== 'string' || typeof end !== 'string' || !Array.isArray(ids)) {
+  if (
+    typeof start !== 'string' ||
+    typeof end !== 'string' ||
+    !Array.isArray(ids)
+  ) {
     return res.status(500).send('must supply start, end, and device IDs');
   }
-  await _performManualVectronicUpdate(start, end, ids);
-  return res.send(true);
+  const results = await _performManualVectronicUpdate(start, end, ids);
+  return res.send(results);
 };
 
 export { fetchVectronicData };
