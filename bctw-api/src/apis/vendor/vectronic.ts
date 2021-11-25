@@ -52,6 +52,7 @@ const _fetchVectronicTelemetry = async function (
     );
   });
   if (results && results.data) {
+    console.log(`${results.data.length} records retrieved for collar ${collar.idcollar}`)
     return results.data;
   }
   return [];
@@ -67,7 +68,7 @@ const _insertVectronicRecords = async function (
 ): Promise<VectronicDataResponse> {
   const fn_name = 'vendor_insert_raw_vectronic';
   const records = rows.filter((e) => e && e.idPosition);
-  // console.log(`Entering ${records.length} records for collar ${records[0].idCollar}`);
+  console.log(`Entering ${records.length} records for collar ${records[0].idCollar}`);
 
   const sql = `select ${fn_name}('[${records
     .map((v) => JSON.stringify(_toTableRow(v)))
