@@ -65,7 +65,7 @@ const _fetchVectronicTelemetry = async function (
 const _insertVectronicRecords = async function (
   rows: VectronicRawTelemetry[]
 ): Promise<VectronicDataResponse> {
-  const fn_name = 'vendor_insert_raw_vectronic2';
+  const fn_name = 'vendor_insert_raw_vectronic';
   const records = rows.filter((e) => e && e.idPosition);
   // console.log(`Entering ${records.length} records for collar ${records[0].idCollar}`);
 
