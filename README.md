@@ -13,3 +13,7 @@ Code to support the aggregation of telemetry information from Vectronic Aerospac
 ## Running BCTW-API ##
 
 See `DEV_SETUP.md`.
+
+## OpenShift ##
+
+OpenShift details including build, deployment and pipelines are in the [openshift](openshift/README.md) folder.

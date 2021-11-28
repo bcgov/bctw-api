@@ -1,0 +1,64 @@
+---
+kind: Template
+apiVersion: v1
+metadata:
+  name: "${NAME}-template"
+  creationTimestamp: 
+objects:
+- kind: Pipeline
+  apiVersion: tekton.dev/v1beta1
+  metadata:    
+    name: promote-prod
+  spec:
+    tasks:
+      - name: tag-images
+        params:
+          - name: SCRIPT
+            value: |
+              oc tag bctw-api:prod bctw-api:prod-backup            
+              oc tag bctw-ui:prod bctw-ui:prod-backup
+              oc tag bctw-data-collector:prod bctw-data-collector:prod-backup
+              oc tag bctw-api:test bctw-api:prod            
+              oc tag bctw-ui:test bctw-ui:prod
+              oc tag bctw-data-collector:test bctw-data-collector:prod
+        taskRef:
+          kind: ClusterTask
+          name: openshift-client
+- kind: Pipeline
+  apiVersion: tekton.dev/v1beta1
+  metadata:
+    name: promote-test
+  spec:
+    tasks:
+      - name: tag-images
+        params:
+          - name: SCRIPT
+            value: |
+              oc tag bctw-api:dev bctw-api:test
+              oc tag bctw-ui:dev bctw-ui:test
+              oc tag bctw-data-collector:dev bctw-data-collector:test
+        taskRef:
+          kind: ClusterTask
+          name: openshift-client        
+- kind: Pipeline
+  apiVersion: tekton.dev/v1beta1
+  metadata:
+    name: undo-last-prod-deployment    
+  spec:
+    tasks:
+      - name: tag-images
+        params:
+          - name: SCRIPT
+            value: |
+              oc tag bctw-api:prod-backup bctw-api:prod
+              oc tag bctw-ui:prod-backup bctw-ui:prod
+              oc tag bctw-data-collector:prod-backup bctw-data-collector:prod
+        taskRef:
+          kind: ClusterTask
+          name: openshift-client
+parameters:
+- name: NAME
+  displayName: Name
+  description: The name assigned to all of the resources defined in this template.
+  required: true
+  value: pipeline
