@@ -7,13 +7,24 @@ export type APIVectronicData = {
   idcollar: number;
 };
 
+export type VendorType = 'Vectronic' | 'Lotek' | 'ATS';
+
 /** object returned from a successful call to the
  * vendor_insert_raw_vectronic pg function
-*/
-export type VectronicDataResponse = {
+ */
+export type ManualVendorAPIResponse = {
   device_id: number;
   records_found: number;
-}
+  vendor: VendorType;
+};
+
+// object from the frontend
+export type ManualVendorInput = {
+  device_ids: number[];
+  vendor: VendorType;
+  start: string;
+  end: string;
+};
 
 /**
  * object returned from the Vectronic API call
@@ -67,3 +78,32 @@ export type VectronicRawTelemetry = {
   transformedY;
   geom;
 };
+
+export type LotekRawTelemetry = {
+  ChannelStatus;
+  UploadTimeStamp;
+  Latitude;
+  Longitude;
+  Altitude;
+  ECEFx;
+  ECEFy;
+  ECEFz;
+  RxStatus;
+  PDOP;
+  MainV;
+  BkUpV;
+  Temperature;
+  FixDuration;
+  bHasTempVoltage;
+  DevName;
+  DeltaTime;
+  FixType;
+  CEPRadius;
+  CRC;
+  DeviceID;
+  RecDateTime;
+};
+
+export type LotekToken = {
+  headers: { Authorization: string }
+}

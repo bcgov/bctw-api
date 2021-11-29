@@ -30,7 +30,7 @@ import { getExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
 import { attachDevice, getCollarAssignmentHistory, unattachDevice, updateDataLife } from './apis/attachment_api';
 import { getOnboardingRequests, getUserOnboardStatus, submitOnboardingRequest, handleOnboardingRequest } from './apis/onboarding_api';
-import { fetchVectronicData } from './apis/vendor/vectronic';
+import { fetchVendorTelemetryData} from './apis/vendor/vendor_helpers';
 
 /* ## notFound
   Catch-all router for any request that does not have an endpoint defined.
@@ -139,5 +139,5 @@ export {
   getOnboardingRequests,
   handleOnboardingRequest,
   submitOnboardingRequest,
-  fetchVectronicData
+  fetchVendorTelemetryData
 };
