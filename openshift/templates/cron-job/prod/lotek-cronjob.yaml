@@ -93,7 +93,7 @@ parameters:
   - name: 'SCHEDULE'
     displayName: 'Cron Schedule'
     description: 'Cron Schedule to Execute the Job (in UTC)'
-    value: '0 1 * * *' # at one o'clock
+    value: '0 9 * * *' # at 9 utc (01:00 pst)
     # value: '*/5 * * * *' #every five minutes  
     required: true
   - name: 'SUCCESS_JOBS_HISTORY_LIMIT'
