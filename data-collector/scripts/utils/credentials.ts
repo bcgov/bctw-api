@@ -24,6 +24,21 @@ const retrieveCredentials = async (name: string): Promise<IVendorCredential> => 
   return data;
 }
 
+/**
+ * converts an objects keys to lowercase, preservering its values
+ * used in this module as JSON objects received from vendor APIs have 
+ * camelcase keys, and the bctw database has all lowercase
+ */
+const ToLowerCaseObjectKeys = <T>(rec: T): T => {
+  const ret = {} as T;
+  for (const [key, value] of Object.entries(rec)) {
+    const lower = key.toLowerCase();
+    ret[lower] = value;
+  }
+  return ret;
+};
+
 export {
   retrieveCredentials,
+  ToLowerCaseObjectKeys,
 }

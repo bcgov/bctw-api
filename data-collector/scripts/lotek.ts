@@ -1,9 +1,9 @@
 import needle from 'needle';
 import { getIsDuplicateAlert, getLastAlertTimestamp, pgPool, queryAsync } from './utils/db';
 const dayjs = require('dayjs');
-import { eVendorType, retrieveCredentials } from './utils/credentials';
+import { eVendorType, retrieveCredentials, ToLowerCaseObjectKeys  } from './utils/credentials';
 import { ILotekAlert } from 'types/lotek';
-import { formatNowUtc, nowUtc } from './utils/time';
+import { nowUtc } from './utils/time';
 
 const ALERT_TABLE = 'telemetry_sensor_alert';
 // Store the access token globally
@@ -17,72 +17,10 @@ This is run under and asyncJS series loop. If there is an error, pass it to the 
 @param callback {function} The asyncJS callback function. Provide an error message if something fails, otherwise null.
  */
 const insertCollarData = async function (records) {
-  const sqlPreamble = `
-    insert into lotek_collar_data (
-      "channelstatus",
-      "uploadtimestamp",
-      "latitude",
-      "longitude",
-      "altitude",
-      "ecefx",
-      "ecefy",
-      "ecefz",
-      "rxstatus",
-      "pdop",
-      "mainv",
-      "bkupv",
-      "temperature",
-      "fixduration",
-      "bhastempvoltage",
-      "devname",
-      "deltatime",
-      "fixtype",
-      "cepradius",
-      "crc",
-      "deviceid",
-      "recdatetime",
-      "timeid",
-      "geom"
-    ) values
-  `;
-
-  const values: any[] = [];
-  for (const p of records) {
-    values.push(
-      `(
-        '${p.ChannelStatus}',
-        '${p.UploadTimeStamp}',
-        ${p.Latitude},
-        ${p.Longitude},
-        ${p.Altitude},
-        ${p.ECEFx},
-        ${p.ECEFy},
-        ${p.ECEFz},
-        ${p.RxStatus},
-        ${p.PDOP},
-        ${p.MainV},
-        ${p.BkUpV},
-        ${p.Temperature},
-        ${p.FixDuration},
-        '${p.bHasTempVoltage}',
-        ${p.DevName || null},
-        ${p.DeltaTime},
-        ${p.FixType},
-        ${p.CEPRadius},
-        ${p.CRC},
-        ${p.DeviceID},
-        '${p.RecDateTime}',
-        '${p.DeviceID}_${p.RecDateTime}',
-        st_setSrid(st_point(${p.Longitude},${p.Latitude}),4326)
-        )`
-    );
-  }
-
-  const sqlPostamble = ' on conflict (timeid) do nothing';
-
-  const sql = sqlPreamble + values.join(',') + sqlPostamble;
-
-  console.log(`${formatNowUtc()}: Entering ${values.length} records for device ${records[0].DeviceID}`);
+  const sql = `select vendor_insert_raw_lotek('[${records
+    .map((v) => JSON.stringify(ToLowerCaseObjectKeys(v)))
+    .join()}]')`;
+  console.log(`Entering ${records.length} records for collar ${records[0].DeviceID}`);
 
   try {
     await pgPool.query(sql);
@@ -181,9 +119,10 @@ const getAlerts = async () => {
  *
  */
 const insertAlerts = async (alerts: ILotekAlert[]) => {
-  /// fixme: confirm what this means, all alerts have this field
-  /// and many have it set to this time. Assumption is the alert has
-  /// not been cancelled if it matches this timestamp.
+  /**
+   * All alerts have this field, and many have it set to this time.
+   * Assumption is the alert has not been cancelled if it matches this timestamp.
+   */
   const timestampNotCanceled = '0001-01-01T00:00:00';
 
   const sqlPreamble = `
