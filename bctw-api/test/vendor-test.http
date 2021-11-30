@@ -8,6 +8,17 @@ content-type: application/json
   "vendor": "Vectronic"
 }
 
+### device currently not found - will throw 400
+post http://localhost:3000/fetch-telemetry?idir={{idir}}
+content-type: application/json
+
+{
+  "ids": [81259],
+  "start":"2021-11-15",
+  "end": "2021-11-30",
+  "vendor": "Lotek"
+}
+
 ###
 post http://localhost:3000/fetch-telemetry?idir={{idir}}
 content-type: application/json

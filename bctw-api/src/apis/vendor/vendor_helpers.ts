@@ -1,38 +1,41 @@
-import { query } from "../../database/query";
+import { query } from '../../database/query';
 import { Request, Response } from 'express';
-import performManualLotekUpdate from './lotek';
-import performManualVectronicUpdate from './vectronic';
+import { performManualLotekUpdate } from './lotek';
+import { performManualVectronicUpdate } from './vectronic';
+import { ManualVendorAPIResponse, ManualVendorInput } from '../../types/vendor';
 
-// private key used to decrypt vendor API credentials
-const PKEY = process.env.VENDOR_API_CREDENTIALS_KEY;
 
 export interface IVendorCredential {
-  username :string;
+  username: string;
   password: string;
   url: string;
 }
 
 /**
- * 
+ *
  */
-const retrieveCredentials = async (name: string): Promise<IVendorCredential | undefined > => {
+const retrieveCredentials = async (
+  name: string
+): Promise<IVendorCredential | undefined> => {
+  // private key used to decrypt vendor API credentials
+  const PKEY = process.env.VENDOR_API_CREDENTIALS_KEY?.replace(/\\n/g, '\n');
   if (!PKEY) {
     console.error('key not supplied to decrypt vendor credentials');
     return;
   }
   const sql = `select * from bctw_dapi_v1.get_collar_vendor_credentials('${name}', '${PKEY}')`;
-  const { result } = await query(sql);
-  if (!result?.rowCount)  {
-    console.error(`unable to find credentials with name ${name}`);
+  const { result, error } = await query(sql);
+  if (!result?.rowCount) {
+    console.error(`unable to find credentials for '${name}': ${error}`);
     return;
   }
   const data: IVendorCredential = result.rows[0];
   // console.log(JSON.stringify(data));
   return data;
-}
+};
 /**
  * converts an objects keys to lowercase, preservering its values
- * used in this module as JSON objects received from vendor APIs have 
+ * used in this module as JSON objects received from vendor APIs have
  * camelcase keys, and the bctw database has all lowercase
  */
 const ToLowerCaseObjectKeys = <T>(rec: T): T => {
@@ -45,44 +48,63 @@ const ToLowerCaseObjectKeys = <T>(rec: T): T => {
 };
 
 /**
- * the endpoint exposed to the BCTW API for manually 
+ * the endpoint exposed to the BCTW API for manually
  * triggering the api fetching of vectronic telemetry
  */
 const fetchVendorTelemetryData = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const body = req.body;
+  const body: ManualVendorInput | ManualVendorInput[] = req.body;
 
-  if(!process.env.LOTEK_API_CREDENTIAL_NAME) {
-    return res.status(500).send('lotek credential identifier not set');
+  const { LOTEK_API_CREDENTIAL_NAME, VECTRONICS_URL, VENDOR_API_CREDENTIALS_KEY} = process.env;
+  // note: .env contains the key in "" as a single line with \n (no spaces)
+  // const VENDOR_API_CREDENTIALS_KEY = process.env.VENDOR_API_CREDENTIALS_KEY?.replace(/\\n/g, '\n');
+
+  if (!LOTEK_API_CREDENTIAL_NAME) {
+    return res.status(500).send('LOTEK_API_CREDENTIAL_NAME not set');
   }
-  if (!process.env.VECTRONICS_URL) {
-    return res.status(500).send('VECTRONICS_URL is not set');
+  if (!VECTRONICS_URL) {
+    return res.status(500).send('VECTRONICS_URL not set');
+  }
+  if (!VENDOR_API_CREDENTIALS_KEY) {
+    return res.status(500).send('VENDOR_API_CREDENTIALS_KEY not set');
   }
 
+  // put the body into an array if it is a single object
   const inputArr = Array.isArray(body) ? body : [body];
 
-  const promises = inputArr.map(i => {
-    const { start, end, vendor, ids } = i;
-    if (
-      typeof start !== 'string' ||
-      typeof end !== 'string' ||
-      !Array.isArray(ids) ||
-      !vendor
-    ) {
-      return res.status(500).send('must supply start, end, vendor and device IDs');
-    }
-    if (vendor === 'Lotek') {
-      return performManualLotekUpdate(start, end, ids);
+  const promises = inputArr
+    .filter((mvi) => {
+      const { start, end, ids, vendor } = mvi;
+      return (
+        typeof start === 'string' &&
+        typeof end === 'string' &&
+        Array.isArray(ids) &&
+        vendor
+      );
+    })
+    .map((mvi) => {
+      const { start, end, vendor, ids } = mvi;
+      if (vendor === 'Lotek') {
+        return performManualLotekUpdate(start, end, ids);
+      } else if (vendor === 'Vectronic') {
+        return performManualVectronicUpdate(start, end, ids);
+      }
+    });
+  
+  if (!promises.length) {
+    return res.status(500).send('unable to begin process, confirm start, end, ids, and vendor are in body list');
+  }
 
-    } else if (vendor === 'Vectronic') {
-      return performManualVectronicUpdate(start, end, ids);
+  const apiResults:(ManualVendorAPIResponse[] | undefined)[] = await Promise.all(promises);
+  const ret: ManualVendorAPIResponse[] = [];
+  apiResults.forEach(r => {
+    if (r && Array.isArray(r)) {
+      ret.push(...r);
     }
   })
-
-  const results = await Promise.all(promises);
-  return res.send(results);
+  return res.send(ret);
 };
 
 export { fetchVendorTelemetryData, retrieveCredentials, ToLowerCaseObjectKeys };

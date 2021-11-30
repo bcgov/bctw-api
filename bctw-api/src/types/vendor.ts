@@ -20,7 +20,7 @@ export type ManualVendorAPIResponse = {
 
 // object from the frontend
 export type ManualVendorInput = {
-  device_ids: number[];
+  ids: number[];
   vendor: VendorType;
   start: string;
   end: string;

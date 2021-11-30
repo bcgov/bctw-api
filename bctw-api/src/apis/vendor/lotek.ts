@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { retrieveCredentials, ToLowerCaseObjectKeys } from './vendor_helpers';
 import { getRowResults, query } from '../../database/query';
@@ -36,7 +36,7 @@ const _insertLotekRecords = async function (
 /**
  *
  */
-const _fetchDeviceTelemetry = async function (
+const _fetchLotekTelemetry = async function (
   device_id: number,
   start: string,
   end: string,
@@ -49,48 +49,28 @@ const _fetchDeviceTelemetry = async function (
   const url = `${uri}/gps?deviceId=${device_id}&dtStart=${s}&dtEnd=${e}`;
 
   // Send request to the API
-  const { data } = await axios.get(url, token);
-  const { error } = data;
-  if (error) {
-    const msg = `Could not get collar data for ${device_id}: ${error}`;
-    console.error(msg);
-    return [];
+  const results = await axios.get(url, token).catch((err: AxiosError) => {
+    console.error(`fetchLotekTelemetry error: ${JSON.stringify(err?.response?.data)}`);
+  });
+  if (results && results.data) {
+    const { data } = results;
+    return data.filter((e) => e && e.RecDateTime && e.DeviceID);
   }
-
-  if (!Array.isArray(data)) {
-    const msg = `Did not receive a valid array for ${device_id} body: ${JSON.stringify(
-      data
-    )}`;
-    console.log(msg);
-    return [];
-  }
-
-  const validRecords = data.filter((e) => e && e.RecDateTime && e.DeviceID);
-  if (validRecords.length < 1) {
-    console.log(`No records for ${device_id}`);
-    return [];
-  }
-  return validRecords;
+  return [];
 };
 
 /**
  * Get the authentication token from the API
  */
-const _fetchAPIToken = async function (): Promise<
-  { token: LotekToken; url: string } | undefined
-> {
+const _fetchAPIToken = async function (): Promise<{ token: LotekToken; url: string } | undefined> {
   if (!LOTEK_CREDENTIAL_ID) {
-    console.error(
-      `credential identifier: 'LOTEK_API_CREDENTIAL_NAME' not supplied`
-    );
+    console.error(`credential identifier: 'LOTEK_API_CREDENTIAL_NAME' not supplied`);
     return;
   }
   // retrieve the lotek credentials from the encrypted db table
   const credentials = await retrieveCredentials(LOTEK_CREDENTIAL_ID);
   if (!credentials) {
-    console.error(
-      `unable to retrieve Lotek vendor credentials using ${LOTEK_CREDENTIAL_ID}`
-    );
+    console.error(`unable to retrieve Lotek vendor credentials using ${LOTEK_CREDENTIAL_ID}`);
     return;
   }
   const { username, password, url } = credentials;
@@ -118,20 +98,18 @@ const performManualLotekUpdate = async (
   start: string,
   end: string,
   device_ids: number[] = []
-): Promise<ManualVendorAPIResponse[] | undefined> => {
+): Promise<ManualVendorAPIResponse[]> => {
   const auth = await _fetchAPIToken();
   if (!auth) {
-    return;
+    return [];
   }
   const { token, url } = auth;
-  const promises = device_ids.map((id) =>
-    _fetchDeviceTelemetry(id, start, end, url, token)
-  );
+  const promises = device_ids.map((id) => _fetchLotekTelemetry(id, start, end, url, token));
   const apiResults = await Promise.all(promises);
 
-  const promisesDb = apiResults.map((r) => _insertLotekRecords(r));
+  const promisesDb = apiResults.filter(rows => rows?.length).map((rows) => _insertLotekRecords(rows));
   const dbResults = await Promise.all(promisesDb);
   return dbResults;
 };
 
-export default performManualLotekUpdate;
+export { performManualLotekUpdate }
