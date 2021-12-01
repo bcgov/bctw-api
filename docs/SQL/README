@@ -1,7 +1,0 @@
-The folder contains all the staging tables created from the text, CSV, and Excel spreadsheets
-provided to use from the Ministry.
-
-The main document of note is 'table_creation_vendor_data_merge.sql.' This TABLE CREATE statement is an attempt to unify
-the three different vendor collar data into a single table. This table is based on the
-January_2020_Monthly_Collar_Summary_20200220 document. It is essentially reverse engineering of the data contained in
-that document as the process of collecting the data was not completely revealed to us by CASLYS.

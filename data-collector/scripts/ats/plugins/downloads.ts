@@ -3,7 +3,7 @@ import path from 'path';
 import { promisify } from 'util';
 import { IDeviceReadingEvent, ITransmissionEvent} from 'types/ats';
 import { filterCollarDataAfter, filterTransmissionDataAfter, getPaths, mergeATSData, parseCsv } from './csv';
-import { getTimestampOfLastCollarEntry, formatSql, insertData } from './pg';
+import { getTimestampOfLastATSEntry, formatSql, insertData } from './pg';
 const rimraf = promisify(require('rimraf'));
 
 let port = 0;
@@ -66,7 +66,7 @@ module.exports = (on, config) => {
   // called if files were successfully downloaded and parsed into JSON
   const mergeAndInsert = async (data: IDeviceReadingEvent[], transmissionData: ITransmissionEvent[]) => {
     // retrieve timestamp of last successfull entry to the ATS raw data table
-    const lastEntry = await getTimestampOfLastCollarEntry();
+    const lastEntry = await getTimestampOfLastATSEntry();
     console.log(`last successfull insertion to ATS table was ${lastEntry.format()}`);
 
     // filter out old data 

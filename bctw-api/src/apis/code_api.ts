@@ -14,6 +14,8 @@ const pg_add_code_header_fn = 'add_code_header';
 const pg_add_code_fn = 'add_code';
 
 /**
+ * retrieves codes given a code_header_name
+ * if @param req.query.page is 0, fetches all codes
  * @param codeHeader - code_header_name of the codes to be retrieved
 */
 const getCode = async function (
@@ -38,8 +40,9 @@ const getCode = async function (
 };
 
 /**
- * @param codeType optional param of code_header_name
+ * @param codeType code_header_name
  * @returns returns all codeHeaders unless codeType is supplied
+ * note: deprecated, no longer used in UI
  */
 const getCodeHeaders = async function (
   req: Request,
@@ -65,12 +68,10 @@ const getCodeHeaders = async function (
   return res.send(result.rows);
 };
 
-/* 
-  - accepts json[] in the format:
-  {
-    code_header_name: '', code_header_title: '', code_header_description: '', valid_from: Date, valid_to: Date,
-  }
-*/
+/**
+ * adds a new code header
+ * note: deprecated, no longer used in UI  
+ */
 const addCodeHeader = async function (
   req: Request,
   res: Response
@@ -94,12 +95,10 @@ const addCodeHeader = async function (
   return res.send(bulkResp);
 };
 
-/*
-  - accepts json[] in format
-   {
-     "code_header": '', "code_type: '', code_name":'', "code_description":'', "code_sort_order: number, "valid_from": Date, "valid_to": Date
-   }
-*/
+/**
+ * adds a new code
+ * note: deprected, no longer used in UI 
+ */
 const addCode = async function (
   req: Request,
   res: Response

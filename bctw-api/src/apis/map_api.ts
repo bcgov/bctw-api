@@ -93,53 +93,6 @@ const getCritterTracks = async function (
   return res.send(featureCollection);
 };
 
-/* ## getPingExtent
-  note: deprecated
-  Request the min and max dates of available collar pings
- */
-// const getPingExtent = async function (
-//   req: Request,
-//   res: Response
-// ): Promise<Response> {
-//   const sql = `
-//     select
-//       max(date_recorded) "max",
-//       min(date_recorded) "min"
-//     from
-//       vendor_merge_view_no_critter
-//   `;
-//   let data: QResult;
-//   try {
-//     data = await query(sql);
-//   } catch (e) {
-//     return res.status(500).send(`Failed to query database: ${e}`);
-//   }
-//   return res.send(data.rows[0]);
-// };
-
-/**
- * note: deprecated
- * retrieves the last known location of collars that you have access to
- * currently only returns collars that are attached to a critter
- */
-// const getLastPings = async function (req: Request, res: Response): Promise<Response> {
-//   const fn_name = 'get_last_critter_pings';
-//   const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
-//   const { result, error, isError } = await query(
-//     sql,
-//     `unable to retrive critter tracks`
-//   );
-//   if (isError) {
-//     return res.status(500).send(error.message);
-//   }
-//   const features = getRowResults(result, fn_name);
-//   const featureCollection = {
-//     type: 'FeatureCollection',
-//     features: features,
-//   };
-//   return res.send(featureCollection); 
-// };
-
 /**
  * not exposed to API - currently only accessible through bulk CSV import
  * allows adding of historical telemetry data
@@ -149,7 +102,7 @@ const getCritterTracks = async function (
  * it will be considered a duplicate and not inserted. No errors will be thrown.
  * @param records array of @type {HistoricalTelemetryInput}
  * @returns a bulkresponse object
- * todo: may contain frequency instead of device_id?
+ * fixme: incomplete db/backend implementation
  */
 const upsertPointTelemetry = async function (userIdentifier: string, records: HistoricalTelemetryInput[]): Promise<IBulkResponse> {
   const fn_name = 'add_historical_telemetry';
@@ -168,7 +121,5 @@ const upsertPointTelemetry = async function (userIdentifier: string, records: Hi
 export {
   getCritterTracks,
   getDBCritters,
-  // getLastPings,
-  // getPingExtent,
   upsertPointTelemetry,
 }

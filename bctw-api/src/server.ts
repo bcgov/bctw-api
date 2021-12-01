@@ -94,8 +94,8 @@ const app = express()
   // codes
   .get('/get-code', api.getCode)
   .get('/get-code-headers', api.getCodeHeaders)
-  .post('/add-code', api.addCode)
-  .post('/add-code-header', api.addCodeHeader)
+  // .post('/add-code', api.addCode)
+  // .post('/add-code-header', api.addCodeHeader)
   // export/import
   .post('/export', api.getExportData)
   .post('/import-csv', upload.single('csv'), importCsv)

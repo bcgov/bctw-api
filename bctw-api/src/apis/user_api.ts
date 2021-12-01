@@ -23,6 +23,7 @@ const fn_user_critter_access = 'get_user_critter_access';
 const fn_get_user_id = `get_user_id`;
 const fn_get_user_id_domain = `get_user_id_with_domain`;
 const fn_upsert_user = 'upsert_user';
+
 /**
  * adds or updates a new user. in order to update - the bctw.user.id field
  * must be present in the JSON.
@@ -46,7 +47,10 @@ const upsertUser = async function (
 };
 
 /**
- * expires a user
+ * expires/ soft deletes a user
+ * removes their user role entry,
+ * expires their permissions to all animals but does not remove owned_by_user_id flag 
+ * on animals they have created
  * @param idToDelete ID of the user to be removed
  * @returns a boolean indicating if the deletion was successful
  */
@@ -180,9 +184,9 @@ interface IUserCritterPermission {
 }
 
 /**
- * @param req.body an object with @type {IUserCritterPermission}
- * @param req.body.userId: the user receiving the permission
- * @param req.body.access the crtter access type being granted
+ * @param body an object with @type {IUserCritterPermission}
+ * @param userId: the user receiving the permission
+ * @param access the crtter access type being granted
  * @returns list of successful assignments
  */
 const assignCritterToUser = async function (

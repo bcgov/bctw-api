@@ -22,7 +22,8 @@ const parseBoolFromJSON = (val: string) => {
 
 // retrieves the timestamp of the last entered row in the ats_collar_data table
 // if not production, returns now() - 1 day 
-const getTimestampOfLastCollarEntry = async (): Promise<Dayjs> => {
+const getTimestampOfLastATSEntry = async (): Promise<Dayjs> => {
+  // todo: use env defined variable instead of yesterday if it exists
   const yesterday = dayjs().utc().subtract(1, 'd');
   const sql = `select c.date from bctw.ats_collar_data c order by c.date desc limit 1`
   const data = await queryAsync(sql);
@@ -110,7 +111,7 @@ const insertData = async (sql: string): Promise<QueryResult> => {
 }
 
 export {
-  getTimestampOfLastCollarEntry,
+  getTimestampOfLastATSEntry,
   formatSql,
   insertData,
 }

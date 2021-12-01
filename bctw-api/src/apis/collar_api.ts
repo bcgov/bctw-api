@@ -23,7 +23,7 @@ const fn_get_collar_history = 'get_collar_history';
 const fn_get_collar_permission = `${S_BCTW}.get_user_collar_permission`;
 
 /**
- * @returns the result of the insert/upsert in the bulk rseponse format
+ * @returns the result of the insert/upsert in the bulk response format
  */
 const upsertCollar = async function (
   req: Request,
@@ -67,7 +67,6 @@ const deleteCollar = async function (
  * @returns a list of collars that are not attached to a critter that the user created.
  * If the user has admin role they can see all unattached collars
  */
-
 const getUnattachedDeviceSQL = function (
   username: string,
   page: number,
@@ -101,6 +100,7 @@ const getUnattachedDeviceSQL = function (
   return sql;
 };
 
+// sql to retrieve the latest transmission date of a device (note: fetches from a materialized view)
 const getLastPingSQL = `(SELECT date_recorded FROM latest_transmissions WHERE collar_id = ca.collar_id) as "last_transmission_date"`;
 
 const getAvailableCollars = async function (

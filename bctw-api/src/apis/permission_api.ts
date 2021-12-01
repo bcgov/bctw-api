@@ -14,8 +14,6 @@ import { sendEmail } from './email';
 const fn_submit_perm_request = 'submit_permission_request';
 const fn_execute_perm_request = 'execute_permission_request';
 
-
-
 /**
  * the object the admin submits to grant / denty a permission request
  */
@@ -25,22 +23,18 @@ interface IExecuteRequest extends Pick<IPermissionRequest, 'request_id'> {
 }
 
 /**
- * endpoint for a manager to submit a permission request.
- * @param critter_permissions_list is an array, but the database function
+ * endpoint for a manager to submit a permission request for other uses to gain
+ * access to one or more animals.
+ * note: @param critter_permissions_list is an array, but the database function
  * splits each critter permission into it's own request
  */
 const submitPermissionRequest = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const userIdentifier = getUserIdentifier(req) as string;
-  const {
-    user_email_list,
-    critter_permissions_list,
-    request_comment,
-  } = req.body as IPermissionRequestInput;
+  const { user_email_list, critter_permissions_list, request_comment } = req.body as IPermissionRequestInput;
   const sql = constructFunctionQuery(fn_submit_perm_request, [
-    userIdentifier,
+    getUserIdentifier(req),
     user_email_list,
     JSON.stringify(critter_permissions_list),
     request_comment,
@@ -80,7 +74,8 @@ const getPermissionRequests = async function (
 /**
  * endpoint for an admin to deny or approve a request
  * @param body @type {IExecuteRequest}
- * if the @param is_grant is false, db function will not return anything.
+ * if @param is_grant is false, db function will not return anything.
+ * if @param is_grant is false, a permission denied email will be sent to the user
  */
 const approveOrDenyPermissionRequest = async function (
   req: Request,

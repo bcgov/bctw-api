@@ -14,7 +14,8 @@ const completeTokenURL = `${EMAIL_ENV.tokenURL}/protocol/openid-connect/token`;
 const completeApiUrl = `${EMAIL_ENV.apiURL}/api/v1/email`;
 
 /**
- * a test endpoing
+ * a test endpoint
+ * note: not exposed in server.ts
  */
 const emailEndpoint = async function (
   req: Request,
@@ -37,7 +38,7 @@ const createAuthHash = (): string => {
 };
 
 /**
- *
+ * sends an email using the CHES service
  * @param message message to send
  * @param subject the email subject
  * @param emailTo email address of the receiver, defaults to admin
