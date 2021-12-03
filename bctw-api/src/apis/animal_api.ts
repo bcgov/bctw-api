@@ -73,7 +73,7 @@ const _getAttachedSQL = (username: string, page: number, search?: SearchFilter, 
     ) SELECT * from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
-    const filter =  search ? appendFilter(search, base, `${alias}.`, true) : '';
+    const filter =  search ? appendFilter(search, `${alias}.`, true) : '';
     return constructGetQuery({ base, page, filter, order: [{field: `${alias}.attachment_start `, order: 'desc'}, {field: `${alias}.device_id`}]});
 }
 
@@ -89,7 +89,7 @@ const _getUnattachedSQL = (username: string, page: number, search?: SearchFilter
     ) SELECT * from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
-  const filter =  search ? appendFilter(search, base, `${alias}.`, true) : '';
+  const filter =  search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({ base, page, filter, order: [{ field: `${alias}.valid_from `, order: 'desc' }, {field: `${alias}.wlh_id`}] });
 }
 

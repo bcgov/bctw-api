@@ -5,6 +5,7 @@ import { deleteAnimal, getAnimal, getAnimalHistory, getAnimals, upsertAnimal } f
 import { addCode, addCodeHeader, getCode, getCodeHeaders } from './apis/code_api';
 import {
   deleteCollar,
+  getAllCollars,
   getAssignedCollars,
   getAvailableCollars,
   getCollar,
@@ -109,6 +110,7 @@ export {
   emailEndpoint,
   getAnimalHistory,
   getAnimals,
+  getAllCollars,
   getAssignedCollars,
   getAvailableCollars,
   getCode,

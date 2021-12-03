@@ -95,7 +95,7 @@ const getUnattachedDeviceSQL = function (
     base,
     order: [{field: 'c.valid_from', order: 'desc'}, {field: 'c.device_id '}],
     page,
-    filter: filter ? appendFilter(filter, base, true, true) : '',
+    filter: filter ? appendFilter(filter, true, true) : '',
   });
   return sql;
 };
@@ -158,7 +158,7 @@ const getAttachedDeviceSQL = function (
   const sql = constructGetQuery({
     base,
     order: [{field: `${alias}.attachment_start`, order: 'desc'}, {field: `${alias}.device_id `}],
-    filter: filter ? appendFilter(filter, base, `${alias}.`, !!collar_id) : '',
+    filter: filter ? appendFilter(filter, `${alias}.`, !!collar_id) : '',
     page,
   });
   return sql;
@@ -207,6 +207,21 @@ const getCollar = async function (
 };
 
 /**
+ * retrieve all devices, regardless of device
+ */
+const getAllCollars = async function (req: Request, res:Response): Promise<Response> {
+  const base = `select collar_id, device_id, frequency, device_make, device_status, device_type, device_model, activation_status FROM ${S_API}.collar_v`;
+  const filter = getFilterFromRequest(req);
+  const page = (req.query?.page || 0) as number;
+  const sql = constructGetQuery({ base, filter: appendFilter(filter, false, false), page });
+  const { result, error, isError } = await query(sql);
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows);
+}
+
+/**
  * retrieves a history of changes made to a collar
  */
 const getCollarChangeHistory = async function (
@@ -236,6 +251,7 @@ const getCollarChangeHistory = async function (
 export {
   upsertCollar,
   deleteCollar,
+  getAllCollars,
   getCollar,
   getAssignedCollars,
   getAvailableCollars,

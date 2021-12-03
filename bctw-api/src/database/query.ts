@@ -203,7 +203,6 @@ const paginate = (pageNumber: number): string => {
  */
 const appendFilter = (
   filter: SearchFilter | undefined,
-  sqlBase: string,
   hasAlias: boolean | string,
   hasWhere: boolean
 ): string => {

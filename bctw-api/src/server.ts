@@ -57,6 +57,7 @@ const app = express()
   .get('/get-animal-history/:animal_id', api.getAnimalHistory)
   .post('/upsert-animal', api.upsertAnimal)
   // devices
+  .get('/get-all-collars', api.getAllCollars)
   .get('/get-assigned-collars', api.getAssignedCollars)
   .get('/get-available-collars', api.getAvailableCollars)
   .get('/get-assignment-history/:animal_id', api.getCollarAssignmentHistory)
@@ -94,8 +95,6 @@ const app = express()
   // codes
   .get('/get-code', api.getCode)
   .get('/get-code-headers', api.getCodeHeaders)
-  // .post('/add-code', api.addCode)
-  // .post('/add-code-header', api.addCodeHeader)
   // export/import
   .post('/export', api.getExportData)
   .post('/import-csv', upload.single('csv'), importCsv)

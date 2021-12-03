@@ -163,7 +163,7 @@ const getUserCritterAccess = async function (
     S_API,
     true
   );
-  const sql = constructGetQuery({base, filter: appendFilter(getFilterFromRequest(req), base, false, false)});
+  const sql = constructGetQuery({base, filter: appendFilter(getFilterFromRequest(req), false, false)});
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
