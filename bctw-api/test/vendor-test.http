@@ -1,3 +1,4 @@
+###
 post http://localhost:3000/fetch-telemetry?idir={{idir}}
 content-type: application/json
 
@@ -29,3 +30,22 @@ content-type: application/json
   "end": "2021-11-30",
   "vendor": "Lotek"
 }
+
+### combine vendors
+post http://localhost:3000/fetch-telemetry?idir={{idir}}
+content-type: application/json
+
+[
+  {
+    "ids": [83576],
+    "start":"2021-11-15",
+    "end": "2021-11-30",
+    "vendor": "Lotek"
+  },
+  {
+    "ids": [42136,34710],
+    "start":"2021-10-15" ,
+    "end": "2021-11-01",
+    "vendor": "Vectronic"
+  }
+]

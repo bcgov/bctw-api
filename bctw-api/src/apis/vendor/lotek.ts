@@ -16,7 +16,7 @@ const LOTEK_CREDENTIAL_ID = process.env.LOTEK_API_CREDENTIAL_NAME;
 const _insertLotekRecords = async function (
   rows: LotekRawTelemetry[]
 ): Promise<ManualVendorAPIResponse> {
-  console.log(`Entering ${rows.length} records for device ${rows[0].DeviceID}`);
+  console.log(`${rows.length} records for lotek device ${rows[0].DeviceID}`);
   const fn_name = 'vendor_insert_raw_lotek';
   const records = rows.filter((e) => e && e.DeviceID);
 
@@ -42,21 +42,24 @@ const _fetchLotekTelemetry = async function (
   end: string,
   uri: string,
   token: LotekToken
-): Promise<LotekRawTelemetry[]> {
+): Promise<LotekRawTelemetry[] | ManualVendorAPIResponse> {
   const s = dayjs(start).format('YYYY-MM-DDTHH:mm:ss');
   const e = dayjs(end).format('YYYY-MM-DDTHH:mm:ss');
 
   const url = `${uri}/gps?deviceId=${device_id}&dtStart=${s}&dtEnd=${e}`;
+  let errStr = '';
 
   // Send request to the API
   const results = await axios.get(url, token).catch((err: AxiosError) => {
-    console.error(`fetchLotekTelemetry error: ${JSON.stringify(err?.response?.data)}`);
+    errStr = JSON.stringify(err?.response?.data);
+    console.error(`fetchLotekTelemetry error: ${errStr}`);
   });
   if (results && results.data) {
     const { data } = results;
     return data.filter((e) => e && e.RecDateTime && e.DeviceID);
+  } else {
+    return { device_id: device_id, records_found: 0, vendor: 'Lotek', error: errStr } as ManualVendorAPIResponse;
   }
-  return [];
 };
 
 /**
@@ -107,9 +110,10 @@ const performManualLotekUpdate = async (
   const promises = device_ids.map((id) => _fetchLotekTelemetry(id, start, end, url, token));
   const apiResults = await Promise.all(promises);
 
-  const promisesDb = apiResults.filter(rows => rows?.length).map((rows) => _insertLotekRecords(rows));
+  const failed = apiResults.filter(f => !Array.isArray(f)) as ManualVendorAPIResponse[];
+  const promisesDb = apiResults.filter(rows => Array.isArray(rows) && rows.length).map((rows) => _insertLotekRecords(rows as LotekRawTelemetry[]));
   const dbResults = await Promise.all(promisesDb);
-  return dbResults;
+  return [...dbResults, ...failed];
 };
 
 export { performManualLotekUpdate }

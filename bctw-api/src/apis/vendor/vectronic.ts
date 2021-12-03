@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import { getRowResults, query } from '../../database/query';
 import {
@@ -41,19 +41,22 @@ const _fetchVectronicTelemetry = async function (
   collar: APIVectronicData,
   start: string,
   end: string
-): Promise<VectronicRawTelemetry[]> {
+): Promise<VectronicRawTelemetry[] | ManualVendorAPIResponse> {
   const { collarkey, idcollar } = collar;
   const s = dayjs(start).format(VECT_API_TS_FORMAT);
   const e = dayjs(end).format(VECT_API_TS_FORMAT);
   const url = `${VECT_API_URL}/${idcollar}/gps?collarkey=${collarkey}&afterScts=${s}&beforeScts=${e}`;
-  const results = await axios.get(url).catch((err) => {
-    console.error(`fetchVectronicTelemetry: Could not get collar data for ${collar.idcollar}: ${err}`);
+  let errStr = '';
+  const results = await axios.get(url).catch((err: AxiosError) => {
+    errStr = JSON.stringify(err?.response?.data);
+    console.error(`fetchVectronicTelemetry failure for device ${collar.idcollar}: ${errStr}`);
   });
   if (results && results.data) {
-    console.log(`${results.data.length} records retrieved for collar ${collar.idcollar}`);
+    console.log(`${results.data.length} records retrieved for vectronic device ${collar.idcollar}`);
     return results.data;
+  } else {
+    return { device_id: idcollar, records_found: 0, vendor: 'Vectronic', error: errStr } as ManualVendorAPIResponse;
   }
-  return [];
 };
 
 /**
@@ -66,7 +69,7 @@ const _insertVectronicRecords = async function (
 ): Promise<ManualVendorAPIResponse> {
   const fn_name = 'vendor_insert_raw_vectronic';
   const records = rows.filter((e) => e && e.idPosition && e.idCollar);
-  console.log(`inserting ${records.length} records for collar ${records[0].idCollar}`);
+  // console.log(`inserting ${records.length} records for collar ${records[0].idCollar}`);
 
   const sql = `select ${fn_name}('[${records
     .map((v) => JSON.stringify(ToLowerCaseObjectKeys(v)))
@@ -79,6 +82,7 @@ const _insertVectronicRecords = async function (
       device_id: rows[0]?.idCollar ?? 0,
       records_found: 0,
       vendor: 'Vectronic',
+      error: error.message
     };
   }
   const insertResult = getRowResults(result, fn_name, true);
@@ -113,12 +117,13 @@ const performManualVectronicUpdate = async (
     return [];
   }
 
+  const failed = apiResults.filter(f => !Array.isArray(f)) as ManualVendorAPIResponse[];
   // for any successful api results, insert them into the vectronics_collar_data table.
   const promisesDb = apiResults
-    .filter((rows) => rows?.length)
-    .map((rows: VectronicRawTelemetry[]) => _insertVectronicRecords(rows));
+    .filter((rows) => Array.isArray(rows) && rows.length)
+    .map((rows) => _insertVectronicRecords(rows as VectronicRawTelemetry[]));
   const dbResults = await Promise.all(promisesDb);
-  return dbResults;
+  return [...dbResults, ...failed];
 };
 
 export { performManualVectronicUpdate };

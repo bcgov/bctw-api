@@ -16,6 +16,7 @@ export type ManualVendorAPIResponse = {
   device_id: number;
   records_found: number;
   vendor: VendorType;
+  error?: string;
 };
 
 // object from the frontend
