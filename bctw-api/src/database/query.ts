@@ -213,16 +213,25 @@ const appendFilter = (
   }
   const { keys, term } = filter;
   for (let i = 0; i < keys.length; i++) {
-    const col = keys[i];
+    const column = keys[i]; // the column to search for
+    /**
+     * a search can be performed with 
+     * a) looking for one term within multiple columns
+     * b) multiple terms in multiple columns
+     * note: if the term list length doesnt match columns length,
+     * this logic implements the search as if the first term is meant 
+     * to be searched across multiple columns.
+     */
+    const searchTerm = term.length === keys.length ? term[i] : term[0];
     const isFirst = i === 0;
     const limiter = isFirst && !hasWhere ? ' WHERE' : !isFirst && hasWhere ? 'OR' : 'AND';
     let alias;
     if (typeof hasAlias === 'string') {
       alias = hasAlias;
     } else {
-      alias = hasAlias ? `${determineTableAlias(col)}` : '';
+      alias = hasAlias ? `${determineTableAlias(column)}` : '';
     }
-    sql += `${limiter} LOWER(${alias}${col}::varchar) LIKE '%${term}%' `;
+    sql += `${limiter} LOWER(${alias}${column}::varchar) LIKE '%${searchTerm}%' `;
   }
   // console.log(keys, sql)
   return sql;

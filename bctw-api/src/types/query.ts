@@ -8,7 +8,7 @@ export type QResult = {
 
 type SearchFilter = {
   keys: string[];
-  term: string;
+  term: string[];
 }
 
 export type Order = {

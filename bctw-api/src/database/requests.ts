@@ -12,13 +12,8 @@ const getFilterFromRequest = (req: Request): SearchFilter | undefined => {
   const o = {} as SearchFilter;
 
   for (const [key, value] of Object.entries(query)) {
-    if ((['keys', 'term'] as (keyof SearchFilter)[]).includes(key as keyof SearchFilter)) {
-      const k = String(key);
-      if (key === 'keys') {
-        o[k] = typeof value === 'string' ? value.split(','): Array.isArray(value) ? value : null;
-      } else if (key === 'term') {
-        o[k] = value;
-      }
+    if (['keys', 'term'].includes(key)) {
+      o[key] = typeof value === 'string' ? value.split(','): Array.isArray(value) ? value : null;
     }
   }
   return o.keys && o.term ? o : undefined;
