@@ -46,9 +46,10 @@ const _fetchVectronicTelemetry = async function (
   const s = dayjs(start).format(VECT_API_TS_FORMAT);
   const e = dayjs(end).format(VECT_API_TS_FORMAT);
   const url = `${VECT_API_URL}/${idcollar}/gps?collarkey=${collarkey}&afterScts=${s}&beforeScts=${e}`;
+  console.log('vetronic url: ', url);
   let errStr = '';
   const results = await axios.get(url).catch((err: AxiosError) => {
-    errStr = JSON.stringify(err?.response?.data);
+    errStr = JSON.stringify(err);
     console.error(`fetchVectronicTelemetry failure for device ${collar.idcollar}: ${errStr}`);
   });
   if (results && results.data) {
