@@ -7,6 +7,7 @@ import {
   VectronicRawTelemetry,
 } from '../../types/vendor';
 import { ToLowerCaseObjectKeys } from './vendor_helpers';
+import { Agent } from 'https';
 
 const VECT_API_URL = process.env.VECTRONICS_URL;
 // format the API expects timestamps
@@ -37,6 +38,10 @@ const _getVectronicAPIKeys = async function (
  * bounded by @param start, @param end
  * @returns {VectronicRawTelemetry[]}
  */
+
+// fixme: testing using an unauthorized agent for vectronic fetch
+const agent = new Agent({ rejectUnauthorized: false});
+
 const _fetchVectronicTelemetry = async function (
   collar: APIVectronicData,
   start: string,
@@ -48,7 +53,7 @@ const _fetchVectronicTelemetry = async function (
   const url = `${VECT_API_URL}/${idcollar}/gps?collarkey=${collarkey}&afterScts=${s}&beforeScts=${e}`;
   console.log('vetronic url: ', url);
   let errStr = '';
-  const results = await axios.get(url).catch((err: AxiosError) => {
+  const results = await axios.get(url, { httpsAgent: agent }).catch((err: AxiosError) => {
     errStr = JSON.stringify(err);
     console.error(`fetchVectronicTelemetry failure for device ${collar.idcollar}: ${errStr}`);
   });
