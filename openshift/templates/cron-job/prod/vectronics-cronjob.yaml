@@ -59,7 +59,7 @@ objects:
                     value: 'https://api.vectronic-wildlife.com/v2/collar'
               restartPolicy: 'Never'
               terminationGracePeriodSeconds: 30
-              activeDeadlineSeconds: 90
+              activeDeadlineSeconds: 300
               dnsPolicy: 'ClusterFirst'
 parameters:
   - name: 'NAMESPACE'
