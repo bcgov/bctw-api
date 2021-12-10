@@ -19,7 +19,7 @@ const listenForTelemetryAlerts = async (): Promise<void> => {
       console.log('database telemetry alert listener started')
     }
     client.on('error', (er: Error) => {
-      console.error(`error in notify listener: ${JSON.stringify(er)}`);
+      console.error(`error in mortality alert listener: ${JSON.stringify(er)}`);
     });
     // listen to the event from the trigger trg_new_alert
     client.query(`LISTEN "${MORT_CHANNEL}"`);
@@ -36,7 +36,6 @@ const listenForTelemetryAlerts = async (): Promise<void> => {
       if (Array.isArray(json) && json.length) {
         handleMortalityAlert(json);
       }
-      // console.log('notif supplied!', data);
     });
   });
 };

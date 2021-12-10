@@ -19,7 +19,7 @@ const fn_get_critter_history = 'get_animal_history';
 const cac_v = `${S_API}.currently_attached_collars_v`;
 
 /**
- * body can be single or array of Animals
+ * body can be single object or array of Animals
  * @returns the upserted @type {Animal} list
  */
 const upsertAnimal = async function (
@@ -119,7 +119,9 @@ const getAnimals = async function (
 };
 
 /**
- * 
+ * fetches an individual animal supplied with a @param critter_id
+ * will first query db to determine if the animal is attached, and return
+ * attachment-specific columns
  */
 const getAnimal = async function (
   username: string,

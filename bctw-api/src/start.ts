@@ -33,10 +33,10 @@ import { attachDevice, getCollarAssignmentHistory, unattachDevice, updateDataLif
 import { getOnboardingRequests, getUserOnboardStatus, submitOnboardingRequest, handleOnboardingRequest } from './apis/onboarding_api';
 import { fetchVendorTelemetryData} from './apis/vendor/vendor_helpers';
 
-/* ## notFound
+/** contains a few special handlers, but otherwise this file simply re-export other endpoints */
+
+/**
   Catch-all router for any request that does not have an endpoint defined.
-  @param req {object} Node/Express request object
-  @param res {object} Node/Express response object
 */
 const notFound = function (req: Request, res: Response): Response {
   return res.status(404).json({ error: 'Express start.ts says: Sorry, but you must be lost' });
@@ -45,7 +45,7 @@ const notFound = function (req: Request, res: Response): Response {
 /**
  * generic getter
  * @param req.type : animal or device
- * @param req.query.id : uuid identifier of the object
+ * @param req.query.id : uuid - critter_id or collar_id to fetch 
  */
 const getType = async function (req: Request, res: Response): Promise<Response> {
   const { type, id } = req.params;

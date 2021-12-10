@@ -90,7 +90,7 @@ const getUserRole = async function (
 
 /**
  * @returns @type {User} includes user role type
- * note: since this uses the request query params it can only fetch the "current" user object.
+ * note: since this uses the request query string it can only fetch the current user session.
  */
 const getUser = async function (
   req: Request,
@@ -134,8 +134,8 @@ const getUsers = async function (
 };
 
 /**
- * @returns a list of critters the user has at least 'observer' access to
- * @param req.user username to get acccess for
+ * @returns a list of critters the user has at least observer access to
+ * @param req.params.user username to get acccess for
  * @param filters array of @type {eCritterPermission} to retrieve
  * @returns list of @type {Animal} and attached device properties
  */

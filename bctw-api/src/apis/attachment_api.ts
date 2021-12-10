@@ -58,7 +58,7 @@ const unattachDevice = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  console.log(sql);
+  // console.log(sql);
   return res.send(getRowResults(result, pg_unlink_collar_fn, true));
 }
 

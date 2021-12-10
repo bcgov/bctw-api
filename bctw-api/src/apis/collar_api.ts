@@ -183,6 +183,8 @@ const getAssignedCollars = async function (
 
 /**
  * retrieve an individual collar
+ * returns device metadata based on the collar's 
+ * animal attachment status
  */
 const getCollar = async function (
   username: string,

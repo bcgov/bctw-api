@@ -11,7 +11,7 @@ import { pgPool } from './pg';
 
 /**
  * @param IConstructQueryParameters
- * @returns the sql string with parameters applied
+ * @returns the modified sql string
  */
 const constructGetQuery = ({
   base,
@@ -59,7 +59,7 @@ const constructFunctionQuery = (
       newParams.push(to_pg_str(p));
     } else if (typeof p === 'number' || typeof p === 'boolean') {
       newParams.push(p);
-    } else if (typeof p.getMonth === 'function') {
+    } else if (typeof p.getMonth === 'function') { // p is a date object
       newParams.push(to_pg_timestamp(p));
     } else if (typeof p === 'object' && expectsObjAsArray) {
       newParams.push(obj_to_pg_array(p));
@@ -72,7 +72,7 @@ const constructFunctionQuery = (
   return `select ${returnsTable ? '* from' : ''} ${schema}.${fnName}(${newParams.join()})`;
 };
 
-// converts a js array to the postgres format
+// converts an array to the postgres format
 // ex. ['b','b'] => '{a, b}'
 const to_pg_array = (arr: number[] | string[]): string =>
   `'{${arr.join(',')}}'`;
@@ -80,7 +80,7 @@ const to_pg_array = (arr: number[] | string[]): string =>
 // uses a psql builtin function to convert a js date object
 const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
 
-// stringifies a single object into a psql friendly array of objects
+// stringifies a single object into a psql-friendly array of objects
 const obj_to_pg_array = (objOrArray: Record<string, unknown>): string => {
   const asArr = Array.isArray(objOrArray) ? objOrArray : [objOrArray];
   return `'${JSON.stringify(asArr)}'`;
@@ -137,7 +137,7 @@ const _getQueryResult = (data: QueryResult, fn: string) => {
   return flattened;
 };
 
-//
+/** uses the postgres client to run the query, rolls back if an exception is caught */
 const queryAsync = async (sql: string): Promise<QueryResult> => {
   const client = await pgPool.connect();
   let res: QueryResult;
@@ -157,7 +157,8 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
  * helper function that handles the try catch of querying the database
  * @param sql the sql string to be passed to the db
  * @param msgIfErr function will return an Error with this message if exception is caught
- * @param performAsTransaction whether or not to attempt to rollback the transaction if it fails
+ * @param asTransaction if true, and the environment is not in production, the transaction will be rolled back
+ * note: most put/post requests will pass true for this parameter
  */
 const query = async (
   sql: string,
@@ -176,7 +177,8 @@ const query = async (
 };
 
 /**
- * if environment variable ROLLBACK is set, don't commit transactions
+ * used in the @function query
+ * wraps the @param sql in begin;rollbac; if env variable ROLLBACK is set
  */
 const transactionify = (sql: string): string => {
   return process.env.ROLLBACK ? `begin;${sql};rollback;` : sql;

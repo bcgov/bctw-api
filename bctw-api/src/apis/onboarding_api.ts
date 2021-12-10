@@ -12,7 +12,12 @@ import { IHandleOnboardRequestInput, OnboardUserInput } from '../types/user';
 import { sendEmail } from './email';
 
 /**
- * handler for when a new user submits a request for access to BCTW
+ * unauthorized endpoint that handles new user onboard requests
+ * 
+ * note: although idir/bceid still exist in the bctw.user table, onboarding requests
+ * only supply the username. The idir/bceid rows are updated in the table via a trigger
+ * that is fired on inserting a row to the user table.
+ * idir/bceid columns should be deprecated completely
  */
 const submitOnboardingRequest = async function (
   req: Request,
@@ -31,8 +36,8 @@ const submitOnboardingRequest = async function (
 };
 
 /**
- * handler for an admin to grant or deny a user request
- * @param {IHandleOnboardRequestInput}
+ * handler for an admin to grant or deny a user request provied a @param {IHandleOnboardRequestInput}
+ * database function returns a boolean indicating whether or not the request was handled successfully
  */
 const handleOnboardingRequest = async function (
   req: Request,
@@ -50,6 +55,7 @@ const handleOnboardingRequest = async function (
 
 /**
  * retrieves all onboarding requests
+ * used in admin interface to handle new requests
  */
 const getOnboardingRequests = async function (req: Request, res:Response): Promise<Response> {
   const base = `select * from ${S_API}.onboarding_v`;
@@ -61,8 +67,8 @@ const getOnboardingRequests = async function (req: Request, res:Response): Promi
 };
 
 /**
- * for onboarding purposes. Takes the domain and username and returns the status of onboarding.
- * returns an access object that has a @type {OnboardingStatus}
+ * unauthorized endpoint for non-users to fetch their onboard status
+ * accepts the domain and username and returns an access @type {OnboardingStatus} object
  */
 const getUserOnboardStatus = async function (
   req: Request,

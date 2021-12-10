@@ -15,7 +15,7 @@ const fn_submit_perm_request = 'submit_permission_request';
 const fn_execute_perm_request = 'execute_permission_request';
 
 /**
- * the object the admin submits to grant / denty a permission request
+ * object the admin submits to grant / denty a permission request
  */
 interface IExecuteRequest extends Pick<IPermissionRequest, 'request_id'> {
   is_grant: boolean; // whether or not to approve or deny
@@ -41,7 +41,7 @@ const submitPermissionRequest = async function (
   ]);
   const { result, error } = await query(sql, '', true);
   if (!error && !DISABLE_PERMISSION_EMAIL) {
-    // send email notification to the admin
+    // send email notification to the admin via CHES
     const rows = getRowResults(result, fn_submit_perm_request);
     const template = permissionSubmittedEmail(rows as IPermissionRequest[]);
     if (template) {
