@@ -7,7 +7,7 @@ import { PGMortalityAlertEvent } from '../types/sms';
 import handleMortalityAlert from '../utils/gcNotify';
 
 /**
- * retrieves telemetry alerts from the database 
+ * retrieves telemetry alerts
  */
 const getUserTelemetryAlerts = async function (
   req: Request,
@@ -24,7 +24,7 @@ const getUserTelemetryAlerts = async function (
 }
 
 /**
- * used to expire or snooze telemetry alerts
+ * used to flag an alert as complete/finished or snooze telemetry alerts
  * @param req.body the telemetry alert 
  * @returns the updated alerts in JSON
  */

@@ -31,6 +31,11 @@ module.exports = (on, config) => {
     return port;
   }
 
+  /**
+   * the test runner is using a headless version of chrome
+   * this function makes sure the chrome-remote-interface is able to 
+   * perform file downloads
+   */
   async function resetCRI() {
     if (client) {
       // console.log('resetting CRI client');
@@ -39,6 +44,9 @@ module.exports = (on, config) => {
     }
   }
 
+  /**
+   * remove previously downloaded csv files
+   */
   async function cleanDownloads() {
     const path = `${downloadPath}/*.txt`;
     console.log(`cleaning up downloads ${path}`);

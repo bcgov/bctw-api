@@ -37,7 +37,7 @@ describe('ATS Test', () => {
     cy.get(ATS_LOGIN_FORM_ID).submit();
 
     /**
-     * at the time of implementation, there is no way to catch this error, so this test will fail.
+     * note: at the time of implementation, there is no way to catch this error, so this test will fail.
      * Cypress always expects a new page to be loaded when the button is clicked
      */
     cy.get(downloadTransmissionsSelector).parent().click();

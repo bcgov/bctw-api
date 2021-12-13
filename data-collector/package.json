@@ -12,7 +12,6 @@
     "ats": "node build/ats.js",
     "cypress": "cypress run -b chromium --headless",
     "cypress-headed": "cypress run -b chromium --no-exit",
-    "test": "ts-node scripts/test/ats_test.ts",
     "watch": "tsc -w"
   },
   "repository": {

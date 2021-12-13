@@ -3,16 +3,17 @@ import { spawn } from 'child_process'
 
 /** login form field IDs
  * can be supplied via environment variables
- * the Cypress process requires these element IDs to supply the login credentials
- * to the ATS login form
+ * the Cypress process requires these html element IDs to supply the login credentials
+ * to the ATS account login form
+ * note: if the ATS webpage is updated, check to make sure these IDs are the same
 */
 const ATS_USERNAME_FIELD_ID = process.env.ATS_USERNAME_FIELD_ID || '#username';
 const ATS_PASSWORD_FIELD_ID = process.env.ATS_PASSWORD_FIELD_ID || '#password';
 const ATS_LOGIN_FORM_ID = process.env.ATS_LOGIN_FORM_ID || '#ctl01';
 
 /**
- * spawn cypress as a child process, why? to pass the node environment variables
- * debugging note: additionally pass '--no-exit' when debugging locally to have Cypress not exit immediately
+ * spawn cypress as a child process, why? this is done in order to pass the node environment variables
+ * debugging note: you can additionally pass '--no-exit' when debugging locally to have Cypress not exit immediately
  */
 const spawnProcess = async () => {
     // the row identifier in the encrypted table, passed as a parameter to retrieve credentials function
@@ -30,6 +31,7 @@ const spawnProcess = async () => {
     const envString = `ATS_URL=${url},ATS_USERNAME_FIELD_ID=${ATS_USERNAME_FIELD_ID},ATS_PASSWORD_FIELD_ID=${ATS_PASSWORD_FIELD_ID},ATS_LOGIN_FORM_ID=${ATS_LOGIN_FORM_ID},ATS_PASSWORD=${password},ATS_USERNAME=${username}`;
     console.log(`environment variables passed to Cypress: ${envString}`);
 
+    // create the Cypresss process, which will run the tests in ./ats/integration/ats_spec.js in order
     const cypress = spawn('cypress', ['run', '-b', 'chromium', '--headless', '--env', envString]);
 
     cypress.stdout.on('data', data => console.log(`stdout: ${data}`));

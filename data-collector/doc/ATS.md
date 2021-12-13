@@ -30,7 +30,7 @@
 #### Running in a docker container:
 1. Open a terminal and cd into the data-collector directory
 1. Similar to the API development setup, copy the oc command line tools into the data-collector directory. See _DEV_SETUP.md_ for more details.
-1. If a local downloads directory exists, remove it to ensure Docker can grant the correct positions
+1. If a local downloads directory exists, remove it to ensure Docker can grant the correct permissions
 1. Build the image
    ```
    docker build -t data-collector .
@@ -39,7 +39,7 @@
    ```
    docker run -it data-collector /bin/bash
    ```
-1. export the environment variables. Exporting the private key for retrieving credentials - the simplest way to do this is from a file in the same directory.
+1. export the environment variables in the shell. Exporting the private key for retrieving credentials - the simplest way to do this is from a file in the same directory.
    ```
    export POSTGRES_DB=
    export POSTGRES_USER=
@@ -63,7 +63,8 @@
 
 #### Running Cypress locally
 1. Install the [dependencies](https://docs.cypress.io/guides/getting-started/installing-cypress.html#System-requirements)
-1. Use the "cypress-headed" or "cypress" npm scripts to start. You can also swap to another browser with the -b flag. The "headed" version will open the Cypress Test Runner UI.
+1. Use the "cypress-headed" or "cypress" npm scripts to start. You can also swap to another browser with the -b flag. 
+1. The "headed" version will open the Cypress Test Runner UI.
 
 #### Other potential gotchas
 1. data-collector module is written in Typescript, run `npm run watch` compile it before running tests.

@@ -10,6 +10,10 @@ const callback = (err) => {
   }
 };
 
+/**
+ * updates the materialized views for raw telemetry and latest device transmissions.
+ * after that is complete, call the procedure to check for device malfunction alerts.
+ */
 const sql = `
   refresh materialized view vendor_merge_view_no_critter;
   refresh materialized view latest_transmissions;

@@ -116,7 +116,7 @@ const getAlerts = async () => {
 };
 
 /**
- *
+ * insert new alerts directly to the telemetry_sensor_alert table
  */
 const insertAlerts = async (alerts: ILotekAlert[]) => {
   /**
