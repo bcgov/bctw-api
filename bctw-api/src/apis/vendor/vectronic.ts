@@ -13,7 +13,6 @@ const VECT_API_URL = process.env.VECTRONICS_URL;
 // format the API expects timestamps
 const VECT_API_TS_FORMAT = 'YYYY-MM-DDTHH:mm:ss';
 
-const SSL_CERT = process.env.SSL_CERT;
 
 /**
  * fetch the vectronic collar keys used in the api header
@@ -35,16 +34,20 @@ const _getVectronicAPIKeys = async function (
   return result.rows;
 };
 
+
+/**
+ * note: Vectronic API recently updated their ssl cert to use openssl
+ * the cert packaged with this version of node no longer works, so for this
+ * call only, the axios call will use an environment variable for the cert key
+ */
+const SSL_CERT = process.env.VECTRONIC_SSL_ROOT_CERT;
+const agent = new Agent({ca: SSL_CERT });
+
 /**
  * fetches telemetry for @param collar
  * bounded by @param start, @param end
  * @returns {VectronicRawTelemetry[]}
  */
-
-// fixme: testing using an unauthorized agent for vectronic fetch
-// const agent = new Agent({ rejectUnauthorized: false});
-const agent = new Agent({ca: SSL_CERT });
-
 const _fetchVectronicTelemetry = async function (
   collar: APIVectronicData,
   start: string,
@@ -56,6 +59,7 @@ const _fetchVectronicTelemetry = async function (
   const url = `${VECT_API_URL}/${idcollar}/gps?collarkey=${collarkey}&afterScts=${s}&beforeScts=${e}`;
   console.log('vetronic url: ', url);
   let errStr = '';
+  // call the vectronic api, using the agent created with the env variable cert key
   const results = await axios.get(url, { httpsAgent: agent }).catch((err: AxiosError) => {
     errStr = JSON.stringify(err);
     console.error(`fetchVectronicTelemetry failure for device ${collar.idcollar}: ${errStr}`);
