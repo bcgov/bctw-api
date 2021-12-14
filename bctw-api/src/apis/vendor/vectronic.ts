@@ -13,6 +13,8 @@ const VECT_API_URL = process.env.VECTRONICS_URL;
 // format the API expects timestamps
 const VECT_API_TS_FORMAT = 'YYYY-MM-DDTHH:mm:ss';
 
+const SSL_CERT = process.env.SSL_CERT;
+
 /**
  * fetch the vectronic collar keys used in the api header
  * @param device_ids vectronic device IDs to fetch
@@ -40,7 +42,8 @@ const _getVectronicAPIKeys = async function (
  */
 
 // fixme: testing using an unauthorized agent for vectronic fetch
-const agent = new Agent({ rejectUnauthorized: false});
+// const agent = new Agent({ rejectUnauthorized: false});
+const agent = new Agent({ca: SSL_CERT });
 
 const _fetchVectronicTelemetry = async function (
   collar: APIVectronicData,
