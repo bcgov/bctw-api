@@ -25,7 +25,7 @@ import {
   getUsers,
   upsertUDF,
 } from './apis/user_api';
-import { emailEndpoint } from './apis/email';
+// import { emailEndpoint } from './apis/email';
 import { getUserIdentifier, MISSING_USERNAME } from './database/requests';
 import { getExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
@@ -107,7 +107,7 @@ export {
   unattachDevice,
   updateDataLife,
   deleteType,
-  emailEndpoint,
+  // emailEndpoint,
   getAnimalHistory,
   getAnimals,
   getAllCollars,

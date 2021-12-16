@@ -11,9 +11,7 @@ import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 
-/*
-  Run the server.
-*/
+// the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
 
 // only these urls can pass through unauthorized
@@ -22,6 +20,7 @@ const unauthorizedURLs: Record<string, string> = {
   submit: '/submit-onboarding-request'
 };
 
+// setup the express server
 const app = express()
   .use(helmet())
   .use(cors())
@@ -112,17 +111,18 @@ const app = express()
   .get('/health', (_, res) => res.send('healthy'))
   .get('*', api.notFound);
 
+// run the server.
 http.createServer(app).listen(3000, () => {
   console.log(`listening on port 3000`);
   pgPool.connect((err, client) => {
-    const server = `${process.env.POSTGRES_SERVER_HOST ?? 'localhost'}:${
+    const serverMsg = `${process.env.POSTGRES_SERVER_HOST ?? 'localhost'}:${
       process.env.POSTGRES_SERVER_PORT ?? 5432
     }`;
     if (err) {
       console.log(
-        `error connecting to postgresql server host at ${server}: ${err}`
+        `error connecting to postgresql server host at ${serverMsg}: ${err}`
       );
-    } else console.log(`postgres server successfully connected at ${server}`);
+    } else console.log(`postgres server successfully connected at ${serverMsg}`);
     client?.release();
   });
   const disableAlerts = process.env.DISABLE_TELEMETRY_ALERTS;

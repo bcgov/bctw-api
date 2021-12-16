@@ -36,6 +36,11 @@ const animalSQL = (user: string, id: string, range: MapRange): string =>
 const deviceSQL = (user: string, id: string, range: MapRange): string => 
   makeQuery(fn_get_collar_history, user, id, range);
 
+/**
+ * called via the map page -> export view, this endpoint handles requests to
+ * export data when that data is not already in UI memory.
+ * Primarily animal/device metadata history and animal movement history requests 
+ */
 const getExportData = async function (
   req: Request,
   res: Response

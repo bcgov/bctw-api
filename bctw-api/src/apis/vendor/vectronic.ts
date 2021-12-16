@@ -39,6 +39,7 @@ const _getVectronicAPIKeys = async function (
  * note: Vectronic API recently updated their ssl cert to use openssl
  * the cert packaged with this version of node no longer works, so for this
  * call only, the axios call will use an environment variable for the cert key
+ * may be fixed without having to do this with a newer version of node (currently 12.x)
  */
 const SSL_CERT = process.env.VECTRONIC_SSL_ROOT_CERT;
 const agent = new Agent({ca: SSL_CERT });

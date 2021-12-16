@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 
-// load environment variables
+// load CHES environment variables
 const EMAIL_ENV = {
   tokenURL: process.env.BCTW_CHES_AUTH_URL,
   apiURL: process.env.BCTW_CHES_API_URL,
@@ -17,6 +17,7 @@ const completeApiUrl = `${EMAIL_ENV.apiURL}/api/v1/email`;
  * a test endpoint
  * note: not exposed in server.ts
  */
+/**
 const emailEndpoint = async function (
   req: Request,
   res: Response
@@ -26,11 +27,12 @@ const emailEndpoint = async function (
   const response = await sendEmail(message, emailTo, 'test');
   return res.send(response);
 };
+*/
 
 /**
  * Create the authorization hash
  */
-const createAuthHash = (): string => {
+const _createAuthHash = (): string => {
   const { username, password } = EMAIL_ENV;
   const prehash = Buffer.from(`${username}:${password}`, 'utf8').toString('base64');
   const hash = `Basic ${prehash}`;
@@ -39,6 +41,9 @@ const createAuthHash = (): string => {
 
 /**
  * sends an email using the CHES service
+ * note: this service is used to send onboarding and animal permission emails, but 
+ * could/should be deprecated in favor of gcNotify (see utils/gcNotify.ts)
+ * why? primary reason being the email templates can be defined in gcNotify
  * @param message message to send
  * @param subject the email subject
  * @param emailTo email address of the receiver, defaults to admin
@@ -48,7 +53,7 @@ const sendEmail = async (
   subject: string,
   emailTo = EMAIL_ENV.adminEmailAddress,
 ): Promise<void> => {
-  const hash = createAuthHash();
+  const hash = _createAuthHash();
   const emailFrom = EMAIL_ENV.fromEmail;
   console.log(`email to: ${emailTo} env config: ${JSON.stringify(EMAIL_ENV)}`)
 
@@ -103,4 +108,7 @@ const sendEmail = async (
   return ret;
 };
 
-export { emailEndpoint, sendEmail };
+export { 
+  // emailEndpoint,
+  sendEmail
+};

@@ -23,7 +23,7 @@ interface IExecuteRequest extends Pick<IPermissionRequest, 'request_id'> {
 }
 
 /**
- * endpoint for a manager to submit a permission request for other uses to gain
+ * endpoint for a manager to submit a permission request to grant other users
  * access to one or more animals.
  * note: @param critter_permissions_list is an array, but the database function
  * splits each critter permission into it's own request
@@ -56,9 +56,10 @@ const submitPermissionRequest = async function (
 };
 
 /**
- * fetched requests from the permission_requests table.
+ * fetched unhandled requests from the permission_requests table.
  * since a single request can be applied to multiple users and for
  * multiple animal/permission combinations
+ * used in the admin only view data table
  */
 const getPermissionRequests = async function (
   req: Request,

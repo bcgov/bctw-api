@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { QResult, SearchFilter } from '../types/query';
 
+// helpers for processing express Request objects
+
 const MISSING_USERNAME = 'must supply user identifier';
 
 /**

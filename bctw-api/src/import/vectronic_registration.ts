@@ -5,9 +5,6 @@ import { promisify } from 'util';
 import { constructFunctionQuery, getRowResults, query } from '../database/query';
 import { QResult } from '../types/query';
 import { IBulkResponse } from '../types/import_types';
-import { Collar } from '../types/collar';
-import { S_BCTW } from '../constants';
-import { getUserIdentifier, MISSING_USERNAME } from '../database/requests';
 const readPromise = promisify(readFile);
 
 const VECT_KEY_UPSERT_FN = `upsert_vectronic_key`;
@@ -63,6 +60,8 @@ class VectronicKeyxRow implements IKeyX {
  * exposed as an API for handling the bulk import of Vectronic .keyx registration collars
  * parses the .keyx files and inserts results to the bctw.api_vectronics_collar_data table
  * to allow the data-collector module to retrieve telemetry records for the device
+ * note: the collar record is no longer created as this workflow assumes collar metadata
+ * will be uploaded at a later point.
  */
 const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Promise<Response<IBulkResponse>> => {
   const bulkResp: IBulkResponse = { errors: [], results: [] };

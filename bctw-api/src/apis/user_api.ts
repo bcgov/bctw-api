@@ -215,9 +215,12 @@ const assignCritterToUser = async function (
 };
 
 /**
- * used to save user animal groups and collective units this
- * calls a database routine that will replace the udf with the contents
- * of the @param req.body for the udf type provided
+ * used to save user animal groups and collective units.
+ * Calls a database routine that will replace the udf with the contents
+ * of the @param req.body, but only for the udf type provided
+ * ex. when saving custom animal groups in the UI, all of the groups are sent 
+ * in the request. The database handler will replace all of the user's udfs of the 
+ * custom animal group type, but not their collective units
  */
 const upsertUDF = async function (
   req: Request,
