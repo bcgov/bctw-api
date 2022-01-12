@@ -30,4 +30,4 @@ Because each vendor API handles these events differently, unique implementations
 ## User Alert notifications
 * the _alert_notify_api_sms_trg_ trigger is fired upon insertion to the alert table
 * this trigger uses postgres's [notify command](https://www.postgresql.org/docs/12/sql-notify.html) for listeners on the 'TRIGGER_ALERT_SMS' channel
-* when the BCTW API is started, a listener is added to handle this, and an SMS/email is sent to users that have access to the animal the device is attached to.
+* when the BCTW API is started, a listener is added to handle this, and an SMS/email is sent to users that are managers of the animal to which the device is attached.
