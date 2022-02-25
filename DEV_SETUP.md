@@ -30,6 +30,8 @@
   cd {source_folder}\bctw-api\bctw-api
   docker build -t bctw-api .
 ```
+#### Note if error "Failed to solve with frontend dockerfile" occurs####
+- On Docker desktop go to Settings -> Docker Engine -> buildkit = false
 
 ## Start the Docker image ##
 
