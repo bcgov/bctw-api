@@ -94,6 +94,7 @@ const app = express()
   // codes
   .get('/get-code', api.getCode)
   .get('/get-code-headers', api.getCodeHeaders)
+  .get('/get-code-long-desc', api.getCodeLongDesc)
   // export/import
   .post('/export', api.getExportData)
   .post('/import-csv', upload.single('csv'), importCsv)
@@ -108,7 +109,8 @@ const app = express()
   .get('/:type/:id', api.getType)
   // .post('/email', api.emailEndpoint)
   // Health check
-  .get('/health', (_, res) => res.send('healthy'))
+  .get('/health', (_, res) => res.send('cool'))
+  .get('/test', (_, res) => res.send('test'))
   .get('*', api.notFound);
 
 // run the server.

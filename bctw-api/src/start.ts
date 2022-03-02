@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import { getUserTelemetryAlerts, testAlertNotification, updateUserTelemetryAlert } from './apis/alert_api';
 import { deleteAnimal, getAnimal, getAnimalHistory, getAnimals, upsertAnimal } from './apis/animal_api';
-import { addCode, addCodeHeader, getCode, getCodeHeaders } from './apis/code_api';
+import { addCode, addCodeHeader, getCode, getCodeHeaders, getCodeLongDesc } from './apis/code_api';
 import {
   deleteCollar,
   getAllCollars,
@@ -100,6 +100,7 @@ const deleteType = async function (
 export {
   addCode,
   addCodeHeader,
+  getCodeLongDesc,
   upsertUser,
   approveOrDenyPermissionRequest, 
   assignCritterToUser,
