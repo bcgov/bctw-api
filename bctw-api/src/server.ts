@@ -109,8 +109,7 @@ const app = express()
   .get('/:type/:id', api.getType)
   // .post('/email', api.emailEndpoint)
   // Health check
-  .get('/health', (_, res) => res.send('cool'))
-  .get('/test', (_, res) => res.send('test'))
+  .get('/health', (_, res) => res.send('healthy'))
   .get('*', api.notFound);
 
 // run the server.
