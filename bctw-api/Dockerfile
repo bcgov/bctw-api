@@ -2,9 +2,6 @@ FROM node:17.2.0
 
 WORKDIR /app
 
-#hot reload
-RUN npm install -g nodemon
-
 # make sure the linux ocp command line tools executable exists first
 # copy necessary files to image
 COPY oc /app
@@ -22,7 +19,3 @@ RUN echo "POSTGRES_SERVER_PORT=5432\nPOSTGRES_SERVER_HOST=localhost\nPOSTGRES_US
 RUN npm install
 
 RUN npm run build
-
-EXPOSE 3000
-
-CMD ["nodemon", "src/"]
