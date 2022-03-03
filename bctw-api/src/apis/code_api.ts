@@ -59,7 +59,7 @@ const getCodeLongDesc = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  return res.send('result');
+  return res.send(result);
 }
 
 

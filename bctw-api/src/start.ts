@@ -39,7 +39,7 @@ import { fetchVendorTelemetryData} from './apis/vendor/vendor_helpers';
   Catch-all router for any request that does not have an endpoint defined.
 */
 const notFound = function (req: Request, res: Response): Response {
-  return res.status(404).json({ error: 'Express start.ts says: Sorry, but you must be lost' });
+  return res.status(404).json({ error: 'Express start.ts says: Mac, but you must be lost' });
 };
 
 /**
