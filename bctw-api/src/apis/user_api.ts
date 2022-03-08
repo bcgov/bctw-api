@@ -35,13 +35,18 @@ const upsertUser = async function (
 ): Promise<Response> {
   const { user, role }: IUserProps = req.body;
   const sql = constructFunctionQuery(fn_upsert_user, [
-    getUserIdentifier(req, user),
+    getUserIdentifier(req),
     user,
     role,
   ]);
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
-    return res.status(500).send(error.message);
+    return res.status(500).send({
+      err: error.message,
+      userId: getUserIdentifier(req),
+      user: user,
+      role: role,
+    });
   }
   return res.send(getRowResults(result, fn_upsert_user, true));
 };
