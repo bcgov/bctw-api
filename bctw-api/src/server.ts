@@ -21,12 +21,15 @@ const unauthorizedURLs: Record<string, string> = {
 };
 
 const options: cors.CorsOptions = {
-  origin: 
+  "origin": 
   [
     'https://moe-bctw-dev.apps.silver.devops.gov.bc.ca/',  //Live dev
     'https://moe-bctw-test.apps.silver.devops.gov.bc.ca/', //Live test
     'https://telemetry.nrs.gov.bc.ca/',                    //Live prod
-  ]
+  ],
+  "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+  "preflightContinue": false,
+  "optionsSuccessStatus": 204
 }
 // setup the express server
 const app = express()
