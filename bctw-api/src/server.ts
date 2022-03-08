@@ -21,7 +21,6 @@ const unauthorizedURLs: Record<string, string> = {
 };
 
 const options: cors.CorsOptions = {
-  origin: '*',
   methods: ['GET','HEAD','PUT','PATCH','POST','DELETE'],
   preflightContinue: false,
   optionsSuccessStatus: 204,
