@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { QResult, SearchFilter } from '../types/query';
+import { IUserInput } from '../types/user';
 
 // helpers for processing express Request objects
 
@@ -25,8 +26,9 @@ const getFilterFromRequest = (req: Request): SearchFilter | undefined => {
  * retrieves the user identifier from the express request object - BCEID or IDIR 
  * @returns the identifier as a string if it exists, or undefined
  */
-const getUserIdentifier = (req: Request): string | undefined => {
+const getUserIdentifier = (req: Request, user?: IUserInput): string | undefined => {
   const id = req.query.idir ?? req.query.bceid;
+  if(user) return user.idir ?? user.bceid;
   return String(id) ?? undefined;
 }
 
