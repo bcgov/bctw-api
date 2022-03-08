@@ -39,14 +39,9 @@ const upsertUser = async function (
     user,
     role,
   ]);
-  const { result, error, isError } = await query(sql, '', true);
+  const { result, error, isError } = await query(sql,'', true);
   if (isError) {
-    return res.status(500).send({
-      err: error.message,
-      userId: getUserIdentifier(req),
-      user: user,
-      role: role,
-    });
+    return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, fn_upsert_user, true));
 };
