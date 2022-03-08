@@ -35,7 +35,7 @@ const upsertUser = async function (
 ): Promise<Response> {
   const { user, role }: IUserProps = req.body;
   const sql = constructFunctionQuery(fn_upsert_user, [
-    getUserIdentifier(req),
+    getUserIdentifier(req, user),
     user,
     role,
   ]);
