@@ -10,8 +10,8 @@ import { HistoricalTelemetryInput } from '../types/point';
  * Request all collars the user has access to.
  */
 const getDBCritters = function (req: Request, res: Response): void {
-  const {start, end, unassigned } = req.query;
-  const fn_name = unassigned === 'true' ? 'get_unattached_telemetry' : 'get_telemetry';
+  const {start, end} = req.query;
+  const fn_name = 'get_telemetry';
   const sql = `select geojson from ${S_BCTW}.${fn_name}('${getUserIdentifier(req)}', '${start}', '${end}')`;
 
   const done = function (err, data) {
@@ -36,30 +36,31 @@ const getCritterTracks = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { start, end, unassigned } = req.query;
+  const { start, end } = req.query;
   if (!start || !end) {
     return res.status(404).send('Must have a valid start and end date');
   }
   const username = getUserIdentifier(req);
-  const sql = unassigned === 'true' ? 
-  `
-    select
-    jsonb_build_object (
-      'type', 'Feature',
-      'properties', json_build_object(
-        'collar_id', collar_id,
-        'device_id', device_id
-      ),
-      'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
-    ) as "geojson"
-  from
-    get_unattached_telemetry('${username}', '${start}', '${end}')
-  where
-    st_asText(geom) <> 'POINT(0 0)'
-  group by
-    collar_id,
-    device_id;
-  ` : 
+  const sql = 
+  // unassigned === 'true' ? 
+  // `
+  //   select
+  //   jsonb_build_object (
+  //     'type', 'Feature',
+  //     'properties', json_build_object(
+  //       'collar_id', collar_id,
+  //       'device_id', device_id
+  //     ),
+  //     'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
+  //   ) as "geojson"
+  // from
+  //   get_unattached_telemetry('${username}', '${start}', '${end}')
+  // where
+  //   st_asText(geom) <> 'POINT(0 0)'
+  // group by
+  //   collar_id,
+  //   device_id;
+  // ` : 
   `
     select
       jsonb_build_object (
