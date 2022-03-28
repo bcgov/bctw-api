@@ -61,6 +61,7 @@ const getCritterTracks = async function (
   //   collar_id,
   //   device_id;
   // ` : 
+  
   `
     select
       jsonb_build_object (
