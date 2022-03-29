@@ -27,7 +27,7 @@ const _insertLotekRecords = async function (
 
   if (isError) {
     console.error(`_insertLotekRecords error: ${error.message}`);
-    return { device_id: rows[0].DeviceID, records_found: 0, vendor: 'Vectronic' };
+    return { device_id: rows[0].DeviceID, records_found: 0, vendor: 'Lotek' };
   }
   const insertResult = getRowResults(result, fn_name, true);
   return insertResult as ManualVendorAPIResponse;
