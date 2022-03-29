@@ -109,9 +109,11 @@ const getAlerts = async () => {
   const lastAlert = await getLastAlertTimestamp(ALERT_TABLE, eVendorType.lotek) ?? dayjs().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
   const filtered: ILotekAlert[] = body.filter((alert) => dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert)));
   console.log( `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`);
-  if (filtered.length) {
+  if (filtered.length == 0) {
+    console.log('No new alerts found');
     return;
   }
+  console.log('New alerts found');
   insertAlerts(filtered);
 };
 
