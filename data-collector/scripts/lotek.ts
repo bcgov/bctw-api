@@ -3,7 +3,15 @@ import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, pgPool
 const dayjs = require('dayjs');
 import { eVendorType, retrieveCredentials, ToLowerCaseObjectKeys  } from './utils/credentials';
 import { ILotekAlert } from 'types/lotek';
-import { nowUtc } from './utils/time';
+import { formatNowUtc, nowUtc } from './utils/time';
+import { performance } from 'perf_hooks';
+
+var log = console.log;
+console.log = function(){
+  var args = Array.from(arguments);
+  args.unshift(formatNowUtc + ": ");
+  log.apply(console, args);
+}
 
 const ALERT_TABLE = 'telemetry_sensor_alert';
 // Store the access token globally
@@ -156,7 +164,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
       console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
     }
 
-    if (dtTimestampCancel === timestampNotCanceled && strAlertType === 'Mortality') {
+    if (dtTimestampCancel === timestampNotCanceled && strAlertType === 'Mortality') { //toLowerCase() for mortality
       newAlerts.push(`(
         ${nDeviceID},
         '${eVendorType.lotek}',
@@ -191,6 +199,8 @@ const setToken = (data) => {
  * Feed the token into the collar aquisition and iteration function
 */
 const getToken = async function () {
+  var startTimer = performance.now();
+  console.log('Lotek CronJob: V1.1');
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
     console.log(`credential identifier: 'LOTEK_API_CREDENTIAL_NAME' not supplied`)
@@ -217,6 +227,9 @@ const getToken = async function () {
 
   await getAlerts();
   await getAllCollars();
+
+  let endTimer = performance.now();
+  console.log(`Lotek cronjob took ${(endTimer - startTimer)/1000} seconds to execute`);
 };
 
 /*
