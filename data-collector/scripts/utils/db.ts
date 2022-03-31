@@ -50,22 +50,46 @@ const getLastAlertTimestamp = async (alert_table: string, device_make: eVendorTy
  */
 const getIsDuplicateAlert = async (alert_table: string, device_id: number, device_make: eVendorType): Promise<boolean> => {
   const sql = `
-    select 1 from ${alert_table}
+    select COUNT(1) from ${alert_table}
     where device_make = '${device_make}'
     and device_id = ${device_id}
     and is_valid(valid_to)
   `;
   const result = await queryAsync(sql);
-  if (result.rowCount) {
-    const exists = result.rows[0];
-    return !!exists;
-  } else {
-    return false;
-  }
+  // if (result.rowCount) {
+  //   const exists = result.rows[0];
+  //   return !!exists;
+  // } else {
+  //   return false;
+  // }
+  return result.rowCount > 1;
 }
 
+/**
+ * gets lat long for a deviceid
+ * used when lat / long are 0,0
+ * lotek stopped providing proper coordinates with alerts
+ * @returns an latLong
+ */
+ interface latLong {
+  latitude: number;
+  longitude: number;
+}
+ const getLastKnownLatLong = async (device_id: number, device_make): Promise<latLong> => {
+  const sql = `
+  SELECT latitude, longitude
+  FROM telemetry_v
+  WHERE deviceid = ${device_id} 
+  AND vendor = ${device_make}
+  AND latitude != 0 OR NULL
+  AND longitude != 0 OR NULL
+  ORDER BY acquisition_date DESC LIMIT 1;
+  `
+  const result = await queryAsync(sql);
+  return result.rows[0];
+}
 
 // dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
 
-export { pgPool, isProd, queryAsync, getLastAlertTimestamp, getIsDuplicateAlert, transactionify }
+export { pgPool, isProd, queryAsync, getLastAlertTimestamp, getIsDuplicateAlert, transactionify, getLastKnownLatLong }

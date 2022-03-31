@@ -1,5 +1,5 @@
 import needle from 'needle';
-import { getIsDuplicateAlert, getLastAlertTimestamp, pgPool, queryAsync } from './utils/db';
+import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, pgPool, queryAsync } from './utils/db';
 const dayjs = require('dayjs');
 import { eVendorType, retrieveCredentials, ToLowerCaseObjectKeys  } from './utils/credentials';
 import { ILotekAlert } from 'types/lotek';
@@ -140,13 +140,20 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
   const newAlerts: string[] = [];
 
   for (const alert of alerts) {
-    const {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType, latitude, longitude} = alert;
+    let {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType, latitude, longitude} = alert;
     
     // if there is already an alert for this device, skip it
     const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek);
     if (isDuplicateAlert) {
       console.log(`alert with device_id ${nDeviceID} already found, skip. ${JSON.stringify(alert)}`)
       continue;
+    }
+
+    if(!latitude || !longitude){ // might need to change this to latitude == 0 etc...
+      const coords = await getLastKnownLatLong(nDeviceID, 'lotek');
+      latitude = coords.latitude;
+      longitude = coords.longitude;
+      console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
     }
 
     if (dtTimestampCancel === timestampNotCanceled && strAlertType === 'Mortality') {
