@@ -31,7 +31,7 @@ objects:
             spec:
               containers:
                 - name: '${JOB_NAME}'
-                  image: '${IMAGE_NAMESPACE}/${IMAGE_NAME}'
+                  image: 'image-registry.openshift-image-registry.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}'
                   command:
                     - 'npm'
                     - 'run'
@@ -88,7 +88,7 @@ parameters:
   - name: 'IMAGE_NAME'
     displayName: 'Image Name'
     description: 'The image name to use for this cron job.'
-    value: 'data-collector:dev'
+    value: 'bctw-data-collector:dev'
     required: true
   - name: 'SCHEDULE'
     displayName: 'Cron Schedule'
