@@ -19,6 +19,7 @@ const pgPool = new pg.Pool(pool);
 
 const queryAsync = async (sql: string): Promise<QueryResult> => {
   const client = await pgPool.connect();
+  
   let data;
   try {
     data = await client.query(sql);
@@ -26,6 +27,7 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
   }
   catch (e) {
     await client.query('rollback');
+    console.log(e)
     throw e;
   }
   finally {
