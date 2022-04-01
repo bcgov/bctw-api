@@ -1,4 +1,5 @@
 import needle from 'needle';
+import 'dotenv/config';
 import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, pgPool, queryAsync } from './utils/db';
 const dayjs = require('dayjs');
 import { eVendorType, retrieveCredentials, ToLowerCaseObjectKeys  } from './utils/credentials';
@@ -9,7 +10,7 @@ import { performance } from 'perf_hooks';
 var log = console.log;
 console.log = function(){
   var args = Array.from(arguments);
-  args.unshift(formatNowUtc + ": ");
+  args.unshift(formatNowUtc() + ": ");
   log.apply(console, args);
 }
 
@@ -71,7 +72,7 @@ const iterateCollars = async function (collar) {
 
   if (records.length < 1) {
     const msg = `No records for ${collar.nDeviceID}`;
-    console.error(msg);
+    console.log(msg);
     return;
   }
   insertCollarData(records);
@@ -164,11 +165,11 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
       console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
     }
 
-    if (dtTimestampCancel === timestampNotCanceled && strAlertType === 'Mortality') { //toLowerCase() for mortality
+    if (dtTimestampCancel === timestampNotCanceled) { //toLowerCase() for mortality
       newAlerts.push(`(
         ${nDeviceID},
         '${eVendorType.lotek}',
-        'mortality',
+        ${strAlertType.toLowerCase()},
         ${latitude},
         ${longitude},
         '${dtTimestamp}'
@@ -200,7 +201,7 @@ const setToken = (data) => {
 */
 const getToken = async function () {
   var startTimer = performance.now();
-  console.log('Lotek CronJob: V1.1');
+  console.log('Lotek CronJob: V1.2');
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
     console.log(`credential identifier: 'LOTEK_API_CREDENTIAL_NAME' not supplied`)
@@ -229,7 +230,7 @@ const getToken = async function () {
   await getAllCollars();
 
   let endTimer = performance.now();
-  console.log(`Lotek cronjob took ${(endTimer - startTimer)/1000} seconds to execute`);
+  console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
 };
 
 /*
