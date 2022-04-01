@@ -1,5 +1,7 @@
 import { retrieveCredentials } from './utils/credentials';
 import { spawn } from 'child_process'
+import { formatNowUtc } from 'utils/time';
+import { performance } from 'perf_hooks';
 
 /** login form field IDs
  * can be supplied via environment variables
@@ -11,11 +13,21 @@ const ATS_USERNAME_FIELD_ID = process.env.ATS_USERNAME_FIELD_ID || '#username';
 const ATS_PASSWORD_FIELD_ID = process.env.ATS_PASSWORD_FIELD_ID || '#password';
 const ATS_LOGIN_FORM_ID = process.env.ATS_LOGIN_FORM_ID || '#ctl01';
 
+//Extending the console.log to start with UTC time.
+
+var log = console.log;
+console.log = function(){
+  var args = Array.from(arguments);
+  args.unshift(formatNowUtc() + ": ");
+  log.apply(console, args);
+}
+
 /**
  * spawn cypress as a child process, why? this is done in order to pass the node environment variables
  * debugging note: you can additionally pass '--no-exit' when debugging locally to have Cypress not exit immediately
  */
 const spawnProcess = async () => {
+    let startTimer = performance.now();
     // the row identifier in the encrypted table, passed as a parameter to retrieve credentials function
     const credential_name_id = process.env.ATS_API_CREDENTIAL_NAME;
     console.log('credential row identifier: ', credential_name_id)
@@ -39,6 +51,9 @@ const spawnProcess = async () => {
 
     cypress.on('error', (error) => console.log(`error: ${error.message}`));
     cypress.on('close', code => console.log(`child process exited with code ${code}`));
+
+    let endTimer = performance.now();
+    console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
 }
 
 spawnProcess();

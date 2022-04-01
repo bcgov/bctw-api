@@ -7,6 +7,9 @@ import { ILotekAlert } from 'types/lotek';
 import { formatNowUtc, nowUtc } from './utils/time';
 import { performance } from 'perf_hooks';
 
+
+//Extending the console.log to start with UTC time.
+
 var log = console.log;
 console.log = function(){
   var args = Array.from(arguments);
