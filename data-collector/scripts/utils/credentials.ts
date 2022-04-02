@@ -22,7 +22,7 @@ const retrieveCredentials = async (name: string): Promise<IVendorCredential> => 
       console.log(JSON.stringify(res.rows[0]))
       return res.rows[0] 
     })
-    .catch(error => console.log(`unable to find credentials...`, sql))
+    .catch(error => console.log(`unable to find credentials...`))
     return result;
   // if (!result.rowCount)  {
   //   throw(`unable to find credentials with name ${name}`);
