@@ -32,6 +32,7 @@ objects:
               containers:
                 - name: '${JOB_NAME}'
                   image: 'image-registry.openshift-image-registry.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}'
+                  #image: 'docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}'
                   command:
                     - 'npm'
                     - 'run'
