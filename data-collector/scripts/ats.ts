@@ -27,8 +27,7 @@ console.log = function(){
  * debugging note: you can additionally pass '--no-exit' when debugging locally to have Cypress not exit immediately
  */
 const spawnProcess = async () => {
-    let startTimer = performance.now();
-    console.log('ATS: V1.3');
+    console.log('ATS: V1.4');
     // the row identifier in the encrypted table, passed as a parameter to retrieve credentials function
     const credential_name_id = process.env.ATS_API_CREDENTIAL_NAME;
     console.log('credential row identifier: ', credential_name_id)
@@ -53,8 +52,10 @@ const spawnProcess = async () => {
     cypress.on('error', (error) => console.log(`error: ${error.message}`));
     cypress.on('close', code => console.log(`child process exited with code ${code}`));
 
-    let endTimer = performance.now();
-    console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
+    
 }
-
-spawnProcess();
+let startTimer = performance.now();
+spawnProcess().then(()=>{
+  let endTimer = performance.now();
+  console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
+})
