@@ -26,7 +26,7 @@ const disconnect = function (err) {
 };
 
 const getAllCollars = function () {
-  console.log('Vectronic: V1.4')
+  console.log('Vectronic: V1.5')
   const sql = 'select * from api_vectronics_collar_data';
 
   const done = function (err,data) {
