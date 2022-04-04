@@ -7,6 +7,8 @@ import { ToLowerCaseObjectKeys } from './utils/credentials';
 import { formatNowUtc, nowUtc } from './utils/time';
 import { performance } from 'perf_hooks';
 
+let startTimer = performance.now();
+
 //Extending the console.log to start with UTC time.
 
 var log = console.log;
@@ -23,6 +25,9 @@ const disconnect = function (err) {
     return console.log(`${now}: Failed to process Vectronics collars: `,err);
   }
   console.log(`${now}: Successfully processed Vectronics collars.`);
+  let endTimer = performance.now()
+  console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
+
 };
 
 const getAllCollars = function () {
@@ -84,7 +89,4 @@ const insertCollarRecords = function(err,result,collar,callback) {
   pgPool.query(sql,callback);
 }
 
-let startTimer = performance.now();
 getAllCollars();
-let endTimer = performance.now()
-console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
