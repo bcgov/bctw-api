@@ -27,7 +27,7 @@ console.log = function(){
  * debugging note: you can additionally pass '--no-exit' when debugging locally to have Cypress not exit immediately
  */
 const spawnProcess = async () => {
-    console.log('ATS: V1.4');
+    console.log('ATS: V1.5');
     // the row identifier in the encrypted table, passed as a parameter to retrieve credentials function
     const credential_name_id = process.env.ATS_API_CREDENTIAL_NAME;
     console.log('credential row identifier: ', credential_name_id)
