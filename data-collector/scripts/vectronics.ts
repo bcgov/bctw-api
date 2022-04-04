@@ -26,7 +26,6 @@ const disconnect = function (err) {
 };
 
 const getAllCollars = function () {
-  let startTimer = performance.now();
   console.log('Vectronic: V1.4')
   const sql = 'select * from api_vectronics_collar_data';
 
@@ -35,10 +34,6 @@ const getAllCollars = function () {
       return console.log('Failed to fetch Vectronics collars: ', err);
     }
     async.concatSeries(data.rows, iterateCollars, disconnect)
-    .then(() => {
-      let endTimer = performance.now()
-      console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
-    })
   };
 
   pgPool.query(sql,done);
@@ -89,4 +84,7 @@ const insertCollarRecords = function(err,result,collar,callback) {
   pgPool.query(sql,callback);
 }
 
+let startTimer = performance.now();
 getAllCollars();
+let endTimer = performance.now()
+console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
