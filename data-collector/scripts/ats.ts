@@ -28,7 +28,7 @@ console.log = function(){
  */
 const spawnProcess = async () => {
     let startTimer = performance.now();
-    console.log('ATS: V1.1');
+    console.log('ATS: V1.3');
     // the row identifier in the encrypted table, passed as a parameter to retrieve credentials function
     const credential_name_id = process.env.ATS_API_CREDENTIAL_NAME;
     console.log('credential row identifier: ', credential_name_id)
