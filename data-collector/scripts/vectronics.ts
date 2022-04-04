@@ -4,7 +4,7 @@ import needle from 'needle';
 import moment from 'moment';
 import { pgPool } from './utils/db';
 import { ToLowerCaseObjectKeys } from './utils/credentials';
-import { formatNowUtc } from 'utils/time';
+import { formatNowUtc, nowUtc } from './utils/time';
 import { performance } from 'perf_hooks';
 
 //Extending the console.log to start with UTC time.
@@ -27,6 +27,7 @@ const disconnect = function (err) {
 
 const getAllCollars = function () {
   let startTimer = performance.now();
+  console.log('Vectronic: V1.3')
   const sql = 'select * from api_vectronics_collar_data';
 
   const done = function (err,data) {
