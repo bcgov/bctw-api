@@ -82,7 +82,7 @@ const getIsDuplicateAlert = async (alert_table: string, device_id: number, devic
   SELECT latitude, longitude
   FROM telemetry_v
   WHERE deviceid = ${device_id} 
-  AND vendor = ${device_make}
+  AND vendor = '${device_make.toLowerCase()}'
   AND latitude != 0 OR NULL
   AND longitude != 0 OR NULL
   ORDER BY acquisition_date DESC LIMIT 1;

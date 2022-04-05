@@ -162,10 +162,14 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     }
 
     if(!latitude || !longitude){ // might need to change this to latitude == 0 etc...
-      const coords = await getLastKnownLatLong(nDeviceID, 'lotek');
-      latitude = coords.latitude;
-      longitude = coords.longitude;
-      console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
+      const coords = await getLastKnownLatLong(nDeviceID, eVendorType.lotek)
+        .then(res => {
+          console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
+          latitude = res.latitude;
+          longitude = res.longitude;
+        })
+        .catch(err => console.log('GetLastKnowLatLong failed.', err))
+      
     }
 
     if (dtTimestampCancel === timestampNotCanceled) { //toLowerCase() for mortality
