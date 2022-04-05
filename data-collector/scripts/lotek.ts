@@ -164,9 +164,9 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     if(!latitude || !longitude){ // might need to change this to latitude == 0 etc...
       const coords = await getLastKnownLatLong(nDeviceID, eVendorType.lotek)
         .then(res => {
-          console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
           latitude = res.latitude;
           longitude = res.longitude;
+          console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
         })
         .catch(err => console.log('GetLastKnowLatLong failed.', err))
       
@@ -176,7 +176,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
       newAlerts.push(`(
         ${nDeviceID},
         '${eVendorType.lotek}',
-        ${strAlertType.toLowerCase()},
+        '${strAlertType.toLowerCase()}',
         ${latitude},
         ${longitude},
         '${dtTimestamp}'
