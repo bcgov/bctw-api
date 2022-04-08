@@ -155,21 +155,23 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     let {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType, latitude, longitude} = alert;
     
     // if there is already an alert for this device, skip it
-    const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek);
+    const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek)
+      .then(data => data)
+      .catch(err => 
+        console.log(`Error in 'getIsDuplicateAlert()': ${err}`))
     if (isDuplicateAlert) {
-      console.log(`alert with device_id ${nDeviceID} already found, skip. ${JSON.stringify(alert)}`)
+      console.log(`alert with device_id ${nDeviceID} already found, skip. ${JSON.stringify(alert)}`);
       continue;
     }
 
     if(!latitude || !longitude){ // might need to change this to latitude == 0 etc...
       const coords = await getLastKnownLatLong(nDeviceID, eVendorType.lotek)
-        .then(res => {
-          latitude = res.latitude;
-          longitude = res.longitude;
+        .then(data => {
+          latitude = data.latitude;
+          longitude = data.longitude;
           console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
         })
         .catch(err => console.log('GetLastKnowLatLong failed.', err))
-      
     }
 
     if (dtTimestampCancel === timestampNotCanceled) { //toLowerCase() for mortality
