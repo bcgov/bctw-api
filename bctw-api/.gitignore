@@ -8,3 +8,4 @@ build
 oc
 docker-compose.yml
 .devcontainer
+.vscode

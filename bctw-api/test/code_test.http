@@ -46,3 +46,8 @@ GET http://localhost:3000/get-code?codeHeader=species&idir={{idir}} HTTP/1.1
 GET http://localhost:3000/get-code-headers?idir={{idir}} HTTP/1.1
 ###
 GET http://localhost:3000/get-code-headers?idir={{idir}}&codeType=region HTTP/1.1
+
+### get code long description
+### `returns` homepage blurb
+GET http://localhost:3000/get-code-long-desc?codeName=HOME_HDR&idir={{idir}}
+
