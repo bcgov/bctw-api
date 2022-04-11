@@ -6,7 +6,7 @@ const isProd = process.env.NODE_ENV === 'production' ? true : false;
 if (!isProd) {
   dotenv.config();
 }
-//Changed the port at the end to 6666 -> this is for local development
+
 const pgPort = +(process.env.POSTGRES_SERVER_PORT ?? 5432 ) as number;
 //const pgPort = +(isProd ? process.env.POSTGRES_SERVER_PORT ?? 5432 : 5432) as number;
 const pgHost = (isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost') as string;
