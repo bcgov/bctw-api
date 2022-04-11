@@ -53,7 +53,7 @@ const getLastAlertTimestamp = async (alert_table: string, device_make: eVendorTy
 const getIsDuplicateAlert = async (alert_table: string, device_id: number, device_make: eVendorType): Promise<boolean> => {
   const sql = `
     select COUNT(1) from ${alert_table}
-    where device_make = '${device_make.toUpperCase()}'
+    where device_make = '${device_make}'
     and device_id = ${device_id}
     and is_valid(valid_to)
   `;
@@ -82,7 +82,7 @@ const getIsDuplicateAlert = async (alert_table: string, device_id: number, devic
   SELECT latitude, longitude
   FROM telemetry_v
   WHERE deviceid = ${device_id} 
-  AND vendor = '${device_make.toLowerCase()}'
+  AND vendor = '${device_make}'
   AND latitude != 0 OR NULL
   AND longitude != 0 OR NULL
   ORDER BY acquisition_date DESC LIMIT 1;
