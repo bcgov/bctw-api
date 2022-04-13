@@ -158,7 +158,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek)
       .then(data => data)
       .catch(err => 
-        console.log(`Error in 'getIsDuplicateAlert()': ${err}`))
+        console.log(`DeviceId: ${nDeviceID} - Error in 'getIsDuplicateAlert()': ${err}`))
     if (isDuplicateAlert) {
       console.log(`alert with device_id ${nDeviceID} already found, skip. ${JSON.stringify(alert)}`);
       continue;
@@ -171,7 +171,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
           longitude = data.longitude;
           console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
         })
-        .catch(err => console.log('GetLastKnowLatLong failed.', err))
+        .catch(err => console.log('DeviceId: ${nDeviceID} - GetLastKnowLatLong failed.', err))
     }
 
     if (dtTimestampCancel === timestampNotCanceled) { //toLowerCase() for mortality
@@ -235,8 +235,13 @@ const getToken = async function () {
   }
   setToken(body);
 
-  await getAlerts();
-  await getAllCollars();
+  await getAlerts()
+    .then(() => `getAlerts() successfully completed...`)
+    .catch(err => console.log(`Caught error from getAlerts() `, err));
+
+  await getAllCollars()
+    .then(() => `getAllCollars() successfully completed...`)
+    .catch(err => console.log(`Caught error from getAllCollars() `, err));
 
   let endTimer = performance.now();
   console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
