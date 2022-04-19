@@ -103,9 +103,13 @@ const getAllCollars = async function () {
   const now = nowUtc();
   console.log(`${now}: Successfully processed Lotek collars.`);
 
-  pgPool.end(); // Disconnect from database
+  
 };
 
+const confirmAlertType = (alert: ILotekAlert) => {
+  return alert.strAlertType == 'Mortality' || 'Malfunction';
+
+}
 /**
  * fetches Lotek alerts, filters out any alerts that are alerts older than either: 
  *  a) the last Lotek alert added to the telemetry table. 
@@ -119,13 +123,19 @@ const getAlerts = async () => {
     return;
   }
   const lastAlert = await getLastAlertTimestamp(ALERT_TABLE, eVendorType.lotek) ?? dayjs().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
-  const filtered: ILotekAlert[] = body.filter((alert) => dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert)));
+
+  let filtered: ILotekAlert[] = body.filter((alert) => dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert)) && confirmAlertType(alert));
+  let unique = filtered.filter((item, index, self) => 
+    index === self.findIndex((t) => {
+      const bool = t.nDeviceID === item.nDeviceID
+      console.log(bool && `Retrieved more than one occurance of collar '${t.nDeviceID}' from lotek`)
+      return bool;
+    }));
+
   console.log( `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`);
   if (filtered.length == 0) {
-    console.log('No new alerts found');
     return;
   }
-  console.log('New alerts found');
   insertAlerts(filtered);
 };
 
@@ -150,40 +160,38 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     ) values
   `;
   const newAlerts: string[] = [];
-
   for (const alert of alerts) {
     let {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType, latitude, longitude} = alert;
     
     // if there is already an alert for this device, skip it
     const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek)
-      .then(data => data)
+      .then(data => {
+        return data
+      })
       .catch(err => 
-        console.log(`DeviceId: ${nDeviceID} - Error in 'getIsDuplicateAlert()': ${err}`))
+        console.log(`DeviceId: ${nDeviceID} + Alert: ${strAlertType} - Error in 'getIsDuplicateAlert()': ${err}`))
     if (isDuplicateAlert) {
       console.log(`alert with device_id ${nDeviceID} already found, skip. ${JSON.stringify(alert)}`);
       continue;
     }
 
-    if(!latitude || !longitude){ // might need to change this to latitude == 0 etc...
+    
       const coords = await getLastKnownLatLong(nDeviceID, eVendorType.lotek)
         .then(data => {
-          latitude = data.latitude;
-          longitude = data.longitude;
-          console.log(`device_id: ${nDeviceID} has coords(0,0), setting to last known location... (${latitude},${longitude})`)
-        })
-        .catch(err => console.log('DeviceId: ${nDeviceID} - GetLastKnowLatLong failed.', err))
-    }
+          console.log(`DeviceId: ${nDeviceID} has coords(0,0), setting to last known location... (${data.latitude},${data.longitude})`)
+          if (dtTimestampCancel === timestampNotCanceled) {
 
-    if (dtTimestampCancel === timestampNotCanceled) { //toLowerCase() for mortality
-      newAlerts.push(`(
-        ${nDeviceID},
-        '${eVendorType.lotek}',
-        '${strAlertType.toLowerCase()}',
-        ${latitude},
-        ${longitude},
-        '${dtTimestamp}'
-      )`);
-    }
+            newAlerts.push(`(
+              ${nDeviceID},
+              '${eVendorType.lotek}',
+              '${strAlertType.toLowerCase()}',
+              ${latitude ? latitude : data?.latitude},
+              ${longitude ? longitude : data?.longitude},
+              '${dtTimestamp}'
+            )`);
+          }
+        })
+        .catch(err => {console.log(`DeviceId: ${nDeviceID} + Alert: ${strAlertType} - GetLastKnowLatLong failed.`, err)});
   }
 
   if (!newAlerts.length) {
@@ -210,7 +218,8 @@ const setToken = (data) => {
 */
 const getToken = async function () {
   var startTimer = performance.now();
-  console.log('Lotek CronJob: V1.5');
+  console.log('Lotek CronJob: V1.6');
+
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
     console.log(`credential identifier: 'LOTEK_API_CREDENTIAL_NAME' not supplied`)
@@ -235,19 +244,30 @@ const getToken = async function () {
   }
   setToken(body);
 
+  let trigger: boolean = false;
   await getAlerts()
-    .then(() => `getAlerts() successfully completed...`)
-    .catch(err => console.log(`Caught error from getAlerts() `, err));
+    .then(() => {
+      console.log(`getAlerts() COMPLETED`)})
+    .catch(err => console.log(`Caught error from getAlerts() `, err))
+    .finally(() => trigger = true);
 
-  await getAllCollars()
-    .then(() => `getAllCollars() successfully completed...`)
-    .catch(err => console.log(`Caught error from getAllCollars() `, err));
-
+    if(trigger){
+      await getAllCollars()
+        .then(() => console.log(`getAllCollars() COMPLETED`))
+        .catch(err => console.log(`Caught error from getAllCollars() `, err))
+        .then(() => {
+          console.log('Closing the connection to the database...')
+          // pgPool.end();            // Disconnect from database
+        })
+    } 
   let endTimer = performance.now();
   console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
+  //pgPool.end();
 };
 
 /*
   Entry point - Start script
  */
-getToken();
+getToken().finally(()=> pgPool.end()); // Disconnect from database
+
+
