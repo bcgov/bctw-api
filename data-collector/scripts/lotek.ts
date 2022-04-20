@@ -127,9 +127,9 @@ const getAlerts = async () => {
   let filtered: ILotekAlert[] = body.filter((alert) => dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert)) && confirmAlertType(alert));
   let unique = filtered.filter((item, index, self) => 
     index === self.findIndex((t) => {
-      const bool = t.nDeviceID === item.nDeviceID
-      console.log(bool && `Retrieved more than one occurance of collar '${t.nDeviceID}' from lotek`)
-      return bool;
+      const dupeID = t.nDeviceID === item.nDeviceID
+      if(dupeID) console.log(`Retrieved more than one occurance of collar '${t.nDeviceID}' from lotek`)
+      return dupeID;
     }));
 
   console.log( `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`);
@@ -218,7 +218,7 @@ const setToken = (data) => {
 */
 const getToken = async function () {
   var startTimer = performance.now();
-  console.log('Lotek CronJob: V1.6');
+  console.log('Lotek CronJob: V1.7');
 
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
