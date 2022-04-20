@@ -244,30 +244,25 @@ const getToken = async function () {
   }
   setToken(body);
 
-  let trigger: boolean = false;
   await getAlerts()
-    .then(() => {
-      console.log(`getAlerts() COMPLETED`)})
+    .then(() => console.log(`getAlerts() COMPLETED`))
     .catch(err => console.log(`Caught error from getAlerts() `, err))
-    .finally(() => trigger = true);
 
-    if(trigger){
-      await getAllCollars()
-        .then(() => console.log(`getAllCollars() COMPLETED`))
-        .catch(err => console.log(`Caught error from getAllCollars() `, err))
-        .then(() => {
-          console.log('Closing the connection to the database...')
-          // pgPool.end();            // Disconnect from database
-        })
-    } 
+  await getAllCollars()
+    .then(() => console.log(`getAllCollars() COMPLETED`))
+    .catch(err => console.log(`Caught error from getAllCollars() `, err))
+    .then(() => {
+      console.log('Closing the connection to the database...')
+      pgPool.end();
+    })
+
   let endTimer = performance.now();
   console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
-  //pgPool.end();
 };
 
 /*
   Entry point - Start script
  */
-getToken().finally(()=> pgPool.end()); // Disconnect from database
+getToken() // Disconnect from database
 
 
