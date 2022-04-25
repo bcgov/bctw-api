@@ -1,12 +1,21 @@
 import needle from 'needle';
 import 'dotenv/config';
-import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, pgPool, queryAsync } from './utils/db';
+import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, pgPool, pgPoolEndAsync, queryAsync } from './utils/db';
 const dayjs = require('dayjs');
 import { eVendorType, retrieveCredentials, ToLowerCaseObjectKeys  } from './utils/credentials';
-import { ILotekAlert } from 'types/lotek';
+import { ILotekAlert, LOTEK_TEST_ALERTS } from './types/lotek';
 import { formatNowUtc, nowUtc } from './utils/time';
 import { performance } from 'perf_hooks';
+import { data } from 'cypress/types/jquery';
 
+//Enabled in dev for local testing. Uses LOTEK_TEST_ALERTS in types/lotek.ts
+const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === 'localhost';
+
+const ALERT_TABLE = 'telemetry_sensor_alert';
+
+// Store the access token globally
+let tokenConfig = {};
+let lotekUrl: string;
 
 //Extending the console.log to start with UTC time.
 
@@ -17,10 +26,7 @@ console.log = function(){
   log.apply(console, args);
 }
 
-const ALERT_TABLE = 'telemetry_sensor_alert';
-// Store the access token globally
-let tokenConfig = {};
-let lotekUrl: string;
+
 
 /* ## insertCollarData
 Insert collar data into the database.
@@ -101,7 +107,7 @@ const getAllCollars = async function () {
   */
   await Promise.all(body.map((c) => iterateCollars(c)));
   const now = nowUtc();
-  console.log(`${now}: Successfully processed Lotek collars.`);
+  console.log(`Successfully processed Lotek collars.`);
 
   
 };
@@ -132,11 +138,17 @@ const getAlerts = async () => {
       return dupeID;
     }));
 
-  console.log( `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`);
-  if (filtered.length == 0) {
-    return;
+
+  if(TESTMODE){
+    console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
+    insertAlerts(LOTEK_TEST_ALERTS);
+  }else{
+    console.log( `alerts fetched: ${body.length}, new alerts count: ${unique.length}`);
+    if (unique.length == 0) {
+      return;
+    }
+    insertAlerts(unique);
   }
-  insertAlerts(filtered);
 };
 
 /**
@@ -165,43 +177,50 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     
     // if there is already an alert for this device, skip it
     const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek)
-      .then(data => {
-        return data
-      })
+      .then(data => data)
       .catch(err => 
         console.log(`DeviceId: ${nDeviceID} + Alert: ${strAlertType} - Error in 'getIsDuplicateAlert()': ${err}`))
     if (isDuplicateAlert) {
-      console.log(`alert with device_id ${nDeviceID} already found, skip. ${JSON.stringify(alert)}`);
+      console.log(`${strAlertType} alert with DeviceId ${nDeviceID} already exists in alert table. Skipping...`);
       continue;
     }
-
     
-      const coords = await getLastKnownLatLong(nDeviceID, eVendorType.lotek)
-        .then(data => {
-          console.log(`DeviceId: ${nDeviceID} has coords(0,0), setting to last known location... (${data.latitude},${data.longitude})`)
-          if (dtTimestampCancel === timestampNotCanceled) {
+    //Checks if Lotek sent (0,0) coords.
+    if(!latitude || !longitude){
+      
+      //Checks if the database has valid coords for this deviceID.
+      const coords = await getLastKnownLatLong(nDeviceID, eVendorType.lotek, dtTimestamp)
+      .then(data => data)
+      .catch(err => {console.log(`DeviceId: ${nDeviceID} + Alert: ${strAlertType} - GetLastKnowLatLong failed.`, err)})
 
-            newAlerts.push(`(
-              ${nDeviceID},
-              '${eVendorType.lotek}',
-              '${strAlertType.toLowerCase()}',
-              ${latitude ? latitude : data?.latitude},
-              ${longitude ? longitude : data?.longitude},
-              '${dtTimestamp}'
-            )`);
+      //Sets lat / long to new coords.
+      coords ? latitude = coords.latitude : latitude = null;
+      coords ? longitude = coords.longitude : longitude = null;
+      console.log(`DeviceId: ${nDeviceID} has coords(0,0) -> setting to last known location or nulls -> (${latitude},${longitude})`);
+      }
+      
+      //Pushes the alert to the newAlerts array.
+      if (dtTimestampCancel === timestampNotCanceled) {
+          newAlerts.push(
+            `(${nDeviceID},
+            '${eVendorType.lotek}',
+            '${strAlertType.toLowerCase()}',
+            ${latitude},
+            ${longitude},
+            '${dtTimestamp}')`
+            );
           }
-        })
-        .catch(err => {console.log(`DeviceId: ${nDeviceID} + Alert: ${strAlertType} - GetLastKnowLatLong failed.`, err)});
   }
+      
 
   if (!newAlerts.length) {
     console.log('no new Lotek alerts detected');
     return;
   }
 
-  console.log(`valid alerts found ${JSON.stringify(alerts)}`)
   const sql = sqlPreamble + newAlerts.join(',');
-  console.log(`${dayjs().format()}: Inserting ` + newAlerts.length + " alert records");
+  console.log(`Inserting ` + newAlerts.length + " alert records");
+  console.log(`valid alerts found ${JSON.stringify(alerts)}`)
   await queryAsync(sql);
 };
 
@@ -249,13 +268,20 @@ const getToken = async function () {
     .catch(err => console.log(`Caught error from getAlerts() `, err))
 
   await getAllCollars()
-    .then(() => console.log(`getAllCollars() COMPLETED`))
-    .catch(err => console.log(`Caught error from getAllCollars() `, err))
-    .then(() => {
-      console.log('Closing the connection to the database...')
-      pgPool.end();
-    })
-
+  .catch(err => console.log(`Caught error from getAllCollars() `, err))
+  .finally(()=>console.log(`getAllCollars() COMPLETED`))
+  await pgPoolEndAsync();
+  // await getAllCollars()
+  //   .then(() => console.log(`getAllCollars() COMPLETED`))
+  //   .catch(err => console.log(`Caught error from getAllCollars() `, err))
+  //   .then(() => {
+  //     console.log('Closing the connection to the database...')
+  //     pgPool.end();
+  //   })
+  // if(SAFECLOSE) {
+  //   console.log('Closing the connection to the database...')
+  //   pgPool.end();
+  // }
   let endTimer = performance.now();
   console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
 };
@@ -263,6 +289,6 @@ const getToken = async function () {
 /*
   Entry point - Start script
  */
-getToken() // Disconnect from database
+getToken()
 
 

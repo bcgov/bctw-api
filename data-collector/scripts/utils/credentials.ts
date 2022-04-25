@@ -18,7 +18,6 @@ const retrieveCredentials = async (name: string): Promise<IVendorCredential> => 
   const sql = `select * from bctw_dapi_v1.get_collar_vendor_credentials('${name}', '${PKEY}')`;
   const result = await queryAsync(sql)
     .then(res => { 
-      console.log('Success')
       //console.log(JSON.stringify(res.rows[0]))
       return res.rows[0] 
     })
