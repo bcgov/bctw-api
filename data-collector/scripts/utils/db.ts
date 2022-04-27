@@ -49,11 +49,12 @@ const getLastAlertTimestamp = async (alert_table: string, device_make: eVendorTy
  * @returns a bool depending on if there is an existing alert present in the 
  * telemetry alert table where the device ID and device make match
  */
-const getIsDuplicateAlert = async (alert_table: string, device_id: number, device_make: eVendorType): Promise<boolean> => {
+const getIsDuplicateAlert = async (alert_table: string, device_id: number, device_make: eVendorType, alertType: string): Promise<boolean> => {
   const sql = `
     select device_id from ${alert_table}
     where device_make = '${device_make}'
     and device_id = ${device_id}
+    and alert_type = '${alertType.toLowerCase()}'
     and is_valid(valid_to)
   `;
   const result = await queryAsync(sql);

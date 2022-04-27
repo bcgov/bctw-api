@@ -112,8 +112,16 @@ const getAllCollars = async function () {
   
 };
 
+// sets
+
+const isSameIDAndAlertType = () => {
+
+}
+
+//Tests alert is of proper type
 const confirmAlertType = (alert: ILotekAlert) => {
-  return alert.strAlertType == 'Mortality' || 'Malfunction';
+    //alert.strAlertType === 'Mortality' 
+  return alert.strAlertType === ('Mortality' || 'Malfunction');
 
 }
 /**
@@ -123,32 +131,22 @@ const confirmAlertType = (alert: ILotekAlert) => {
  */
 const getAlerts = async () => {
   const url = `${lotekUrl}/alerts`;
-  const { body, error } = await needle<ILotekAlert[]>('get', url, tokenConfig);
+  let { body, error } = await needle<ILotekAlert[]>('get', url, tokenConfig);
   if (error) {
     console.error(`error retrieving results from Lotek alert API: ${error}`);
     return;
   }
   const lastAlert = await getLastAlertTimestamp(ALERT_TABLE, eVendorType.lotek) ?? dayjs().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
 
+  if(TESTMODE) body = LOTEK_TEST_ALERTS;
+
   let filtered: ILotekAlert[] = body.filter((alert) => dayjs(alert.dtTimestamp).isAfter(dayjs(lastAlert)) && confirmAlertType(alert));
-  let unique = filtered.filter((item, index, self) => 
-    index === self.findIndex((t) => {
-      const dupeID = t.nDeviceID === item.nDeviceID
-      if(dupeID) console.log(`Retrieved more than one occurance of collar '${t.nDeviceID}' from lotek`)
-      return dupeID;
-    }));
-
-
-  if(TESTMODE){
-    console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
-    insertAlerts(LOTEK_TEST_ALERTS);
-  }else{
-    console.log( `alerts fetched: ${body.length}, new alerts count: ${unique.length}`);
-    if (unique.length == 0) {
+  
+    console.log( `alerts fetched: ${body.length}, new alerts count: ${filtered.length}`);
+    if (filtered.length == 0) {
       return;
     }
-    insertAlerts(unique);
-  }
+    insertAlerts(filtered);
 };
 
 /**
@@ -176,7 +174,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
     let {nDeviceID, dtTimestamp, dtTimestampCancel, strAlertType, latitude, longitude} = alert;
     
     // if there is already an alert for this device, skip it
-    const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek)
+    const isDuplicateAlert = await getIsDuplicateAlert(ALERT_TABLE, nDeviceID, eVendorType.lotek, strAlertType)
       .then(data => data)
       .catch(err => 
         console.log(`DeviceId: ${nDeviceID} + Alert: ${strAlertType} - Error in 'getIsDuplicateAlert()': ${err}`))
@@ -192,10 +190,16 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
       const coords = await getLastKnownLatLong(nDeviceID, eVendorType.lotek, dtTimestamp)
       .then(data => data)
       .catch(err => {console.log(`DeviceId: ${nDeviceID} + Alert: ${strAlertType} - GetLastKnowLatLong failed.`, err)})
-
+      if(coords){
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      }else{
+        latitude = null;
+        longitude = null;
+      }
       //Sets lat / long to new coords.
-      coords ? latitude = coords.latitude : latitude = null;
-      coords ? longitude = coords.longitude : longitude = null;
+      // coords ? latitude = coords.latitude : latitude = null;
+      // coords ? longitude = coords.longitude : longitude = null;
       console.log(`DeviceId: ${nDeviceID} has coords(0,0) -> setting to last known location or nulls -> (${latitude},${longitude})`);
       }
       
@@ -237,6 +241,7 @@ const setToken = (data) => {
 */
 const getToken = async function () {
   var startTimer = performance.now();
+  console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
   console.log('Lotek CronJob: V1.7');
 
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
@@ -271,17 +276,7 @@ const getToken = async function () {
   .catch(err => console.log(`Caught error from getAllCollars() `, err))
   .finally(()=>console.log(`getAllCollars() COMPLETED`))
   await pgPoolEndAsync();
-  // await getAllCollars()
-  //   .then(() => console.log(`getAllCollars() COMPLETED`))
-  //   .catch(err => console.log(`Caught error from getAllCollars() `, err))
-  //   .then(() => {
-  //     console.log('Closing the connection to the database...')
-  //     pgPool.end();
-  //   })
-  // if(SAFECLOSE) {
-  //   console.log('Closing the connection to the database...')
-  //   pgPool.end();
-  // }
+
   let endTimer = performance.now();
   console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
 };
