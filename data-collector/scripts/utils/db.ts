@@ -65,14 +65,6 @@ const getIsDuplicateAlert = async (alert_table: string, device_id: number, devic
     return false;
   }
   
-
-  // if(result.rowCount){
-  //   return result.rows.length > 1
-  // }else {
-  //   return false
-  // }
-  // console.log(result);
-  // return result.rowCount > 1;
 }
 
 /**
