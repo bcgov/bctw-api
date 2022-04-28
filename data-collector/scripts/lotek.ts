@@ -9,7 +9,7 @@ import { performance } from 'perf_hooks';
 import { data } from 'cypress/types/jquery';
 
 //Enabled in dev for local testing. Uses LOTEK_TEST_ALERTS in types/lotek.ts
-const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === 'localhost';
+const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST !== 'localhost';
 
 const ALERT_TABLE = 'telemetry_sensor_alert';
 
@@ -63,7 +63,7 @@ const iterateCollars = async function (collar) {
   const { body, error } = await needle('get', url, tokenConfig);
   if (error) {
     const msg = `Could not get collar data for ${collar.nDeviceID}: ${error}`;
-    console.error(msg);
+    console.log(msg);
     return;
   }
 
@@ -71,7 +71,7 @@ const iterateCollars = async function (collar) {
     const msg = `Did not receive a valid array for ${
       collar.nDeviceID
     } body: ${JSON.stringify(body)}`;
-    console.error(msg);
+    console.log(msg);
     return;
   }
 
@@ -97,7 +97,7 @@ const getAllCollars = async function () {
   const url = `${lotekUrl}/devices`; // the API url
   const { body, error } = await needle('get', url, tokenConfig);
   if (error) {
-    return console.error('Could not get collar list: ', error);
+    return console.log('Could not get collar list: ', error);
   }
 
   /*
@@ -105,9 +105,13 @@ const getAllCollars = async function () {
     Run the IterateCollars function on each collar.
     When done. Shut down the database connection.
   */
-  await Promise.all(body.map((c) => iterateCollars(c)));
-  const now = nowUtc();
-  console.log(`Successfully processed Lotek collars.`);
+  await Promise.all(body.map((c) => iterateCollars(c)))
+    .then(()=>console.log(`Successfully processed Lotek collars.`))
+    .catch(err => console.log(err))
+    .finally(()=>{
+      pgPool.end();
+    });
+  
 
   
 };
@@ -128,7 +132,7 @@ const getAlerts = async () => {
   const url = `${lotekUrl}/alerts`;
   let { body, error } = await needle<ILotekAlert[]>('get', url, tokenConfig);
   if (error) {
-    console.error(`error retrieving results from Lotek alert API: ${error}`);
+    console.log(`error retrieving results from Lotek alert API: ${error}`);
     return;
   }
   const lastAlert = await getLastAlertTimestamp(ALERT_TABLE, eVendorType.lotek) ?? dayjs().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
@@ -259,7 +263,7 @@ const getToken = async function () {
 
   const { body, error } = await needle('post', loginURL, data, config);
   if (error) {
-    console.error(`unable to retrieve lotek API login token ${error}`);
+    console.log(`unable to retrieve lotek API login token ${error}`);
   }
   setToken(body);
 
@@ -269,8 +273,7 @@ const getToken = async function () {
 
   await getAllCollars()
   .catch(err => console.log(`Caught error from getAllCollars() `, err))
-  .finally(()=>console.log(`getAllCollars() COMPLETED`))
-  await pgPoolEndAsync();
+  // await pgPoolEndAsync();
 
   let endTimer = performance.now();
   console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
