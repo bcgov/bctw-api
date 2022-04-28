@@ -12,6 +12,13 @@ export interface ILotekAlert {
   strReleaseCodeOrTransmitterID: unknown;
 }
 
+export interface ICollar {
+  nDeviceID: number;
+  strSpecialID: string;
+  dtCreated: string;
+  strSatellite: string;
+}
+
 export type alertType = 'Mortality' | 'Malfunction';
 
 export const LOTEK_TEST_ALERTS = [

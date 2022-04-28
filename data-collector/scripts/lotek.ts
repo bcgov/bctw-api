@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, pgPool, pgPoolEndAsync, queryAsync } from './utils/db';
 const dayjs = require('dayjs');
 import { eVendorType, retrieveCredentials, ToLowerCaseObjectKeys  } from './utils/credentials';
-import { ILotekAlert, LOTEK_TEST_ALERTS } from './types/lotek';
+import { ICollar, ILotekAlert, LOTEK_TEST_ALERTS } from './types/lotek';
 import { formatNowUtc, nowUtc } from './utils/time';
 import { performance } from 'perf_hooks';
 import { data } from 'cypress/types/jquery';
@@ -12,6 +12,9 @@ import { data } from 'cypress/types/jquery';
 const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === 'localhost';
 
 const ALERT_TABLE = 'telemetry_sensor_alert';
+
+let START_TIMER:number;
+let STOP_TIMER:number;
 
 // Store the access token globally
 let tokenConfig = {};
@@ -40,11 +43,7 @@ const insertCollarData = async function (records) {
     .join()}]')`;
   console.log(`Entering ${records.length} records for collar ${records[0].DeviceID}`);
 
-  try {
-    await pgPool.query(sql);
-  } catch (e) {
-    console.log(e);
-  }
+  await pgPool.query(sql).catch(err => console.log(err))
 };
 
 /* ## iterateCollars
@@ -55,7 +54,7 @@ const insertCollarData = async function (records) {
   @param collar {object} The collar object containing the unique ID.
   @param callback {function} The asyncJS callback function. Provide an error message if something fails, otherwise null.
  */
-const iterateCollars = async function (collar) {
+const iterateCollars = async function (collar: ICollar) {
   const weekAgo = dayjs().subtract(7, 'd').format('YYYY-MM-DDTHH:mm:ss');
   const url = `${lotekUrl}/gps?deviceId=${collar.nDeviceID}&dtStart=${weekAgo}`;
 
@@ -99,21 +98,27 @@ const getAllCollars = async function () {
   if (error) {
     return console.log('Could not get collar list: ', error);
   }
-
   /*
     Async workflow of cycling through all the collars.
     Run the IterateCollars function on each collar.
     When done. Shut down the database connection.
   */
-  await Promise.all(body.map((c) => iterateCollars(c)))
-    .then(()=>console.log(`Successfully processed Lotek collars.`))
-    .catch(err => console.log(err))
-    .finally(()=>{
-      pgPool.end();
-    });
-  
 
-  
+  Promise.all<ICollar>(
+    body.map(async (collar: ICollar) => {
+      await iterateCollars(collar)
+        .catch(err => {
+          console.log(`Collar Error: ${collar.nDeviceID} -> ${err}`);
+        })
+  }))
+  .then(() => {
+    console.log('Closing database connection...');
+    pgPool.end();
+    STOP_TIMER = performance.now();
+    console.log(`Process took ${(STOP_TIMER - START_TIMER) / 1000} seconds 🦌`);
+  }) // 1,Error: 2,3
+  .catch(err => console.log(err));
+
 };
 
 
@@ -189,6 +194,8 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
       const coords = await getLastKnownLatLong(nDeviceID, eVendorType.lotek, dtTimestamp)
       .then(data => data)
       .catch(err => {console.log(`DeviceId: ${nDeviceID} + Alert: ${strAlertType} - GetLastKnowLatLong failed.`, err)})
+      
+      //Set lat long to valid coords.
       if(coords){
         latitude = coords.latitude;
         longitude = coords.longitude;
@@ -196,9 +203,6 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
         latitude = null;
         longitude = null;
       }
-      //Sets lat / long to new coords.
-      // coords ? latitude = coords.latitude : latitude = null;
-      // coords ? longitude = coords.longitude : longitude = null;
       console.log(`DeviceId: ${nDeviceID} has coords(0,0) -> setting to last known location or nulls -> (${latitude},${longitude})`);
       }
       
@@ -239,7 +243,7 @@ const setToken = (data) => {
  * Feed the token into the collar aquisition and iteration function
 */
 const getToken = async function () {
-  var startTimer = performance.now();
+  START_TIMER = performance.now();
   if(TESTMODE) console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
   console.log('Lotek CronJob: V1.9.1');
 
@@ -273,10 +277,6 @@ const getToken = async function () {
 
   await getAllCollars()
   .catch(err => console.log(`Caught error from getAllCollars() `, err))
-  // await pgPoolEndAsync();
-
-  let endTimer = performance.now();
-  console.log(`Runtime: ${(endTimer - startTimer)/1000} secs`);
 };
 
 /*
