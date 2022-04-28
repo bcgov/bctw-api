@@ -112,11 +112,6 @@ const getAllCollars = async function () {
   
 };
 
-// sets
-
-const isSameIDAndAlertType = () => {
-
-}
 
 //Tests alert is of proper type
 const confirmAlertType = (alert: ILotekAlert) => {

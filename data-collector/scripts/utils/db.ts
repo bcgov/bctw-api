@@ -102,8 +102,11 @@ const getIsDuplicateAlert = async (alert_table: string, device_id: number, devic
 
 //Async pgClose function used for lotek
 export const pgPoolEndAsync = async () => {
-  console.log('Closing the connection to the database...')
-  pgPool.end();
+  setTimeout(() => {
+    console.log('Closing the connection to the database...')
+    pgPool.end();
+  }, 5000)
+  
 }
 // dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
