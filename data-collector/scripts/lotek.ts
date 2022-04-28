@@ -9,7 +9,7 @@ import { performance } from 'perf_hooks';
 import { data } from 'cypress/types/jquery';
 
 //Enabled in dev for local testing. Uses LOTEK_TEST_ALERTS in types/lotek.ts
-const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST !== 'localhost';
+const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === 'localhost';
 
 const ALERT_TABLE = 'telemetry_sensor_alert';
 
