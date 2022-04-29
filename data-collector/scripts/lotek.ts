@@ -13,6 +13,8 @@ const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === 'localhost';
 
 const ALERT_TABLE = 'telemetry_sensor_alert';
 
+const RETRIES: number = 3;
+
 let START_TIMER:number;
 let STOP_TIMER:number;
 
@@ -104,22 +106,22 @@ const getAllCollars = async function () {
     Run the IterateCollars function on each collar.
     When done. Shut down the database connection.
   */
-
   Promise.all<ICollar>(
     body.map(async (collar: ICollar, i: number, promiseArr: ICollar[]) => {
-      let retries: number = 1;
       await iterateCollars(promiseArr[i])
         .catch(err => {
-          const {nDeviceID} = collar;
-          console.log(`Collar Error: ${nDeviceID} -> ${err}`);
+          let {nDeviceID} = promiseArr[i];
           //Re-try if failure on collar
-          if(retries !== 4) {
-            console.log(`Retrying Collar: ${nDeviceID} -> Retry number [${retries}]`)
-            i -= 1;
-            retries += 1;
-          }else{
-            console.log(`All 3 retries for Collar: ${nDeviceID} failed`)
-          }
+          console.log(`Collar Error: ${nDeviceID} -> ${err}`);
+          console.log(`Collar: ${nDeviceID} retrying...`)
+          i -= 1;
+          // if(retryCount !== RETRIES) {
+          //   i -= 1;
+          //   retryCount += 1;
+          //   console.log(`Retry[${retryCount}] for Collar: ${nDeviceID}`)
+          // }else{
+          //   console.log(`All 3 retries for Collar: ${nDeviceID} failed`)
+          // }
         })
   }))
   .then(() => {
