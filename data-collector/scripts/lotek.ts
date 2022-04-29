@@ -83,6 +83,7 @@ const iterateCollars = async function (collar: ICollar) {
     console.log(msg);
     return;
   }
+  if(TESTMODE) throw new Error('Test error throw');
   insertCollarData(records);
 };
 
@@ -105,10 +106,20 @@ const getAllCollars = async function () {
   */
 
   Promise.all<ICollar>(
-    body.map(async (collar: ICollar) => {
-      await iterateCollars(collar)
+    body.map(async (collar: ICollar, i: number, promiseArr: ICollar[]) => {
+      let retries: number = 1;
+      await iterateCollars(promiseArr[i])
         .catch(err => {
-          console.log(`Collar Error: ${collar.nDeviceID} -> ${err}`);
+          const {nDeviceID} = collar;
+          console.log(`Collar Error: ${nDeviceID} -> ${err}`);
+          //Re-try if failure on collar
+          if(retries !== 4) {
+            console.log(`Retrying Collar: ${nDeviceID} -> Retry number [${retries}]`)
+            i -= 1;
+            retries += 1;
+          }else{
+            console.log(`All 3 retries for Collar: ${nDeviceID} failed`)
+          }
         })
   }))
   .then(() => {
