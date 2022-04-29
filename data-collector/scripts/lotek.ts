@@ -256,7 +256,7 @@ const setToken = (data) => {
 const getToken = async function () {
   START_TIMER = performance.now();
   if(TESTMODE) console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
-  console.log('Lotek CronJob: V1.9.1');
+  console.log('Lotek CronJob: V1.9.2');
 
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
