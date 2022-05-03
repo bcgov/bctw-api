@@ -106,41 +106,28 @@ const getAllCollars = async function () {
     Run the IterateCollars function on each collar.
     When done. Shut down the database connection.
   */
-  Promise.all<ICollar>(
+ let asyncCalls: number = body.length;
+
+
+  await Promise.all<ICollar>(
     body.map(async (collar: ICollar, i: number, promiseArr: ICollar[]) => {
       await iterateCollars(promiseArr[i])
-        .catch(err => {
-          let {nDeviceID} = promiseArr[i];
-          //Re-try if failure on collar
-          console.log(`Collar Error: ${nDeviceID} -> ${err}`);
-          console.log(`Collar: ${nDeviceID} retrying...`)
-          i -= 1;
-          // if(retryCount !== RETRIES) {
-          //   i -= 1;
-          //   retryCount += 1;
-          //   console.log(`Retry[${retryCount}] for Collar: ${nDeviceID}`)
-          // }else{
-          //   console.log(`All 3 retries for Collar: ${nDeviceID} failed`)
-          // }
-        })
+      .catch(err => {
+        let {nDeviceID} = promiseArr[i];
+        //Re-try if failure on collar
+        console.log(`Collar Error: ${nDeviceID} -> ${err}`);
+        console.log(`Collar: ${nDeviceID} retrying...`);
+        i -= 1;
+      })
   }))
-  .then(() => {
-    console.log('Closing database connection...');
-    pgPool.end();
-    STOP_TIMER = performance.now();
-    console.log(`Process took ${(STOP_TIMER - START_TIMER) / 1000} seconds 🦌`);
-  }) // 1,Error: 2,3
   .catch(err => console.log(err));
 
 };
 
 
 //Tests alert is of proper type
-const confirmAlertType = (alert: ILotekAlert) => {
-    //alert.strAlertType === 'Mortality' 
-  return alert.strAlertType === ('Mortality' || 'Malfunction');
+const confirmAlertType = (alert: ILotekAlert) => alert.strAlertType === ('Mortality' || 'Malfunction');
 
-}
 /**
  * fetches Lotek alerts, filters out any alerts that are alerts older than either: 
  *  a) the last Lotek alert added to the telemetry table. 
@@ -258,7 +245,7 @@ const setToken = (data) => {
 const getToken = async function () {
   START_TIMER = performance.now();
   if(TESTMODE) console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
-  console.log('Lotek CronJob: V1.9.2');
+  console.log('Lotek CronJob: V1.9.4');
 
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
@@ -289,12 +276,28 @@ const getToken = async function () {
     .catch(err => console.log(`Caught error from getAlerts() `, err))
 
   await getAllCollars()
+  .then(()=> console.log(`getAllCollars completed`))
   .catch(err => console.log(`Caught error from getAllCollars() `, err))
+
+  console.log('Closing database connection');
+  console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
+  pgPool.end();
+
+  // while (true){
+  //   let noConnections = !pgPool.totalCount && !pgPool.idleCount && !pgPool.waitingCount;
+  //   console.log(`PG Pool Details: totalCount: ${pgPool.totalCount} | idleCount: ${pgPool.idleCount} | waitingCount: ${pgPool.waitingCount}`)
+  //   if(!pgPool.totalCount && !pgPool.idleCount && !pgPool.waitingCount){
+  //     console.log('Closing database connection');
+  //     console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
+  //     pgPool.end();
+  //     break;
+  //   }
+  // } 
 };
+
+
 
 /*
   Entry point - Start script
  */
-getToken()
-
-
+getToken();
