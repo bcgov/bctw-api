@@ -11,7 +11,7 @@ import { data } from 'cypress/types/jquery';
 //Enabled in dev for local testing. Uses LOTEK_TEST_ALERTS in types/lotek.ts
 const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === 'localhost';
 
-const RETRIES: number = 3;
+const RETRIES: number = 50;
 const ALERT_TABLE: string = 'telemetry_sensor_alert';
 
 // Store the access token globally
