@@ -1,6 +1,6 @@
 import needle from 'needle';
 import 'dotenv/config';
-import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, isPoolEmpty, pgPool, pgPoolEndAsync, queryAsync } from './utils/db';
+import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, isPoolEmpty, pgPool, queryAsync } from './utils/db';
 const dayjs = require('dayjs');
 import { eVendorType, retrieveCredentials, ToLowerCaseObjectKeys  } from './utils/credentials';
 import { ICollar, ILotekAlert, LOTEK_TEST_ALERTS } from './types/lotek';
@@ -11,7 +11,8 @@ import { data } from 'cypress/types/jquery';
 //Enabled in dev for local testing. Uses LOTEK_TEST_ALERTS in types/lotek.ts
 const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === 'localhost';
 
-const ALERT_TABLE = 'telemetry_sensor_alert';
+const RETRIES: number = 3;
+const ALERT_TABLE: string = 'telemetry_sensor_alert';
 
 // Store the access token globally
 let tokenConfig = {};
@@ -281,18 +282,6 @@ const main = async function () {
   .then(()=> console.log(`PHASE[2] (getCollars) COMPLETE...`))
   .catch(err => console.log(`Error in PHASE[2] (getCollars)`, err))
 
-  
-
-  // while (true){
-  //   let noConnections = !pgPool.totalCount && !pgPool.idleCount && !pgPool.waitingCount;
-  //   console.log(`PG Pool Details: totalCount: ${pgPool.totalCount} | idleCount: ${pgPool.idleCount} | waitingCount: ${pgPool.waitingCount}`)
-  //   if(!pgPool.totalCount && !pgPool.idleCount && !pgPool.waitingCount){
-  //     console.log('Closing database connection');
-  //     console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
-  //     pgPool.end();
-  //     break;
-  //   }
-  // } 
 };
 
 
@@ -304,17 +293,18 @@ const main = async function () {
   const START_TIMER = performance.now();
   try {
     //Run main script
-    const run = await main();
+    await main();
+
   } catch (e) {
-      // Deal with the fact the script failed
       console.log('Error occured within the script', e);
 
   } finally {
-      //Close database connection
-      let RETRIES = 3;
+      //Check pool is drained and close database connection
+      //Retry 3 times safely then abort
+      let retry = RETRIES;
       while(true){
-        if(!RETRIES){
-          console.log(`DB tried 3 safe times to close and was unsuccessful...`);
+        if(!retry){
+          console.log(`DB tried ${RETRIES} safe times to close and was unsuccessful...`);
           break;
         }
         const emptyPool = await isPoolEmpty().then(res => res);
@@ -322,7 +312,7 @@ const main = async function () {
           console.log('PHASE[3] drain pool COMPLETE')
           break;
         }else{
-          RETRIES--;
+          retry--;
         }
       }
     await pgPool.end()
