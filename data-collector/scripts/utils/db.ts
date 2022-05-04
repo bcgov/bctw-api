@@ -3,6 +3,8 @@ import { Dayjs } from 'dayjs';
 import { eVendorType } from './credentials';
 const dayjs = require('dayjs')
 
+const TIMEOUT_MILLIS = 5000;
+
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
 // Set up the database pool
@@ -12,7 +14,8 @@ const password = process.env.POSTGRES_PASSWORD;
 const host = isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost';
 const port = isProd ? +(process?.env?.POSTGRES_SERVER_PORT ?? 5432) : 5432;
 
-const pool = { user, database, password, host, port, max: 10, idleTimeoutMillis: 10000, allowExitOnIdle: true };
+//Might need allowExitOnIdel
+const pool = { user, database, password, host, port, max: 10, idleTimeoutMillis: TIMEOUT_MILLIS};
 
 const pgPool = new pg.Pool(pool);
 
@@ -92,15 +95,26 @@ const getIsDuplicateAlert = async (alert_table: string, device_id: number, devic
   return result.rows[0];
 }
 
-//Async pgClose function used for lotek
-export const pgPoolEndAsync = async () => {
-  setTimeout(() => {
-    console.log('Closing the connection to the database...')
-    pgPool.end();
-  }, 5000)
-  
+//Checks if the DB pool is empty of clients
+//Uses timeout to set a wait between requests when called
+//Returns a boolean Promise
+const isPoolEmpty = (): Promise<boolean> => {
+  const {idleCount, waitingCount} = pgPool;
+
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if(!idleCount && !waitingCount){
+        resolve(true);
+        
+      }else{
+        console.log(`Connections still active... IdleCount: ${pgPool.idleCount} | WaitingCount: ${pgPool.waitingCount}`);
+        resolve(false);
+      }
+    }, 3000);
+  });
 }
+
 // dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
 
-export { pgPool, isProd, queryAsync, getLastAlertTimestamp, getIsDuplicateAlert, transactionify, getLastKnownLatLong }
+export { pgPool, isProd, queryAsync, getLastAlertTimestamp, getIsDuplicateAlert, transactionify, getLastKnownLatLong, TIMEOUT_MILLIS, isPoolEmpty }

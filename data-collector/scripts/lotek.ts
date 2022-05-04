@@ -1,6 +1,6 @@
 import needle from 'needle';
 import 'dotenv/config';
-import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, pgPool, pgPoolEndAsync, queryAsync } from './utils/db';
+import { getIsDuplicateAlert, getLastAlertTimestamp, getLastKnownLatLong, isPoolEmpty, pgPool, pgPoolEndAsync, queryAsync } from './utils/db';
 const dayjs = require('dayjs');
 import { eVendorType, retrieveCredentials, ToLowerCaseObjectKeys  } from './utils/credentials';
 import { ICollar, ILotekAlert, LOTEK_TEST_ALERTS } from './types/lotek';
@@ -246,7 +246,9 @@ const setToken = (data) => {
 const main = async function () {
   if(TESTMODE) console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
   console.log('Lotek CronJob: V1.9.6');
-
+  pgPool.on('error', (err) => {
+    console.log('Pool Error: ', err);
+  })
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
     console.log(`credential identifier: 'LOTEK_API_CREDENTIAL_NAME' not supplied`)
@@ -309,9 +311,24 @@ const main = async function () {
 
   } finally {
       //Close database connection
-      console.log('PHASE[3] COMPLETE closing database connection...');
-      console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
-      await pgPool.end();
+      let RETRIES = 3;
+      while(true){
+        if(!RETRIES){
+          console.log(`DB tried 3 safe times to close and was unsuccessful...`);
+          break;
+        }
+        const emptyPool = await isPoolEmpty().then(res => res);
+        if(emptyPool){
+          console.log('PHASE[3] drain pool COMPLETE')
+          break;
+        }else{
+          RETRIES--;
+        }
+      }
+    await pgPool.end()
+      .then(()=>console.log(`PHASE[4] Closing database connection... COMPLETE`))
+      .catch(err => console.log(`Problem occured when ending pool...`, err));
+    console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
   }
 })();
 //getToken();
