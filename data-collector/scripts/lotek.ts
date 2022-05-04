@@ -114,9 +114,8 @@ const getAllCollars = async function () {
           })
           .catch(async (err) => {
             console.log(`DeviceID ${collar.nDeviceID} ${err}`);
-            //console.log(`DeviceID ${collar.nDeviceID} failed. Retrying...`)
-            await iterateCollars(collar)
-              .catch(err => console.log(`DeviceID ${collar.nDeviceID} failed for second time...`))
+            // await iterateCollars(collar)
+            //   .catch(err => console.log(`DeviceID ${collar.nDeviceID} failed for second time...`))
           })
     }))
     .catch(err => console.log(err));
@@ -246,7 +245,7 @@ const setToken = (data) => {
 */
 const main = async function () {
   if(TESTMODE) console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
-  console.log('Lotek CronJob: V1.9.5');
+  console.log('Lotek CronJob: V1.9.6');
 
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
@@ -312,7 +311,7 @@ const main = async function () {
       //Close database connection
       console.log('PHASE[3] COMPLETE closing database connection...');
       console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
-      pgPool.end();
+      await pgPool.end();
   }
 })();
 //getToken();

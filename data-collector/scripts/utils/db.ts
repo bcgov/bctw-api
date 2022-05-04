@@ -1,4 +1,4 @@
-import pg, {QueryResult } from 'pg';
+import pg, {QueryResult, Pool } from 'pg';
 import { Dayjs } from 'dayjs';
 import { eVendorType } from './credentials';
 const dayjs = require('dayjs')
@@ -12,7 +12,7 @@ const password = process.env.POSTGRES_PASSWORD;
 const host = isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost';
 const port = isProd ? +(process?.env?.POSTGRES_SERVER_PORT ?? 5432) : 5432;
 
-const pool = { user, database, password, host, port, max: 10 };
+const pool = { user, database, password, host, port, max: 10, idleTimeoutMillis: 10000, allowExitOnIdle: true };
 
 const pgPool = new pg.Pool(pool);
 
