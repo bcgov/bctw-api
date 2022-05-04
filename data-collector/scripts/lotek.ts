@@ -13,11 +13,6 @@ const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === 'localhost';
 
 const ALERT_TABLE = 'telemetry_sensor_alert';
 
-const RETRIES: number = 3;
-
-let START_TIMER:number;
-let STOP_TIMER:number;
-
 // Store the access token globally
 let tokenConfig = {};
 let lotekUrl: string;
@@ -65,6 +60,7 @@ const iterateCollars = async function (collar: ICollar) {
   if (error) {
     const msg = `Could not get collar data for ${collar.nDeviceID}: ${error}`;
     console.log(msg);
+    // throw new Error(`DeviceID ${collar.nDeviceID} ${error}`)
     return;
   }
 
@@ -86,7 +82,8 @@ const iterateCollars = async function (collar: ICollar) {
     return;
   }
   if(TESTMODE) throw new Error('Test error throw');
-  insertCollarData(records);
+  await insertCollarData(records)
+    .catch(() => console.log(`Error inserting ${collar.nDeviceID} data into DB`))
 };
 
 /* ## getAllCollars
@@ -96,6 +93,7 @@ const iterateCollars = async function (collar: ICollar) {
   @param data {object} The array object of all collars, containing IDs
  */
 const getAllCollars = async function () {
+
   const url = `${lotekUrl}/devices`; // the API url
   const { body, error } = await needle('get', url, tokenConfig);
   if (error) {
@@ -106,21 +104,24 @@ const getAllCollars = async function () {
     Run the IterateCollars function on each collar.
     When done. Shut down the database connection.
   */
- let asyncCalls: number = body.length;
-
-
-  await Promise.all<ICollar>(
-    body.map(async (collar: ICollar, i: number, promiseArr: ICollar[]) => {
-      await iterateCollars(promiseArr[i])
-      .catch(err => {
-        let {nDeviceID} = promiseArr[i];
-        //Re-try if failure on collar
-        console.log(`Collar Error: ${nDeviceID} -> ${err}`);
-        console.log(`Collar: ${nDeviceID} retrying...`);
-        i -= 1;
-      })
-  }))
-  .catch(err => console.log(err));
+  if (body) {
+    await Promise.all<ICollar>(
+      body.map(async (collar: ICollar, i: number, promiseArr: ICollar[]) => {
+        await iterateCollars(collar)
+        //Individual insert error handling
+          .then(() => {
+            // console.log('Success');
+          })
+          .catch(async (err) => {
+            console.log(`DeviceID ${collar.nDeviceID} ${err}`);
+            //console.log(`DeviceID ${collar.nDeviceID} failed. Retrying...`)
+            await iterateCollars(collar)
+              .catch(err => console.log(`DeviceID ${collar.nDeviceID} failed for second time...`))
+          })
+    }))
+    .catch(err => console.log(err));
+  }
+  
 
 };
 
@@ -228,7 +229,8 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
   const sql = sqlPreamble + newAlerts.join(',');
   console.log(`Inserting ` + newAlerts.length + " alert records");
   console.log(`valid alerts found ${JSON.stringify(alerts)}`)
-  await queryAsync(sql);
+  await queryAsync(sql)
+    .catch(err => `Error inserting alert into DB ${err}`)
 };
 
 // sets token retrieved from login globally
@@ -242,10 +244,9 @@ const setToken = (data) => {
  * Get the authentication token from the API
  * Feed the token into the collar aquisition and iteration function
 */
-const getToken = async function () {
-  START_TIMER = performance.now();
+const main = async function () {
   if(TESTMODE) console.log(`TEST MODE ENABLED: ${LOTEK_TEST_ALERTS.length} test alerts.`);
-  console.log('Lotek CronJob: V1.9.4');
+  console.log('Lotek CronJob: V1.9.5');
 
   const credential_name_id = process.env.LOTEK_API_CREDENTIAL_NAME;
   if (!credential_name_id) {
@@ -272,16 +273,14 @@ const getToken = async function () {
   setToken(body);
 
   await getAlerts()
-    .then(() => console.log(`getAlerts() COMPLETED`))
-    .catch(err => console.log(`Caught error from getAlerts() `, err))
+    .then(() => console.log(`PHASE[1] (getAlerts) COMPLETE`))
+    .catch(err => console.log(`Error in PHASE-1 (getAlerts)`, err))
 
   await getAllCollars()
-  .then(()=> console.log(`getAllCollars completed`))
-  .catch(err => console.log(`Caught error from getAllCollars() `, err))
+  .then(()=> console.log(`PHASE[2] (getCollars) COMPLETE...`))
+  .catch(err => console.log(`Error in PHASE[2] (getCollars)`, err))
 
-  console.log('Closing database connection');
-  console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
-  pgPool.end();
+  
 
   // while (true){
   //   let noConnections = !pgPool.totalCount && !pgPool.idleCount && !pgPool.waitingCount;
@@ -300,4 +299,20 @@ const getToken = async function () {
 /*
   Entry point - Start script
  */
-getToken();
+(async () => {
+  const START_TIMER = performance.now();
+  try {
+    //Run main script
+    const run = await main();
+  } catch (e) {
+      // Deal with the fact the script failed
+      console.log('Error occured within the script', e);
+
+  } finally {
+      //Close database connection
+      console.log('PHASE[3] COMPLETE closing database connection...');
+      console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
+      pgPool.end();
+  }
+})();
+//getToken();
