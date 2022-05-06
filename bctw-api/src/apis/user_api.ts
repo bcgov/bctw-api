@@ -195,6 +195,7 @@ const assignCritterToUser = async function (
 ): Promise<Response> {
   const fn_name = 'grant_critter_to_user';
   const body: IUserCritterPermission[] = req.body;
+  console.log(body[0].access)
   const promises = body.map((cp) => {
     const { userId, access } = cp;
     const sql = constructFunctionQuery(

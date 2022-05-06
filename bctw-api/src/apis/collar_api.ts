@@ -87,7 +87,7 @@ const getUnattachedDeviceSQL = function (
       SELECT collar_id FROM ${cac_v})
     AND (
       c.owned_by_user_id = ${S_BCTW}.get_user_id('${username}') 
-      OR ${S_BCTW}.get_user_role('${username}') = 'administrator'
+      OR ${S_BCTW}.is_typeof_admin(${S_BCTW}.get_user_role('${username}'))
     )
     ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
 
