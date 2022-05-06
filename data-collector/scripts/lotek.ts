@@ -300,7 +300,7 @@ const main = async function () {
 
   } finally {
       //Check pool is drained and close database connection
-      //Retry 3 times safely then abort
+      //Maximum retries set to 50, expected 0-4
       let retry = RETRIES;
       while(true){
         if(!retry){
@@ -321,4 +321,6 @@ const main = async function () {
     console.log(`Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`);
   }
 })();
+
+
 //getToken();
