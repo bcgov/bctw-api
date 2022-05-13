@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { performManualLotekUpdate } from './lotek';
 import { performManualVectronicUpdate } from './vectronic';
 import { ManualVendorAPIResponse, ManualVendorInput } from '../../types/vendor';
-
+import 'dotenv/config';
 
 export interface IVendorCredential {
   username: string;

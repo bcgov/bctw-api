@@ -64,6 +64,7 @@ const app = express()
   .post('/upsert-animal', api.upsertAnimal)
   // devices
   .get('/get-all-collars', api.getAllCollars)
+  .get('/get-collars-and-deviceids', api.getCollarsAndDeviceIds)
   .get('/get-assigned-collars', api.getAssignedCollars)
   .get('/get-available-collars', api.getAvailableCollars)
   .get('/get-assignment-history/:animal_id', api.getCollarAssignmentHistory)

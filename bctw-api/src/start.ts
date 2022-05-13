@@ -10,6 +10,7 @@ import {
   getAvailableCollars,
   getCollar,
   getCollarChangeHistory,
+  getCollarsAndDeviceIds,
   upsertCollar,
 } from './apis/collar_api';
 import { getCritterTracks, getDBCritters } from './apis/map_api';
@@ -112,6 +113,7 @@ export {
   getAnimalHistory,
   getAnimals,
   getAllCollars,
+  getCollarsAndDeviceIds,
   getAssignedCollars,
   getAvailableCollars,
   getCode,
