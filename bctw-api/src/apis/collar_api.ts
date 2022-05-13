@@ -231,7 +231,7 @@ const getAllCollars = async function (req: Request, res:Response): Promise<Respo
  const getCollarsAndDeviceIds = async function (req: Request, res:Response): Promise<Response> {
   const base = `SELECT * FROM (SELECT collar_id, device_id, frequency, device_make, device_status, 
     device_type, device_model, activation_status FROM ${S_API}.collar_v 
-    UNION SELECT collar_id, deviceid AS device_id, NULL::float AS frequency, 
+    UNION SELECT crypto.gen_random_uuid() as collar_id, deviceid AS device_id, NULL::float AS frequency, 
     vendor::varchar AS device_make, NULL::varchar AS device_status, 
     NULL::varchar AS device_type, 'Unassigned Collar'::varchar AS device_model, 
     NULL::boolean AS activation_status FROM ${S_BCTW}.unassigned_telemetry_v) as s`

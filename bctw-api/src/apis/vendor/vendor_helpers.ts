@@ -4,6 +4,7 @@ import { performManualLotekUpdate } from './lotek';
 import { performManualVectronicUpdate } from './vectronic';
 import { ManualVendorAPIResponse, ManualVendorInput } from '../../types/vendor';
 import 'dotenv/config';
+import { isDev } from '../../constants';
 
 export interface IVendorCredential {
   username: string;
@@ -64,7 +65,6 @@ const fetchVendorTelemetryData = async (
   const body: ManualVendorInput | ManualVendorInput[] = req.body;
 
   const { LOTEK_API_CREDENTIAL_NAME, VECTRONICS_URL, VENDOR_API_CREDENTIALS_KEY} = process.env;
-
   if (!LOTEK_API_CREDENTIAL_NAME) {
     // the 'api_name' column for the Lotek account from the collar_vendor_api_credentials table
     return res.status(500).send('LOTEK_API_CREDENTIAL_NAME not set');
