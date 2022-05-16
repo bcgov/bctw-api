@@ -5,7 +5,7 @@ import {
   SearchFilter,
   QResult,
 } from '../types/query';
-import { pgPool } from './pg';
+import { isProd, pgPool } from './pg';
 
 // helper functions for constructing db queries
 
@@ -181,7 +181,7 @@ const query = async (
  * wraps the @param sql in begin;rollbac; if env variable ROLLBACK is set
  */
 const transactionify = (sql: string): string => {
-  return process.env.ROLLBACK ? `begin;${sql};rollback;` : sql;
+  return process.env.ROLLBACK === 'true' ? `begin;${sql};rollback;` : sql;
 };
 
 /**

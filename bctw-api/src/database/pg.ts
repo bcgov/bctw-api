@@ -1,11 +1,7 @@
 import pg, { PoolClient } from 'pg';
-import * as dotenv from 'dotenv';
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
 
-if (!isProd) {
-  dotenv.config();
-}
 //Removed isProd check
 const pgPort = +(process.env.POSTGRES_SERVER_PORT ?? 5432 ) as number;
 //const pgPort = +(isProd ? process.env.POSTGRES_SERVER_PORT ?? 5432 : 5432) as number;
@@ -13,6 +9,7 @@ const pgHost = (isProd ? process.env.POSTGRES_SERVER_HOST : 'localhost') as stri
 // always commit if in production
 const ROLLBACK = (process.env.ROLLBACK === 'true') && !isProd;
 
+console.log(`Environment: ${process.env.NODE_ENV}`)
 console.log('database port', pgPort);
 console.log('database host', pgHost);
 console.log('rolling back persisting changes', ROLLBACK);

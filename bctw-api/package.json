@@ -9,7 +9,7 @@
     "build": "rimraf ./build && tsc",
     "test": "jest --watch",
     "lint": "eslint . --ext .ts --no-error-on-unmatched-pattern",
-    "start:dev": "nodemon -r dotenv/config dotenv_config_path=.env",
+    "start:dev": "nodemon --exec 'ts-node -r dotenv/config src/server.ts dotenv_config_path=./.env dotenv_config_debug=true'",
     "watch": "tsc -w"
   },
   "repository": {
@@ -46,7 +46,8 @@
     "eslint": "^7.10.0",
     "eslint-config-prettier": "^7.1.0",
     "jest": "^27.0.4",
-    "nodemon": "^2.0.13",
+    "kill-port": "^2.0.0",
+    "nodemon": "^2.0.16",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "supervisor": "^0.12.0",
