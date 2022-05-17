@@ -78,7 +78,6 @@ const fetchVendorTelemetryData = async (
 
   // put the body into an array if it is a single object
   const inputArr = Array.isArray(body) ? body : [body];
-
   const promises = inputArr
   // filter out invalid entries with missing parameters
     .filter((mvi) => {
@@ -94,8 +93,10 @@ const fetchVendorTelemetryData = async (
       // create vendor-specific promise
       const { start, end, vendor, ids } = mvi;
       if (vendor === 'Lotek') {
+        console.log('Performing manual Lotek update...');
         return performManualLotekUpdate(start, end, ids);
       } else if (vendor === 'Vectronic') {
+        console.log('Performing manual Vectronic update...');
         return performManualVectronicUpdate(start, end, ids);
       }
     });

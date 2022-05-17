@@ -104,6 +104,7 @@ const performManualLotekUpdate = async (
 ): Promise<ManualVendorAPIResponse[]> => {
   const auth = await _fetchAPIToken();
   if (!auth) {
+    console.log('Lotek Authentication failed...');
     return [];
   }
   const { token, url } = auth;

@@ -9,7 +9,7 @@
     "build": "rimraf ./build && tsc",
     "test": "jest --watch",
     "lint": "eslint . --ext .ts --no-error-on-unmatched-pattern",
-    "start:dev": "nodemon --exec 'ts-node -r dotenv/config src/server.ts dotenv_config_path=./.env dotenv_config_debug=true'",
+    "start:dev": "nodemon -r dotenv/config ./build/server.js",
     "watch": "tsc -w"
   },
   "repository": {
