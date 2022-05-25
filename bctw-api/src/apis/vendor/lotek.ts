@@ -117,4 +117,4 @@ const performManualLotekUpdate = async (
   return [...dbResults, ...failed];
 };
 
-export { performManualLotekUpdate }
+export { performManualLotekUpdate, _fetchAPIToken }

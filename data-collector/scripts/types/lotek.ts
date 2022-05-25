@@ -21,6 +21,12 @@ export interface ICollar {
 
 export type alertType = 'Mortality' | 'Malfunction';
 
+export const LOTEK_TEST_COLLAR = {
+  nDeviceID: 101891,
+  strSpecialID: '0-3204850',
+  dtCreated: '2018-02-16T12:30:41.243',
+  strSatellite: 'Globalstar'
+}
 export const LOTEK_TEST_ALERTS = [
   //Testing multiple alerts with different alertTypes
   //Result -> Inserted as is
