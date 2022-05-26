@@ -10,6 +10,7 @@
     "test": "jest --watch",
     "lint": "eslint . --ext .ts --no-error-on-unmatched-pattern",
     "start:dev": "nodemon -r dotenv/config ./src/server.ts",
+    "start:reload": "./node_modules/.bin/nodemon -r dotenv/config src/server.ts --exec ts-node",
     "watch": "tsc -w"
   },
   "repository": {

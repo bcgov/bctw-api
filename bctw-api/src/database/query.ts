@@ -171,7 +171,7 @@ const query = async (
     result = await queryAsync(asTransaction ? transactionify(sql) : sql);
   } catch (e) {
     isError = true;
-    error = new Error(`${msgIfErr === '' ? e : msgIfErr}`);
+    error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
   }
   return { result, error, isError };
 };

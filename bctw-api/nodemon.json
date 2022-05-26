@@ -2,5 +2,6 @@
   "watch": ["."],
   "ext": ".ts,.js",
   "ignore": [],
-  "exec": "ts-node"
+  "exec": "ts-node",
+  "crash": "npx kill-port 3000"
 }
