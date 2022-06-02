@@ -95,6 +95,7 @@ const _insertVectronicRecords = async function (
     return {
       device_id: rows[0]?.idCollar ?? 0,
       records_found: 0,
+      records_inserted: 0,
       vendor: 'Vectronic',
       error: error.message
     };

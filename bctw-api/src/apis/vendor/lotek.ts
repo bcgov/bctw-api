@@ -7,6 +7,7 @@ import {
   LotekToken,
   ManualVendorAPIResponse,
 } from '../../types/vendor';
+import { formatAxiosError } from '../../utils/error';
 
 const LOTEK_CREDENTIAL_ID = process.env.LOTEK_API_CREDENTIAL_NAME;
 
@@ -27,7 +28,7 @@ const _insertLotekRecords = async function (
 
   if (isError) {
     console.error(`_insertLotekRecords error: ${error.message}`);
-    return { device_id: rows[0].DeviceID, records_found: 0, vendor: 'Lotek' };
+    return { device_id: rows[0].DeviceID, records_inserted: 0, records_found: 0, vendor: 'Lotek' };
   }
   const insertResult = getRowResults(result, fn_name, true);
   return insertResult as ManualVendorAPIResponse;
@@ -51,14 +52,16 @@ const _fetchLotekTelemetry = async function (
 
   // Send request to the API
   const results = await axios.get(url, token).catch((err: AxiosError) => {
-    errStr = JSON.stringify(err?.response?.data);
-    console.error(`fetchLotekTelemetry error: ${errStr}`);
+    //console.log(err);
+    //errStr = JSON.stringify(err?.response?.data);  
+    errStr = formatAxiosError(err);
   });
+  
   if (results && results.data) {
     const { data } = results;
     return data.filter((e) => e && e.RecDateTime && e.DeviceID);
   } else {
-    return { device_id: device_id, records_found: 0, vendor: 'Lotek', error: errStr } as ManualVendorAPIResponse;
+    return { device_id: device_id, records_found: 0, records_inserted: 0, vendor: 'Lotek', error: errStr } as ManualVendorAPIResponse;
   }
 };
 
@@ -79,7 +82,6 @@ const _fetchAPIToken = async function (): Promise<{ token: LotekToken; url: stri
   const { username, password, url } = credentials;
   const queryString = `username=${username}&password=${password}&grant_type=password`;
   const loginURL = `${url}/user/login`;
-
   const { data } = await axios.post(loginURL, queryString, {
     headers: { content_type: 'application/x-www-form-urlencoded' },
   });

@@ -3,5 +3,9 @@
   "ext": ".ts,.js",
   "ignore": [],
   "exec": "ts-node",
-  "crash": "npx kill-port 3000"
+  "events":{
+    "crash": "pkill -f nodemon"
+  },
+  "delay": "1000"
+  
 }

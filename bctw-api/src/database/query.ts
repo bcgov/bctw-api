@@ -192,7 +192,7 @@ const paginate = (pageNumber: number): string => {
   if (isNaN(pageNumber) || pageNumber === 0) {
     return '';
   }
-  const limit = 30;
+  const limit = 100;
   const offset = limit * pageNumber - limit;
   return `limit ${limit} offset ${offset};`;
 };

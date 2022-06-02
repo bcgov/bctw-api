@@ -15,6 +15,7 @@ export type VendorType = 'Vectronic' | 'Lotek' | 'ATS';
 export type ManualVendorAPIResponse = {
   device_id: number;
   records_found: number;
+  records_inserted: number;
   vendor: VendorType;
   error?: string;
 };

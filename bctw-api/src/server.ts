@@ -121,8 +121,10 @@ const app = express()
   .get('*', api.notFound);
 
 // run the server.
-http.createServer(app).listen(3000, () => {
-  console.log(`listening on port 3000`);
+// Nodemon was giving issues with port 3000, add new one to env to solve problem.
+const PORT = 3000;
+http.createServer(app).listen(PORT, () => {
+  console.log(`listening on port ${PORT}`);
   pgPool.connect((err, client) => {
     const serverMsg = `${process.env.POSTGRES_SERVER_HOST ?? 'localhost'}:${
       process.env.POSTGRES_SERVER_PORT ?? 5432

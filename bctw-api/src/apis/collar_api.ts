@@ -238,8 +238,13 @@ const getAllCollars = async function (req: Request, res:Response): Promise<Respo
 
   const filter = getFilterFromRequest(req);
   const page = (req.query?.page || 0) as number;
-  const sql = constructGetQuery({ base, filter: appendFilter(filter, false, false), page });
+  const sql = constructGetQuery({ 
+    base, 
+    filter: appendFilter(filter, false, false),  
+    order: [{field: 'device_id', order: 'asc'}],
+    page });
 
+  console.log(sql);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(sql);
