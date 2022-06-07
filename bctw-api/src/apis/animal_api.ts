@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { S_API, S_BCTW } from '../constants';
 import {
   appendFilter,
+  applyCount,
   constructFunctionQuery,
   constructGetQuery,
   getRowResults,
@@ -70,7 +71,7 @@ const _getAttachedSQL = (username: string, page: number, search?: SearchFilter, 
         ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
       FROM ${cac_v} c
       JOIN ${S_API}.animal_v a ON c.critter_id = a.critter_id
-    ) SELECT * from ${alias}
+    ) SELECT ${applyCount(page)}* from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
     const filter =  search ? appendFilter(search, `${alias}.`, true) : '';
@@ -86,7 +87,7 @@ const _getUnattachedSQL = (username: string, page: number, search?: SearchFilter
         ${getAllProps? 'cuc.*,' : 'cuc.critter_id, cuc.animal_id, cuc.species, cuc.wlh_id, cuc.animal_status, cuc.population_unit, cuc.valid_from,'}
         ${fn_get_user_animal_permission}('${username}', cuc.critter_id) AS "permission_type"
       FROM bctw_dapi_v1.currently_unattached_critters_v cuc
-    ) SELECT * from ${alias}
+    ) SELECT ${applyCount(page)}* from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
   const filter =  search ? appendFilter(search, `${alias}.`, true) : '';

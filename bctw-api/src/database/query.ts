@@ -9,6 +9,10 @@ import { isProd, pgPool } from './pg';
 
 // helper functions for constructing db queries
 
+//Used to change sql from basic request to a count of records
+const applyCount = (page: number) => {
+  return page == 1 ? `COUNT(*) OVER() as row_count, ` : '';
+}
 /**
  * @param IConstructQueryParameters
  * @returns the modified sql string
@@ -254,6 +258,7 @@ const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
 }
 
 export {
+  applyCount,
   getRowResults,
   query,
   constructFunctionQuery,

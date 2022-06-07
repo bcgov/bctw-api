@@ -3,6 +3,7 @@ import { S_API, S_BCTW } from '../constants';
 
 import {
   appendFilter,
+  applyCount,
   constructFunctionQuery,
   constructGetQuery,
   getRowResults,
@@ -76,6 +77,7 @@ const getUnattachedDeviceSQL = function (
 ): string {
   const base = `
     SELECT 
+    ${applyCount(page)}
       ${
         getAllProps
           ? 'c.*,'
@@ -152,7 +154,7 @@ const getAttachedDeviceSQL = function (
     FROM ${cac_v} ca
     JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
     JOIN ${S_API}.animal_v a ON a.critter_id = ca.critter_id
-  ) SELECT * FROM ${alias}
+  ) SELECT ${applyCount(page)}* FROM ${alias}
   ${collar_id ? ` WHERE ${alias}.collar_id = '${collar_id}'` : ''}`;
 
   const sql = constructGetQuery({
@@ -229,22 +231,22 @@ const getAllCollars = async function (req: Request, res:Response): Promise<Respo
  * used in Telemetry Retrieval page to allow retrieval of telemetry for unassigned device_ids
  */
  const getCollarsAndDeviceIds = async function (req: Request, res:Response): Promise<Response> {
-  const base = `SELECT * FROM (SELECT collar_id, device_id, frequency, device_make, device_status, 
+  const page = (req.query?.page || 0) as number;
+  console.log('api ' + page);
+  const base = `SELECT ${applyCount(page)}* FROM (SELECT collar_id, device_id, frequency, device_make, device_status, 
     device_type, device_model, activation_status FROM ${S_API}.collar_v 
     UNION SELECT crypto.gen_random_uuid() as collar_id, deviceid AS device_id, NULL::float AS frequency, 
     vendor::varchar AS device_make, NULL::varchar AS device_status, 
     NULL::varchar AS device_type, 'Unassigned Collar'::varchar AS device_model, 
     NULL::boolean AS activation_status FROM ${S_BCTW}.unassigned_telemetry_v) as s`
-
   const filter = getFilterFromRequest(req);
-  const page = (req.query?.page || 0) as number;
   const sql = constructGetQuery({ 
     base, 
     filter: appendFilter(filter, false, false),  
     order: [{field: 'device_id', order: 'asc'}],
     page });
 
-  console.log(sql);
+  console.log({sql});
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(sql);
