@@ -232,7 +232,6 @@ const getAllCollars = async function (req: Request, res:Response): Promise<Respo
  */
  const getCollarsAndDeviceIds = async function (req: Request, res:Response): Promise<Response> {
   const page = (req.query?.page || 0) as number;
-  console.log('api ' + page);
   const base = `SELECT ${applyCount(page)}* FROM (SELECT collar_id, device_id, frequency, device_make, device_status, 
     device_type, device_model, activation_status FROM ${S_API}.collar_v 
     UNION SELECT crypto.gen_random_uuid() as collar_id, deviceid AS device_id, NULL::float AS frequency, 
@@ -245,8 +244,6 @@ const getAllCollars = async function (req: Request, res:Response): Promise<Respo
     filter: appendFilter(filter, false, false),  
     order: [{field: 'device_id', order: 'asc'}],
     page });
-
-  console.log({sql});
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(sql);
