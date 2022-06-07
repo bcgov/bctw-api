@@ -71,7 +71,8 @@ const insertAPICollarData = async function (collar: ICollar) {
   values (${nDeviceID}, '${strSpecialID}', '${dtCreated}', '${strSatellite}', now())
   ON CONFLICT (ndeviceid) DO UPDATE SET ${keys.slice(1).map(i=>`${i}='${collar[i]}'`)}, dtrecord_updated=now();`
 
-  await pgPool.query(sql).catch((err) => console.log(err));
+  await pgPool.query(sql)
+  .catch((err) => console.log(err));
 };
 
 /* ## iterateCollars
