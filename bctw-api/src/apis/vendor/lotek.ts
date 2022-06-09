@@ -49,14 +49,17 @@ const _fetchLotekTelemetry = async function (
 
   const url = `${uri}/gps?deviceId=${device_id}&dtStart=${s}&dtEnd=${e}`;
   let errStr = '';
-
   // Send request to the API
   const results = await axios.get(url, token).catch((err: AxiosError) => {
-    //console.log(err);
-    //errStr = JSON.stringify(err?.response?.data);  
     errStr = formatAxiosError(err);
   });
-  
+  if(errStr == 'Device not found'){
+    const credentials = await retrieveCredentials(LOTEK_CREDENTIAL_ID ?? '');
+    if(credentials?.username){
+      errStr = `Device not registered with account '${credentials.username}'`
+    }
+    
+  }
   if (results && results.data) {
     const { data } = results;
     return data.filter((e) => e && e.RecDateTime && e.DeviceID);

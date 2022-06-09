@@ -8,6 +8,7 @@ import {
 } from '../../types/vendor';
 import { ToLowerCaseObjectKeys } from './vendor_helpers';
 import { Agent } from 'https';
+import { formatAxiosError } from '../../utils/error';
 
 const VECT_API_URL = process.env.VECTRONICS_URL;
 // format the API expects timestamps
@@ -58,15 +59,15 @@ const _fetchVectronicTelemetry = async function (
   const s = dayjs(start).format(VECT_API_TS_FORMAT);
   const e = dayjs(end).format(VECT_API_TS_FORMAT);
   const url = `${VECT_API_URL}/${idcollar}/gps?collarkey=${collarkey}&afterScts=${s}&beforeScts=${e}`;
-  console.log('vetronic url: ', url);
+  //console.log('vetronic url: ', url);
   let errStr = '';
   // call the vectronic api, using the agent created with the env variable cert key
   const results = await axios.get(url, { httpsAgent: agent }).catch((err: AxiosError) => {
-    errStr = JSON.stringify(err);
+    errStr = formatAxiosError(err);
     console.error(`fetchVectronicTelemetry failure for device ${collar.idcollar}: ${errStr}`);
   });
   if (results && results.data) {
-    console.log(`${results.data.length} records retrieved for vectronic device ${collar.idcollar}`);
+    //console.log(`${results.data.length} records retrieved for vectronic device ${collar.idcollar}`);
     return results.data;
   } else {
     return { device_id: idcollar, records_found: 0, vendor: 'Vectronic', error: errStr } as ManualVendorAPIResponse;
@@ -138,6 +139,7 @@ const performManualVectronicUpdate = async (
     .filter((rows) => Array.isArray(rows) && rows.length)
     .map((rows) => _insertVectronicRecords(rows as VectronicRawTelemetry[]));
   const dbResults = await Promise.all(promisesDb);
+  console.log(dbResults);
   return [...dbResults, ...failed];
 };
 

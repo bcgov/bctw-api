@@ -4,8 +4,7 @@
   "ignore": [],
   "exec": "ts-node",
   "events":{
-    "crash": "pkill -f nodemon"
-  },
-  "delay": "1000"
+    "crash": ""
+  }
   
 }
