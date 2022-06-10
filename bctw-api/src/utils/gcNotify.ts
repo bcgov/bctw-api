@@ -21,8 +21,8 @@ const EMAIL_ENV = {
 };
 
 const TEMPLATES_IDS = {
-  mortalityTemplateSMS: process.env.BCTW_GCNOTIFY_TEMPLATE_SMS_MORTALITY,
-  mortalityTemplateEmail: process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_MORTALITY,
+  mortalityTemplateSMS: process.env.BCTW_GCNOTIFY_TEMPLATE_SMS_MORTALITY_DETECTED,
+  mortalityTemplateEmail: process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_MORTALITY_DETECTED,
 };
 
 /**
@@ -71,7 +71,7 @@ const sendSMS = async function <T>(
  * @param body
  * @param template_id
  */
-const sendEmail = async function <T>(
+export const sendGCEmail = async function <T>(
   email_address: string,
   body: T,
   template_id: string
@@ -91,6 +91,8 @@ const sendEmail = async function <T>(
     email_reply_to_id,
   };
   const [uri, header] = constructHeader('email');
+  //console.log(emailPayload);
+  console.log(emailPayload);
   await axios.post(uri, emailPayload, header).catch((e: AxiosError) => {
     console.error(`error sending email to ${email_address}: ${e.message}`);
   });
@@ -155,7 +157,7 @@ const handleMortalityAlert = async function (
   const emailPromises = templates.map(
     (t) =>
       new Promise(() =>
-        sendEmail<GCMortalityTemplateEmail>(t.email, t.emailTemplate, emailID)
+        sendGCEmail<GCMortalityTemplateEmail>(t.email, t.emailTemplate, emailID)
       )
   );
   // send sms notifications followed by emails

@@ -1,6 +1,7 @@
+import { type } from 'os';
 import { Animal } from './animal';
 import { Collar } from './collar';
-import { User } from './user';
+import { eUserRole, IOnboardEmailDetails, IOnboardInput, IUserInput, User } from './user';
 
 /**
  * response returned from gc notify after a successful post
@@ -61,6 +62,20 @@ type GCNotifyEmailPayload<T> = {
 type GCNotifySMSPayload<T> = Omit<GCNotifyEmailPayload<T>, 'email_address' | 'email_reply_to_id'> & {
   phone_number: string;
 };
+/* Onboarding type for GCNotify user requests. BCTW admin receives email*/
+type GCNotifyOnboardAdminReq = Omit<IOnboardInput, 'role_type'>
+& IOnboardEmailDetails;
+
+/* User onboarding GCNotify confirmation type. User receives email*/
+type GCNotifyOnboardUserConfirmation = Pick<IUserInput, 'firstname'> & {
+  request_type: eUserRole;
+  request_date: string;
+}
+
+type GCNotifyOnboardUserApproved = 
+Pick<GCNotifyOnboardUserConfirmation, 'firstname' | 'request_type'>
+
+type GCNotifyOnboardUserDeclined = Pick<IUserInput, 'firstname'>
 
 export type {
   GCNotifyResponse,
@@ -69,4 +84,8 @@ export type {
   GCMortalityTemplateEmail,
   GCNotifyEmailPayload,
   GCNotifySMSPayload,
+  GCNotifyOnboardAdminReq,
+  GCNotifyOnboardUserConfirmation,
+  GCNotifyOnboardUserApproved,
+  GCNotifyOnboardUserDeclined
 };
