@@ -8,16 +8,16 @@ import {
   query,
 } from '../database/query';
 import { getUserIdentifier, getUserIdentifierDomain } from '../database/requests';
-import { IHandleOnboardRequestInput, OnboardUserInput } from '../types/user';
+import { IHandleOnboardRequestInput } from '../types/user';
 import { sendGCEmail } from '../utils/gcNotify';
 
-const REQUEST_TO_ADMIN_ID = process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_ONBOARDING_ADMIN ?? 
+const REQUEST_TO_ADMIN_ID = process.env.BCTW_GCNOTIFY_EMAIL_ONBOARDING_ADMIN ?? 
 '1ca46c89-cc35-4bd7-bc90-3349618a6c59';
-const CONFIRMATION_TO_USER_ID = process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_ONBOARDING_CONFIRMATION ?? 
+const CONFIRMATION_TO_USER_ID = process.env.BCTW_GCNOTIFY_EMAIL_ONBOARDING_CONFIRMATION ?? 
 '1d8c664b-20e2-4026-b7cc-b0a4b696af9a';
-const DENIED_ID = process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_ONBOARDING_DECLINED ??
+const DENIED_ID = process.env.BCTW_GCNOTIFY_EMAIL_ONBOARDING_DECLINED ??
  'b8f2e472-2b69-4419-a7ad-a80b1510fc09';
-const APPROVED_ID = process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_ONBOARDING_APPROVED ?? 
+const APPROVED_ID = process.env.BCTW_GCNOTIFY_EMAIL_ONBOARDING_APPROVED ?? 
 '2760a534-e412-4e1d-bf68-4f4a987d372b';
 
 /**
@@ -81,6 +81,7 @@ const handleOnboardingRequest = async function (
   const body: GCNotifyOnboardUserConfirmation | GCNotifyOnboardUserDeclined = 
     isApproved ? { firstname, request_type: role_type} : { firstname }
 
+  // Sends approval / denial email to the user
   sendGCEmail(email, body, isApproved ? APPROVED_ID : DENIED_ID)
   return res.send(getRowResults(result, fn_name, true));
 };

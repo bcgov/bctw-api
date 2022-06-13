@@ -21,8 +21,8 @@ const EMAIL_ENV = {
 };
 
 const TEMPLATES_IDS = {
-  mortalityTemplateSMS: process.env.BCTW_GCNOTIFY_TEMPLATE_SMS_MORTALITY_DETECTED,
-  mortalityTemplateEmail: process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_MORTALITY_DETECTED,
+  mortalityTemplateSMS: process.env.BCTW_GCNOTIFY_SMS_MORTALITY_DETECTED,
+  mortalityTemplateEmail: process.env.BCTW_GCNOTIFY_EMAIL_MORTALITY_DETECTED,
 };
 
 /**
@@ -91,11 +91,10 @@ export const sendGCEmail = async function <T>(
     email_reply_to_id,
   };
   const [uri, header] = constructHeader('email');
-  //console.log(emailPayload);
-  console.log(emailPayload);
-  await axios.post(uri, emailPayload, header).catch((e: AxiosError) => {
+  await axios.post(uri, emailPayload, header)
+  .catch((e: AxiosError) => {
     console.error(`error sending email to ${email_address}: ${e.message}`);
-  });
+  }).then(() => console.log(`Sent emailPayload: ${emailPayload}`))
 };
 
 /**
@@ -161,11 +160,14 @@ const handleMortalityAlert = async function (
       )
   );
   // send sms notifications followed by emails
-  Promise.allSettled([...smsPromises, ...emailPromises]).then((results) =>
-    results.forEach((result) => {
-      console.log(result.status);
-    })
-  );
+  // Promise.allSettled([...smsPromises, ...emailPromises]).then((results) =>
+  //   results.forEach((result) => {
+  //     console.log(result.status);
+  //   })
+  // );
+
+  Promise.all([[...smsPromises, ...emailPromises]])
+    .then(res=>console.log(res));
 };
 
 export default handleMortalityAlert;
