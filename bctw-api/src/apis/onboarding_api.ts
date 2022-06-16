@@ -1,5 +1,6 @@
+import { GCNotifyOnboardAdminReq, GCNotifyOnboardUserConfirmation, GCNotifyOnboardUserDeclined} from './../types/sms';
 import { Request, Response } from 'express';
-import { S_API } from '../constants';
+import { BCTW_EMAIL, CONFIRMATION_TO_USER_ID, ONBOARD_APPROVED_ID, ONBOARD_DENIED_ID, REQUEST_TO_ADMIN_ID, S_API } from '../constants';
 import {
   constructFunctionQuery,
   constructGetQuery,
@@ -7,9 +8,10 @@ import {
   query,
 } from '../database/query';
 import { getUserIdentifier, getUserIdentifierDomain } from '../database/requests';
-import { userOnboardRequest } from '../templates/email_templates';
-import { IHandleOnboardRequestInput, OnboardUserInput } from '../types/user';
-import { sendEmail } from './email';
+import { IHandleOnboardRequestInput } from '../types/user';
+import { sendGCEmail } from '../utils/gcNotify';
+
+
 
 /**
  * unauthorized endpoint that handles new user onboard requests
@@ -24,14 +26,31 @@ const submitOnboardingRequest = async function (
   res: Response
 ): Promise<Response> {
   const fn_name = 'submit_onboarding_request';
-  const body: OnboardUserInput = req.body;
-  const { user } = body;
+  const dt = new Date();
+  const {user, emailInfo} = req.body;
+
   const sql = constructFunctionQuery(fn_name, [user]);
+  if(!REQUEST_TO_ADMIN_ID || !CONFIRMATION_TO_USER_ID){
+    return res.status(500).send(
+      `Must supply a valid 'Request to admin' / 'Confirmation to user' template ID's to GCNotify`);
+  }
+  const confirmationToUserBody: GCNotifyOnboardUserConfirmation = {
+    firstname: user.firstname,
+    request_type: user.role_type,
+    request_date: dt.toLocaleDateString(),
+  }
+
+  delete user.role_type;
+  const requestToAdminBody: GCNotifyOnboardAdminReq = {...user, ...emailInfo}
+
   const { result, error, isError } = await query(sql, undefined, true);
   if (isError) {
     return res.status(500).send(error.message);
   }
-  sendEmail(userOnboardRequest(body), `Access request for the BC Telemetry Warehouse: ${user.username}`);
+  //Send onboarding request to Admin
+  await sendGCEmail(BCTW_EMAIL, requestToAdminBody, REQUEST_TO_ADMIN_ID);
+  //Send confirmation to User
+  await sendGCEmail(user.email, confirmationToUserBody, CONFIRMATION_TO_USER_ID)
   return res.send(getRowResults(result, fn_name, true));
 };
 
@@ -44,12 +63,20 @@ const handleOnboardingRequest = async function (
   res: Response
 ): Promise<Response>{
   const fn_name = 'handle_onboarding_request';
-  const { onboarding_id, access, role_type } = req.body as IHandleOnboardRequestInput;
+  const { onboarding_id, access, role_type, email, firstname } = req.body as IHandleOnboardRequestInput;
   const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), onboarding_id, access, role_type]);
+  console.log(req.body)
   const { result, error, isError } = await query(sql, undefined, true);
   if (isError) {
     return res.status(500).send(error.message);
   }
+  const isApproved: boolean = access == 'granted';
+
+  const body: GCNotifyOnboardUserConfirmation | GCNotifyOnboardUserDeclined = 
+    isApproved ? { firstname, request_type: role_type} : { firstname }
+
+  // Sends approval / denial email to the user
+  sendGCEmail(email, body, isApproved ? ONBOARD_APPROVED_ID : ONBOARD_DENIED_ID)
   return res.send(getRowResults(result, fn_name, true));
 };
 

@@ -38,7 +38,7 @@ type OnboardUserInput = {
 }
 
 // represents what an admin passes to grant/deny an onboard request
-interface IHandleOnboardRequestInput extends Pick<IOnboardInput, 'access' | 'role_type'> {
+interface IHandleOnboardRequestInput extends Pick<IOnboardInput, 'access' | 'role_type' | 'email' | 'firstname'> {
   onboarding_id: number;
 }
 
@@ -47,9 +47,11 @@ type User = BCTWBaseType & IUserInput;
 // used to represent user role type
 enum eUserRole {
   administrator = 'administrator',
-  owner = 'owner',
-  editor = 'editor',
-  observer = 'observer'
+  user = 'user',
+  data_administrator = 'data_administrator'
+  //owner = 'owner',
+  //editor = 'editor',
+  //observer = 'observer'
 }
 
 enum eCritterPermission {
@@ -68,5 +70,6 @@ export {
   eUserRole,
   eCritterPermission,
   IHandleOnboardRequestInput,
+  IOnboardEmailDetails,
   DomainType
 } 

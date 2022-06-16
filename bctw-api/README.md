@@ -13,4 +13,5 @@ Port forward database to development computer
 ```bash
 oc get pods # Find the pod name
 oc port-forward pod-name 5432:5432
+npm run start:dev
 ```

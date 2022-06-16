@@ -1,6 +1,6 @@
 @badrole = adminstrato
 @badaccess = notpending
-@validrole = owner
+@validrole = manager
 @validaccess = pending
 @granted = granted
 @denied = denied

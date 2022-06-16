@@ -21,8 +21,8 @@ const EMAIL_ENV = {
 };
 
 const TEMPLATES_IDS = {
-  mortalityTemplateSMS: process.env.BCTW_GCNOTIFY_TEMPLATE_SMS_MORTALITY,
-  mortalityTemplateEmail: process.env.BCTW_GCNOTIFY_TEMPLATE_EMAIL_MORTALITY,
+  mortalityTemplateSMS: process.env.BCTW_GCNOTIFY_SMS_MORTALITY_DETECTED,
+  mortalityTemplateEmail: process.env.BCTW_GCNOTIFY_EMAIL_MORTALITY_DETECTED,
 };
 
 /**
@@ -71,7 +71,7 @@ const sendSMS = async function <T>(
  * @param body
  * @param template_id
  */
-const sendEmail = async function <T>(
+export const sendGCEmail = async function <T>(
   email_address: string,
   body: T,
   template_id: string
@@ -91,15 +91,16 @@ const sendEmail = async function <T>(
     email_reply_to_id,
   };
   const [uri, header] = constructHeader('email');
-  await axios.post(uri, emailPayload, header).catch((e: AxiosError) => {
+  await axios.post(uri, emailPayload, header)
+  .catch((e: AxiosError) => {
     console.error(`error sending email to ${email_address}: ${e.message}`);
-  });
+  }).then(() => console.log({emailPayload}))
 };
 
 /**
  * @param alerts the array of raw event JSON from the pg notify event
  * converts @param alerts into the expected GC notify mortality template
- * calls @function sendSMS and @function sendEmail for each template.
+ * calls @function sendGCSMS and @function sendGCEmail for each template.
  * note: there are no retries if there are any exceptions, errors are
  * simply caught and logged
  */
@@ -155,15 +156,18 @@ const handleMortalityAlert = async function (
   const emailPromises = templates.map(
     (t) =>
       new Promise(() =>
-        sendEmail<GCMortalityTemplateEmail>(t.email, t.emailTemplate, emailID)
+        sendGCEmail<GCMortalityTemplateEmail>(t.email, t.emailTemplate, emailID)
       )
   );
   // send sms notifications followed by emails
-  Promise.allSettled([...smsPromises, ...emailPromises]).then((results) =>
-    results.forEach((result) => {
-      console.log(result.status);
-    })
-  );
+  // Promise.allSettled([...smsPromises, ...emailPromises]).then((results) =>
+  //   results.forEach((result) => {
+  //     console.log(result.status);
+  //   })
+  // );
+
+  Promise.all([[...smsPromises, ...emailPromises]])
+    .then(res=>console.log(res));
 };
 
 export default handleMortalityAlert;
