@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { DISABLE_PERMISSION_EMAIL, S_API } from '../constants';
+import { request } from 'http';
+import { BCTW_EMAIL, DISABLE_PERMISSION_EMAIL, PERMISSION_DENIED_ID, PERMISSION_REQ_ID, S_API } from '../constants';
 import {
   constructFunctionQuery,
   constructGetQuery,
@@ -7,13 +8,11 @@ import {
   query,
 } from '../database/query';
 import { getUserIdentifier, handleResponse } from '../database/requests';
-import { permissionDeniedEmail, permissionSubmittedEmail } from '../templates/email_templates';
 import { IPermissionRequest, IPermissionRequestInput } from '../types/permission';
-import { sendEmail } from './email';
+import { sendGCEmail } from '../utils/gcNotify';
 
 const fn_submit_perm_request = 'submit_permission_request';
 const fn_execute_perm_request = 'execute_permission_request';
-
 /**
  * object the admin submits to grant / denty a permission request
  */
@@ -43,9 +42,18 @@ const submitPermissionRequest = async function (
   if (!error && !DISABLE_PERMISSION_EMAIL) {
     // send email notification to the admin via CHES
     const rows = getRowResults(result, fn_submit_perm_request);
-    const template = permissionSubmittedEmail(rows as IPermissionRequest[]);
-    if (template) {
-      sendEmail(template, 'Animal permission request submitted');
+    if(rows.length){
+      const {requested_by_name, requested_date, requested_by, 
+        requested_by_email, requested_for_email} = rows[0] as IPermissionRequest;
+      sendGCEmail(BCTW_EMAIL, {
+        requested_by_name,
+        requested_date,
+        requested_by,
+        requested_by_email,
+        requested_for: requested_for_email,
+        critters: JSON.stringify(critter_permissions_list, null, 2),
+        request_comment: request_comment ?? '',
+      }, PERMISSION_REQ_ID)
     }
   }
   const data =
@@ -97,10 +105,19 @@ const approveOrDenyPermissionRequest = async function (
   // send an email notification if the request was denied to the manager
   if (!isError && !is_grant && !DISABLE_PERMISSION_EMAIL) {
     const requestResult = row as IPermissionRequest;
-    const template = permissionDeniedEmail(requestResult);
-    if (template) {
-      sendEmail(template, `Animal permission request ${request_id} denied`, requestResult.requested_by_email);
-    }
+    const { requested_by_name, requested_date, requested_for_email, 
+      permission_type, wlh_id, animal_id, species, 
+      was_denied_reason } = requestResult;
+    sendGCEmail(requested_for_email, {
+      requested_by_name, 
+      requested_date, 
+      requested_for_email, 
+      permission_type,
+      wlh_id, 
+      animal_id,
+      species,
+      was_denied_reason
+    }, PERMISSION_DENIED_ID)
   }
   return handleResponse(res, row, error);
 };

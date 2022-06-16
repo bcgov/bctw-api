@@ -149,7 +149,7 @@ const getUserCritterAccess = async function (
   }
   const params: (string | string[])[] = [user];
   /**
-   * permission filters are appended to the query, ex '?editor,owner'
+   * permission filters are appended to the query, ex '?editor,manager'
    * split the string into an array so the query can handle it
    */
   const { filters } = req.query;

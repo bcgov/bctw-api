@@ -1,6 +1,6 @@
 import { GCNotifyOnboardAdminReq, GCNotifyOnboardUserConfirmation, GCNotifyOnboardUserDeclined} from './../types/sms';
 import { Request, Response } from 'express';
-import { BCTW_EMAIL, S_API } from '../constants';
+import { BCTW_EMAIL, CONFIRMATION_TO_USER_ID, ONBOARD_APPROVED_ID, ONBOARD_DENIED_ID, REQUEST_TO_ADMIN_ID, S_API } from '../constants';
 import {
   constructFunctionQuery,
   constructGetQuery,
@@ -11,14 +11,7 @@ import { getUserIdentifier, getUserIdentifierDomain } from '../database/requests
 import { IHandleOnboardRequestInput } from '../types/user';
 import { sendGCEmail } from '../utils/gcNotify';
 
-const REQUEST_TO_ADMIN_ID = process.env.BCTW_GCNOTIFY_EMAIL_ONBOARDING_ADMIN ?? 
-'1ca46c89-cc35-4bd7-bc90-3349618a6c59';
-const CONFIRMATION_TO_USER_ID = process.env.BCTW_GCNOTIFY_EMAIL_ONBOARDING_CONFIRMATION ?? 
-'1d8c664b-20e2-4026-b7cc-b0a4b696af9a';
-const DENIED_ID = process.env.BCTW_GCNOTIFY_EMAIL_ONBOARDING_DECLINED ??
- 'b8f2e472-2b69-4419-a7ad-a80b1510fc09';
-const APPROVED_ID = process.env.BCTW_GCNOTIFY_EMAIL_ONBOARDING_APPROVED ?? 
-'2760a534-e412-4e1d-bf68-4f4a987d372b';
+
 
 /**
  * unauthorized endpoint that handles new user onboard requests
@@ -56,6 +49,7 @@ const submitOnboardingRequest = async function (
   }
   //Send onboarding request to Admin
   await sendGCEmail(BCTW_EMAIL, requestToAdminBody, REQUEST_TO_ADMIN_ID);
+  //Send confirmation to User
   await sendGCEmail(user.email, confirmationToUserBody, CONFIRMATION_TO_USER_ID)
   return res.send(getRowResults(result, fn_name, true));
 };
@@ -82,7 +76,7 @@ const handleOnboardingRequest = async function (
     isApproved ? { firstname, request_type: role_type} : { firstname }
 
   // Sends approval / denial email to the user
-  sendGCEmail(email, body, isApproved ? APPROVED_ID : DENIED_ID)
+  sendGCEmail(email, body, isApproved ? ONBOARD_APPROVED_ID : ONBOARD_DENIED_ID)
   return res.send(getRowResults(result, fn_name, true));
 };
 

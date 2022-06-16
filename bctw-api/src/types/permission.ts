@@ -27,7 +27,12 @@ export interface IPermissionRequest extends ICritterPermissionRequest {
   was_granted: boolean;
   valid_to: Date;
 }
-
+/* TODO: Change requested_for in template to requested_for_email */
+export interface IPermissionRequestEmail extends Pick<IPermissionRequest, 
+'requested_by_name'|'requested_date' | 'requested_by' | 
+'requested_by_email' | 'request_comment' | 'requested_for_email'> {
+critters: string;
+}
 /**
  * the object an manager submits for a request
  */

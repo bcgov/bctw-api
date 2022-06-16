@@ -94,13 +94,13 @@ export const sendGCEmail = async function <T>(
   await axios.post(uri, emailPayload, header)
   .catch((e: AxiosError) => {
     console.error(`error sending email to ${email_address}: ${e.message}`);
-  }).then(() => console.log(`Sent emailPayload: ${emailPayload}`))
+  }).then(() => console.log({emailPayload}))
 };
 
 /**
  * @param alerts the array of raw event JSON from the pg notify event
  * converts @param alerts into the expected GC notify mortality template
- * calls @function sendSMS and @function sendEmail for each template.
+ * calls @function sendGCSMS and @function sendGCEmail for each template.
  * note: there are no retries if there are any exceptions, errors are
  * simply caught and logged
  */

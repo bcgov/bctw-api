@@ -8,7 +8,7 @@ There are only two types of _user_ roles in BCTW:
 There is also the concept of a _permission type_. A permission type is different than a user role because a single user can have multiple permission types but only a single role.  
 
 Permission types fall into two categories:
-* `permissions that are applied automatically`: when an object is created, the `owner` permission is assigned to the user that created it. This permission cannot currently be changed in the BCTW UI. This is the only permission type that applies to both animals _and devices_.
+* `permissions that are applied automatically`: when an object is created, the `manager` permission is assigned to the user that created it. This permission cannot currently be changed in the BCTW UI. This is the only permission type that applies to both animals _and devices_.
   * the _owned_by_user_id_ column exists in both the animal and collar tables.
   * a user has change permissions to all animals and devices that they created
 * `permissions that are granted`: Administrators can grant animal permissions to any user. Managers can submit a request to have permissions granted to other users for animals that they created or have at least editor permission to. These permission requests must be approved by an admin user. 
@@ -35,7 +35,7 @@ Permission types fall into two categories:
 * the manager can only submit requests for animals they own or have edit permission to.
 * the manager must know the email address of the users they want to give access to - unlike an admin, they cannot see a list of all BCTW users in the system.
 * they can choose from _observer_, _editor_, and _manager_ permission types.
-* owner can somehow see a list of past requests
+* manager can somehow see a list of past requests
 * This workflow is initiated in the Manage -> Delegation Request page
 * If an admin denies a request, the manager will receive an email with the reason why it was denied.
 * An email is not generated if the request was granted.
@@ -43,7 +43,7 @@ Permission types fall into two categories:
 
 #### Administrator
 * When a manager submits a permission request, the admin receives an email containing the details of the request.
-* By visiting the Manage -> Requests page, an admin can see a list of current requests that owners have submitted.
+* By visiting the Manage -> Requests page, an admin can see a list of current requests that managers have submitted.
 * a _request_ consists of: 
     * a list of email addresses (or user IDs)
     * a list of permission-animal JSON objects. Ex: `[{"animal_id": "1232-2222-2222", "permission_type": "view"}]`
