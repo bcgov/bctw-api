@@ -115,7 +115,6 @@ const app = express()
   .delete('/:type/:id', api.deleteType)
   // generic getter
   .get('/:type/:id', api.getType)
-  // .post('/email', api.emailEndpoint)
   // Health check
   .get('/health', (_, res) => res.send('Im healthy!'))
   .get('*', api.notFound);
