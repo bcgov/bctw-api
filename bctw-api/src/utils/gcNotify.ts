@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import dayjs from 'dayjs';
+import { MORTALITY_EMAIL, MORTALITY_SMS } from '../constants';
 import {
   GCMortalityTemplateSMS,
   GCMortalityTemplateEmail,
@@ -21,8 +22,8 @@ const EMAIL_ENV = {
 };
 
 const TEMPLATES_IDS = {
-  mortalityTemplateSMS: process.env.BCTW_GCNOTIFY_SMS_MORTALITY_DETECTED,
-  mortalityTemplateEmail: process.env.BCTW_GCNOTIFY_EMAIL_MORTALITY_DETECTED,
+  mortalityTemplateSMS: MORTALITY_SMS,
+  mortalityTemplateEmail: MORTALITY_EMAIL,
 };
 
 /**
