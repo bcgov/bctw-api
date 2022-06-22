@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { request } from 'http';
-import { BCTW_EMAIL, DISABLE_PERMISSION_EMAIL, PERMISSION_DENIED_ID, PERMISSION_REQ_ID, S_API } from '../constants';
+import { BCTW_EMAIL, DISABLE_PERMISSION_EMAIL, PERMISSION_APPROVED_ID, PERMISSION_DENIED_ID, PERMISSION_REQ_ID, S_API } from '../constants';
 import {
   constructFunctionQuery,
   constructGetQuery,
@@ -112,22 +112,34 @@ const approveOrDenyPermissionRequest = async function (
   const row = !isError
     ? getRowResults(result, fn_execute_perm_request, true)
     : undefined;
+  const requestResult = row as IPermissionRequest;
+  const { requested_by_name, requested_date, requested_for_email, 
+    permission_type, wlh_id, animal_id, species, requested_by_email} = requestResult;
+  const body = {
+    requested_by_name, 
+    requested_date, 
+    requested_for_email, 
+    permission_type,
+    wlh_id, 
+    animal_id,
+    species,
+    was_denied_reason
+  }
   // send an email notification if the request was denied to the manager
-  if (!isError && !is_grant && !DISABLE_PERMISSION_EMAIL) {
-    const requestResult = row as IPermissionRequest;
-    const { requested_by_name, requested_date, requested_for_email, 
-      permission_type, wlh_id, animal_id, species, 
-      was_denied_reason } = requestResult;
-    sendGCEmail(requested_for_email, {
-      requested_by_name, 
-      requested_date, 
-      requested_for_email, 
-      permission_type,
-      wlh_id, 
-      animal_id,
-      species,
-      was_denied_reason
-    }, PERMISSION_DENIED_ID)
+  if (!isError && !DISABLE_PERMISSION_EMAIL) {
+    if(!is_grant){
+      sendGCEmail(requested_for_email, body, PERMISSION_DENIED_ID)
+    }else{
+      const {was_denied_reason, ...newBody} = body;
+      //send approval email to requestee
+      sendGCEmail(requested_for_email, newBody, PERMISSION_APPROVED_ID);
+      //send approval email to the requestor
+      sendGCEmail(requested_by_email, newBody, PERMISSION_APPROVED_ID);
+    }
+    
+  }
+  if(is_grant && !DISABLE_PERMISSION_EMAIL){
+    
   }
   return handleResponse(res, row, error);
 };
@@ -159,3 +171,4 @@ export {
   getPermissionRequests,
   submitPermissionRequest,
 };
+
