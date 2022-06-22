@@ -41,17 +41,27 @@ const submitPermissionRequest = async function (
   const { result, error } = await query(sql, '', true);
   if (!error && !DISABLE_PERMISSION_EMAIL) {
     // send email notification to the admin via CHES
-    const rows = getRowResults(result, fn_submit_perm_request);
+    const rows = getRowResults(result, fn_submit_perm_request) as IPermissionRequest[];
     if(rows.length){
+      let critterStr = '';
+      rows.forEach( c => {
+        critterStr += `{
+        animal_id: ${c.animal_id ?? ''}
+        critter_id: ${c.critter_id ?? ''}
+        permission_type: ${c.permission_type ?? ''}
+        wlh_id: ${c.wlh_id ?? ''}
+        },
+        `;
+      })
       const {requested_by_name, requested_date, requested_by, 
-        requested_by_email, requested_for_email} = rows[0] as IPermissionRequest;
+        requested_by_email, requested_for_email} = rows[0];
       sendGCEmail(BCTW_EMAIL, {
         requested_by_name,
         requested_date,
         requested_by,
         requested_by_email,
         requested_for: requested_for_email,
-        critters: JSON.stringify(critter_permissions_list, null, 2),
+        critters: critterStr,
         request_comment: request_comment ?? '',
       }, PERMISSION_REQ_ID)
     }

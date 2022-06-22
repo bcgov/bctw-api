@@ -60,7 +60,7 @@ const _fetchLotekTelemetry = async function (
     }
     
   }
-  if (results && results.data) {
+  if (results && results.data.length) {
     const { data } = results;
     return data.filter((e) => e && e.RecDateTime && e.DeviceID);
   } else {

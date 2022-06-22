@@ -64,10 +64,8 @@ const _fetchVectronicTelemetry = async function (
   // call the vectronic api, using the agent created with the env variable cert key
   const results = await axios.get(url, { httpsAgent: agent }).catch((err: AxiosError) => {
     errStr = formatAxiosError(err);
-    console.error(`fetchVectronicTelemetry failure for device ${collar.idcollar}: ${errStr}`);
   });
-  if (results && results.data) {
-    //console.log(`${results.data.length} records retrieved for vectronic device ${collar.idcollar}`);
+  if (results && results.data.length) {
     return results.data;
   } else {
     return { device_id: idcollar, records_found: 0, vendor: 'Vectronic', error: errStr } as ManualVendorAPIResponse;
@@ -139,7 +137,7 @@ const performManualVectronicUpdate = async (
     .filter((rows) => Array.isArray(rows) && rows.length)
     .map((rows) => _insertVectronicRecords(rows as VectronicRawTelemetry[]));
   const dbResults = await Promise.all(promisesDb);
-  console.log(dbResults);
+  //console.log(dbResults);
   return [...dbResults, ...failed];
 };
 
