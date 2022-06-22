@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { request } from 'http';
 import { BCTW_EMAIL, DISABLE_PERMISSION_EMAIL, PERMISSION_APPROVED_ID, PERMISSION_DENIED_ID, PERMISSION_REQ_ID, S_API } from '../constants';
 import {
   constructFunctionQuery,
@@ -136,9 +135,6 @@ const approveOrDenyPermissionRequest = async function (
       //send approval email to the requestor
       sendGCEmail(requested_by_email, newBody, PERMISSION_APPROVED_ID);
     }
-    
-  }
-  if(is_grant && !DISABLE_PERMISSION_EMAIL){
     
   }
   return handleResponse(res, row, error);

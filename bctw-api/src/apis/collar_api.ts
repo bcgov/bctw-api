@@ -246,7 +246,7 @@ const getAllCollars = async function (req: Request, res:Response): Promise<Respo
     page });
   const { result, error, isError } = await query(sql);
   if (isError) {
-    return res.status(500).send(sql);
+    return res.status(500).send(error);
   }
   return res.send(result.rows);
   //return res.send(sql);

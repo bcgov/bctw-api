@@ -12,7 +12,6 @@ import { IBulkResponse } from '../types/import_types';
 const pg_get_code_fn = 'get_code';
 const pg_add_code_header_fn = 'add_code_header';
 const pg_add_code_fn = 'add_code';
-const pg_get_code_long_desc = 'get_code_desc';
 /**
  * retrieves codes given a code_header_name
  * if @param req.query.page is 0, fetches all codes
@@ -47,7 +46,7 @@ const getCodeLongDesc = async function (
   if (!codeName) {
     return res.status(500).send(`invalid code name ${codeName}`);
   }
-  let sql = `
+  const sql = `
   SELECT code_description_long
   FROM ${S_API}.code_v
   WHERE code_v.code_name = '${codeName}'
