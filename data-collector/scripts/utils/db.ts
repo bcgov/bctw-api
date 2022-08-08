@@ -114,6 +114,7 @@ const isPoolEmpty = (): Promise<boolean> => {
   });
 }
 
+
 // dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
 
