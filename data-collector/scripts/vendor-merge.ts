@@ -3,15 +3,8 @@ import "dotenv/config";
 import { isPoolEmpty, pgPool, queryAsync, safelyDrainPool } from './utils/db';
 import { QueryResult } from 'pg';
 
-const callback = (err: Error, result: QueryResult<any>) => {
-  const now = moment().utc();
-  if (err) {
-    return console.error(`${now}: Merge of vendor tables failed`, err);
-  } else {
-    return console.log(`${now}: `, result);
-  }
-};
 const SQL = [
+  'vacuum analyze;', //Clean and free up unused space. Optimizes query performance.
   'refresh materialized view vendor_merge_view_no_critter;', 
   'refresh materialized view latest_transmissions;', 
   'refresh materialized view concurrently telemetry_with_security_m;',
