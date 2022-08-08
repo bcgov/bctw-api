@@ -14,7 +14,7 @@ const callback = (err: Error, result: QueryResult<any>) => {
 const SQL = [
   'refresh materialized view vendor_merge_view_no_critter;', 
   'refresh materialized view latest_transmissions;', 
-  //'refresh materialized view concurrently telemetry_with_security_m;',
+  'refresh materialized view concurrently telemetry_with_security_m;',
   'call bctw.proc_check_for_missing_telemetry();'
 ];
 
