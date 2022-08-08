@@ -1,10 +1,9 @@
 import moment from 'moment';
 import "dotenv/config";
-import { isPoolEmpty, pgPool, queryAsync, safelyDrainPool } from './utils/db';
-import { QueryResult } from 'pg';
+import { queryAsync, safelyDrainPool } from './utils/db';
 
 const SQL = [
-  'vacuum analyze;', //Clean and free up unused space. Optimizes query performance.
+  'vacuum analyze;',
   'refresh materialized view vendor_merge_view_no_critter;', 
   'refresh materialized view latest_transmissions;', 
   'refresh materialized view concurrently telemetry_with_security_m;',
@@ -12,6 +11,7 @@ const SQL = [
 ];
 
 /**
+ * runs a vacuum analyze to clean up unused space and optimize query performance
  * updates the materialized views for raw telemetry, latest device transmissions
  * and telemetry with security.
  * after that is complete, call the procedure to check for device malfunction alerts.
