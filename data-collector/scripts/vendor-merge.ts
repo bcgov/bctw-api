@@ -18,8 +18,7 @@ const SQL = [
  */
 
 const main = async() => {
-  console.log(`Starting Vendor Merge V1.2`);
-
+  console.log(`Starting Vendor Merge V1.2.1`);
   for(const S of SQL){
     await queryAsync(S).then(() =>
       console.log(`${moment().utc()}: '${S}' Successfully executed.`));
