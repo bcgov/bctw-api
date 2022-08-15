@@ -1,6 +1,6 @@
 @badrole = adminstrato
 @badaccess = notpending
-@validrole = manager
+@validrole = user
 @validaccess = pending
 @granted = granted
 @denied = denied
@@ -153,7 +153,9 @@ content-type: application/json
 {
 	"onboarding_id": "{{pending_request_id}}",
 	"access": "{{granted}}",
-	"role_type": "{{validrole}}"
+	"role_type": "{{validrole}}",
+	"email": "{{email}}",
+	"firstname": "{{firstname}}"
 }
 
 # onboard status test

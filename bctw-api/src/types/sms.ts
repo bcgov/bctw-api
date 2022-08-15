@@ -70,12 +70,20 @@ type GCNotifyOnboardAdminReq = Omit<IOnboardInput, 'role_type'>
 type GCNotifyOnboardUserConfirmation = Pick<IUserInput, 'firstname'> & {
   request_type: eUserRole;
   request_date: string;
+  file_attachment_1?: FileAttachment;
+  file_attachment_2?: FileAttachment;
 }
 
 type GCNotifyOnboardUserApproved = 
 Pick<GCNotifyOnboardUserConfirmation, 'firstname' | 'request_type'>
 
 type GCNotifyOnboardUserDeclined = Pick<IUserInput, 'firstname'>
+
+type FileAttachment = {
+  file: string; //base64 encoded string
+  filename: string; //original filename with extension
+  sending_method: 'attach';
+}
 
 export type {
   GCNotifyResponse,
@@ -87,5 +95,6 @@ export type {
   GCNotifyOnboardAdminReq,
   GCNotifyOnboardUserConfirmation,
   GCNotifyOnboardUserApproved,
-  GCNotifyOnboardUserDeclined
+  GCNotifyOnboardUserDeclined,
+  FileAttachment,
 };
