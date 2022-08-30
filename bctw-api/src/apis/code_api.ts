@@ -21,16 +21,17 @@ const getCode = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { codeHeader } = req.query;
+  const { codeHeader, species } = req.query;
   if (!codeHeader) {
     return res.status(500).send(`invalid code header name ${codeHeader}`);
   }
   const page = (req.query?.page || 0) as number;
-  const sql = constructFunctionQuery('get_code', [getUserIdentifier(req), codeHeader, page], false, S_API);
+  const sql = constructFunctionQuery('get_code', [getUserIdentifier(req), codeHeader, page, species], false, S_API);
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve codes'
   );
+  
   if (isError) {
     return res.status(500).send(error.message);
   }

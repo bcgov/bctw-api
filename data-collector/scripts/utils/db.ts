@@ -114,6 +114,7 @@ const isPoolEmpty = (): Promise<boolean> => {
   });
 }
 
+
 //Handles closing the db connection safely.
 //Retries: Used as a safe guard for infinite loops.
 const safelyDrainPool = async(retries: number) => {
@@ -130,6 +131,7 @@ const safelyDrainPool = async(retries: number) => {
     retries--;
   } 
 }
+
 // dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
 

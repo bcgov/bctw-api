@@ -33,6 +33,7 @@ const upsertAnimal = async function (
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
+    console.log(sql);
   } else {
     createBulkResponse(bulkResp, getRowResults(result, fn_upsert_animal));
   }
