@@ -37,6 +37,8 @@ objects:
                     - 'run'
                     - 'vectronics'
                   env:
+                  - name: npm_config_cache
+                    value: /tmp
                   - name: NODE_ENV
                     value: production
                   - name: POSTGRES_SERVER_HOST

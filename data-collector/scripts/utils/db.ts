@@ -115,7 +115,24 @@ const isPoolEmpty = (): Promise<boolean> => {
 }
 
 
+//Handles closing the db connection safely.
+//Retries: Used as a safe guard for infinite loops.
+const safelyDrainPool = async(retries: number) => {
+  while(true){
+    const isEmpty = await isPoolEmpty().then(res=>res);
+    if(isEmpty) {
+      console.log(`Pool drained successfully.`)
+      break;
+    }
+    if(!retries){
+      console.log(`DB tried ${retries} times to close connection and was not successful. Aborting...`);
+      break;
+    } 
+    retries--;
+  } 
+}
+
 // dont commit transaction if not in production
 const transactionify = (sql: string) => isProd ? sql : `begin; ${sql}; rollback;`;
 
-export { pgPool, isProd, queryAsync, getLastAlertTimestamp, getIsDuplicateAlert, transactionify, getLastKnownLatLong, TIMEOUT_MILLIS, isPoolEmpty }
+export { pgPool, isProd, queryAsync, getLastAlertTimestamp, getIsDuplicateAlert, transactionify, getLastKnownLatLong, TIMEOUT_MILLIS, isPoolEmpty, safelyDrainPool }

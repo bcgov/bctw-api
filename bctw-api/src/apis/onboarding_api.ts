@@ -1,4 +1,4 @@
-import { GCNotifyOnboardAdminReq, GCNotifyOnboardUserConfirmation, GCNotifyOnboardUserDeclined} from './../types/sms';
+import { FileAttachment, GCNotifyOnboardAdminReq, GCNotifyOnboardUserConfirmation, GCNotifyOnboardUserDeclined} from './../types/sms';
 import { Request, Response } from 'express';
 import { BCTW_EMAIL, CONFIRMATION_TO_USER_ID, ONBOARD_APPROVED_ID, ONBOARD_DENIED_ID, REQUEST_TO_ADMIN_ID, S_API } from '../constants';
 import {
@@ -63,20 +63,31 @@ const handleOnboardingRequest = async function (
   res: Response
 ): Promise<Response>{
   const fn_name = 'handle_onboarding_request';
+  const file_keys = ['sedis_cona', 'quick_guide'];
+
   const { onboarding_id, access, role_type, email, firstname } = req.body as IHandleOnboardRequestInput;
+  
   const sql = constructFunctionQuery(fn_name, [getUserIdentifier(req), onboarding_id, access, role_type]);
-  console.log(req.body)
   const { result, error, isError } = await query(sql, undefined, true);
   if (isError) {
     return res.status(500).send(error.message);
   }
   const isApproved: boolean = access == 'granted';
 
-  const body: GCNotifyOnboardUserConfirmation | GCNotifyOnboardUserDeclined = 
-    isApproved ? { firstname, request_type: role_type} : { firstname }
-
+  if(isApproved){
+    const files = await getFiles(file_keys);
+    if(files?.length === file_keys.length){
+      sendGCEmail(email, {
+        firstname, 
+        request_type: role_type,
+        file_attachment_1: files[0],
+        file_attachment_2: files[1]
+      }, ONBOARD_APPROVED_ID)
+    }
+  }else{
+    sendGCEmail(email, {firstname}, ONBOARD_DENIED_ID)
+  }
   // Sends approval / denial email to the user
-  sendGCEmail(email, body, isApproved ? ONBOARD_APPROVED_ID : ONBOARD_DENIED_ID)
   return res.send(getRowResults(result, fn_name, true));
 };
 
@@ -114,9 +125,36 @@ if (!result.rowCount) {
 return res.send(result.rows[0]);
 }
 
+/**
+ * Query helper function get get and parse file from DB.
+ * @param file_keys array of file_key from db table Files
+ * @returns Object of type FileAttachment to be used as email attachment. 
+ * Encodes file to base64.
+ */
+const getFiles = async (file_keys: string[]): Promise<FileAttachment[]> => {
+  const sql = `select file_key, file_name, file_type, contents
+  from bctw.files where file_key in (${file_keys.map(f=>`'${f}'`).join(', ')});`
+  const {result, isError, error} = await query(sql);
+  if(isError) {
+    console.log(`getFiles: ${error}`);
+    return [];
+  }
+  const res: FileAttachment[] = result.rows.map(row => {
+    return {
+      file: Buffer.from(row.contents).toString('base64'),
+      filename: row.file_name,
+      sending_method: 'attach',
+    }
+  })
+
+  return res;
+}
+
 export {
   getOnboardingRequests,
   getUserOnboardStatus,
   handleOnboardingRequest,
   submitOnboardingRequest,
+  getFiles,
 };
+
