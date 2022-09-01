@@ -9,6 +9,7 @@
 ### Outcomes
 
 - Logged in to Openshift using Command Line Tools
+- ENV variables created
 - Port forwarding will be established between the local system and the BCTW database in OCP4.
 - Server will be started with hot reloading enabled.
 
@@ -23,13 +24,12 @@
 #### Note the double `bctw-api\bctw-api` folder!!!
 
 - Make sure the `oc` executable is already in the **{source_folder}\bctw-api\bctw-api\\** folder or the **_build will fail_**.
-- Open a Command Prompt (administrator privileges not needed).
 
 ## Login to Openshift using OC Command Line Tools (Every Time)
 
 #### This grants access to the pods on Openshift, needed for Port Forwarding
 
-1. In a WSL or Command Prompt, change into the following directory which contains the OC executable:
+1. In a WSL Terminal or Command Prompt, change into the following directory which contains the OC executable
 
 ```
   cd {source_folder}\bctw-api\bctw-api
@@ -67,9 +67,29 @@
 
 7. You should see a message similar to `Forwarding from 127.0.0.1:5432 -> 5432`.
 
+## Create .env file (One Time)
+
+1. Using code editor (VSCode) create .env file in **{source_folder}\bctw-api\bctw-api\\**
+
+2. Collect values from secrets on Openshift
+
+```
+NODE_ENV=development
+POSTGRES_SERVER_HOST=localhost
+POSTGRES_SERVER_PORT=5432
+POSTGRES_USER=bctw
+POSTGRES_PASSWORD=<DB_PASSWORD>
+POSTGRES_DB=bctw
+BCTW_EMAIL=bctw@gov.bc.ca
+LOTEK_API_CREDENTIAL_NAME=lotek_dev
+VECTRONICS_URL=https://api.vectronic-wildlife.com/v2/collar
+VENDOR_API_CREDENTIALS_KEY=<KEY_STORED_IN_DB>
+BCTW_PROD_URL=https://telemetry.nrs.gov.bc.ca
+```
+
 ## Start the API server (Every Time)
 
-8. In a new terminal window start the API server from **{source_folder}\bctw-api\bctw-api\\** directory
+1. In a new terminal window start the API server from **{source_folder}\bctw-api\bctw-api\\** directory
 
 ```
   npm run start:dev

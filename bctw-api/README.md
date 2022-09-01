@@ -9,7 +9,7 @@ oc new-app \
   https://github.com/bcgov/bctw-api.git
 ```
 
-## Develop
+## Develop Quick Setup
 
 Port forward database to development computer
 
