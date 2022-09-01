@@ -12,7 +12,7 @@ Code to support the aggregation of telemetry information from Vectronic Aerospac
 
 ## Running BCTW-API ##
 
-See `DEV_SETUP.md`.
+See `DEV_SETUP_2022.md`.
 
 ## OpenShift ##
 
