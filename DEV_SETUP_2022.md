@@ -67,7 +67,7 @@
 
 7. You should see a message similar to `Forwarding from 127.0.0.1:5432 -> 5432`.
 
-## Create .env file (One Time)
+## Create .env file and install packages (One Time)
 
 1. Using code editor (VSCode) create .env file in **{source_folder}\bctw-api\bctw-api\\**
 
@@ -85,6 +85,11 @@ LOTEK_API_CREDENTIAL_NAME=lotek_dev
 VECTRONICS_URL=https://api.vectronic-wildlife.com/v2/collar
 VENDOR_API_CREDENTIALS_KEY=<KEY_STORED_IN_DB>
 BCTW_PROD_URL=https://telemetry.nrs.gov.bc.ca
+```
+3. Install packages
+
+```
+npm i
 ```
 
 ## Start the API server (Every Time)
