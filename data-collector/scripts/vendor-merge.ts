@@ -4,6 +4,7 @@ import { queryAsync, safelyDrainPool } from './utils/db';
 
 const SQL = [
   'vacuum analyze;',
+  'refresh materialized view concurrently historical_telemetry_with_security_m;',
   'refresh materialized view vendor_merge_view_no_critter;', 
   'refresh materialized view latest_transmissions;', 
   'refresh materialized view concurrently telemetry_with_security_m;',
