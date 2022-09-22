@@ -90,7 +90,7 @@ const getPermissionRequests = async function (
 };
 
 /**
- * endpoint for an admin to deny or approve a request
+ * endpoint for an admin to deny or approve requests in bulk, though single requests will work fine as well
  * @param body @type {IExecuteRequest}
  * if @param is_grant is false, db function will not return anything.
  * if @param is_grant is false, a permission denied email will be sent to the user
@@ -100,44 +100,49 @@ const approveOrDenyPermissionRequest = async function (
   res: Response
 ): Promise<Response> {
   const userIdentifier = getUserIdentifier(req) as string;
-  const { request_id, is_grant, was_denied_reason }: IExecuteRequest = req.body;
+  const request_blob: IExecuteRequest[] = req.body;
   const sql = constructFunctionQuery(fn_execute_perm_request, [
     userIdentifier,
-    request_id,
-    is_grant,
-    was_denied_reason,
+    JSON.stringify(request_blob)
   ]);
   const { result, error, isError } = await query(sql, '', true);
-  const row = !isError
-    ? getRowResults(result, fn_execute_perm_request, true)
+  const rows = !isError
+    ? getRowResults(result, fn_execute_perm_request, false)
     : undefined;
-  const requestResult = row as IPermissionRequest;
-  const { requested_by_name, requested_date, requested_for_email, 
-    permission_type, wlh_id, animal_id, species, requested_by_email} = requestResult;
-  const body = {
-    requested_by_name, 
-    requested_date, 
-    requested_for_email, 
-    permission_type,
-    wlh_id, 
-    animal_id,
-    species,
-    was_denied_reason
-  }
-  // send an email notification if the request was denied to the manager
-  if (!isError && !DISABLE_PERMISSION_EMAIL) {
-    if(!is_grant){
-      sendGCEmail(requested_for_email, body, PERMISSION_DENIED_ID)
-    }else{
-      const {was_denied_reason, ...newBody} = body;
-      //send approval email to requestee
-      sendGCEmail(requested_for_email, newBody, PERMISSION_APPROVED_ID);
-      //send approval email to the requestor
-      sendGCEmail(requested_by_email, newBody, PERMISSION_APPROVED_ID);
+
+  const requestResults = rows as IPermissionRequest[];
+
+  requestResults.forEach(result => {
+    const { requested_by_name, requested_date, requested_for_email, 
+      permission_type, wlh_id, animal_id, species, requested_by_email, was_denied_reason, was_granted} = result;
+    const body = {
+      requested_by_name, 
+      requested_date, 
+      requested_for_email, 
+      permission_type,
+      wlh_id, 
+      animal_id,
+      species,
+      was_denied_reason
     }
+    // send an email notification if the request was denied to the manager
     
-  }
-  return handleResponse(res, row, error);
+    if (!isError && !DISABLE_PERMISSION_EMAIL) {
+      if(!was_granted){
+        sendGCEmail(requested_for_email, body, PERMISSION_DENIED_ID)
+      }else{
+        const {was_denied_reason, ...newBody} = body;
+        //send approval email to requestee
+        sendGCEmail(requested_for_email, newBody, PERMISSION_APPROVED_ID);
+        //send approval email to the requestor
+        sendGCEmail(requested_by_email, newBody, PERMISSION_APPROVED_ID);
+      }
+      
+    }
+  })
+  
+
+  return handleResponse(res, rows, error);
 };
 
 /**

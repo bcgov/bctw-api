@@ -64,6 +64,8 @@ const getExportData = async function (
       break;
   }
   const promises = sqlStrings.map(s => query(s, ''));
+  //console.log(sqlStrings);
+
   const resolved = await Promise.all(promises);
   const errors = resolved.filter(r => r.isError);
   if (errors.length) {
