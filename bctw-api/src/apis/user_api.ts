@@ -39,7 +39,7 @@ const upsertUser = async function (
     user,
     role,
   ]);
-  const { result, error, isError } = await query(sql,'', true);
+  const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -49,7 +49,7 @@ const upsertUser = async function (
 /**
  * expires/ soft deletes a user
  * removes their user role entry,
- * expires their permissions to all animals but does not remove owned_by_user_id flag 
+ * expires their permissions to all animals but does not remove owned_by_user_id flag
  * on animals they have created
  * @param idToDelete ID of the user to be removed
  * @returns a boolean indicating if the deletion was successful
@@ -152,9 +152,12 @@ const getUserCritterAccess = async function (
    * permission filters are appended to the query, ex '?editor,manager'
    * split the string into an array so the query can handle it
    */
-  const { filters } = req.query;
+  const { filters, page } = req.query;
   if (filters) {
     params.push(String(filters).split(','));
+  }
+  if (page) {
+    params.push(page.toString());
   }
   const base = constructFunctionQuery(
     fn_user_critter_access,
@@ -163,7 +166,12 @@ const getUserCritterAccess = async function (
     S_API,
     true
   );
-  const sql = constructGetQuery({base, filter: appendFilter(getFilterFromRequest(req), false, false)});
+  const sql = constructGetQuery({
+    base,
+    filter: appendFilter(getFilterFromRequest(req), false, false),
+  });
+
+  console.log(sql, page);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
@@ -195,7 +203,7 @@ const assignCritterToUser = async function (
 ): Promise<Response> {
   const fn_name = 'grant_critter_to_user';
   const body: IUserCritterPermission[] = req.body;
-  console.log(body[0].access)
+  console.log(body[0].access);
   const promises = body.map((cp) => {
     const { userId, access } = cp;
     const sql = constructFunctionQuery(
@@ -203,7 +211,11 @@ const assignCritterToUser = async function (
       [getUserIdentifier(req), userId, access],
       true
     );
-    return query(sql, `failed to grant user with id ${userId} access to animals`, true);
+    return query(
+      sql,
+      `failed to grant user with id ${userId} access to animals`,
+      true
+    );
   });
   const resolved = await Promise.all(promises);
   const errors = resolved
@@ -219,8 +231,8 @@ const assignCritterToUser = async function (
  * used to save user animal groups and collective units.
  * Calls a database routine that will replace the udf with the contents
  * of the @param req.body, but only for the udf type provided
- * ex. when saving custom animal groups in the UI, all of the groups are sent 
- * in the request. The database handler will replace all of the user's udfs of the 
+ * ex. when saving custom animal groups in the UI, all of the groups are sent
+ * in the request. The database handler will replace all of the user's udfs of the
  * custom animal group type, but not their collective units
  */
 const upsertUDF = async function (
