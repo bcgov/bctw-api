@@ -51,7 +51,7 @@ const app = express()
   // map
   .get('/get-critters', api.getDBCritters)
   .get('/get-critter-tracks', api.getCritterTracks)
-  .get('/get-critters-estimate', api.getPingsEstimate)
+  .get('/get-pings-estimate', api.getPingsEstimate)
   // animals
   .get('/get-animals', api.getAnimals)
   .get('/get-animal-history/:animal_id', api.getAnimalHistory)
