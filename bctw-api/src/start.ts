@@ -13,7 +13,7 @@ import {
   getCollarsAndDeviceIds,
   upsertCollar,
 } from './apis/collar_api';
-import { getCritterTracks, getDBCritters } from './apis/map_api';
+import { getCritterTracks, getDBCritters, getPingsEstimate } from './apis/map_api';
 import { approveOrDenyPermissionRequest, getGrantedPermissionHistory, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
 import {
   upsertUser,
@@ -122,6 +122,7 @@ export {
   getCollarChangeHistory,
   getCritterTracks,
   getDBCritters,
+  getPingsEstimate,
   getExportData,
   getGrantedPermissionHistory,
   getPermissionRequests,
