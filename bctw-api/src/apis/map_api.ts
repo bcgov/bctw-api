@@ -7,9 +7,10 @@ import { IBulkResponse } from '../types/import_types';
 import { HistoricalTelemetryInput } from '../types/point';
 
 /**
- * Request all collars the user has access to.
+ * Request that the backend make an estimate on the amount of telemetry data points a user may request
+ * based on the amount of critters assigned to this user under the time range.
  */
- const getCrittersEstimate = function (req: Request, res: Response): void {
+ const getPingsEstimate = function (req: Request, res: Response): void {
   const {start, end} = req.query;
   const fn_name = 'is_pings_cap';
   const sql = `select is_pings_cap from ${S_BCTW}.${fn_name}('${getUserIdentifier(req)}', '${start}', '${end}')`;
@@ -142,5 +143,5 @@ export {
   getCritterTracks,
   getDBCritters,
   upsertPointTelemetry,
-  getCrittersEstimate
+  getPingsEstimate
 }
