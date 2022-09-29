@@ -1,3 +1,4 @@
+import exp from 'constants';
 import { QueryResult, QueryResultRow } from 'pg';
 import { S_BCTW } from '../constants';
 import {
@@ -228,6 +229,8 @@ const appendFilter = (
      * to be searched across multiple columns.
      */
     const searchTerm = term.length === keys.length ? term[i] : term[0];
+    console.log("Above condition evaluates to: " + (term.length === keys.length) );
+    console.log("Search term looks like " + searchTerm);
     const isFirst = i === 0;
     const limiter = isFirst && !hasWhere ? ' WHERE' : !isFirst && hasWhere ? 'OR' : 'AND';
     let alias;
@@ -236,7 +239,25 @@ const appendFilter = (
     } else {
       alias = hasAlias ? `${determineTableAlias(column)}` : '';
     }
-    sql += `${limiter} LOWER(${alias}${column}::varchar) LIKE '%${searchTerm}%' `;
+
+    /**
+     * This nested logic is a little bit hacky, ideally this entire function could be reworked to be a bit more robust.
+     * For now at least this retains the original functionality of chaining together LIKEs, while expanding towards different operators and lists.
+     */
+    if(filter?.operators) {
+      if(typeof searchTerm === 'string') {
+        sql += `${limiter} LOWER(${alias}${column}::varchar) ${filter.operators[i]} '${searchTerm}' `;
+      }
+      else {
+        const expandedTerm = searchTerm.map(o => `'${o}'`);
+        const negation = filter.operators[i] == "<>" ? "NOT" : "";
+        sql += `${limiter} ${negation} LOWER(${alias}${column}::varchar) = ANY(ARRAY[${expandedTerm}]) `;
+      }
+    }
+    else {
+      sql += `${limiter} LOWER(${alias}${column}::varchar) LIKE '%${searchTerm}%' `;
+    }
+    
   }
   // console.log(keys, sql)
   return sql;

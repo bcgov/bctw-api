@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { fn_get_critter_history } from '../apis/animal_api';
 import { fn_get_collar_history } from '../apis/collar_api';
 import { S_API } from '../constants';
-import { constructFunctionQuery, query } from '../database/query';
-import { getUserIdentifier } from '../database/requests';
+import { appendFilter, constructFunctionQuery, constructGetQuery, query } from '../database/query';
+import { getFilterFromRequest, getUserIdentifier } from '../database/requests';
 
 enum eExportType {
   all = 'all',
@@ -64,7 +64,7 @@ const getExportData = async function (
       break;
   }
   const promises = sqlStrings.map(s => query(s, ''));
-  //console.log(sqlStrings);
+  console.log(sqlStrings);
 
   const resolved = await Promise.all(promises);
   const errors = resolved.filter(r => r.isError);
@@ -77,4 +77,58 @@ const getExportData = async function (
   }
 };
 
-export { getExportData };
+const getAllExportData = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  // console.log(req.body);
+  /*
+  SELECT row_to_json(t) FROM (
+		SELECT * FROM bctw_dapi_v1.animal_historic_v av 
+		WHERE critter_id = animalid
+		AND tsrange(startdate, enddate) && tsrange(valid_from::timestamp, valid_to::timestamp)
+		ORDER BY valid_to DESC NULLS FIRST*/
+  const base = 
+		`WITH ids AS ( SELECT critter_id FROM UNNEST(bctw.get_user_critter_access('gstewart')) AS critter_id ),
+    assignments AS ( SELECT caav.critter_id, collar_id FROM ids JOIN bctw.collar_animal_assignment_v caav ON ids.critter_id = caav.critter_id )
+    SELECT 
+    a.critter_id, 
+    asg.collar_id, 
+    animal_id, 
+    wlh_id,
+    device_id,
+    species,
+    code_name AS population_unit,
+    latitude,
+    longitude,
+    bc_albers_x,
+    bc_albers_y,
+    acquisition_date,
+    geom
+    FROM 
+    assignments asg JOIN bctw.animal a ON asg.critter_id = a.critter_id 
+    JOIN bctw.telemetry_v tel ON asg.collar_id = tel.collar_id
+    LEFT JOIN code ON population_unit = code.code_id `;
+  const filter = getFilterFromRequest(req, true);
+  const username = getUserIdentifier(req) ;
+  if (!username) {
+    return res.status(500).send('username not provided');
+  }
+  console.log(filter);
+  const sql = constructGetQuery({
+    base,
+    filter: appendFilter(filter, false, false),
+    //order:  [{field: 'valid_to', order: 'desc'}]
+  });
+  console.log(req.body);
+  const finalSql = `${sql} AND acquisition_date <@ tsrange('${req.body.range.start}', '${req.body.range.end}') ORDER BY acquisition_date DESC`;
+  console.log(finalSql);
+  const { result, error, isError } = await query(finalSql);
+  if (isError) {
+    return res.status(500).send(error);
+  }
+  return res.send(result.rows);
+  
+};
+
+export { getExportData, getAllExportData };

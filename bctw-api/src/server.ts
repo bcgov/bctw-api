@@ -99,6 +99,7 @@ const app = express()
   .get('/get-code-long-desc', api.getCodeLongDesc)
   // export/import
   .post('/export', api.getExportData)
+  .post('/export-all', api.getAllExportData)
   .post('/import-csv', upload.single('csv'), importCsv)
   .post('/import-xml', upload.array('xml'), api.parseVectronicKeyRegistrationXML)
   // vendor
