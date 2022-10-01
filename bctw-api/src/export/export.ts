@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { fn_get_critter_history } from '../apis/animal_api';
 import { fn_get_collar_history } from '../apis/collar_api';
-import { S_API } from '../constants';
-import { appendFilter, constructFunctionQuery, constructGetQuery, query } from '../database/query';
+import { S_API, S_BCTW } from '../constants';
+import { appendFilter, constructFunctionQuery, constructGetQuery, query, queryParams } from '../database/query';
 import { getFilterFromRequest, getUserIdentifier } from '../database/requests';
 
 enum eExportType {
@@ -78,6 +78,34 @@ const getExportData = async function (
 };
 
 const getAllExportData = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  /*const sql = constructFunctionQuery(
+    'export_telemetry_with_params', 
+    [getUserIdentifier(req), req.body.keys, req.body.operators, req.body.term, req.body.range.start, req.body.range.end],
+    false,
+    'bctw',
+    true
+  );*/
+  const idir = getUserIdentifier(req);
+  const queries = JSON.stringify(req.body.queries);
+  const start = req.body.range.start;
+  const end = req.body.range.end;
+  const sql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}'); `;
+  console.log(sql);
+
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve telemetry'
+  );
+  if(isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows);
+};
+
+const getAllExportDataRename = async function (
   req: Request,
   res: Response
 ): Promise<Response> {

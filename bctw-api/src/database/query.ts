@@ -79,8 +79,21 @@ const constructFunctionQuery = (
 
 // converts an array to the postgres format
 // ex. ['b','b'] => '{a, b}'
-const to_pg_array = (arr: number[] | string[]): string =>
-  `'{${arr.join(',')}}'`;
+const to_pg_array = (arr: number[] | string[] | string[][] ): string => {
+  if(arr[0].constructor === Array) {
+    const temparr: string[] = [];
+    for(const a of arr) {
+      const b = a as string[];
+      temparr.push(`{${b.join(',')}}`);
+    }
+    return `'{${temparr.join(',')}}'`
+  }
+  else {
+    return `'{${arr.join(',')}}'`;
+  }
+  
+}
+  
 
 // uses a psql builtin function to convert a js date object
 const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
@@ -143,11 +156,11 @@ const _getQueryResult = (data: QueryResult, fn: string) => {
 };
 
 /** uses the postgres client to run the query, rolls back if an exception is caught */
-const queryAsync = async (sql: string): Promise<QueryResult> => {
+const queryAsync = async (sql: string, values?: Array<any>): Promise<QueryResult> => {
   const client = await pgPool.connect();
   let res: QueryResult;
   try {
-    res = await client.query(sql);
+    res = values ? await client.query(sql, values) : await client.query(sql);
     await client.query('commit');
   } catch (err) {
     await client.query('rollback');
@@ -180,6 +193,23 @@ const query = async (
   }
   return { result, error, isError };
 };
+
+const queryParams = async (
+  sql: string,
+  values: Array<any>, 
+  msgIfErr?: string,
+  asTransaction = false
+): Promise<QResult> => {
+  let result, error;
+  let isError = false;
+  try {
+    result = await queryAsync(asTransaction ? transactionify(sql) : sql, values);
+  } catch (e) {
+    isError = true;
+    error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
+  }
+  return { result, error, isError };
+}
 
 /**
  * used in the @function query
@@ -282,6 +312,7 @@ export {
   applyCount,
   getRowResults,
   query,
+  queryParams,
   constructFunctionQuery,
   constructGetQuery,
   appendFilter,

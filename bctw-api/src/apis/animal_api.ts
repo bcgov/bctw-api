@@ -76,7 +76,9 @@ const _getAttachedSQL = (username: string, page: number, search?: SearchFilter, 
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
     const filter =  search ? appendFilter(search, `${alias}.`, true) : '';
-    return constructGetQuery({ base, page, filter, order: [{field: `${alias}.attachment_start `, order: 'desc'}, {field: `${alias}.device_id`}]});
+    const finalsql = constructGetQuery({ base, page, filter, order: [{field: `${alias}.attachment_start `, order: 'desc'}, {field: `${alias}.device_id`}]});
+    console.log(finalsql);
+    return finalsql;
 }
 
 // generate SQL for retrieving animals that are not attached to a device
