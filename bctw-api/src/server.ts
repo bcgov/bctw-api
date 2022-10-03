@@ -5,8 +5,12 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
 import { importCsv } from './import/csv';
-import { getUserIdentifierDomain, matchAny, MISSING_USERNAME } from './database/requests';
-import { fn_get_user_id_domain } from './apis/user_api';
+import {
+  getUserIdentifierDomain,
+  matchAny,
+  MISSING_USERNAME,
+} from './database/requests';
+import { fn_get_user_id, fn_get_user_id_domain } from './apis/user_api';
 import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { isProd, pgPool } from './database/pg';
@@ -17,7 +21,7 @@ const upload = multer({ dest: 'bctw-api/build/uploads' });
 // only these urls can pass through unauthorized
 const unauthorizedURLs: Record<string, string> = {
   status: '/get-onboard-status',
-  submit: '/submit-onboarding-request'
+  submit: '/submit-onboarding-request',
 };
 
 // setup the express server
@@ -35,14 +39,18 @@ const app = express()
     if (!identifier) {
       res.status(500).send(MISSING_USERNAME); // reject
     }
-    const sql = constructFunctionQuery(fn_get_user_id_domain, [domain, identifier]);
+    const sql = constructFunctionQuery(fn_get_user_id, [identifier]);
     // fetch the domain/username user ID
     const { result } = await query(sql);
     // valid users will have an integer user id
-    const registered = typeof getRowResults(result, fn_get_user_id_domain, true) === 'number';
+    const registered =
+      typeof getRowResults(result, fn_get_user_id, true) === 'number';
     if (registered) {
       next(); // pass through
-    } else if (!registered && matchAny(req.url, Object.values(unauthorizedURLs))) {
+    } else if (
+      !registered &&
+      matchAny(req.url, Object.values(unauthorizedURLs))
+    ) {
       next(); // also pass through for new onboarding requests
     } else {
       res.status(401).send('Unauthorized'); // reject
@@ -100,7 +108,11 @@ const app = express()
   // export/import
   .post('/export', api.getExportData)
   .post('/import-csv', upload.single('csv'), importCsv)
-  .post('/import-xml', upload.array('xml'), api.parseVectronicKeyRegistrationXML)
+  .post(
+    '/import-xml',
+    upload.array('xml'),
+    api.parseVectronicKeyRegistrationXML
+  )
   // vendor
   .post('/fetch-telemetry', api.fetchVendorTelemetryData)
 
@@ -126,7 +138,8 @@ http.createServer(app).listen(PORT, () => {
       console.log(
         `error connecting to postgresql server host at ${serverMsg}: ${err}`
       );
-    } else console.log(`postgres server successfully connected at ${serverMsg}`);
+    } else
+      console.log(`postgres server successfully connected at ${serverMsg}`);
     client?.release();
   });
   const disableAlerts = process.env.DISABLE_TELEMETRY_ALERTS;

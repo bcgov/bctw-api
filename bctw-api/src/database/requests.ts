@@ -4,7 +4,7 @@ import { IUserInput } from '../types/user';
 
 // helpers for processing express Request objects
 
-const MISSING_USERNAME = 'must supply user identifier';
+const MISSING_USERNAME = 'must supply user identifier. Keycloak GUID.';
 
 /**
  * parses the request query for 'column' and 'search' fields
@@ -16,27 +16,34 @@ const getFilterFromRequest = (req: Request): SearchFilter | undefined => {
 
   for (const [key, value] of Object.entries(query)) {
     if (['keys', 'term'].includes(key)) {
-      o[key] = typeof value === 'string' ? value.split(','): Array.isArray(value) ? value : null;
+      o[key] =
+        typeof value === 'string'
+          ? value.split(',')
+          : Array.isArray(value)
+          ? value
+          : null;
     }
   }
   return o.keys && o.term ? o : undefined;
-}
+};
 
 /**
- * retrieves the user identifier from the express request object - BCEID or IDIR 
+ * retrieves the user identifier from the express request object - BCEID or IDIR
  * @returns the identifier as a string if it exists, or undefined
  */
 const getUserIdentifier = (req: Request): string | undefined => {
   const id = req.query.idir ?? req.query.bceid;
   // if(user) return user.idir ?? user.bceid;
   return String(id) ?? undefined;
-}
+};
 
 /**
  * similar to @function getUserIdentifier but also returns domain type
  * if domain is unknown, it defaults to IDIR
  */
-const getUserIdentifierDomain = (req: Request): [string, string | undefined] => {
+const getUserIdentifierDomain = (
+  req: Request
+): [string, string | undefined] => {
   const { query } = req;
   const { bceid, idir } = query;
   if (bceid) {
@@ -45,7 +52,7 @@ const getUserIdentifierDomain = (req: Request): [string, string | undefined] => 
     return ['idir', String(idir)];
   }
   return ['idir', undefined];
-}
+};
 
 /**
  * a response handler
@@ -62,11 +69,14 @@ const handleResponse = async function (
 };
 
 /**
- * a response error handler 
+ * a response error handler
  */
-const handleQueryError = async (result: QResult, res: Response): Promise<Response> => {
+const handleQueryError = async (
+  result: QResult,
+  res: Response
+): Promise<Response> => {
   return res.status(500).send(result?.error.message);
-}
+};
 
 /**
  * determines if a request @param url matches one of @param potentialMatches
@@ -79,7 +89,7 @@ const matchAny = (url: string, potentialMatches: string[]): boolean => {
     }
   }
   return false;
-}
+};
 
 export {
   getUserIdentifierDomain,
@@ -89,4 +99,4 @@ export {
   handleQueryError,
   handleResponse,
   matchAny,
-}
+};
