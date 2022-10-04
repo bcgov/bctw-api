@@ -4,7 +4,7 @@ import { IUserInput } from '../types/user';
 
 // helpers for processing express Request objects
 
-const MISSING_USERNAME = 'must supply user identifier. Keycloak GUID.';
+const MISSING_USERNAME = 'must supply user identifier';
 
 /**
  * parses the request query for 'column' and 'search' fields
@@ -28,8 +28,9 @@ const getFilterFromRequest = (req: Request): SearchFilter | undefined => {
 };
 
 /**
- * retrieves the user identifier from the express request object - BCEID or IDIR
- * @returns the identifier as a string if it exists, or undefined
+ * retrieves the user identifier (keycloak_guid) from the express request object - BCEID or IDIR
+ * ex: idir='a3daf3vvdf3334fdsaf3asd3'
+ * @returns the identifier as a string if it exists, or undefined -> keycloak GUUID
  */
 const getUserIdentifier = (req: Request): string | undefined => {
   const id = req.query.idir ?? req.query.bceid;
