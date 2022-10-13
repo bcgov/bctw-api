@@ -8,7 +8,11 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { getFilterFromRequest, getUserIdentifier, handleQueryError } from '../database/requests';
+import {
+  getFilterFromRequest,
+  getUserIdentifier,
+  handleQueryError,
+} from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
@@ -29,7 +33,11 @@ const upsertAnimal = async function (
 ): Promise<Response> {
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
-  const sql = constructFunctionQuery(fn_upsert_animal, [getUserIdentifier(req), animals], true);
+  const sql = constructFunctionQuery(
+    fn_upsert_animal,
+    [getUserIdentifier(req), animals],
+    true
+  );
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
@@ -53,7 +61,7 @@ const deleteAnimal = async function (
 ): Promise<Response> {
   const fn_name = 'delete_animal';
   const sql = constructFunctionQuery(fn_name, [userIdentifier, critterIds]);
-  const {result,  error, isError } = await query(sql, '', true);
+  const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -61,39 +69,76 @@ const deleteAnimal = async function (
 };
 
 // generate SQL for retrieving animals that are attached to a device
-const _getAttachedSQL = (username: string, page: number, search?: SearchFilter, critter_id?: string, getAllProps = false): string => {
+const _getAttachedSQL = (
+  username: string,
+  page: number,
+  search?: SearchFilter,
+  critter_id?: string,
+  getAllProps = false
+): string => {
   const alias = 'attached';
   const base = `
     WITH ${alias} AS (
       SELECT
         c.assignment_id, c.device_id, c.collar_id, c.frequency,
         c.attachment_start, c.data_life_start, c.data_life_end, c.attachment_end,
-        ${getAllProps ? 'a.*,' : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'}
+        ${
+          getAllProps
+            ? 'a.*,'
+            : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'
+        }
         ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
       FROM ${cac_v} c
       JOIN ${S_API}.animal_v a ON c.critter_id = a.critter_id
     ) SELECT ${applyCount(page)}* from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
-    const filter =  search ? appendFilter(search, `${alias}.`, true) : '';
-    return constructGetQuery({ base, page, filter, order: [{field: `${alias}.attachment_start `, order: 'desc'}, {field: `${alias}.device_id`}]});
-}
+  const filter = search ? appendFilter(search, `${alias}.`, true) : '';
+  return constructGetQuery({
+    base,
+    page,
+    filter,
+    order: [
+      { field: `${alias}.attachment_start `, order: 'desc' },
+      { field: `${alias}.device_id` },
+    ],
+  });
+};
 
 // generate SQL for retrieving animals that are not attached to a device
-const _getUnattachedSQL = (username: string, page: number, search?: SearchFilter, critter_id?: string, getAllProps = false): string => {
+
+const _getUnattachedSQL = (
+  username: string,
+  page: number,
+  search?: SearchFilter,
+  critter_id?: string,
+  getAllProps = false
+): string => {
   const alias = 'unattached';
   const base = `
     WITH ${alias} AS (
       SELECT
-        ${getAllProps? 'cuc.*,' : 'cuc.critter_id, cuc.animal_id, cuc.species, cuc.wlh_id, cuc.animal_status, cuc.population_unit, cuc.valid_from,'}
+        ${
+          getAllProps
+            ? 'cuc.*,'
+            : 'cuc.critter_id, cuc.animal_id, cuc.species, cuc.wlh_id, cuc.animal_status, cuc.population_unit, cuc.valid_from,'
+        }
         ${fn_get_user_animal_permission}('${username}', cuc.critter_id) AS "permission_type"
       FROM bctw_dapi_v1.currently_unattached_critters_v cuc
     ) SELECT ${applyCount(page)}* from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
-  const filter =  search ? appendFilter(search, `${alias}.`, true) : '';
-  return constructGetQuery({ base, page, filter, order: [{ field: `${alias}.valid_from `, order: 'desc' }, {field: `${alias}.wlh_id`}] });
-}
+  const filter = search ? appendFilter(search, `${alias}.`, true) : '';
+  return constructGetQuery({
+    base,
+    page,
+    filter,
+    order: [
+      { field: `${alias}.valid_from `, order: 'desc' },
+      { field: `${alias}.wlh_id` },
+    ],
+  });
+};
 
 /**
  * retrieves a list of @type {Animal}, based on the user's permissions
@@ -104,15 +149,15 @@ const getAnimals = async function (
   res: Response
 ): Promise<Response> {
   const username = getUserIdentifier(req) as string;
-  const page     = (req.query.page || 0) as number;
-  const type     = req.query.critterType as eCritterFetchType;
-  const search   = getFilterFromRequest(req);
+  const page = (req.query.page || 0) as number;
+  const type = req.query.critterType as eCritterFetchType;
+  const search = getFilterFromRequest(req);
   let sql;
   if (type === eCritterFetchType.unassigned) {
-    sql = _getUnattachedSQL(username, page, search); 
+    sql = _getUnattachedSQL(username, page, search);
   } else if (type === eCritterFetchType.assigned) {
     sql = _getAttachedSQL(username, page, search);
-  } 
+  }
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
@@ -130,17 +175,22 @@ const getAnimal = async function (
   critter_id: string,
   res: Response
 ): Promise<Response> {
-  const hasCollar = await query(`select 1 from ${cac_v} where critter_id = '${critter_id}'`);
-  if(hasCollar.isError) {
+  const hasCollar = await query(
+    `select 1 from ${cac_v} where critter_id = '${critter_id}'`
+  );
+  if (hasCollar.isError) {
     return handleQueryError(hasCollar, res);
   }
-  const sql = hasCollar.result.rowCount > 0 ? _getAttachedSQL(username, 1, undefined, critter_id, true) : _getUnattachedSQL(username, 1, undefined, critter_id, true);
+  const sql =
+    hasCollar.result.rowCount > 0
+      ? _getAttachedSQL(username, 1, undefined, critter_id, true)
+      : _getUnattachedSQL(username, 1, undefined, critter_id, true);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(result.rows[0]);
-}
+};
 
 /**
  * retrieves a history of metadata changes made to a animal
@@ -178,5 +228,5 @@ export {
   getAnimals,
   getAnimalHistory,
   fn_get_critter_history,
-  cac_v
+  cac_v,
 };
