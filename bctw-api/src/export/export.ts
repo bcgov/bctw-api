@@ -92,7 +92,6 @@ const getAllExportData = async function (
   const end = req.body.range.end;
   const polygons = 'ARRAY[ ' + req.body.polygons.map(o => `'${o}'`).join(', ') + ']::text[]';
   const sql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}', ${polygons}); `;
-  console.log(sql);
 
   const { result, error, isError } = await query(
     sql,

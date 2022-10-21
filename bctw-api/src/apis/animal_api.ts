@@ -77,7 +77,6 @@ const _getAttachedSQL = (username: string, page: number, search?: SearchFilter, 
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
     const filter =  search ? appendFilter(search, `${alias}.`, true) : '';
     const finalsql = constructGetQuery({ base, page, filter, order: [{field: `${alias}.attachment_start `, order: 'desc'}, {field: `${alias}.device_id`}]});
-    console.log(finalsql);
     return finalsql;
 }
 
