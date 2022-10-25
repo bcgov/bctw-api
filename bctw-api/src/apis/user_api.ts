@@ -171,11 +171,11 @@ const getUserCritterAccess = async function (
     filter: appendFilter(getFilterFromRequest(req), false, false),
   });
 
-  console.log(sql, page);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
+  console.log(sql);
   return res.send(result.rows);
 };
 

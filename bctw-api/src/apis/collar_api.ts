@@ -57,7 +57,7 @@ const deleteCollar = async function (
 ): Promise<Response> {
   const fn_name = 'delete_collar';
   const sql = constructFunctionQuery(fn_name, [username, collarIds]);
-  const {result, error, isError } = await query(sql, '', true);
+  const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -95,7 +95,10 @@ const getUnattachedDeviceSQL = function (
 
   const sql = constructGetQuery({
     base,
-    order: [{field: 'c.valid_from', order: 'desc'}, {field: 'c.device_id '}],
+    order: [
+      { field: 'c.valid_from', order: 'desc' },
+      { field: 'c.device_id ' },
+    ],
     page,
     filter: filter ? appendFilter(filter, true, true) : '',
   });
@@ -103,7 +106,7 @@ const getUnattachedDeviceSQL = function (
 };
 
 // sql to retrieve the latest transmission date of a device (note: fetches from a materialized view)
-const getLastPingSQL = `(SELECT date_recorded FROM latest_transmissions WHERE collar_id = ca.collar_id) as "last_transmission_date"`;
+export const getLastPingSQL = `(SELECT date_recorded FROM latest_transmissions WHERE collar_id = ca.collar_id) as "last_transmission_date"`;
 
 const getAvailableCollars = async function (
   req: Request,
@@ -159,7 +162,10 @@ const getAttachedDeviceSQL = function (
 
   const sql = constructGetQuery({
     base,
-    order: [{field: `${alias}.attachment_start`, order: 'desc'}, {field: `${alias}.device_id `}],
+    order: [
+      { field: `${alias}.attachment_start`, order: 'desc' },
+      { field: `${alias}.device_id ` },
+    ],
     filter: filter ? appendFilter(filter, `${alias}.`, !!collar_id) : '',
     page,
   });
@@ -185,7 +191,7 @@ const getAssignedCollars = async function (
 
 /**
  * retrieve an individual collar
- * returns device metadata based on the collar's 
+ * returns device metadata based on the collar's
  * animal attachment status
  */
 const getCollar = async function (
@@ -213,44 +219,57 @@ const getCollar = async function (
 /**
  * retrieve all devices, regardless of device
  */
-const getAllCollars = async function (req: Request, res:Response): Promise<Response> {
+const getAllCollars = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const base = `select collar_id, device_id, frequency, device_make, device_status, device_type, device_model, activation_status FROM ${S_API}.collar_v`;
 
   const filter = getFilterFromRequest(req);
   const page = (req.query?.page || 0) as number;
-  const sql = constructGetQuery({ base, filter: appendFilter(filter, false, false), page });
+  const sql = constructGetQuery({
+    base,
+    filter: appendFilter(filter, false, false),
+    page,
+  });
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(result.rows);
-}
+};
 
 /**
  * retrieve all devices, regardless if device has an assigned collar_id
  * used in Telemetry Retrieval page to allow retrieval of telemetry for unassigned device_ids
  */
- const getCollarsAndDeviceIds = async function (req: Request, res:Response): Promise<Response> {
+const getCollarsAndDeviceIds = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const page = (req.query?.page || 0) as number;
-  const base = `SELECT ${applyCount(page)}* FROM (SELECT collar_id, device_id, frequency, device_make, device_status, 
+  const base = `SELECT ${applyCount(
+    page
+  )}* FROM (SELECT collar_id, device_id, frequency, device_make, device_status, 
     device_type, device_model, activation_status FROM ${S_API}.collar_v 
     UNION SELECT crypto.gen_random_uuid() as collar_id, deviceid AS device_id, NULL::float AS frequency, 
     vendor::varchar AS device_make, NULL::varchar AS device_status, 
     NULL::varchar AS device_type, 'Unassigned Collar'::varchar AS device_model, 
-    NULL::boolean AS activation_status FROM ${S_BCTW}.unassigned_telemetry_v) as s`
+    NULL::boolean AS activation_status FROM ${S_BCTW}.unassigned_telemetry_v) as s`;
   const filter = getFilterFromRequest(req);
-  const sql = constructGetQuery({ 
-    base, 
-    filter: appendFilter(filter, false, false),  
-    order: [{field: 'device_id', order: 'asc'}],
-    page });
+  const sql = constructGetQuery({
+    base,
+    filter: appendFilter(filter, false, false),
+    order: [{ field: 'device_id', order: 'asc' }],
+    page,
+  });
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error);
   }
   return res.send(result.rows);
   //return res.send(sql);
-}
+};
 
 /**
  * retrieves a history of changes made to a collar

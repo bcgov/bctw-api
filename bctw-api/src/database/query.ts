@@ -12,7 +12,8 @@ import { isProd, pgPool } from './pg';
 //Used to change sql from basic request to a count of records
 const applyCount = (page: number) => {
   return page == 1 ? `COUNT(*) OVER() as row_count, ` : '';
-}
+};
+
 /**
  * @param IConstructQueryParameters
  * @returns the modified sql string
@@ -32,7 +33,7 @@ const constructGetQuery = ({
     sql += `group by ${group.join()} `;
   }
   if (order) {
-    const mapped = order.map( o => `${o.field} ${o.order ?? 'asc'}`)
+    const mapped = order.map((o) => `${o.field} ${o.order ?? 'asc'}`);
     sql += `order by ${mapped.join(', ')} `;
   }
   if (page) {
@@ -63,7 +64,8 @@ const constructFunctionQuery = (
       newParams.push(to_pg_str(p));
     } else if (typeof p === 'number' || typeof p === 'boolean') {
       newParams.push(p);
-    } else if (typeof p.getMonth === 'function') { // p is a date object
+    } else if (typeof p.getMonth === 'function') {
+      // p is a date object
       newParams.push(to_pg_timestamp(p));
     } else if (typeof p === 'object' && expectsObjAsArray) {
       newParams.push(obj_to_pg_array(p));
@@ -73,7 +75,9 @@ const constructFunctionQuery = (
       newParams.push(to_pg_obj(p));
     }
   });
-  return `select ${returnsTable ? '* from' : ''} ${schema}.${fnName}(${newParams.join()})`;
+  return `select ${
+    returnsTable ? '* from' : ''
+  } ${schema}.${fnName}(${newParams.join()})`;
 };
 
 // converts an array to the postgres format
@@ -202,7 +206,7 @@ const paginate = (pageNumber: number): string => {
 };
 
 /**
- * appends a basic search string 
+ * appends a basic search string
  * @param filter the @type {SearchFilter}
  * @param sqlBase the sql query
  * @param hasAlias does the select have a table alias?
@@ -220,16 +224,17 @@ const appendFilter = (
   for (let i = 0; i < keys.length; i++) {
     const column = keys[i]; // the column to search for
     /**
-     * a search can be performed with 
+     * a search can be performed with
      * a) looking for one term within multiple columns
      * b) multiple terms in multiple columns
      * note: if the term list length doesnt match columns length,
-     * this logic implements the search as if the first term is meant 
+     * this logic implements the search as if the first term is meant
      * to be searched across multiple columns.
      */
     const searchTerm = term.length === keys.length ? term[i] : term[0];
     const isFirst = i === 0;
-    const limiter = isFirst && !hasWhere ? ' WHERE' : !isFirst && hasWhere ? 'OR' : 'AND';
+    const limiter =
+      isFirst && !hasWhere ? ' WHERE' : !isFirst && hasWhere ? 'OR' : 'AND';
     let alias;
     if (typeof hasAlias === 'string') {
       alias = hasAlias;
@@ -243,19 +248,22 @@ const appendFilter = (
 };
 
 /**
- * based on the @param columnName provided, 
+ * based on the @param columnName provided,
  * returns the table alias
  * assumes collar table is 'c' and animal is 'a'
  */
 const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
-  if (['animal_id', 'wlh_id', 'population_unit', 'animal_status'].includes(columnName)) {
+  if (
+    ['animal_id', 'wlh_id', 'population_unit', 'animal_status'].includes(
+      columnName
+    )
+  ) {
     return 'a.';
-  }
-  else if (['device_id', 'frequency', 'device_make'].includes(columnName)) {
+  } else if (['device_id', 'frequency', 'device_make'].includes(columnName)) {
     return 'c.';
   }
   return '';
-}
+};
 
 export {
   applyCount,
