@@ -30,9 +30,9 @@ import { HistoricalTelemetryInput } from '../types/point';
  */
 const getDBCritters = function (req: Request, res: Response): void {
   const {start, end} = req.query;
+  const critter = req.query?.critter_id ? `'${req.query?.critter_id}'` : `NULL`;
   const fn_name = 'get_telemetry';
-  const sql = `select geojson from ${S_BCTW}.${fn_name}('${getUserIdentifier(req)}', '${start}', '${end}')`;
-
+  const sql = `select geojson from ${S_BCTW}.${fn_name}('${getUserIdentifier(req)}', '${start}', '${end}', ${critter})`;
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
@@ -56,6 +56,7 @@ const getCritterTracks = async function (
   res: Response
 ): Promise<Response> {
   const { start, end } = req.query;
+  const critter = req.query?.critter_id ? `'${req.query?.critter_id}'` : `NULL`;
   if (!start || !end) {
     return res.status(404).send('Must have a valid start and end date');
   }
@@ -93,7 +94,7 @@ const getCritterTracks = async function (
         'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
       ) as "geojson"
     from
-      get_telemetry('${username}', '${start}', '${end}')
+      get_telemetry('${username}', '${start}', '${end}', ${critter})
     where
       critter_id is not null and
       st_asText(geom) <> 'POINT(0 0)'
