@@ -10,8 +10,8 @@ const MISSING_USERNAME = 'must supply user identifier';
  * parses the request query for 'column' and 'search' fields
  * @returns {SearchFilter}
  */
-const getFilterFromRequest = (req: Request): SearchFilter | undefined => {
-  const { query } = req;
+const getFilterFromRequest = (req: Request, isPost: boolean = false): SearchFilter | undefined => {
+  const query = isPost ? req.body : req.query;
   const o = {} as SearchFilter;
 
   for (const [key, value] of Object.entries(query)) {

@@ -1,0 +1,275 @@
+@your_critter_1 = 00d3cea6-dc3c-4913-89a3-7a04277514a3
+@your_critter_2 = 734448ea-7e12-478a-8c33-43e8cef48987
+
+@wlh_multiple_collar = 17-10430
+
+@your_pop_unit = north cariboo
+
+@your_wlh_id_1 = 20-1404
+@your_wlh_id_2 = 20-3431
+
+@your_animal_id_1 = 4
+@your_animal_id_2 = 121
+
+@test_user_guid = TESTUSERGUID
+
+### Get telemetry data only for caribous in pop unit.
+POST http://localhost:3000/export-all?idir={{idir}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "species",
+			"operator": "=",
+			"term": [
+				"caribou"
+			]
+		},
+		{
+			"key": "population_unit",
+			"operator": "=",
+			"term": [
+				"{{your_pop_unit}}"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}
+
+### Get telemetry data for all caribou NOT in a certain pop unit
+POST http://localhost:3000/export-all?idir={{idir}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "species",
+			"operator": "=",
+			"term": [
+				"caribou"
+			]
+		},
+		{
+			"key": "population_unit",
+			"operator": "<>",
+			"term": [
+				"north cariboo"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-08-05"
+	}
+}
+
+### Get all telemetry for specific WLH ids.
+POST http://localhost:3000/export-all?idir={{idir}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "wlh_id",
+			"operator": "=",
+			"term": [
+				"{{your_wlh_id_1}}",
+                "{{your_wlh_id_2}}"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}
+
+### Get all telemetry for specific Animal ids.
+POST http://localhost:3000/export-all?idir={{idir}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "animal_id",
+			"operator": "=",
+			"term": [
+				"{{your_animal_id_1}}",
+                "{{your_animal_id_2}}"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}
+
+### Get all telemetry for specific frequencies.
+POST http://localhost:3000/export-all?idir={{idir}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "frequency",
+			"operator": "=",
+			"term": [
+				"148.41"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}
+
+### Get all telemetry for specific Device ID.
+POST http://localhost:3000/export-all?idir={{idir}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "device_id",
+			"operator": "=",
+			"term": [
+				"45671"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}
+
+### Test all parameters at once, this should work as long as you have the right critter.
+POST http://localhost:3000/export-all?idir={{idir}}
+Content-Type: application/json
+{
+	"queries": [
+		{
+			"key": "species",
+			"operator": "=",
+			"term": [
+				"caribou"
+			]
+		},
+		{
+			"key": "population_unit",
+			"operator": "=",
+			"term": [
+				"north cariboo"
+			]
+		},
+		{
+			"key": "wlh_id",
+			"operator": "=",
+			"term": [
+				"19-1607"
+			]
+		},
+		{
+			"key": "animal_id",
+			"operator": "=",
+			"term": [
+				"c48260"
+			]
+		},
+		{
+			"key": "device_id",
+			"operator": "=",
+			"term": [
+				"42159"
+			]
+		},
+		{
+			"key": "frequency",
+			"operator": "=",
+			"term": [
+				"148.26"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}
+
+
+### This should not work since none of these critters will be owned by the test user.
+POST http://localhost:3000/export-all?idir={{test_user_guid}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "species",
+			"operator": "=",
+			"term": [
+				"caribou"
+			]
+		},
+		{
+			"key": "population_unit",
+			"operator": "=",
+			"term": [
+				"{{your_pop_unit}}"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}
+
+### This is for simple export. Should work with any critters you own.
+POST http://localhost:3000/export-all?idir={{idir}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "critter_id",
+			"operator": "=",
+			"term": [
+				"{{your_critter_1}}",
+				"{{your_critter_2}}"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}
+
+
+###Test user has no critters, so this should not work.
+POST http://localhost:3000/export-all?idir={{test_user_guid}}
+Content-Type: application/json
+
+{
+	"queries": [
+		{
+			"key": "critter_id",
+			"operator": "=",
+			"term": [
+				"{{your_critter_1}}",
+				"{{your_critter_2}}"
+			]
+		}
+	],
+	"range": {
+		"end": "2022-10-05",
+		"start": "2022-07-05"
+	}
+}

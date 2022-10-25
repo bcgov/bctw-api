@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { fn_get_critter_history } from '../apis/animal_api';
 import { fn_get_collar_history } from '../apis/collar_api';
-import { S_API } from '../constants';
-import { constructFunctionQuery, query } from '../database/query';
-import { getUserIdentifier } from '../database/requests';
+import { S_API, S_BCTW } from '../constants';
+import { appendFilter, constructFunctionQuery, constructGetQuery, query, queryParams } from '../database/query';
+import { getFilterFromRequest, getUserIdentifier } from '../database/requests';
 
 enum eExportType {
   all = 'all',
@@ -64,7 +64,7 @@ const getExportData = async function (
       break;
   }
   const promises = sqlStrings.map(s => query(s, ''));
-  //console.log(sqlStrings);
+  console.log(sqlStrings);
 
   const resolved = await Promise.all(promises);
   const errors = resolved.filter(r => r.isError);
@@ -77,4 +77,30 @@ const getExportData = async function (
   }
 };
 
-export { getExportData };
+/*
+* Called by the new standalone export page. 
+* Allows user to export based on specific column parameters and geographic regions contained in polygon data.
+*/
+const getAllExportData = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+
+  const idir = getUserIdentifier(req);
+  const queries = JSON.stringify(req.body.queries);
+  const start = req.body.range.start;
+  const end = req.body.range.end;
+  const polygons = 'ARRAY[ ' + req.body.polygons.map(o => `'${o}'`).join(', ') + ']::text[]';
+  const sql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}', ${polygons}); `;
+
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve telemetry'
+  );
+  if(isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows);
+};
+
+export { getExportData, getAllExportData };

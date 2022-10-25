@@ -244,6 +244,7 @@ const getAllCollars = async function (req: Request, res:Response): Promise<Respo
     filter: appendFilter(filter, false, false),  
     order: [{field: 'device_id', order: 'asc'}],
     page });
+  console.log(sql);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error);

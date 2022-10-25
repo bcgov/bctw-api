@@ -6,9 +6,12 @@ export type QResult = {
   isError: boolean;
 };
 
+export type SupportedOperators = "<" | ">" | "=" | "<>" | ">=" | "<="; 
+
 type SearchFilter = {
   keys: string[];
-  term: string[];
+  term: string[] | Array<Array<string>>;
+  operators?: SupportedOperators;
 }
 
 export type Order = {

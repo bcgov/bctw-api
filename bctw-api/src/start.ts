@@ -28,7 +28,7 @@ import {
 } from './apis/user_api';
 // import { emailEndpoint } from './apis/email';
 import { getUserIdentifier, MISSING_USERNAME } from './database/requests';
-import { getExportData } from './export/export';
+import { getExportData, getAllExportData } from './export/export';
 import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
 import { attachDevice, getCollarAssignmentHistory, unattachDevice, updateDataLife } from './apis/attachment_api';
 import { getOnboardingRequests, getUserOnboardStatus, submitOnboardingRequest, handleOnboardingRequest } from './apis/onboarding_api';
@@ -124,6 +124,7 @@ export {
   getDBCritters,
   getPingsEstimate,
   getExportData,
+  getAllExportData,
   getGrantedPermissionHistory,
   getPermissionRequests,
   getType,

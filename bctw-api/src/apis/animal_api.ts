@@ -93,6 +93,7 @@ const _getAttachedSQL = (
     ) SELECT ${applyCount(page)}* from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
+
   const filter = search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({
     base,
@@ -104,6 +105,7 @@ const _getAttachedSQL = (
     ],
   });
 };
+
 
 // generate SQL for retrieving animals that are not attached to a device
 
