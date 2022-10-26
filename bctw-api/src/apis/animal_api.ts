@@ -82,6 +82,7 @@ const _getAttachedSQL = (
     WITH ${alias} AS (
       SELECT
         ca.assignment_id, ca.device_id, ca.collar_id, ca.frequency, ca.device_status,
+        ca.device_make, ca.activation_status, ca.device_model,
         ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end,
         ${
           getAllProps
