@@ -145,7 +145,7 @@ const getAttachedDeviceSQL = function (
   WITH ${alias} AS (
     SELECT 
       ca.assignment_id,
-      ca.attachment_start, ca.attachment_end, ca.data_life_start, ca.data_life_end,
+      ca.attachment_start, ca.attachment_end, ca.data_life_start, ca.data_life_end, ca.last_fetch_date,
       ${
         getAllProps
           ? 'c.*,'
@@ -158,7 +158,8 @@ const getAttachedDeviceSQL = function (
     JOIN ${S_API}.collar_v c ON c.collar_id = ca.collar_id
     JOIN ${S_API}.animal_v a ON a.critter_id = ca.critter_id
   ) SELECT ${applyCount(page)}* FROM ${alias}
-  ${collar_id ? ` WHERE ${alias}.collar_id = '${collar_id}'` : ''}`;
+  WHERE permission_type IS NOT NULL
+  ${collar_id ? ` AND ${alias}.collar_id = '${collar_id}'` : ''}`;
 
   const sql = constructGetQuery({
     base,
@@ -180,7 +181,8 @@ const getAssignedCollars = async function (
   const sql = getAttachedDeviceSQL(
     getUserIdentifier(req) as string,
     page,
-    getFilterFromRequest(req)
+    getFilterFromRequest(req),
+    true
   );
   const { result, error, isError } = await query(sql);
   if (isError) {
