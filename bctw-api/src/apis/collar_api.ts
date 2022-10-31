@@ -259,21 +259,12 @@ const getCollarsAndDeviceIds = async function (
     NULL::varchar AS device_type, 'Unassigned Collar'::varchar AS device_model, 
     NULL::boolean AS activation_status FROM ${S_BCTW}.unassigned_telemetry_v) as s`;
   const filter = getFilterFromRequest(req);
-<<<<<<< HEAD
-  const sql = constructGetQuery({ 
-    base, 
-    filter: appendFilter(filter, false, false),  
-    order: [{field: 'device_id', order: 'asc'}],
-    page });
-  console.log(sql);
-=======
   const sql = constructGetQuery({
     base,
     filter: appendFilter(filter, false, false),
     order: [{ field: 'device_id', order: 'asc' }],
     page,
   });
->>>>>>> 705-animal-page
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error);
