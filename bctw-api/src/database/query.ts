@@ -1,4 +1,3 @@
-import exp from 'constants';
 import { QueryResult, QueryResultRow } from 'pg';
 import { S_BCTW } from '../constants';
 import {
@@ -83,21 +82,8 @@ const constructFunctionQuery = (
 
 // converts an array to the postgres format
 // ex. ['b','b'] => '{a, b}'
-const to_pg_array = (arr: number[] | string[] | string[][] ): string => {
-  if(arr[0].constructor === Array) {
-    const temparr: string[] = [];
-    for(const a of arr) {
-      const b = a as string[];
-      temparr.push(`{${b.join(',')}}`);
-    }
-    return `'{${temparr.join(',')}}'`
-  }
-  else {
-    return `'{${arr.join(',')}}'`;
-  }
-  
-}
-  
+const to_pg_array = (arr: number[] | string[]): string =>
+  `'{${arr.join(',')}}'`;
 
 // uses a psql builtin function to convert a js date object
 const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
@@ -160,11 +146,11 @@ const _getQueryResult = (data: QueryResult, fn: string) => {
 };
 
 /** uses the postgres client to run the query, rolls back if an exception is caught */
-const queryAsync = async (sql: string, values?: Array<any>): Promise<QueryResult> => {
+const queryAsync = async (sql: string): Promise<QueryResult> => {
   const client = await pgPool.connect();
   let res: QueryResult;
   try {
-    res = values ? await client.query(sql, values) : await client.query(sql);
+    res = await client.query(sql);
     await client.query('commit');
   } catch (err) {
     await client.query('rollback');
@@ -197,23 +183,6 @@ const query = async (
   }
   return { result, error, isError };
 };
-
-const queryParams = async (
-  sql: string,
-  values: Array<any>, 
-  msgIfErr?: string,
-  asTransaction = false
-): Promise<QResult> => {
-  let result, error;
-  let isError = false;
-  try {
-    result = await queryAsync(asTransaction ? transactionify(sql) : sql, values);
-  } catch (e) {
-    isError = true;
-    error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
-  }
-  return { result, error, isError };
-}
 
 /**
  * used in the @function query
@@ -263,8 +232,6 @@ const appendFilter = (
      * to be searched across multiple columns.
      */
     const searchTerm = term.length === keys.length ? term[i] : term[0];
-    console.log("Above condition evaluates to: " + (term.length === keys.length) );
-    console.log("Search term looks like " + searchTerm);
     const isFirst = i === 0;
     const limiter =
       isFirst && !hasWhere ? ' WHERE' : !isFirst && hasWhere ? 'OR' : 'AND';
@@ -274,25 +241,7 @@ const appendFilter = (
     } else {
       alias = hasAlias ? `${determineTableAlias(column)}` : '';
     }
-
-    /**
-     * This nested logic is a little bit hacky, ideally this entire function could be reworked to be a bit more robust.
-     * For now at least this retains the original functionality of chaining together LIKEs, while expanding towards different operators and lists.
-     */
-    if(filter?.operators) {
-      if(typeof searchTerm === 'string') {
-        sql += `${limiter} LOWER(${alias}${column}::varchar) ${filter.operators[i]} '${searchTerm}' `;
-      }
-      else {
-        const expandedTerm = searchTerm.map(o => `'${o}'`);
-        const negation = filter.operators[i] == "<>" ? "NOT" : "";
-        sql += `${limiter} ${negation} LOWER(${alias}${column}::varchar) = ANY(ARRAY[${expandedTerm}]) `;
-      }
-    }
-    else {
-      sql += `${limiter} LOWER(${alias}${column}::varchar) LIKE '%${searchTerm}%' `;
-    }
-    
+    sql += `${limiter} LOWER(${alias}${column}::varchar) LIKE '%${searchTerm}%' `;
   }
   // console.log(keys, sql)
   return sql;
@@ -320,7 +269,6 @@ export {
   applyCount,
   getRowResults,
   query,
-  queryParams,
   constructFunctionQuery,
   constructGetQuery,
   appendFilter,
