@@ -65,14 +65,15 @@ Upserts collar data into api_lotek_collar_data table
 Used to record all Lotek devices for bctw
 */
 const insertAPICollarData = async function (collar: ICollar) {
-  const {nDeviceID, strSpecialID, dtCreated, strSatellite} = collar;
+  const { nDeviceID, strSpecialID, dtCreated, strSatellite } = collar;
   const keys = Object.keys(collar);
   const sql = `insert into bctw.api_lotek_collar_data (${keys.toString()}, dtrecord_added)
   values (${nDeviceID}, '${strSpecialID}', '${dtCreated}', '${strSatellite}', now())
-  ON CONFLICT (ndeviceid) DO UPDATE SET ${keys.slice(1).map(i=>`${i}='${collar[i]}'`)}, dtrecord_updated=now();`
+  ON CONFLICT (ndeviceid) DO UPDATE SET ${keys
+    .slice(1)
+    .map((i) => `${i}='${collar[i]}'`)}, dtlast_fetch=now();`;
 
-  await pgPool.query(sql)
-  .catch((err) => console.log(err));
+  await pgPool.query(sql).catch((err) => console.log(err));
 };
 
 /* ## iterateCollars
@@ -87,10 +88,6 @@ const iterateCollars = async function (collar: ICollar) {
   const weekAgo = dayjs().subtract(7, "d").format("YYYY-MM-DDTHH:mm:ss");
   const url = `${lotekUrl}/gps?deviceId=${collar.nDeviceID}&dtStart=${weekAgo}`;
 
-  await insertAPICollarData(collar).catch((err) => {
-    console.log(`Error inserting ${collar} into api_lotek_collar_data table...`, err)
-  });
-
   // Send request to the API
   const { body, error } = await needle("get", url, tokenConfig);
   if (error) {
@@ -99,6 +96,12 @@ const iterateCollars = async function (collar: ICollar) {
     // throw new Error(`DeviceID ${collar.nDeviceID} ${error}`)
     return;
   }
+  await insertAPICollarData(collar).catch((err) => {
+    console.log(
+      `Error inserting ${collar} into api_lotek_collar_data table...`,
+      err
+    );
+  });
 
   if (!body.flat) {
     const msg = `Did not receive a valid array for ${

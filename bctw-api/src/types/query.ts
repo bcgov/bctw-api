@@ -1,4 +1,4 @@
-import { QueryResult } from "pg";
+import { QueryResult } from 'pg';
 
 export type QResult = {
   result: QueryResult;
@@ -6,39 +6,38 @@ export type QResult = {
   isError: boolean;
 };
 
-export type SupportedOperators = "<" | ">" | "=" | "<>" | ">=" | "<="; 
+export type SupportedOperators = '<' | '>' | '=' | '<>' | '>=' | '<=';
 
 type SearchFilter = {
   keys: string[];
-  term: string[] | Array<Array<string>>;
-  operators?: SupportedOperators;
-}
+  term: string[];
+};
 
 export type Order = {
   field: string;
   order?: 'desc' | 'asc';
-}
+};
 
 interface IConstructQueryParameters {
-  base: string,
-  filter?: string,
-  order?: Order[],
-  group?: string[],
-  page?: number,
+  base: string;
+  filter?: string;
+  order?: Order[];
+  group?: string[];
+  page?: number;
 }
 
 enum TelemetryType {
   animal = 'animal',
   collar = 'collar',
-  user = 'user'
+  user = 'user',
 }
 
 // define a callback function type for queries
-type QueryResultCbFn = (err: Error, result?: QueryResult) => void
+type QueryResultCbFn = (err: Error, result?: QueryResult) => void;
 
 export {
   IConstructQueryParameters,
   QueryResultCbFn,
   TelemetryType,
   SearchFilter,
-}
+};

@@ -17,6 +17,7 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
+import { getLastPingSQL } from './collar_api';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
@@ -80,16 +81,18 @@ const _getAttachedSQL = (
   const base = `
     WITH ${alias} AS (
       SELECT
-        c.assignment_id, c.device_id, c.collar_id, c.frequency,
-        c.attachment_start, c.data_life_start, c.data_life_end, c.attachment_end,
+        ca.assignment_id, ca.device_id, ca.collar_id, ca.frequency, ca.device_status,
+        ca.device_make, ca.activation_status, ca.device_model,
+        ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end,
         ${
           getAllProps
             ? 'a.*,'
             : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'
         }
-        ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
-      FROM ${cac_v} c
-      JOIN ${S_API}.animal_v a ON c.critter_id = a.critter_id
+        ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type",
+        ${getLastPingSQL}
+      FROM ${cac_v} ca
+      JOIN ${S_API}.animal_v a ON ca.critter_id = a.critter_id
     ) SELECT ${applyCount(page)}* from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
@@ -108,7 +111,6 @@ const _getAttachedSQL = (
 
 
 // generate SQL for retrieving animals that are not attached to a device
-
 const _getUnattachedSQL = (
   username: string,
   page: number,
