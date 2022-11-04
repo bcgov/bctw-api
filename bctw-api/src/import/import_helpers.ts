@@ -28,6 +28,16 @@ const mapCsvHeader = (header: string): string => {
   }
 }
 
+const mapXlsxHeader = (header: string): string => {
+  const trimmed = header.trim();
+  switch(trimmed) {
+    case "Wildlife Health ID":
+      return "wlh_id";
+    default:
+      return trimmed.toLowerCase().split(' ').join('_');
+  }
+}
+
 /**
  * deletes an uploaded csv file
  * @param path fully qualified path of the file to be removed
@@ -61,6 +71,7 @@ const rowToCsv = (row): string => Object.values(row).join(',');
 export {
   cleanupUploadsDir,
   mapCsvHeader,
+  mapXlsxHeader,
   removeEmptyProps,
   rowToCsv,
 }

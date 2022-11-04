@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
-import { importCsv } from './import/csv';
+import { finalizeImport, importCsv, importXlsx } from './import/csv';
 import {
   getUserIdentifierDomain,
   matchAny,
@@ -108,7 +108,8 @@ const app = express()
   // export/import
   .post('/export', api.getExportData)
   .post('/export-all', api.getAllExportData)
-  .post('/import-csv', upload.single('csv'), importCsv)
+  .post('/import-csv', upload.single('csv'), importXlsx)
+  .post('/import-finalize', finalizeImport)
   .post(
     '/import-xml',
     upload.array('xml'),

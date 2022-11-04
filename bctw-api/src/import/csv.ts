@@ -1,7 +1,7 @@
 import csv from 'csv-parser';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
-import { constructFunctionQuery, query } from '../database/query';
+import { constructFunctionQuery, getRowResults, query } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
 import { Animal, IAnimal } from '../types/animal';
 import { HistoricalTelemetryInput } from '../types/point';
@@ -15,18 +15,131 @@ import {
   isCollar,
   isHistoricalTelemtry,
 } from '../types/import_types';
-import { cleanupUploadsDir, mapCsvHeader, removeEmptyProps, rowToCsv } from './import_helpers';
+import { cleanupUploadsDir, mapCsvHeader, mapXlsxHeader, removeEmptyProps, rowToCsv } from './import_helpers';
 import { upsertPointTelemetry } from '../apis/map_api';
 import { pg_link_collar_fn } from '../apis/attachment_api';
 import { HistoricalAttachmentProps } from '../types/attachment';
 import dayjs from 'dayjs';
 import { upsertBulk } from './bulk_handlers';
+import xlsx from 'node-xlsx';
+import { getCode } from '../start';
+import { S_API } from '../constants';
 
 type ParsedCSVResult = {
   both: IAnimalDeviceMetadata[];
   animals: IAnimal[];
   collars: ICollar[];
   points: HistoricalTelemetryInput[];
+}
+
+type CellErrorDescriptor = {
+  errorDescription: string
+}
+
+type ParsedXLSXCellError = {
+  [key in (keyof IAnimalDeviceMetadata) | 'identifier']?: string;
+}
+
+type ParsedXLSXResult = {
+  row: IAnimalDeviceMetadata;
+  errors: ParsedXLSXCellError[];
+  success: boolean;
+}
+
+const validSheetNames = ["Device Metadata", "Existing Telemetry"];
+const codeFields = ["animal_status","species","sex","population_unit","region","map_colour","juvenile_at_heel","device_make","device_type","device_status","device_deployment_status","device_malfunction_type","satellite_network"];
+
+const obtainColumnTypes = async () => {
+  const sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'animal' OR table_name = 'collar';"
+  const {result, error, isError} = await query(sql);
+  const rawObj = result.rows.reduce((o, keyval) => ({...o, [keyval['column_name']]: keyval['data_type']}), {});
+  Object.keys(rawObj).forEach((key => {
+    switch(rawObj[key]) {
+      case "integer":
+      case "double precision":
+        rawObj[key] = "number";
+        return;
+      case "timestamp without time zone":
+      case "timestamp with time zone":
+        rawObj[key] = "date";
+        return;
+      case "boolean":
+        return;
+      default:
+        rawObj[key] = "string";
+        return;
+    }
+  }));
+  return rawObj;
+}
+
+const verifyRow = async (row: IAnimalDeviceMetadata): Promise<ParsedXLSXCellError[]> => {
+  const errors: ParsedXLSXCellError[] = [];
+
+  const columnTypes = await obtainColumnTypes();
+
+  for(const key of Object.keys(row)) {
+    if(codeFields.includes(key)) {
+      const sql = constructFunctionQuery('get_code', ['83245BCDC21F43A29CEDA78AE67DF223', key, 0], false, S_API);
+      const { result, error, isError } = await query(
+        sql,
+        'failed to retrieve codes'
+      );
+      const code_descriptions = getRowResults(result, 'get_code').map(o => o.description);
+      if(!code_descriptions.includes(row[key])) {
+        errors.push({[key]: 'This value is not a valid code. Some examples of valid codes for this field: ' + code_descriptions.slice(1, 4)});
+      }
+    }
+    else if(columnTypes[key] === "date") {
+      if(!(row[key] instanceof Date)) {
+        errors.push({[key]: 'This field must be a valid date format.'})
+      }
+    }
+    else if(columnTypes[key] === "number") {
+      if(typeof row[key] !== "number") {
+        errors.push({[key]: 'This field must be a numeric value.'})
+      }
+    }
+    else if(columnTypes[key] === "boolean") {
+      if(row[key] !== "TRUE" && row[key] !== "FALSE") {
+        errors.push({[key]: 'Set this field to either TRUE or FALSE.'})
+      }
+    }
+  }
+
+  if(!verifyIdentifiers(row)) {
+    errors.push({'identifier' : 'Insufficient information provided to uniquely identify this animal.'});
+  }
+  return errors;
+}
+
+const verifyIdentifiers = (row: IAnimalDeviceMetadata): boolean => {
+  switch(row.species) {
+    case "Caribou":
+    default:
+      return  !! ( row.species && row.sex && (row.wlh_id || row.animal_id || row.ear_tag_id) );
+  }
+}
+
+const parseXlsx = async(
+  file: Express.Multer.File,
+  callback: (obj: ParsedXLSXResult[]) => void
+) => {
+  const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file.path), {cellDates: true})
+                                  .filter((sheet) => validSheetNames.includes(sheet.name));
+  const verifiedRowObj: ParsedXLSXResult[] = [];
+  for(const sheet of workSheetsFromBuffer) {
+    const headers = (sheet.data[0] as string[]).map(o => mapXlsxHeader(o));
+    for(const row of sheet.data.slice(1) as any[][]) {
+      const rowWithHeader = {};
+      headers.forEach((key, i) => rowWithHeader[key] = (i < row.length) ? row[i] : undefined);
+      const crow = removeEmptyProps(rowWithHeader);
+      const errors = await verifyRow(crow);
+      verifiedRowObj.push({row: crow, errors: errors, success: errors.length === 0});
+    }
+  }
+  //console.log(JSON.stringify(verifiedRowObj, null, 2));
+  callback(verifiedRowObj);
 }
 
 /**
@@ -206,6 +319,35 @@ const handleCollarCritterLink = async (
   });
 };
 
+const importXlsx = async function (req: Request, res: Response): Promise<void> {
+  const id = getUserIdentifier(req) as string;
+  const file = req.file;
+  if (!file) {
+    res.status(500).send('failed: csv file not found');
+  }
+
+  const onFinishedParsing = async (obj: ParsedXLSXResult[]) => {
+    const allClear = obj.every(o => o.success);
+    cleanupUploadsDir(file.path);
+    return res.send(obj);
+  }
+
+  await parseXlsx(file, onFinishedParsing);
+}
+
+const finalizeImport = async function (req: Request, res: Response): Promise<void> {
+  const id = getUserIdentifier(req) as string;
+  console.log("Response body " + JSON.stringify(req.body, null, 2));
+  const animalDeviceData: IAnimalDeviceMetadata[] = req.body.map(o => o.row);
+  console.log("animalDeviceData list " + JSON.stringify(animalDeviceData, null, 2));
+  if(!animalDeviceData.length) {
+    res.status(500).send('There was an error collecting the data');
+  }
+
+  let r = {errors: [{error: 'FINALIZATION SUCCESS'}]} as IBulkResponse;
+  res.send(r);
+}
+
 /** 
   the main endpoint for bulk importing via CSV file. workflow is:
     1) call @function parseCsv function which handles the file parsing
@@ -252,4 +394,4 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
   await parseCSV(file, onFinishedParsing);
 };
 
-export { importCsv };
+export { importCsv, importXlsx, finalizeImport };
