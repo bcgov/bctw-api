@@ -83,7 +83,7 @@ const getIsDuplicateAlert = async (alert_table: string, device_id: number, devic
  const getLastKnownLatLong = async (device_id: number, device_make: string, alert_time: string): Promise<latLong> => {
   const sql = `
   SELECT latitude, longitude
-  FROM telemetry_v
+  FROM telemetry
   WHERE deviceid = ${device_id} 
   AND vendor = '${device_make}'
   AND latitude != 0 OR NULL
