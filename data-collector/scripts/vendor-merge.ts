@@ -5,7 +5,7 @@ import { queryAsync, safelyDrainPool } from './utils/db';
 const SQL = [
   'vacuum analyze;',
   'refresh materialized view concurrently historical_telemetry_with_security_m;',
-  'refresh materialized view telemetry;', 
+  'refresh materialized view concurrently telemetry;', 
   'refresh materialized view latest_transmissions;', 
   'refresh materialized view concurrently telemetry_with_security_m;',
   'call bctw.proc_check_for_missing_telemetry();'
