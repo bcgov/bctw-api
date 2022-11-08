@@ -33,19 +33,27 @@ type ParsedCSVResult = {
 }
 
 type CellErrorDescriptor = {
-  errorDescription: string
+  desc: string;
+  help: string;
+  valid_values?: string[];
 }
 
 type ParsedXLSXCellError = {
-  [key in (keyof IAnimalDeviceMetadata) | 'identifier']?: string;
+  [key in (keyof IAnimalDeviceMetadata) | 'identifier']?: CellErrorDescriptor;
 }
 
-type ParsedXLSXResult = {
+type ParsedXLSXRowResult = {
   row: IAnimalDeviceMetadata;
-  errors: ParsedXLSXCellError[];
+  errors: ParsedXLSXCellError;
   success: boolean;
 }
 
+type ParsedXLSXSheetResult = {
+  headers: string[];
+  rows: ParsedXLSXRowResult[];
+}
+
+const mustHaveHeaders = ["Wildlife Health ID", "Animal ID", "Species", "Population Unit", "Region", "Sex", "Animal Status", "Capture Date", "Capture Latitude", "Capture Longitude", "Capture UTM Easting", "Capture UTM Northing", "Capture UTM Zone", "Capture Comments", "Ear Tag Right ID", "Ear Tag Right Colour", "Ear Tag Left ID", "Ear Tag Left Colour", "Compulsory Inspection ID", "COORS ID", "Leg Band ID", "Microchip ID", "Nickname", "Pit Tag ID", "RAPP Ear Tag ID", "Recapture ID", "Wing Band ID", "HWCN ID", "Telemetry Device ID", "Device Deployment Status", "Device Make", "Device Model", "Device Type", "Frequency", "Frequency Units", "Fix Interval", "Fix Interval Units", "Satellite Network", "Vaginal Implant Transmitter ID", "Camera Device ID", "Dropoff Device ID", "Dropoff Frequency", "Dropoff Frequency Unit", "Malfunction Date", "Malfunction Comments", "Malfunctioning Device Type", "Device Retrieval Date", "Device Retrieval Comments", "Animal Mortality Date", "Suspected Mortality Cause", "Mortality Comments"]
 const validSheetNames = ["Device Metadata", "Existing Telemetry"];
 const codeFields = ["animal_status","species","sex","population_unit","region","map_colour","juvenile_at_heel","device_make","device_type","device_status","device_deployment_status","device_malfunction_type","satellite_network"];
 
@@ -73,8 +81,8 @@ const obtainColumnTypes = async () => {
   return rawObj;
 }
 
-const verifyRow = async (row: IAnimalDeviceMetadata): Promise<ParsedXLSXCellError[]> => {
-  const errors: ParsedXLSXCellError[] = [];
+const verifyRow = async (row: IAnimalDeviceMetadata): Promise<ParsedXLSXCellError> => {
+  const errors = {} as ParsedXLSXCellError;
 
   const columnTypes = await obtainColumnTypes();
 
@@ -87,28 +95,28 @@ const verifyRow = async (row: IAnimalDeviceMetadata): Promise<ParsedXLSXCellErro
       );
       const code_descriptions = getRowResults(result, 'get_code').map(o => o.description);
       if(!code_descriptions.includes(row[key])) {
-        errors.push({[key]: 'This value is not a valid code. Some examples of valid codes for this field: ' + code_descriptions.slice(1, 4)});
+        errors[key] = {desc:'This value is not a valid code for this field.', help: 'This field must contain a value from the list of acceptable values.', valid_values: code_descriptions };
       }
     }
     else if(columnTypes[key] === "date") {
       if(!(row[key] instanceof Date)) {
-        errors.push({[key]: 'This field must be a valid date format.'})
+        errors[key] = {desc: 'This field must be a valid date format.', help: 'You have incorrectly formatted this date field. One way you can ensure correct formatting for a cell of this type is to change the Number Format dropdown in Excel.'}
       }
     }
     else if(columnTypes[key] === "number") {
       if(typeof row[key] !== "number") {
-        errors.push({[key]: 'This field must be a numeric value.'})
+        errors[key] = {desc: 'This field must be a numeric value.', help: 'This field is set to only accept numbers, including integers and floating points. Ensure you have not included any special characters.' };
       }
     }
     else if(columnTypes[key] === "boolean") {
       if(row[key] !== "TRUE" && row[key] !== "FALSE") {
-        errors.push({[key]: 'Set this field to either TRUE or FALSE.'})
+        errors[key] =  {desc: 'Set this field to either TRUE or FALSE.', help: ''};
       }
     }
   }
 
   if(!verifyIdentifiers(row)) {
-    errors.push({'identifier' : 'Insufficient information provided to uniquely identify this animal.'});
+    errors['identifier'] = { desc: 'Insufficient information provided to uniquely identify this animal.', help: 'More detailed help description to come.'};
   }
   return errors;
 }
@@ -123,23 +131,44 @@ const verifyIdentifiers = (row: IAnimalDeviceMetadata): boolean => {
 
 const parseXlsx = async(
   file: Express.Multer.File,
-  callback: (obj: ParsedXLSXResult[]) => void
+  callback: (obj: ParsedXLSXSheetResult) => void
 ) => {
-  const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file.path), {cellDates: true})
+  let sheetResult: ParsedXLSXSheetResult = {headers: [], rows: []};
+  try {
+    const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file.path), {cellDates: true})
                                   .filter((sheet) => validSheetNames.includes(sheet.name));
-  const verifiedRowObj: ParsedXLSXResult[] = [];
-  for(const sheet of workSheetsFromBuffer) {
-    const headers = (sheet.data[0] as string[]).map(o => mapXlsxHeader(o));
-    for(const row of sheet.data.slice(1) as any[][]) {
-      const rowWithHeader = {};
-      headers.forEach((key, i) => rowWithHeader[key] = (i < row.length) ? row[i] : undefined);
-      const crow = removeEmptyProps(rowWithHeader);
-      const errors = await verifyRow(crow);
-      verifiedRowObj.push({row: crow, errors: errors, success: errors.length === 0});
+    const verifiedRowObj: ParsedXLSXRowResult[] = [];
+    let headers: string[] = [];
+    
+    for(const sheet of workSheetsFromBuffer) {
+      headers = sheet.data[0] as string[];//.map(o => mapXlsxHeader(o));
+      if(sheet.name == validSheetNames[0]) {
+        mustHaveHeaders.forEach((value, idx) => {
+          if(headers[idx] != value) {
+            console.log(`Recieved bad header: ${headers[idx]} != ${value}` )
+            throw new Error("Headers from this file do not match template headers.");
+          }
+        })
+      }
+      
+      headers = headers.map(o => mapXlsxHeader(o));
+      for(const row of sheet.data.slice(1) as any[][]) {
+        const rowWithHeader = {};
+        headers.forEach((key, i) => rowWithHeader[key] = (i < row.length) ? row[i] : undefined);
+        const crow = removeEmptyProps(rowWithHeader);
+        const errors = await verifyRow(crow);
+        verifiedRowObj.push({row: crow, errors: errors, success: Object.keys(errors).length === 0});
+      }
     }
+
+    sheetResult = {headers: headers, rows: verifiedRowObj};
   }
-  //console.log(JSON.stringify(verifiedRowObj, null, 2));
-  callback(verifiedRowObj);
+  catch (err) {
+    console.log("Failed parse. File was invalid.");
+  }
+  
+  
+  callback(sheetResult);
 }
 
 /**
@@ -326,10 +355,16 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
     res.status(500).send('failed: csv file not found');
   }
 
-  const onFinishedParsing = async (obj: ParsedXLSXResult[]) => {
-    const allClear = obj.every(o => o.success);
+  const onFinishedParsing = async (obj: ParsedXLSXSheetResult) => {
+    const allClear = obj.rows.every(o => o.success);
     cleanupUploadsDir(file.path);
-    return res.send(obj);
+    if(obj.rows.length && obj.headers.length) {
+      return res.send(obj);
+    }
+    else {
+      return res.status(500).send('Failed parsing the XLSX file.')
+    }
+    
   }
 
   await parseXlsx(file, onFinishedParsing);
