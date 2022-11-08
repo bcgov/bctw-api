@@ -14,7 +14,6 @@ const VECT_API_URL = process.env.VECTRONICS_URL;
 // format the API expects timestamps
 const VECT_API_TS_FORMAT = 'YYYY-MM-DDTHH:mm:ss';
 
-
 /**
  * fetch the vectronic collar keys used in the api header
  * @param device_ids vectronic device IDs to fetch
@@ -35,7 +34,6 @@ const _getVectronicAPIKeys = async function (
   return result.rows;
 };
 
-
 /**
  * note: Vectronic API recently updated their ssl cert to use openssl
  * the cert packaged with this version of node no longer works, so for this
@@ -43,7 +41,7 @@ const _getVectronicAPIKeys = async function (
  * may be fixed without having to do this with a newer version of node (currently 12.x)
  */
 const SSL_CERT = process.env.VECTRONIC_SSL_ROOT_CERT;
-const agent = new Agent({ca: SSL_CERT });
+const agent = new Agent({ ca: SSL_CERT });
 
 /**
  * fetches telemetry for @param collar
@@ -59,16 +57,34 @@ const _fetchVectronicTelemetry = async function (
   const s = dayjs(start).format(VECT_API_TS_FORMAT);
   const e = dayjs(end).format(VECT_API_TS_FORMAT);
   const url = `${VECT_API_URL}/${idcollar}/gps?collarkey=${collarkey}&afterScts=${s}&beforeScts=${e}`;
+  const updateFetchDateSql = `update api_vectronic_collar_data set dtlast_fetch = now() where idcollar = ${idcollar};`;
   //console.log('vetronic url: ', url);
   let errStr = '';
   // call the vectronic api, using the agent created with the env variable cert key
-  const results = await axios.get(url, { httpsAgent: agent }).catch((err: AxiosError) => {
-    errStr = formatAxiosError(err);
-  });
+  const results = await axios
+    .get(url, { httpsAgent: agent })
+    .catch((err: AxiosError) => {
+      errStr = formatAxiosError(err);
+    });
+  const { result: updateFetchDateResult, error, isError } = await query(
+    updateFetchDateSql,
+    '',
+    true
+  );
   if (results && results.data.length) {
+    let { data } = results;
+    if (!isError) {
+      data = { ...data, fetchDate: dayjs() };
+    }
     return results.data;
   } else {
-    return { device_id: idcollar, records_found: 0, vendor: 'Vectronic', error: errStr } as ManualVendorAPIResponse;
+    return {
+      device_id: idcollar,
+      records_found: 0,
+      vendor: 'Vectronic',
+      error: errStr,
+      fetchDate: dayjs(),
+    } as ManualVendorAPIResponse;
   }
 };
 
@@ -96,7 +112,7 @@ const _insertVectronicRecords = async function (
       records_found: 0,
       records_inserted: 0,
       vendor: 'Vectronic',
-      error: error.message
+      error: error.message,
     };
   }
   const insertResult = getRowResults(result, fn_name, true);
@@ -106,9 +122,9 @@ const _insertVectronicRecords = async function (
 /**
  * main entry point of the vectronic routine
  * workflow:
-    * fetch the collar keys used in the API url from db
-    * call the vendor API
-    * call db handler for inserting response telemetry
+ * fetch the collar keys used in the API url from db
+ * call the vendor API
+ * call db handler for inserting response telemetry
  */
 const performManualVectronicUpdate = async (
   start: string,
@@ -131,7 +147,9 @@ const performManualVectronicUpdate = async (
     return [];
   }
 
-  const failed = apiResults.filter(f => !Array.isArray(f)) as ManualVendorAPIResponse[];
+  const failed = apiResults.filter(
+    (f) => !Array.isArray(f)
+  ) as ManualVendorAPIResponse[];
   // for any successful api results, insert them into the vectronics_collar_data table.
   const promisesDb = apiResults
     .filter((rows) => Array.isArray(rows) && rows.length)

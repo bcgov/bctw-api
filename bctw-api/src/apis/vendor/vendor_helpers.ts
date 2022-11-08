@@ -50,11 +50,11 @@ const ToLowerCaseObjectKeys = <T>(rec: T): T => {
 /**
  * the endpoint exposed to the BCTW API for manually
  * triggering the api fetching of vectronic telemetry
- * note: the cronjobs have essentially been rebuilt into the api 
+ * note: the cronjobs have essentially been rebuilt into the api
  * for this purpose, with the added options of suppling:
-  *  which device IDs
-  *  which date range to fetch telemetry for
-  * ATS is not supported at this time.
+ *  which device IDs
+ *  which date range to fetch telemetry for
+ * ATS is not supported at this time.
  */
 const fetchVendorTelemetryData = async (
   req: Request,
@@ -62,7 +62,11 @@ const fetchVendorTelemetryData = async (
 ): Promise<Response> => {
   const body: ManualVendorInput | ManualVendorInput[] = req.body;
 
-  const { LOTEK_API_CREDENTIAL_NAME, VECTRONICS_URL, VENDOR_API_CREDENTIALS_KEY} = process.env;
+  const {
+    LOTEK_API_CREDENTIAL_NAME,
+    VECTRONICS_URL,
+    VENDOR_API_CREDENTIALS_KEY,
+  } = process.env;
   if (!LOTEK_API_CREDENTIAL_NAME) {
     // the 'api_name' column for the Lotek account from the collar_vendor_api_credentials table
     return res.status(500).send('LOTEK_API_CREDENTIAL_NAME not set');
@@ -79,7 +83,7 @@ const fetchVendorTelemetryData = async (
   // put the body into an array if it is a single object
   const inputArr = Array.isArray(body) ? body : [body];
   const promises = inputArr
-  // filter out invalid entries with missing parameters
+    // filter out invalid entries with missing parameters
     .filter((mvi) => {
       const { start, end, ids, vendor } = mvi;
       return (
@@ -100,18 +104,25 @@ const fetchVendorTelemetryData = async (
         return performManualVectronicUpdate(start, end, ids);
       }
     });
-  
+
   if (!promises.length) {
-    return res.status(500).send('unable to begin process, confirm start, end, ids, and vendor are in body list');
+    return res
+      .status(500)
+      .send(
+        'unable to begin process, confirm start, end, ids, and vendor are in body list'
+      );
   }
 
-  const apiResults:(ManualVendorAPIResponse[] | undefined)[] = await Promise.all(promises);
+  const apiResults: (
+    | ManualVendorAPIResponse[]
+    | undefined
+  )[] = await Promise.all(promises);
   const ret: ManualVendorAPIResponse[] = [];
-  apiResults.forEach(r => {
+  apiResults.forEach((r) => {
     if (r && Array.isArray(r)) {
       ret.push(...r);
     }
-  })
+  });
   return res.send(ret);
 };
 
