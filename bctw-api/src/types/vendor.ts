@@ -1,3 +1,5 @@
+import { Dayjs } from 'dayjs';
+
 /**
  * columns fetched from the api_vectronics_collar_data table
  * used in the API call for Vectronic
@@ -17,6 +19,7 @@ export type ManualVendorAPIResponse = {
   records_found: number;
   records_inserted: number;
   vendor: VendorType;
+  fetchDate?: Dayjs;
   error?: string;
 };
 
@@ -107,5 +110,5 @@ export type LotekRawTelemetry = {
 };
 
 export type LotekToken = {
-  headers: { Authorization: string }
-}
+  headers: { Authorization: string };
+};
