@@ -102,7 +102,7 @@ const _getAttachedSQL = (
     page,
     filter,
     order: [
-      { field: `${alias}.attachment_start `, order: 'desc' },
+      { field: `${alias}.attachment_start `, order: 'asc' },
       { field: `${alias}.device_id` },
     ],
   });
