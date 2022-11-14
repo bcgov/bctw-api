@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
-import { finalizeImport, importCsv, importXlsx } from './import/csv';
+import { finalizeImport, importCsv, importXlsx, getTemplateFile } from './import/csv';
 import {
   getUserIdentifierDomain,
   matchAny,
@@ -115,6 +115,7 @@ const app = express()
     upload.array('xml'),
     api.parseVectronicKeyRegistrationXML
   )
+  .get('/get-template', getTemplateFile)
   // vendor
   .post('/fetch-telemetry', api.fetchVendorTelemetryData)
 

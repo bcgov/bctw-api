@@ -131,7 +131,7 @@ return res.send(result.rows[0]);
  * @returns Object of type FileAttachment to be used as email attachment. 
  * Encodes file to base64.
  */
-const getFiles = async (file_keys: string[]): Promise<FileAttachment[]> => {
+const getFiles = async (file_keys: string[], encode = true): Promise<FileAttachment[]> => {
   const sql = `select file_key, file_name, file_type, contents
   from bctw.files where file_key in (${file_keys.map(f=>`'${f}'`).join(', ')});`
   const {result, isError, error} = await query(sql);
@@ -139,9 +139,10 @@ const getFiles = async (file_keys: string[]): Promise<FileAttachment[]> => {
     console.log(`getFiles: ${error}`);
     return [];
   }
+
   const res: FileAttachment[] = result.rows.map(row => {
     return {
-      file: Buffer.from(row.contents).toString('base64'),
+      file: encode ? Buffer.from(row.contents).toString('base64') : row.contents,
       filename: row.file_name,
       sending_method: 'attach',
     }

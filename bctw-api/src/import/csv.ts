@@ -22,8 +22,12 @@ import { HistoricalAttachmentProps } from '../types/attachment';
 import dayjs from 'dayjs';
 import { upsertBulk } from './bulk_handlers';
 import xlsx from 'node-xlsx';
+import * as XLSX from 'exceljs';
+import * as XLSXExtend from '../types/xlsx_types';
 import { getCode } from '../start';
 import { S_API } from '../constants';
+import { getFiles } from '../apis/onboarding_api';
+import { FileAttachment } from '../types/sms';
 
 type ParsedCSVResult = {
   both: IAnimalDeviceMetadata[];
@@ -54,8 +58,9 @@ type ParsedXLSXSheetResult = {
 }
 
 const mustHaveHeaders = ["Wildlife Health ID", "Animal ID", "Species", "Population Unit", "Region", "Sex", "Animal Status", "Capture Date", "Capture Latitude", "Capture Longitude", "Capture UTM Easting", "Capture UTM Northing", "Capture UTM Zone", "Capture Comments", "Ear Tag Right ID", "Ear Tag Right Colour", "Ear Tag Left ID", "Ear Tag Left Colour", "Compulsory Inspection ID", "COORS ID", "Leg Band ID", "Microchip ID", "Nickname", "Pit Tag ID", "RAPP Ear Tag ID", "Recapture ID", "Wing Band ID", "HWCN ID", "Telemetry Device ID", "Device Deployment Status", "Device Make", "Device Model", "Device Type", "Frequency", "Frequency Units", "Fix Interval", "Fix Interval Units", "Satellite Network", "Vaginal Implant Transmitter ID", "Camera Device ID", "Dropoff Device ID", "Dropoff Frequency", "Dropoff Frequency Unit", "Malfunction Date", "Malfunction Comments", "Malfunctioning Device Type", "Device Retrieval Date", "Device Retrieval Comments", "Animal Mortality Date", "Suspected Mortality Cause", "Mortality Comments"]
-const validSheetNames = ["Device Metadata", "Existing Telemetry"];
-const codeFields = ["animal_status","species","sex","population_unit","region","map_colour","juvenile_at_heel","device_make","device_type","device_status","device_deployment_status","device_malfunction_type","satellite_network"];
+const deviceMetadataSheetName = "Device Metadata";
+const validSheetNames = [deviceMetadataSheetName];
+const extraCodeFields = ["species"];
 
 const obtainColumnTypes = async () => {
   const sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'animal' OR table_name = 'collar';"
@@ -81,7 +86,7 @@ const obtainColumnTypes = async () => {
   return rawObj;
 }
 
-const verifyRow = async (row: IAnimalDeviceMetadata): Promise<ParsedXLSXCellError> => {
+const verifyRow = async (row: IAnimalDeviceMetadata, codeFields: string[]): Promise<ParsedXLSXCellError> => {
   const errors = {} as ParsedXLSXCellError;
 
   const columnTypes = await obtainColumnTypes();
@@ -139,6 +144,15 @@ const parseXlsx = async(
                                   .filter((sheet) => validSheetNames.includes(sheet.name));
     const verifiedRowObj: ParsedXLSXRowResult[] = [];
     let headers: string[] = [];
+
+    const header_sql = "SELECT code_header_name FROM code_header;"
+    const { result, error, isError } = await query(
+      header_sql,
+      'failed to retrieve headers'
+    );
+
+    const code_header_names = result.rows.map(o => o['code_header_name']);
+    code_header_names.push(...extraCodeFields);
     
     for(const sheet of workSheetsFromBuffer) {
       headers = sheet.data[0] as string[];//.map(o => mapXlsxHeader(o));
@@ -156,7 +170,7 @@ const parseXlsx = async(
         const rowWithHeader = {};
         headers.forEach((key, i) => rowWithHeader[key] = (i < row.length) ? row[i] : undefined);
         const crow = removeEmptyProps(rowWithHeader);
-        const errors = await verifyRow(crow);
+        const errors = await verifyRow(crow, code_header_names);
         verifiedRowObj.push({row: crow, errors: errors, success: Object.keys(errors).length === 0});
       }
     }
@@ -383,6 +397,103 @@ const finalizeImport = async function (req: Request, res: Response): Promise<voi
   res.send(r);
 }
 
+const computeXLSXCol = (idx: number): string => {
+  let str = '';
+  const a = Math.trunc(idx / 26);
+  if(a > 0) {
+    str = str.concat(String.fromCharCode(65 + a - 1));
+  }
+  str = str.concat(String.fromCharCode(65 + (idx - a * 26)));
+  
+  return str;
+}
+
+const getTemplateFile = async function(req: Request, res: Response): Promise<void> {
+  const key = req.query.file_key as string;
+  const files = await getFiles([key], false);
+  //console.log("File is " + JSON.stringify(files[0]) );
+  const workbook = new XLSX.Workbook();
+  await workbook.xlsx.load(Buffer.from(files[0].file, 'binary'));
+  
+  const sheet = workbook.getWorksheet("Device Metadata");
+  const valSheet = workbook.getWorksheet("Validation");
+  const headerRow = sheet.getRow(1);
+  
+  let val_header_idx = 0;
+
+  const header_sql = "SELECT code_header_name FROM code_header;"
+  const { result, error, isError } = await query(
+    header_sql,
+    'failed to retrieve headers'
+  );
+
+  if(isError) {
+    res.status(500).send("Unable to collect list of code headers.");
+    return;
+  }
+
+  const code_header_names = result.rows.map(o => o['code_header_name']);
+  code_header_names.push(...extraCodeFields);
+
+  for (let header_idx = 1; header_idx < headerRow.cellCount; header_idx++) {
+    const cell = headerRow.getCell(header_idx);
+    const code_header = mapXlsxHeader(cell.text);
+    if(code_header_names.includes(code_header)) {
+
+      const sql = constructFunctionQuery('get_code', [req.query.idir, code_header, 0], false, S_API);
+      const { result, error, isError } = await query(
+        sql,
+        'failed to retrieve codes'
+      );
+
+      if(isError) {
+        res.status(500).send('Unable to determine codes from the provided header');
+        return;
+      }
+
+      const code_descriptions = getRowResults(result, 'get_code').map(o => o.description);
+      const col = cell.address.replace(/[0-9]/g, '');
+
+      const val_col = computeXLSXCol(val_header_idx);
+
+      const val_header_cell = valSheet.getCell(`${val_col}1`);
+      val_header_cell.fill =  {
+        type: 'pattern',
+        pattern:'solid',
+        fgColor:{argb:'F08080'},
+      };
+      val_header_cell.value = `${cell.text} Values`;
+      
+      code_descriptions.forEach((code, idx) => {
+        
+        const val_cell = valSheet.getCell(`${val_col}${idx + 2}`);
+        val_cell.value = code;
+      });
+
+      val_header_idx ++;
+
+      sheet.dataValidations.model[`${col}2:${col}9999`] = {
+        allowBlank: true,
+        error: 'Please use the drop down to select a valid value',
+        errorTitle: 'Invalid Selection',
+        formulae: [`Validation!${val_col}2:${val_col}${code_descriptions.length + 1}`],
+        showErrorMessage: true,
+        type: 'list'
+      }
+        
+    }
+  }
+
+  res.set({
+    'Content-Disposition': 'attachment; filename="ireshansexcel.xlsx"',
+    'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+
+  workbook.xlsx.writeFile('src/import/test.xlsx').then(() => {
+    res.download('src/import/test.xlsx');
+  });
+}
+
 /** 
   the main endpoint for bulk importing via CSV file. workflow is:
     1) call @function parseCsv function which handles the file parsing
@@ -429,4 +540,4 @@ const importCsv = async function (req: Request, res: Response): Promise<void> {
   await parseCSV(file, onFinishedParsing);
 };
 
-export { importCsv, importXlsx, finalizeImport };
+export { importCsv, importXlsx, finalizeImport, getTemplateFile };
