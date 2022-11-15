@@ -116,6 +116,7 @@ const app = express()
     api.parseVectronicKeyRegistrationXML
   )
   .get('/get-template', getTemplateFile)
+  .get('/get-collars-keyx', api.retrieveCollarKeyXRelation)
   // vendor
   .post('/fetch-telemetry', api.fetchVendorTelemetryData)
 

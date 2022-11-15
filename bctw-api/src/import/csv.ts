@@ -485,7 +485,6 @@ const getTemplateFile = async function(req: Request, res: Response): Promise<voi
   }
 
   res.set({
-    'Content-Disposition': 'attachment; filename="ireshansexcel.xlsx"',
     'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
 
