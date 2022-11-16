@@ -29,7 +29,7 @@ import {
 // import { emailEndpoint } from './apis/email';
 import { getUserIdentifier, MISSING_USERNAME } from './database/requests';
 import { getExportData, getAllExportData } from './export/export';
-import { parseVectronicKeyRegistrationXML } from './import/vectronic_registration';
+import { parseVectronicKeyRegistrationXML, retrieveCollarKeyXRelation } from './import/vectronic_registration';
 import { attachDevice, getCollarAssignmentHistory, unattachDevice, updateDataLife } from './apis/attachment_api';
 import { getOnboardingRequests, getUserOnboardStatus, submitOnboardingRequest, handleOnboardingRequest } from './apis/onboarding_api';
 import { fetchVendorTelemetryData} from './apis/vendor/vendor_helpers';
@@ -138,6 +138,7 @@ export {
   testAlertNotification,
   notFound,
   parseVectronicKeyRegistrationXML,
+  retrieveCollarKeyXRelation,
   submitPermissionRequest,
   updateUserTelemetryAlert,
   upsertAnimal,

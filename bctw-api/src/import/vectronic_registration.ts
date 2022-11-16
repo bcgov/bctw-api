@@ -5,6 +5,7 @@ import { promisify } from 'util';
 import { constructFunctionQuery, getRowResults, query } from '../database/query';
 import { QResult } from '../types/query';
 import { IBulkResponse } from '../types/import_types';
+import { getUserIdentifier } from '../database/requests';
 const readPromise = promisify(readFile);
 
 const VECT_KEY_UPSERT_FN = `upsert_vectronic_key`;
@@ -56,6 +57,16 @@ class VectronicKeyxRow implements IKeyX {
   }
 }
 
+const retrieveCollarKeyXRelation = async (req: Request, res: Response): Promise<void> => {
+  const userid = getUserIdentifier(req);
+  const sql = constructFunctionQuery('get_collars_and_keyx', [userid], undefined, undefined, true);
+  const { result, error, isError } = await query(sql, 'failed to retrieve collars');
+  if(isError) {
+    res.status(500).send(error.message);
+  }
+  res.send(result.rows);
+}
+
 /**
  * exposed as an API for handling the bulk import of Vectronic .keyx registration collars
  * parses the .keyx files and inserts results to the bctw.api_vectronics_collar_data table
@@ -97,4 +108,4 @@ const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Pr
   return res.send(bulkResp);
 };
 
-export { parseVectronicKeyRegistrationXML };
+export { parseVectronicKeyRegistrationXML, retrieveCollarKeyXRelation };
