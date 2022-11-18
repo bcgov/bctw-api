@@ -1,12 +1,12 @@
 import moment from "moment";
 import "dotenv/config";
-import { queryAsync, safelyDrainPool } from "./utils/db";
+import { queryAsync, safelyDrainAndClosePool } from "./utils/db";
 
 const SQL = [
   "vacuum analyze;",
-  "refresh materialzed view concurrently telemetry;",
   "refresh materialized view concurrently historical_telemetry_with_security_m;",
-  // 'refresh materialized view vendor_merge_view_no_critter;',
+  "refresh materialized view concurrently telemetry;",
+  "refresh materialized view concurrently latest_valid_transmissions;",
   "refresh materialized view latest_transmissions;",
   "refresh materialized view concurrently telemetry_with_security_m;",
   "call bctw.proc_check_for_missing_telemetry();",
@@ -26,7 +26,7 @@ const main = async () => {
       console.log(`${moment().utc()}: '${S}' Successfully executed.`)
     );
   }
-  await safelyDrainPool(10);
+  await safelyDrainAndClosePool(10);
   console.log(`Vendor Merge complete.`);
 };
 

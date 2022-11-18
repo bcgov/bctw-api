@@ -10,8 +10,8 @@ import { isProd, pgPool } from './pg';
 // helper functions for constructing db queries
 
 //Used to change sql from basic request to a count of records
-const applyCount = (page: number) => {
-  return page == 1 ? `COUNT(*) OVER() as row_count, ` : '';
+const applyCount = (page?: number) => {
+  return page == 1 || !page ? `COUNT(*) OVER() as row_count, ` : '';
 };
 
 /**

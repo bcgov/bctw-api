@@ -2,10 +2,14 @@ import { Request, Response } from 'express';
 import * as xml2js from 'xml2js';
 import { readFile } from 'fs';
 import { promisify } from 'util';
-import { constructFunctionQuery, getRowResults, query } from '../database/query';
+import {
+  constructFunctionQuery,
+  getRowResults,
+  query,
+} from '../database/query';
 import { QResult } from '../types/query';
 import { IBulkResponse } from '../types/import_types';
-import { getUserIdentifier } from '../database/requests';
+import { getFilterFromRequest, getUserIdentifier } from '../database/requests';
 const readPromise = promisify(readFile);
 
 const VECT_KEY_UPSERT_FN = `upsert_vectronic_key`;
@@ -37,7 +41,7 @@ interface IKeyXAsJson {
 }
 
 /**
- * class that takes @param {IKeyXAsJson} as a constructor parameter 
+ * class that takes @param {IKeyXAsJson} as a constructor parameter
  * creates an object representing an api_vectronics_collar_data table row
  */
 class VectronicKeyxRow implements IKeyX {
@@ -57,15 +61,27 @@ class VectronicKeyxRow implements IKeyX {
   }
 }
 
-const retrieveCollarKeyXRelation = async (req: Request, res: Response): Promise<void> => {
+const retrieveCollarKeyXRelation = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   const userid = getUserIdentifier(req);
-  const sql = constructFunctionQuery('get_collars_and_keyx', [userid], undefined, undefined, true);
-  const { result, error, isError } = await query(sql, 'failed to retrieve collars');
-  if(isError) {
+  let param: string | string[] | undefined = `'${userid}'`;
+  const { device_ids } = req.query;
+  if (device_ids) {
+    const pgDeviceFormatted = `'{${device_ids}}'::integer[]`;
+    param = pgDeviceFormatted;
+  }
+  const sql = `select * from bctw.get_collars_and_keyx(${param})`;
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve keyX details'
+  );
+  if (isError) {
     res.status(500).send(error.message);
   }
-  res.send(result.rows);
-}
+  return res.send(result.rows);
+};
 
 /**
  * exposed as an API for handling the bulk import of Vectronic .keyx registration collars
@@ -74,36 +90,63 @@ const retrieveCollarKeyXRelation = async (req: Request, res: Response): Promise<
  * note: the collar record is no longer created as this workflow assumes collar metadata
  * will be uploaded at a later point.
  */
-const parseVectronicKeyRegistrationXML = async (req: Request, res: Response): Promise<Response<IBulkResponse>> => {
+const parseVectronicKeyRegistrationXML = async (
+  req: Request,
+  res: Response
+): Promise<Response<IBulkResponse>> => {
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   const files = req.files as Express.Multer.File[];
-  const promises: Promise<QResult>[]= [];
+  const promises: Promise<QResult>[] = [];
 
   if (!files || !files.length) {
-    bulkResp.errors.push({row: '', error: 'no attached files found', rownum: -1});
+    bulkResp.errors.push({
+      row: '',
+      error: 'no attached files found',
+      rownum: -1,
+    });
     return res.send(bulkResp);
   }
   // iterate keyx files, creating a promise for each file
   try {
     for (let idx = 0; idx < files.length; idx++) {
-      const file = await readPromise(files[idx].path, {encoding: 'utf-8'});
+      const file = await readPromise(files[idx].path, { encoding: 'utf-8' });
       console.log('parseVectronicKeyRegistrationXML xml file read:', file);
-      const asJson: IKeyXAsJson = await new xml2js.Parser().parseStringPromise(file);
-      const { idcollar, comtype, idcom, collarkey, collartype } = new VectronicKeyxRow(asJson);
-      const sql = constructFunctionQuery(VECT_KEY_UPSERT_FN, [idcollar, comtype, idcom, collarkey, collartype], false);
-      promises.push(query(sql, '', true))
+      const asJson: IKeyXAsJson = await new xml2js.Parser().parseStringPromise(
+        file
+      );
+      const {
+        idcollar,
+        comtype,
+        idcom,
+        collarkey,
+        collartype,
+      } = new VectronicKeyxRow(asJson);
+      const sql = constructFunctionQuery(
+        VECT_KEY_UPSERT_FN,
+        [idcollar, comtype, idcom, collarkey, collartype],
+        false
+      );
+      console.log(sql);
+      promises.push(query(sql, '', true));
     }
-  }
-  catch (err) {
-    bulkResp.errors.push({row: '', error:`parseVectronicKeyRegistrationXML: error parsing xml: ${err}`, rownum: 0});
+  } catch (err) {
+    bulkResp.errors.push({
+      row: '',
+      error: `parseVectronicKeyRegistrationXML: error parsing xml: ${err}`,
+      rownum: 0,
+    });
     return res.send(bulkResp);
   }
   const resolved = await Promise.all(promises);
-  const errors = resolved.filter(r => r.isError).map(e => e.error);
+  const errors = resolved.filter((r) => r.isError).map((e) => e.error);
   if (errors.length) {
-    bulkResp.errors.push(...errors.map(e => ({row: '', error: e.message, rownum: 0})));
+    bulkResp.errors.push(
+      ...errors.map((e) => ({ row: '', error: e.message, rownum: 0 }))
+    );
   }
-  const results = resolved.filter(r => !r.isError).map(e => getRowResults(e.result, VECT_KEY_UPSERT_FN, true)) as IKeyX[];
+  const results = resolved
+    .filter((r) => !r.isError)
+    .map((e) => getRowResults(e.result, VECT_KEY_UPSERT_FN, true)) as IKeyX[];
   bulkResp.results.push(...results);
   return res.send(bulkResp);
 };

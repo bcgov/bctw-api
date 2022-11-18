@@ -106,7 +106,7 @@ const getUnattachedDeviceSQL = function (
 };
 
 // sql to retrieve the latest transmission date of a device (note: fetches from a materialized view)
-export const getLastPingSQL = `(SELECT date_recorded FROM latest_transmissions WHERE collar_id = ca.collar_id) as "last_transmission_date"`;
+export const getLastPingSQL = `(SELECT date_recorded FROM latest_valid_transmissions WHERE collar_id = ca.collar_id) as "last_transmission_date"`;
 
 const getAvailableCollars = async function (
   req: Request,
