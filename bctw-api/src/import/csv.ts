@@ -21,7 +21,7 @@ import { pg_link_collar_fn } from '../apis/attachment_api';
 import { HistoricalAttachmentProps } from '../types/attachment';
 import dayjs from 'dayjs';
 import { upsertBulk } from './bulk_handlers';
-import xlsx from 'node-xlsx';
+//import xlsx from 'node-xlsx';
 import * as XLSX from 'exceljs';
 import * as XLSXExtend from '../types/xlsx_types';
 import { getCode } from '../start';
@@ -57,10 +57,30 @@ type ParsedXLSXSheetResult = {
   rows: ParsedXLSXRowResult[];
 }
 
-const mustHaveHeaders = ["Wildlife Health ID", "Animal ID", "Species", "Population Unit", "Region", "Sex", "Animal Status", "Capture Date", "Capture Latitude", "Capture Longitude", "Capture UTM Easting", "Capture UTM Northing", "Capture UTM Zone", "Capture Comments", "Ear Tag Right ID", "Ear Tag Right Colour", "Ear Tag Left ID", "Ear Tag Left Colour", "Compulsory Inspection ID", "COORS ID", "Leg Band ID", "Microchip ID", "Nickname", "Pit Tag ID", "RAPP Ear Tag ID", "Recapture ID", "Wing Band ID", "HWCN ID", "Telemetry Device ID", "Device Deployment Status", "Device Make", "Device Model", "Device Type", "Frequency", "Frequency Units", "Fix Interval", "Fix Interval Units", "Satellite Network", "Vaginal Implant Transmitter ID", "Camera Device ID", "Dropoff Device ID", "Dropoff Frequency", "Dropoff Frequency Unit", "Malfunction Date", "Malfunction Comments", "Malfunctioning Device Type", "Device Retrieval Date", "Device Retrieval Comments", "Animal Mortality Date", "Suspected Mortality Cause", "Mortality Comments"]
+type SheetRequirements = {
+  sheetName: string;
+  requiredHeaders: string[];
+}
+
+const metadataRequiredHeaders = ["Wildlife Health ID", "Animal ID", "Species", "Population Unit", "Region", "Sex", "Animal Status", "Capture Date", "Capture Latitude", "Capture Longitude", "Capture UTM Easting", "Capture UTM Northing", "Capture UTM Zone", "Capture Comments", "Ear Tag Right ID", "Ear Tag Right Colour", "Ear Tag Left ID", "Ear Tag Left Colour", "Compulsory Inspection ID", "COORS ID", "Leg Band ID", "Microchip ID", "Nickname", "Pit Tag ID", "RAPP Ear Tag ID", "Recapture ID", "Wing Band ID", "HWCN ID", "Telemetry Device ID", "Device Deployment Status", "Device Make", "Device Model", "Device Type", "Frequency", "Frequency Units", "Fix Interval", "Fix Interval Units", "Satellite Network", "Vaginal Implant Transmitter ID", "Camera Device ID", "Dropoff Device ID", "Dropoff Frequency", "Dropoff Frequency Unit", "Malfunction Date", "Malfunction Comments", "Malfunctioning Device Type", "Device Retrieval Date", "Device Retrieval Comments", "Animal Mortality Date", "Suspected Mortality Cause", "Mortality Comments"]
+const telemetryRequiredHeaders = ["Device ID","Latitude","Longitude","Acquisition Date","Elevation","Temperature","Satellite","Dilution", "Main Voltage", "Backup Voltage"];
 const deviceMetadataSheetName = "Device Metadata";
-const validSheetNames = [deviceMetadataSheetName];
+const telemetrySheetName = "Telemetry";
+const validSheetNames = [deviceMetadataSheetName, telemetrySheetName];
 const extraCodeFields = ["species"];
+
+const sheetRequirements: SheetRequirements[] = [
+  {
+    sheetName: deviceMetadataSheetName,
+    requiredHeaders: metadataRequiredHeaders
+  },
+  {
+    sheetName: telemetrySheetName,
+    requiredHeaders: telemetryRequiredHeaders
+  }
+]
+
+
 
 const obtainColumnTypes = async () => {
   const sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'animal' OR table_name = 'collar';"
@@ -136,14 +156,14 @@ const verifyIdentifiers = (row: IAnimalDeviceMetadata): boolean => {
 
 const parseXlsx = async(
   file: Express.Multer.File,
-  callback: (obj: ParsedXLSXSheetResult) => void
+  callback: (obj: ParsedXLSXSheetResult[]) => void
 ) => {
-  let sheetResult: ParsedXLSXSheetResult = {headers: [], rows: []};
+  const sheetResults: ParsedXLSXSheetResult[] = [];
+
   try {
-    const workSheetsFromBuffer = xlsx.parse(fs.readFileSync(file.path), {cellDates: true})
-                                  .filter((sheet) => validSheetNames.includes(sheet.name));
-    const verifiedRowObj: ParsedXLSXRowResult[] = [];
-    let headers: string[] = [];
+    const workbook = new XLSX.Workbook();
+    await workbook.xlsx.readFile(file.path);
+    
 
     const header_sql = "SELECT code_header_name FROM code_header;"
     const { result, error, isError } = await query(
@@ -153,36 +173,53 @@ const parseXlsx = async(
 
     const code_header_names = result.rows.map(o => o['code_header_name']);
     code_header_names.push(...extraCodeFields);
-    
-    for(const sheet of workSheetsFromBuffer) {
-      headers = sheet.data[0] as string[];//.map(o => mapXlsxHeader(o));
-      if(sheet.name == validSheetNames[0]) {
-        mustHaveHeaders.forEach((value, idx) => {
-          if(headers[idx] != value) {
-            console.log(`Recieved bad header: ${headers[idx]} != ${value}` )
-            throw new Error("Headers from this file do not match template headers.");
-          }
-        })
-      }
+
+    for(const req of sheetRequirements) {
+      const sheet = workbook.getWorksheet(req.sheetName);
+
+      const verifiedRowObj: ParsedXLSXRowResult[] = [];
+      let headers: string[] = [];
       
+      headers = sheet.getRow(1).values as string[];
+      headers = headers.filter(o => o !== undefined);
+
+      console.log("Headers list " + headers);
+
+      req.requiredHeaders.forEach((value, idx) => {
+        if(headers[idx] != value) {
+          console.log(`Recieved bad header: ${headers[idx]} != ${value}` )
+          throw new Error("Headers from this file do not match template headers.");
+        }
+      });
+
+      const lastRow = sheet.lastRow?.number;
+
+      if(!lastRow) {
+        throw Error("There was somehow no last row within this worksheet, aborting.");
+      }
+
       headers = headers.map(o => mapXlsxHeader(o));
-      for(const row of sheet.data.slice(1) as any[][]) {
+      for(let i = 2; i <= lastRow; i ++) {
+        const row = sheet.getRow(i);
         const rowWithHeader = {};
-        headers.forEach((key, i) => rowWithHeader[key] = (i < row.length) ? row[i] : undefined);
+
+        headers.forEach((key, idx) => rowWithHeader[key] = (row?.values?.length && idx + 1 < row.values.length) ? row.values[idx + 1] : undefined);
         const crow = removeEmptyProps(rowWithHeader);
+        console.log("CROW " + JSON.stringify(crow));
         const errors = await verifyRow(crow, code_header_names);
         verifiedRowObj.push({row: crow, errors: errors, success: Object.keys(errors).length === 0});
       }
+
+      sheetResults.push({headers: headers, rows: verifiedRowObj});
     }
 
-    sheetResult = {headers: headers, rows: verifiedRowObj};
+    
   }
   catch (err) {
-    console.log("Failed parse. File was invalid.");
+    console.log(err);
   }
   
-  
-  callback(sheetResult);
+  callback(sheetResults);
 }
 
 /**
@@ -369,10 +406,10 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
     res.status(500).send('failed: csv file not found');
   }
 
-  const onFinishedParsing = async (obj: ParsedXLSXSheetResult) => {
-    const allClear = obj.rows.every(o => o.success);
+  const onFinishedParsing = async (obj: ParsedXLSXSheetResult[]) => {
     cleanupUploadsDir(file.path);
-    if(obj.rows.length && obj.headers.length) {
+    console.log({obj})
+    if(obj.length) {
       return res.send(obj);
     }
     else {
@@ -434,6 +471,8 @@ const getTemplateFile = async function(req: Request, res: Response): Promise<voi
 
   const code_header_names = result.rows.map(o => o['code_header_name']);
   code_header_names.push(...extraCodeFields);
+
+  console.log(code_header_names);
 
   for (let header_idx = 1; header_idx < headerRow.cellCount; header_idx++) {
     const cell = headerRow.getCell(header_idx);

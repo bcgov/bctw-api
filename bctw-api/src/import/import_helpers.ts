@@ -33,6 +33,16 @@ const mapXlsxHeader = (header: string): string => {
   switch(trimmed) {
     case "Wildlife Health ID":
       return "wlh_id";
+    case "Suspected Mortality Cause":
+      return "proximate_cause_of_death";
+    case "Device Retrieval Date":
+      return "retrieval_date";
+    case "Device Retrieval Comments":
+      return "retrieval_comment";
+    case "Telemetry Device ID":
+      return "device_id";
+    case "Vaginal Implant Transmitter ID":
+      return "implant_device_id";
     default:
       return trimmed.toLowerCase().split(' ').join('_');
   }
