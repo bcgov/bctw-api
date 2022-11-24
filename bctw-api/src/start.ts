@@ -1,8 +1,24 @@
 import { Request, Response } from 'express';
 
-import { getUserTelemetryAlerts, testAlertNotification, updateUserTelemetryAlert } from './apis/alert_api';
-import { deleteAnimal, getAnimal, getAnimalHistory, getAnimals, upsertAnimal } from './apis/animal_api';
-import { addCode, addCodeHeader, getCode, getCodeHeaders, getCodeLongDesc } from './apis/code_api';
+import {
+  getUserTelemetryAlerts,
+  testAlertNotification,
+  updateUserTelemetryAlert,
+} from './apis/alert_api';
+import {
+  deleteAnimal,
+  getAnimal,
+  getAnimalHistory,
+  getAnimals,
+  upsertAnimal,
+} from './apis/animal_api';
+import {
+  addCode,
+  addCodeHeader,
+  getCode,
+  getCodeHeaders,
+  getCodeLongDesc,
+} from './apis/code_api';
 import {
   deleteCollar,
   getAllCollars,
@@ -13,8 +29,17 @@ import {
   getCollarsAndDeviceIds,
   upsertCollar,
 } from './apis/collar_api';
-import { getCritterTracks, getDBCritters, getPingsEstimate } from './apis/map_api';
-import { approveOrDenyPermissionRequest, getGrantedPermissionHistory, getPermissionRequests, submitPermissionRequest } from './apis/permission_api';
+import {
+  getCritterTracks,
+  getDBCritters,
+  getPingsEstimate,
+} from './apis/map_api';
+import {
+  approveOrDenyPermissionRequest,
+  getGrantedPermissionHistory,
+  getPermissionRequests,
+  submitPermissionRequest,
+} from './apis/permission_api';
 import {
   upsertUser,
   assignCritterToUser,
@@ -29,10 +54,26 @@ import {
 // import { emailEndpoint } from './apis/email';
 import { getUserIdentifier, MISSING_USERNAME } from './database/requests';
 import { getExportData, getAllExportData } from './export/export';
-import { parseVectronicKeyRegistrationXML, retrieveCollarKeyXRelation } from './import/vectronic_registration';
-import { attachDevice, getCollarAssignmentHistory, unattachDevice, updateDataLife } from './apis/attachment_api';
-import { getOnboardingRequests, getUserOnboardStatus, submitOnboardingRequest, handleOnboardingRequest } from './apis/onboarding_api';
-import { fetchVendorTelemetryData} from './apis/vendor/vendor_helpers';
+import {
+  parseVectronicKeyRegistrationXML,
+  retrieveCollarKeyXRelation,
+} from './import/vectronic_registration';
+import {
+  attachDevice,
+  getCollarAssignmentHistory,
+  unattachDevice,
+  updateDataLife,
+} from './apis/attachment_api';
+import {
+  getOnboardingRequests,
+  getUserOnboardStatus,
+  submitOnboardingRequest,
+  handleOnboardingRequest,
+} from './apis/onboarding_api';
+import {
+  fetchVendorTelemetryData,
+  importTelemetry,
+} from './apis/vendor/vendor_helpers';
 
 /** contains a few special handlers, but otherwise this file simply re-export other endpoints */
 
@@ -40,18 +81,23 @@ import { fetchVendorTelemetryData} from './apis/vendor/vendor_helpers';
   Catch-all router for any request that does not have an endpoint defined.
 */
 const notFound = function (req: Request, res: Response): Response {
-  return res.status(404).json({ error: 'Express start.ts says: Sorry, but you must be lost' });
+  return res
+    .status(404)
+    .json({ error: 'Express start.ts says: Sorry, but you must be lost' });
 };
 
 /**
  * generic getter
  * @param req.type : animal or device
- * @param req.query.id : uuid - critter_id or collar_id to fetch 
+ * @param req.query.id : uuid - critter_id or collar_id to fetch
  */
-const getType = async function (req: Request, res: Response): Promise<Response> {
+const getType = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
   const { type, id } = req.params;
   const username = getUserIdentifier(req);
-  if (!type || !id || ! username) {
+  if (!type || !id || !username) {
     return res.status(500).send('must supply critter_id');
   }
   const params = req.params;
@@ -61,7 +107,7 @@ const getType = async function (req: Request, res: Response): Promise<Response> 
     case 'device':
       return getCollar(username, id, res);
     default:
-      return res.status(500).send(`invalid type '${type}'`)
+      return res.status(500).send(`invalid type '${type}'`);
   }
 };
 
@@ -103,9 +149,9 @@ export {
   addCodeHeader,
   getCodeLongDesc,
   upsertUser,
-  approveOrDenyPermissionRequest, 
+  approveOrDenyPermissionRequest,
   assignCritterToUser,
-  attachDevice, 
+  attachDevice,
   unattachDevice,
   updateDataLife,
   deleteType,
@@ -147,5 +193,6 @@ export {
   getOnboardingRequests,
   handleOnboardingRequest,
   submitOnboardingRequest,
-  fetchVendorTelemetryData
+  fetchVendorTelemetryData,
+  importTelemetry,
 };

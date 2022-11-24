@@ -4,7 +4,12 @@ import helmet from 'helmet';
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
-import { finalizeImport, importCsv, importXlsx, getTemplateFile } from './import/csv';
+import {
+  finalizeImport,
+  importCsv,
+  importXlsx,
+  getTemplateFile,
+} from './import/csv';
 import {
   getUserIdentifierDomain,
   matchAny,
@@ -115,6 +120,7 @@ const app = express()
     upload.array('xml'),
     api.parseVectronicKeyRegistrationXML
   )
+  .post('/import-telemetry', api.importTelemetry)
   .get('/get-template', getTemplateFile)
   .get('/get-collars-keyx', api.retrieveCollarKeyXRelation)
   // vendor

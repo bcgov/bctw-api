@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { getRowResults, query } from '../../database/query';
 import {
   APIVectronicData,
+  ManualVectronicTelemetry,
   ManualVendorAPIResponse,
   VectronicRawTelemetry,
 } from '../../types/vendor';

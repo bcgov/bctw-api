@@ -14,7 +14,7 @@ const LOTEK_CREDENTIAL_ID = process.env.LOTEK_API_CREDENTIAL_NAME;
 /**
  *
  */
-const _insertLotekRecords = async function (
+export const _insertLotekRecords = async function (
   rows: LotekRawTelemetry[]
 ): Promise<ManualVendorAPIResponse> {
   console.log(`${rows.length} records for lotek device ${rows[0].DeviceID}`);
