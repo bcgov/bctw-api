@@ -94,7 +94,7 @@ const _fetchVectronicTelemetry = async function (
  * raw vectronic telemetry table.
  * @returns {ManualVendorAPIResponse}
  */
-const _insertVectronicRecords = async function (
+export const _insertVectronicRecords = async function (
   rows: VectronicRawTelemetry[]
 ): Promise<ManualVendorAPIResponse> {
   const fn_name = 'vendor_insert_raw_vectronic';
