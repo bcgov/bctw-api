@@ -15,7 +15,7 @@ import {
   isCollar,
   isHistoricalTelemtry,
 } from '../types/import_types';
-import { cleanupUploadsDir, mapCsvHeader, mapXlsxHeader, removeEmptyProps, rowToCsv } from './import_helpers';
+import { cleanupUploadsDir, dateRangesOverlap, mapCsvHeader, mapXlsxHeader, removeEmptyProps, rowToCsv } from './import_helpers';
 import { upsertPointTelemetry } from '../apis/map_api';
 import { pg_link_collar_fn } from '../apis/attachment_api';
 import { HistoricalAttachmentProps } from '../types/attachment';
@@ -25,9 +25,10 @@ import { upsertBulk } from './bulk_handlers';
 import * as XLSX from 'exceljs';
 import * as XLSXExtend from '../types/xlsx_types';
 import { getCode } from '../start';
-import { S_API } from '../constants';
+import { S_API, S_BCTW } from '../constants';
 import { getFiles } from '../apis/onboarding_api';
 import { FileAttachment } from '../types/sms';
+import { QueryResultRow } from 'pg';
 
 type ParsedCSVResult = {
   both: IAnimalDeviceMetadata[];
@@ -43,12 +44,13 @@ type CellErrorDescriptor = {
 }
 
 type ParsedXLSXCellError = {
-  [key in (keyof IAnimalDeviceMetadata) | 'identifier']?: CellErrorDescriptor;
+  [key in (keyof IAnimalDeviceMetadata) | 'identifier' | 'missing_data' | 'link']?: CellErrorDescriptor;
 }
 
 type ParsedXLSXRowResult = {
   row: IAnimalDeviceMetadata;
   errors: ParsedXLSXCellError;
+  warnings: string[];
   success: boolean;
 }
 
@@ -62,7 +64,12 @@ type SheetRequirements = {
   requiredHeaders: string[];
 }
 
-const metadataRequiredHeaders = ["Wildlife Health ID", "Animal ID", "Species", "Population Unit", "Region", "Sex", "Animal Status", "Capture Date", "Capture Latitude", "Capture Longitude", "Capture UTM Easting", "Capture UTM Northing", "Capture UTM Zone", "Capture Comments", "Ear Tag Right ID", "Ear Tag Right Colour", "Ear Tag Left ID", "Ear Tag Left Colour", "Compulsory Inspection ID", "COORS ID", "Leg Band ID", "Microchip ID", "Nickname", "Pit Tag ID", "RAPP Ear Tag ID", "Recapture ID", "Wing Band ID", "HWCN ID", "Telemetry Device ID", "Device Deployment Status", "Device Make", "Device Model", "Device Type", "Frequency", "Frequency Units", "Fix Interval", "Fix Interval Units", "Satellite Network", "Vaginal Implant Transmitter ID", "Camera Device ID", "Dropoff Device ID", "Dropoff Frequency", "Dropoff Frequency Unit", "Malfunction Date", "Malfunction Comments", "Malfunctioning Device Type", "Device Retrieval Date", "Device Retrieval Comments", "Animal Mortality Date", "Suspected Mortality Cause", "Mortality Comments"]
+interface ErrorsAndWarnings {
+  errors: ParsedXLSXCellError;
+  warnings: string[];
+}
+
+const metadataRequiredHeaders = ["Wildlife Health ID", "Animal ID", "Species", "Population Unit", "Region", "Sex", "Animal Status", "Capture Date", "Capture Latitude", "Capture Longitude", "Capture UTM Easting", "Capture UTM Northing", "Capture UTM Zone", "Capture Comment", "Ear Tag Right ID", "Ear Tag Right Colour", "Ear Tag Left ID", "Ear Tag Left Colour", "Compulsory Inspection ID", "COORS ID", "Leg Band ID", "Microchip ID", "Nickname", "Pit Tag ID", "RAPP Ear Tag ID", "Recapture ID", "Wing Band ID", "HWCN ID", "Telemetry Device ID", "Device Deployment Status", "Device Make", "Device Model", "Device Type", "Frequency", "Frequency Unit", "Fix Interval", "Fix Interval Rate", "Satellite Network", "Vaginal Implant Transmitter ID", "Camera Device ID", "Dropoff Device ID", "Dropoff Frequency", "Dropoff Frequency Unit", "Malfunction Date", "Malfunction Comment", "Device Malfunction Type", "Device Retrieval Date", "Device Retrieval Comment", "Animal Mortality Date", "Suspected Mortality Cause", "Mortality Comment"]
 const telemetryRequiredHeaders = ["Device ID","Latitude","Longitude","Acquisition Date","Elevation","Temperature","Satellite","Dilution", "Main Voltage", "Backup Voltage"];
 const deviceMetadataSheetName = "Device Metadata";
 const telemetrySheetName = "Telemetry";
@@ -106,7 +113,7 @@ const obtainColumnTypes = async () => {
   return rawObj;
 }
 
-const verifyRow = async (row: IAnimalDeviceMetadata, codeFields: string[]): Promise<ParsedXLSXCellError> => {
+const checkGenericErrors = async (row: IAnimalDeviceMetadata, codeFields: string[]): Promise<ParsedXLSXCellError> => {
   const errors = {} as ParsedXLSXCellError;
 
   const columnTypes = await obtainColumnTypes();
@@ -139,14 +146,11 @@ const verifyRow = async (row: IAnimalDeviceMetadata, codeFields: string[]): Prom
       }
     }
   }
-
-  if(!verifyIdentifiers(row)) {
-    errors['identifier'] = { desc: 'Insufficient information provided to uniquely identify this animal.', help: 'More detailed help description to come.'};
-  }
   return errors;
 }
 
 const verifyIdentifiers = (row: IAnimalDeviceMetadata): boolean => {
+  return true;
   switch(row.species) {
     case "Caribou":
     default:
@@ -154,8 +158,90 @@ const verifyIdentifiers = (row: IAnimalDeviceMetadata): boolean => {
   }
 }
 
+const requireFields = (row: IAnimalDeviceMetadata): boolean => {
+  if(row.species && row.device_id) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+const verifyUniqueAnimals = async (row: ParsedXLSXRowResult): Promise<IAnimalDeviceMetadata[]> => {
+  const sql = `SELECT get_critters_from_markings('${JSON.stringify(row.row)}'::jsonb)`;
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve codes'
+  );
+  const result_set = getRowResults(result, 'get_critters_from_markings') as IAnimalDeviceMetadata[];
+  return result_set;
+}
+
+const verifyDevice = async (row: IAnimalDeviceMetadata): Promise<boolean> => {
+  if(!row.device_id) {
+    return false;
+  }
+  const sql = `SELECT EXISTS (SELECT * FROM collar WHERE device_id = ${row.device_id} AND is_valid(valid_to));`;
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve codes'
+  );
+
+  return result.rows[0].exists;
+}
+
+const verifyAssignment = async (row: IAnimalDeviceMetadata, user: string): Promise<ErrorsAndWarnings> => {
+  let linkData: ErrorsAndWarnings = { errors: {}, warnings: [] };
+  const row_start = row.capture_date ?? new Date();
+  const row_end = row.mortality_date ?? row.retrieval_date ?? null;
+
+  let sql = constructFunctionQuery('get_device_assignment_history', [row.device_id]);
+  let { result, error, isError } = await query(
+    sql,
+    'failed to retrieve device assignment'
+  );
+  const deviceLinks = getRowResults(result, 'get_device_assignment_history');
+  if(deviceLinks.some(link => dateRangesOverlap(link.attachment_start, link.attachment_end, row_start, row_end))) {
+    linkData.errors.device_id = {desc: 'This device is already assigned to an animal. Unlink this device and try again.', help: 'This device is already assigned to an animal. Unlink this device and try again.'};
+  }
+  else if(deviceLinks.length > 0) {
+    linkData.warnings.push('There are previous deployments for device ID ' + row.device_id);
+  }
+  //console.log("Device links " + JSON.stringify(deviceLinks));
+  
+  if(row.critter_id) {
+    let sql = constructFunctionQuery('get_animal_collar_assignment_history', [user, row.critter_id]);
+    let { result, error, isError } = await query(
+      sql,
+      'failed to retrieve animal assignment'
+    );
+    const animalLinks = getRowResults(result, 'get_animal_collar_assignment_history');
+    //console.log("Animallinks for " + row.critter_id + " " + JSON.stringify(animalLinks));
+    if(animalLinks.some(link => dateRangesOverlap(link.attachment_start, link.attachment_end, row_start, row_end))) {
+      linkData.warnings.push('You will be attaching multiple devices to this animal over the same time span.');
+    }
+  }
+  //console.log("Link data " + JSON.stringify(linkData));
+  return linkData;
+}
+
+const checkAnimalDeviceErrorsAndWarns = async (rowres: ParsedXLSXRowResult, user: string): Promise<ErrorsAndWarnings> => {
+  let ret: ErrorsAndWarnings = { errors: {}, warnings: [] } 
+  if(requireFields(rowres.row) == false) {
+    ret.errors.missing_data = {desc: 'You have not provided sufficient data.', help: 'You have not provided sufficient data.'};
+    return ret;
+  }
+  ret = await verifyAssignment(rowres.row, user);
+  const unqanim = await verifyUniqueAnimals(rowres);
+  if(unqanim['error']) {
+    ret.errors.identifier = {desc: 'Insufficient data provided to uniquely identify this animal.', help: 'Insufficient data provided to uniquely identify this animal.'};
+  }
+  return ret;
+}
+
 const parseXlsx = async(
   file: Express.Multer.File,
+  user: string,
   callback: (obj: ParsedXLSXSheetResult[]) => void
 ) => {
   const sheetResults: ParsedXLSXSheetResult[] = [];
@@ -183,8 +269,6 @@ const parseXlsx = async(
       headers = sheet.getRow(1).values as string[];
       headers = headers.filter(o => o !== undefined);
 
-      console.log("Headers list " + headers);
-
       req.requiredHeaders.forEach((value, idx) => {
         if(headers[idx] != value) {
           console.log(`Recieved bad header: ${headers[idx]} != ${value}` )
@@ -205,11 +289,18 @@ const parseXlsx = async(
 
         headers.forEach((key, idx) => rowWithHeader[key] = (row?.values?.length && idx + 1 < row.values.length) ? row.values[idx + 1] : undefined);
         const crow = removeEmptyProps(rowWithHeader);
-        console.log("CROW " + JSON.stringify(crow));
-        const errors = await verifyRow(crow, code_header_names);
-        verifiedRowObj.push({row: crow, errors: errors, success: Object.keys(errors).length === 0});
-      }
+        const errors = await checkGenericErrors(crow, code_header_names);
+        const rowObj: ParsedXLSXRowResult = {row: crow as IAnimalDeviceMetadata, warnings: [], errors: errors, success: false};
 
+        if(sheet.name == deviceMetadataSheetName) {
+          const errswrns = await checkAnimalDeviceErrorsAndWarns(rowObj, user);
+          rowObj.errors = {...rowObj.errors, ...errswrns.errors};
+          rowObj.warnings.push(...errswrns.warnings);
+        }
+
+        rowObj.success = Object.keys(rowObj.errors).length == 0;
+        verifiedRowObj.push(rowObj);
+      }
       sheetResults.push({headers: headers, rows: verifiedRowObj});
     }
 
@@ -408,7 +499,6 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
 
   const onFinishedParsing = async (obj: ParsedXLSXSheetResult[]) => {
     cleanupUploadsDir(file.path);
-    console.log({obj})
     if(obj.length) {
       return res.send(obj);
     }
@@ -418,19 +508,30 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
     
   }
 
-  await parseXlsx(file, onFinishedParsing);
+  await parseXlsx(file, id, onFinishedParsing);
 }
 
 const finalizeImport = async function (req: Request, res: Response): Promise<void> {
   const id = getUserIdentifier(req) as string;
   console.log("Response body " + JSON.stringify(req.body, null, 2));
-  const animalDeviceData: IAnimalDeviceMetadata[] = req.body.map(o => o.row);
-  console.log("animalDeviceData list " + JSON.stringify(animalDeviceData, null, 2));
-  if(!animalDeviceData.length) {
-    res.status(500).send('There was an error collecting the data');
-  }
+  
+  const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(req.body)}' );`;
+  console.log(sql);
+  const { result, error, isError } = await query(sql);
 
-  let r = {errors: [{error: 'FINALIZATION SUCCESS'}]} as IBulkResponse;
+  console.log(error?.message);
+  console.log(isError);
+  console.log(getRowResults(result, 'upsert_bulk_v2'));
+
+  const resrows = getRowResults(result, 'upsert_bulk_v2');
+  const assignments = resrows.map(obj => `'${obj.assignment_id}'`);
+  const collars = resrows.map(obj => `'${obj.collar_id}'`);
+  const animals = resrows.map(obj => `'${obj.critter_id}'`);
+
+  console.log(`assignment_id = ANY(ARRAY[${assignments.join()}]::uuid[])`)
+  console.log(`collar_id = ANY(ARRAY[${collars.join()}]::uuid[])`)
+  console.log(`critter_id = ANY(ARRAY[${animals.join()}]::uuid[])`)
+  let r = {results: resrows} as IBulkResponse;
   res.send(r);
 }
 
@@ -472,11 +573,10 @@ const getTemplateFile = async function(req: Request, res: Response): Promise<voi
   const code_header_names = result.rows.map(o => o['code_header_name']);
   code_header_names.push(...extraCodeFields);
 
-  console.log(code_header_names);
-
   for (let header_idx = 1; header_idx < headerRow.cellCount; header_idx++) {
     const cell = headerRow.getCell(header_idx);
     const code_header = mapXlsxHeader(cell.text);
+
     if(code_header_names.includes(code_header)) {
 
       const sql = constructFunctionQuery('get_code', [req.query.idir, code_header, 0], false, S_API);
@@ -515,11 +615,12 @@ const getTemplateFile = async function(req: Request, res: Response): Promise<voi
         allowBlank: true,
         error: 'Please use the drop down to select a valid value',
         errorTitle: 'Invalid Selection',
-        formulae: [`Validation!${val_col}2:${val_col}${code_descriptions.length + 1}`],
+        formulae: [`Validation!$${val_col}$2:$${val_col}$${code_descriptions.length + 1}`],
         showErrorMessage: true,
         type: 'list'
       }
         
+      console.log(`Validation!${val_col}2:${val_col}${code_descriptions.length + 1}`);
     }
   }
 

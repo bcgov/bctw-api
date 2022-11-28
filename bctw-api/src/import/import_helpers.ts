@@ -75,6 +75,16 @@ const removeEmptyProps = (obj) => {
   return obj;
 }
 
+const dateRangesOverlap = (startDateA : Date, endDateA : Date, startDateB : Date, endDateB : Date): boolean => {
+  startDateA = new Date(startDateA);
+  startDateB = new Date(startDateB);
+  console.log("End date A before cast " + endDateA);
+  endDateA = endDateA ? new Date(endDateA) : new Date(8640000000000000);
+  endDateB = endDateB ? new Date(endDateB) : new Date(8640000000000000);
+  console.log(`Comparing ${startDateA}, ${endDateB} and ${endDateA}, ${startDateB}`);
+  return startDateA <= endDateB && endDateA >= startDateB;
+}
+
 // converts an objects values to a string
 const rowToCsv = (row): string => Object.values(row).join(',');
 
@@ -84,4 +94,5 @@ export {
   mapXlsxHeader,
   removeEmptyProps,
   rowToCsv,
+  dateRangesOverlap
 }
