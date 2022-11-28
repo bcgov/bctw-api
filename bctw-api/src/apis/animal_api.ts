@@ -81,18 +81,17 @@ const _getAttachedSQL = (
   const base = `
     WITH ${alias} AS (
       SELECT
-        ca.assignment_id, ca.device_id, ca.collar_id, ca.frequency, ca.device_status,
-        ca.device_make, ca.activation_status, ca.device_model,
-        ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end,
+        ca.assignment_id, ca.device_id, ca.collar_id, ca.collar_transaction_id, ca.critter_transaction_id, 
+        ca.frequency, ca.device_status, ca.device_make, ca.activation_status, ca.device_model, ca.latitude, ca.longitude,
+        ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end, ca.last_fetch_date, ca.last_transmission_date,
         ${
           getAllProps
             ? 'a.*,'
             : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'
         }
-        ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type",
-        ${getLastPingSQL}
+        ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
       FROM ${cac_v} ca
-      JOIN ${S_API}.animal_v a ON ca.critter_id = a.critter_id
+      JOIN ${S_API}.animal_v a ON ca.critter_transaction_id = a.critter_transaction_id
     ) SELECT ${applyCount(page)}* from ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
@@ -103,12 +102,11 @@ const _getAttachedSQL = (
     page,
     filter,
     order: [
-      { field: `${alias}.attachment_start `, order: 'desc' },
+      { field: `${alias}.attachment_start `, order: 'asc' },
       { field: `${alias}.device_id` },
     ],
   });
 };
-
 
 // generate SQL for retrieving animals that are not attached to a device
 const _getUnattachedSQL = (

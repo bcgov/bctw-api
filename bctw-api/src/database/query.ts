@@ -5,13 +5,13 @@ import {
   SearchFilter,
   QResult,
 } from '../types/query';
-import { isProd, pgPool } from './pg';
+import { isProd, isTest, pgPool } from './pg';
 
 // helper functions for constructing db queries
 
 //Used to change sql from basic request to a count of records
-const applyCount = (page: number) => {
-  return page == 1 ? `COUNT(*) OVER() as row_count, ` : '';
+const applyCount = (page?: number) => {
+  return page == 1 || !page ? `COUNT(*) OVER() as row_count, ` : '';
 };
 
 /**
@@ -150,12 +150,18 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
   const client = await pgPool.connect();
   let res: QueryResult;
   try {
+    client.query('begin');
     res = await client.query(sql);
-    await client.query('commit');
+    if (!isTest) {
+      await client.query('commit');
+    }
   } catch (err) {
     await client.query('rollback');
     throw err;
   } finally {
+    if (isTest) {
+      await client.query('rollback');
+    }
     client.release();
   }
   return res;

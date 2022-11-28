@@ -1,5 +1,18 @@
-import needle from "needle";
 import "dotenv/config";
+import needle from "needle";
+import { performance } from "perf_hooks";
+import { ALERT_TABLE, CLOSE_POOL_RETRIES, TESTMODE } from "./utils/constants";
+import {
+  ICollar,
+  ILotekAlert,
+  LOTEK_TEST_ALERTS,
+  LOTEK_TEST_COLLAR,
+} from "./types/lotek";
+import {
+  eVendorType,
+  retrieveCredentials,
+  ToLowerCaseObjectKeys,
+} from "./utils/credentials";
 import {
   getIsDuplicateAlert,
   getLastAlertTimestamp,
@@ -7,28 +20,10 @@ import {
   isPoolEmpty,
   pgPool,
   queryAsync,
+  safelyDrainAndClosePool,
 } from "./utils/db";
+import { formatNowUtc } from "./utils/time";
 const dayjs = require("dayjs");
-import {
-  eVendorType,
-  retrieveCredentials,
-  ToLowerCaseObjectKeys,
-} from "./utils/credentials";
-import {
-  ICollar,
-  ILotekAlert,
-  LOTEK_TEST_ALERTS,
-  LOTEK_TEST_COLLAR,
-} from "./types/lotek";
-import { formatNowUtc, nowUtc, parseAsUtc } from "./utils/time";
-import { performance } from "perf_hooks";
-import { data } from "cypress/types/jquery";
-
-//Enabled in dev for local testing. Uses LOTEK_TEST_ALERTS in types/lotek.ts
-const TESTMODE: boolean = process.env.POSTGRES_SERVER_HOST === "localhost";
-
-const RETRIES: number = 50;
-const ALERT_TABLE: string = "telemetry_sensor_alert";
 
 // Store the access token globally
 let tokenConfig = {};
@@ -230,7 +225,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
       eVendorType.lotek,
       strAlertType
     )
-      .then((data) => data)
+      // .then((data) => data)
       .catch((err) =>
         console.log(
           `DeviceId: ${nDeviceID} + Alert: ${strAlertType} - Error in 'getIsDuplicateAlert()': ${err}`
@@ -251,7 +246,7 @@ const insertAlerts = async (alerts: ILotekAlert[]) => {
         eVendorType.lotek,
         dtTimestamp
       )
-        .then((data) => data)
+        // .then((data) => data)
         .catch((err) => {
           console.log(
             `DeviceId: ${nDeviceID} + Alert: ${strAlertType} - GetLastKnowLatLong failed.`,
@@ -369,28 +364,29 @@ const main = async function () {
   } finally {
     //Check pool is drained and close database connection
     //Maximum retries set to 50, expected 0-4
-    let retry = RETRIES;
-    while (true) {
-      if (!retry) {
-        console.log(
-          `DB tried ${RETRIES} safe times to close and was unsuccessful...`
-        );
-        break;
-      }
-      const emptyPool = await isPoolEmpty().then((res) => res);
-      if (emptyPool) {
-        console.log("PHASE[3] drain pool COMPLETE");
-        break;
-      } else {
-        retry--;
-      }
-    }
-    await pgPool
-      .end()
-      .then(() =>
-        console.log(`PHASE[4] Closing database connection... COMPLETE`)
-      )
-      .catch((err) => console.log(`Problem occured when ending pool...`, err));
+    // let retry = CLOSE_POOL_RETRIES;
+    // while (true) {
+    //   if (!retry) {
+    //     console.log(
+    //       `DB tried ${CLOSE_POOL_RETRIES} safe times to close and was unsuccessful...`
+    //     );
+    //     break;
+    //   }
+    //   const emptyPool = await isPoolEmpty();
+    //   if (emptyPool) {
+    //     console.log("PHASE[3] drain pool COMPLETE");
+    //     break;
+    //   } else {
+    //     retry--;
+    //   }
+    // }
+    await safelyDrainAndClosePool(CLOSE_POOL_RETRIES);
+    // await pgPool
+    //   .end()
+    //   .then(() =>
+    //     console.log(`PHASE[4] Closing database connection... COMPLETE`)
+    //   )
+    //   .catch((err) => console.log(`Problem occured when ending pool...`, err));
     console.log(
       `Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`
     );
