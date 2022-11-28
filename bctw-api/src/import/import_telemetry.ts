@@ -38,6 +38,10 @@ const importTelemetry = async (
   const VectronicPL = Payloads.Vectronic;
 
   let idPosition = await getLowestNegativeVectronicIdPosition();
+
+  if (!Array.isArray(telemetry)) {
+    return res.status(400).send('Must be an array of telemetry points');
+  }
   for (let i = 0; i < telemetry.length; i++) {
     const row = telemetry[i];
     const { device_id, device_make, latitude, longitude } = row;
@@ -116,15 +120,13 @@ const importTelemetry = async (
   //No errors insert the telemetry points to the correct vendor table.
   if (LotekDevices.length) {
     for (const a of LotekDevices) {
-      console.log('Inserting Lotek telemetry points...');
       const res = await _insertLotekRecords(LotekPL[a]);
       bulkRes.results.push(res);
     }
   }
   if (VectronicDevices.length) {
     for (const a of VectronicDevices) {
-      console.log('Inserting Vectronic telemetry points...');
-      const res = await _insertVectronicRecords(LotekPL[a]);
+      const res = await _insertVectronicRecords(VectronicPL[a]);
       bulkRes.results.push(res);
     }
   }
