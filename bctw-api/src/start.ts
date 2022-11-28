@@ -70,10 +70,8 @@ import {
   submitOnboardingRequest,
   handleOnboardingRequest,
 } from './apis/onboarding_api';
-import {
-  fetchVendorTelemetryData,
-  importTelemetry,
-} from './apis/vendor/vendor_helpers';
+import { fetchVendorTelemetryData } from './apis/vendor/vendor_helpers';
+import { importTelemetry } from './import/import_telemetry';
 
 /** contains a few special handlers, but otherwise this file simply re-export other endpoints */
 

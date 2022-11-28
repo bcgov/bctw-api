@@ -2,7 +2,9 @@ import { query } from '../../database/query';
 import { Request, Response } from 'express';
 import { performManualLotekUpdate, _insertLotekRecords } from './lotek';
 import {
+  getLowestNegativeVectronicIdPosition,
   performManualVectronicUpdate,
+  vectronicRecordExists,
   _insertVectronicRecords,
 } from './vectronic';
 import {
@@ -18,9 +20,7 @@ import {
 } from '../../types/vendor';
 import { IBulkResponse } from '../../types/import_types';
 import dayjs, { Dayjs } from 'dayjs';
-
-const RAW_LOTEK = 'lotek_collar_data';
-const RAW_VECTRONIC = 'vectronics_collar_data';
+import { RAW_LOTEK, RAW_VECTRONIC } from '../../constants';
 
 export interface IVendorCredential {
   username: string;
@@ -144,24 +144,7 @@ const fetchVendorTelemetryData = async (
   return res.send(ret);
 };
 
-//Mimics db function -> concat(deviceid, '_', recdatetime),
-const getLotekTimeID = (
-  device_id: number,
-  recDateTime: Dayjs
-): string | undefined => {
-  const d = dayjs(recDateTime);
-  //Need to provide atleast one to be able to safely create unique timeid
-  if (!d.hour() && !d.minute && !d.second) return;
-  return `${device_id}_${dayjs(recDateTime).format('YYYY-MM-DDTHH:mm:ss')}`;
-};
-
-export const getLowestNegativeVectronicIdPosition = async (): Promise<number> => {
-  const sql = `select min(idposition) from ${RAW_VECTRONIC} where idposition < 0`;
-  const res = await query(sql);
-  return res.result?.rows[0].min ?? -1;
-};
-
-export const doesVendorDeviceExist = async (
+const doesVendorDeviceExist = async (
   vendor: ImportVendors,
   device_id: number
 ): Promise<boolean> => {
@@ -181,25 +164,6 @@ export const doesVendorDeviceExist = async (
   where ${tables[vendor].id} = ${device_id} 
   limit 1`;
 
-  const res = await query(sql);
-  return !!res.result?.rows?.length;
-};
-
-//API uses idposition to tell if duplicate record
-export const vectronicRecordExists = async (
-  device_id: number,
-  acquisition_date: Dayjs
-): Promise<boolean> => {
-  const d = dayjs(acquisition_date);
-  //Must have at least a second/minute/hour field to accurately check
-  //Probably need to add some formatting here for date
-  if (!d.hour() && !d.minute && !d.second) return false;
-  const sql = `select idposition 
-  from ${RAW_VECTRONIC}
-  where idcollar = ${device_id}
-  and acquisitiontime = '${dayjs(acquisition_date).format(
-    'YYYY-MM-DD HH:mm:ss.SSS'
-  )}'`;
   const res = await query(sql);
   return !!res.result?.rows?.length;
 };
@@ -252,123 +216,11 @@ const genericToVendorTelemetry = (
     } as LotekRawTelemetry;
   }
 };
-interface ImportTelemetryPayload {
-  Vectronic: { [device_id: number]: VectronicRawTelemetry[] };
-  Lotek: { [device_id: number]: LotekRawTelemetry[] };
-}
-//Things to handle
-//1. Lat / long valid values
-//2. device_make is valid AND Vectronic or Lotek
-//3. device_id is valid AND exists in vendor table
-//4. acquisition_date is valid
-const importTelemetry = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const telemetry: GenericVendorTelemetry[] = req.body;
-  const bulkRes: IBulkResponse = { errors: [], results: [] };
-  const Payloads: ImportTelemetryPayload = { Vectronic: {}, Lotek: {} };
-  const LotekPL = Payloads.Lotek;
-  const VectronicPL = Payloads.Vectronic;
-
-  let idPosition = await getLowestNegativeVectronicIdPosition();
-  for (let i = 0; i < telemetry.length; i++) {
-    const row = telemetry[i];
-    const { device_id, device_make, latitude, longitude } = row;
-    const isLotek = device_make === ImportVendors.Lotek;
-    const isVectronic = device_make === ImportVendors.Vectronic;
-    if (isVectronic) {
-      idPosition--;
-    }
-    const formattedRow = genericToVendorTelemetry(row, idPosition);
-    const errorObj = { row: JSON.parse(JSON.stringify(row)), rownum: i };
-
-    //Must be valid lat long no NULL / 0 values
-    if (!latitude || !longitude) {
-      bulkRes.errors.push({
-        ...errorObj,
-        error: `Must provide a valid latitude and longitude, no NULL / 0 values allowed. (${latitude}, ${longitude})`,
-      });
-    }
-
-    //Only suppport Lotek / Vectronic vendors currently
-    if (!isLotek && !isVectronic) {
-      bulkRes.errors.push({
-        ...errorObj,
-        error: `Device Make: ${device_make} must be ${Object.keys(
-          ImportVendors
-        ).join(' OR ')}`,
-      });
-    } else {
-      //Device must exist in the vendor table to add additional telemetry
-      const deviceExists = await doesVendorDeviceExist(device_make, device_id);
-      if (!deviceExists) {
-        bulkRes.errors.push({
-          ...errorObj,
-          error: `Device ID: ${row.device_id} does not exist in raw ${row.device_make} telemetry table.`,
-        });
-      }
-      if (isVectronic) {
-        //Validates no collisions with existing device_id and date
-        const unsafeVecInsert = await vectronicRecordExists(
-          row.device_id,
-          row.acquisition_date
-        );
-        if (unsafeVecInsert) {
-          bulkRes.errors.push({
-            ...errorObj,
-            error: `An existing record for Device ID: ${row.device_id} on Date: ${row.acquisition_date} exists;`,
-          });
-        }
-      }
-    }
-    //Checks for error in errors array with same row num as the current index of loop
-    if (bulkRes.errors.find((err) => err.rownum == i)) continue;
-
-    //If no errors add the item to vendor payload ex: {Payload: {Vectronic: {1234: [row]}}}
-    if (isLotek) {
-      const record = formattedRow as LotekRawTelemetry;
-      let L = LotekPL[device_id];
-      L ? L.push(record) : (LotekPL[device_id] = [record]);
-    }
-    if (isVectronic) {
-      const record = formattedRow as VectronicRawTelemetry;
-      let V = VectronicPL[device_id];
-      V ? V.push(record) : (VectronicPL[device_id] = [record]);
-    }
-  }
-
-  //Check if any errors occured for any of the telemetry points and return errors.
-  const hasErrors = !!bulkRes.errors?.length;
-  if (hasErrors) {
-    return res.send(bulkRes);
-  }
-
-  const LotekDevices = Object.keys(LotekPL);
-  const VectronicDevices = Object.keys(VectronicPL);
-
-  //No errors insert the telemetry points to the correct vendor table.
-  if (LotekDevices.length) {
-    for (const a of LotekDevices) {
-      console.log('Inserting Lotek telemetry points...');
-      const res = await _insertLotekRecords(LotekPL[a]);
-      bulkRes.results.push(res);
-    }
-  }
-  if (VectronicDevices.length) {
-    for (const a of VectronicDevices) {
-      console.log('Inserting Vectronic telemetry points...');
-      const res = await _insertVectronicRecords(LotekPL[a]);
-      bulkRes.results.push(res);
-    }
-  }
-  // console.log(Payloads);
-  return res.send(bulkRes);
-};
 
 export {
   fetchVendorTelemetryData,
   retrieveCredentials,
   ToLowerCaseObjectKeys,
-  importTelemetry,
+  genericToVendorTelemetry,
+  doesVendorDeviceExist,
 };

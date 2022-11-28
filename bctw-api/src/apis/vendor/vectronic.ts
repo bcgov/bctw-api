@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { getRowResults, query } from '../../database/query';
 import {
   APIVectronicData,
@@ -10,6 +10,7 @@ import {
 import { ToLowerCaseObjectKeys } from './vendor_helpers';
 import { Agent } from 'https';
 import { formatAxiosError } from '../../utils/error';
+import { RAW_VECTRONIC } from '../../constants';
 
 const VECT_API_URL = process.env.VECTRONICS_URL;
 // format the API expects timestamps
@@ -160,4 +161,33 @@ const performManualVectronicUpdate = async (
   return [...dbResults, ...failed];
 };
 
-export { performManualVectronicUpdate };
+const getLowestNegativeVectronicIdPosition = async (): Promise<number> => {
+  const sql = `select min(idposition) from ${RAW_VECTRONIC} where idposition < 0`;
+  const res = await query(sql);
+  return res.result?.rows[0].min ?? -1;
+};
+
+//API uses idposition to tell if duplicate record
+const vectronicRecordExists = async (
+  device_id: number,
+  acquisition_date: Dayjs
+): Promise<boolean> => {
+  const d = dayjs(acquisition_date);
+  //Must have at least a second/minute/hour field to accurately check
+  //Probably need to add some formatting here for date
+  if (!d.hour() && !d.minute && !d.second) return false;
+  const sql = `select idposition 
+  from ${RAW_VECTRONIC}
+  where idcollar = ${device_id}
+  and acquisitiontime = '${dayjs(acquisition_date).format(
+    'YYYY-MM-DD HH:mm:ss.SSS'
+  )}'`;
+  const res = await query(sql);
+  return !!res.result?.rows?.length;
+};
+
+export {
+  performManualVectronicUpdate,
+  getLowestNegativeVectronicIdPosition,
+  vectronicRecordExists,
+};
