@@ -56,17 +56,26 @@ type CellErrorDescriptor = {
 
 interface ErrorsAndWarnings {
   errors: ParsedXLSXCellError;
-  warnings: string[];
+  warnings: WarningInfo[];
+}
+
+type WarningInfo = {
+  message: string;
+  prompt: boolean;
 }
 
 type ParsedXLSXCellError = {
   [key in (keyof IAnimalDeviceMetadata) | 'identifier' | 'missing_data' | 'link']?: CellErrorDescriptor;
 }
 
+type ColumnTypeMapping = {
+  [key in (keyof IAnimalDeviceMetadata)]?: 'number' | 'date' | 'string'; 
+}
+
 type ParsedXLSXRowResult = {
   row: IAnimalDeviceMetadata;
   errors: ParsedXLSXCellError;
-  warnings: string[];
+  warnings: WarningInfo[];
   success: boolean;
 };
 
@@ -94,7 +103,7 @@ const metadataRequiredHeaders = [
   'Capture UTM Easting',
   'Capture UTM Northing',
   'Capture UTM Zone',
-  'Capture Comments',
+  'Capture Comment',
   'Ear Tag Right ID',
   'Ear Tag Right Colour',
   'Ear Tag Left ID',
@@ -115,9 +124,9 @@ const metadataRequiredHeaders = [
   'Device Model',
   'Device Type',
   'Frequency',
-  'Frequency Units',
+  'Frequency Unit',
   'Fix Interval',
-  'Fix Interval Units',
+  'Fix Interval Rate',
   'Satellite Network',
   'Vaginal Implant Transmitter ID',
   'Camera Device ID',
@@ -125,13 +134,13 @@ const metadataRequiredHeaders = [
   'Dropoff Frequency',
   'Dropoff Frequency Unit',
   'Malfunction Date',
-  'Malfunction Comments',
-  'Malfunctioning Device Type',
+  'Malfunction Comment',
+  'Device Malfunction Type',
   'Device Retrieval Date',
-  'Device Retrieval Comments',
+  'Device Retrieval Comment',
   'Animal Mortality Date',
   'Suspected Mortality Cause',
-  'Mortality Comments',
+  'Mortality Comment',
 ];
 const telemetryRequiredHeaders = [
   'Device ID',
@@ -189,10 +198,10 @@ const obtainColumnTypes = async () => {
   return rawObj;
 };
 
-const checkGenericErrors = async (row: IAnimalDeviceMetadata, codeFields: string[]): Promise<ParsedXLSXCellError> => {
+const checkGenericErrors = async (row: IAnimalDeviceMetadata, codeFields: string[], columnTypes: ColumnTypeMapping): Promise<ParsedXLSXCellError> => {
   const errors = {} as ParsedXLSXCellError;
 
-  const columnTypes = await obtainColumnTypes();
+  //const columnTypes = await obtainColumnTypes();
 
   for (const key of Object.keys(row)) {
     if (codeFields.includes(key)) {
@@ -267,13 +276,13 @@ const requireFields = (row: IAnimalDeviceMetadata): boolean => {
   }
 }
 
-const verifyUniqueAnimals = async (row: ParsedXLSXRowResult): Promise<IAnimalDeviceMetadata[]> => {
-  const sql = `SELECT get_critters_from_markings('${JSON.stringify(row.row)}'::jsonb)`;
+const verifyUniqueAnimals = async (row: ParsedXLSXRowResult): Promise<any> => {
+  const sql = `SELECT is_new_animal('${JSON.stringify(row.row)}'::jsonb)`;
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve codes'
   );
-  const result_set = getRowResults(result, 'get_critters_from_markings') as IAnimalDeviceMetadata[];
+  const result_set = getRowResults(result, 'is_new_animal')[0];
   return result_set;
 }
 
@@ -293,7 +302,7 @@ const verifyDevice = async (row: IAnimalDeviceMetadata): Promise<boolean> => {
 const verifyAssignment = async (row: IAnimalDeviceMetadata, user: string): Promise<ErrorsAndWarnings> => {
   let linkData: ErrorsAndWarnings = { errors: {}, warnings: [] };
   const row_start = row.capture_date ?? new Date();
-  const row_end = row.mortality_date ?? row.retrieval_date ?? null;
+  const row_end = row.retrieval_date ?? row.mortality_date ?? null;
 
   let sql = constructFunctionQuery('get_device_assignment_history', [row.device_id]);
   let { result, error, isError } = await query(
@@ -305,7 +314,7 @@ const verifyAssignment = async (row: IAnimalDeviceMetadata, user: string): Promi
     linkData.errors.device_id = {desc: 'This device is already assigned to an animal. Unlink this device and try again.', help: 'This device is already assigned to an animal. Unlink this device and try again.'};
   }
   else if(deviceLinks.length > 0) {
-    linkData.warnings.push('There are previous deployments for device ID ' + row.device_id);
+    linkData.warnings.push({message:'There are previous deployments for device ID ' + row.device_id, prompt: false});
   }
   //console.log("Device links " + JSON.stringify(deviceLinks));
   
@@ -318,7 +327,7 @@ const verifyAssignment = async (row: IAnimalDeviceMetadata, user: string): Promi
     const animalLinks = getRowResults(result, 'get_animal_collar_assignment_history');
     //console.log("Animallinks for " + row.critter_id + " " + JSON.stringify(animalLinks));
     if(animalLinks.some(link => dateRangesOverlap(link.attachment_start, link.attachment_end, row_start, row_end))) {
-      linkData.warnings.push('You will be attaching multiple devices to this animal over the same time span.');
+      linkData.warnings.push({message:'You will be attaching multiple devices to this animal over the same time span.', prompt: true});
     }
   }
   //console.log("Link data " + JSON.stringify(linkData));
@@ -333,8 +342,8 @@ const checkAnimalDeviceErrorsAndWarns = async (rowres: ParsedXLSXRowResult, user
   }
   ret = await verifyAssignment(rowres.row, user);
   const unqanim = await verifyUniqueAnimals(rowres);
-  if(unqanim['error']) {
-    ret.errors.identifier = {desc: 'Insufficient data provided to uniquely identify this animal.', help: 'Insufficient data provided to uniquely identify this animal.'};
+  if(unqanim['is_new']) {
+    ret.warnings.push({message:`This row will create a new animal.`, prompt: true});
   }
   return ret;
 }
@@ -397,9 +406,18 @@ const parseXlsx = async(
                 ? row.values[idx + 1]
                 : undefined)
         );
+        const columnTypes = await obtainColumnTypes();
+
         const crow = removeEmptyProps(rowWithHeader);
-        const errors = await checkGenericErrors(crow, code_header_names);
+        const errors = await checkGenericErrors(crow, code_header_names, columnTypes);
         const rowObj: ParsedXLSXRowResult = {row: crow as IAnimalDeviceMetadata, warnings: [], errors: errors, success: false};
+        
+        //Converts dates from YYYY-MM-DDThh:mm:ss.sssZ format to YYYY-MM-DD format.
+        for(const _key of Object.keys(rowObj.row)) {
+          if(columnTypes[_key] == 'date') {
+            rowObj.row[_key] = new Date(rowObj.row[_key]).toISOString().split('T')[0];
+          }
+        }
 
         if(sheet.name == deviceMetadataSheetName) {
           const errswrns = await checkAnimalDeviceErrorsAndWarns(rowObj, user);
