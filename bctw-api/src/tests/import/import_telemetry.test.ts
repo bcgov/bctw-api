@@ -7,15 +7,6 @@ import {
   request,
   vectronicPayload,
 } from '../utils/constants';
-// let client;
-// // describe('', () => {})
-// beforeAll(async () => {
-//   client = await pgPool.connect();
-//   client.query('commit');
-// });
-// afterAll(async () => {
-//   client.query('rollback');
-// });
 
 // GENERIC
 describe('POST /import-telemetry', () => {

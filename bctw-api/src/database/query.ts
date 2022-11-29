@@ -159,10 +159,10 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
     await client.query('rollback');
     throw err;
   } finally {
+    client.release();
     if (isTest) {
       await client.query('rollback');
     }
-    client.release();
   }
   return res;
 };
