@@ -44,7 +44,15 @@ const importTelemetry = async (
   }
   for (let i = 0; i < telemetry.length; i++) {
     const row = telemetry[i];
-    const { device_id, device_make, latitude, longitude } = row;
+    const {
+      device_id,
+      device_make,
+      latitude,
+      longitude,
+      utm_northing,
+      utm_easting,
+      utm_zone,
+    } = row;
     const isLotek = device_make === ImportVendors.Lotek;
     const isVectronic = device_make === ImportVendors.Vectronic;
     if (isVectronic) {
@@ -52,12 +60,14 @@ const importTelemetry = async (
     }
     const formattedRow = genericToVendorTelemetry(row, idPosition);
     const errorObj = { row: JSON.parse(JSON.stringify(row)), rownum: i };
+    const UTM = utm_northing && utm_easting && utm_zone;
 
     //Must be valid lat long no NULL / 0 values
-    if (!latitude || !longitude) {
+    if ((!latitude || !longitude) && !UTM) {
+      // if (!includesUTM) {
       bulkRes.errors.push({
         ...errorObj,
-        error: `Must provide a valid latitude and longitude, no NULL / 0 values allowed. (${latitude}, ${longitude})`,
+        error: `Must provide at least valid latitude AND longitude OR UTM values, no NULL / 0 values allowed. (${latitude}, ${longitude})`,
       });
     }
 

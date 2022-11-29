@@ -147,8 +147,11 @@ export type ManualLotekTelemetry = {
 export type GenericVendorTelemetry = {
   device_id: number;
   device_make: ImportVendors;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  utm_northing?: number;
+  utm_easting?: number;
+  utm_zone?: number;
   acquisition_date: Dayjs;
   elevation?: number;
   //frequency?: number;
