@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { _insertLotekRecords } from '../../apis/vendor/lotek';
 import { pgPool } from '../../database/pg';
 import {
   existingDateDevice21510,
@@ -44,8 +45,20 @@ describe('POST /import-telemetry', () => {
           .send([{ ...lotekPayload, latitude, longitude }]);
         expect(res.body.errors.length).toBe(1);
         expect(res.body.errors[0].error).toBe(
-          `Must provide a valid latitude and longitude, no NULL / 0 values allowed. (${latitude}, ${longitude})`
+          `Must provide at least valid latitude AND longitude OR UTM values, no NULL / 0 values allowed. (${latitude}, ${longitude})`
         );
+      });
+    });
+
+    describe('given no lat/long but includes utm_northing, utm_easting and utm_zone', () => {
+      it('should return', () => {
+        expect(true).toBe(true);
+      });
+    });
+
+    describe('given no lat/long or utm coordinates', () => {
+      it('should return', () => {
+        expect(true).toBe(true);
       });
     });
 
