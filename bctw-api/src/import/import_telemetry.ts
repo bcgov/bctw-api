@@ -17,6 +17,7 @@ import {
   LotekRawTelemetry,
   VectronicRawTelemetry,
 } from '../types/vendor';
+import { validateTelemetryRow } from './validation';
 
 interface ImportTelemetryPayload {
   Vectronic: { [device_id: number]: VectronicRawTelemetry[] };
@@ -55,56 +56,64 @@ const importTelemetry = async (
     } = row;
     const isLotek = device_make === ImportVendors.Lotek;
     const isVectronic = device_make === ImportVendors.Vectronic;
-    if (isVectronic) {
-      idPosition--;
-    }
-    const formattedRow = genericToVendorTelemetry(row, idPosition);
     const errorObj = { row: JSON.parse(JSON.stringify(row)), rownum: i };
-    const UTM = utm_northing && utm_easting && utm_zone;
+    const formattedRow = genericToVendorTelemetry(row, idPosition);
+    const { errors, warnings } = await validateTelemetryRow(row);
+    Object.keys(errors).map((key) =>
+      bulkRes.errors.push({ ...errorObj, error: errors[key].desc })
+    );
+    // bulkRes.errors.push({ ...errors, ...results });
+    // if (isVectronic) {
+    //   idPosition--;
+    // }
+    // const UTM = utm_northing && utm_easting && utm_zone;
 
-    //Must be valid lat long no NULL / 0 values
-    if ((!latitude || !longitude) && !UTM) {
-      // if (!includesUTM) {
-      bulkRes.errors.push({
-        ...errorObj,
-        error: `Must provide at least valid latitude AND longitude OR UTM values, no NULL / 0 values allowed. (${latitude}, ${longitude})`,
-      });
-    }
+    // //Must be valid lat long no NULL / 0 values
+    // if ((!latitude || !longitude) && !UTM) {
+    //   // if (!includesUTM) {
+    //   bulkRes.errors.push({
+    //     ...errorObj,
+    //     error: `Must provide at least valid latitude AND longitude OR UTM values, no NULL / 0 values allowed. (${latitude}, ${longitude})`,
+    //   });
+    // }
 
-    //Only suppport Lotek / Vectronic vendors currently
-    if (!isLotek && !isVectronic) {
-      bulkRes.errors.push({
-        ...errorObj,
-        error: `Device Make: ${device_make} must be ${Object.keys(
-          ImportVendors
-        ).join(' OR ')}`,
-      });
-    } else {
-      //Device must exist in the vendor table to add additional telemetry
-      const deviceExists = await doesVendorDeviceExist(device_make, device_id);
-      if (!deviceExists) {
-        bulkRes.errors.push({
-          ...errorObj,
-          error: `Device ID: ${row.device_id} does not exist in raw ${row.device_make} telemetry table.`,
-        });
-      }
-      if (isVectronic) {
-        //Validates no collisions with existing device_id and date
-        const unsafeVecInsert = await vectronicRecordExists(
-          row.device_id,
-          row.acquisition_date
-        );
-        if (unsafeVecInsert) {
-          bulkRes.errors.push({
-            ...errorObj,
-            error: `An existing record for Device ID: ${row.device_id} on Date: ${row.acquisition_date} exists;`,
-          });
-        }
-      }
-    }
+    // //Only suppport Lotek / Vectronic vendors currently
+    // if (!isLotek && !isVectronic) {
+    //   bulkRes.errors.push({
+    //     ...errorObj,
+    //     error: `Device Make: ${device_make} must be ${Object.keys(
+    //       ImportVendors
+    //     ).join(' OR ')}`,
+    //   });
+    // } else {
+    //   //Device must exist in the vendor table to add additional telemetry
+    //   const deviceExists = await doesVendorDeviceExist(device_make, device_id);
+    //   if (!deviceExists) {
+    //     bulkRes.errors.push({
+    //       ...errorObj,
+    //       error: `Device ID: ${row.device_id} does not exist in raw ${row.device_make} telemetry table.`,
+    //     });
+    //   }
+    //   if (isVectronic) {
+    //     //Validates no collisions with existing device_id and date
+    //     const unsafeVecInsert = await vectronicRecordExists(
+    //       row.device_id,
+    //       row.acquisition_date
+    //     );
+    //     if (unsafeVecInsert) {
+    //       bulkRes.errors.push({
+    //         ...errorObj,
+    //         error: `An existing record for Device ID: ${row.device_id} on Date: ${row.acquisition_date} exists;`,
+    //       });
+    //     }
+    //   }
+    // }
     //Checks for error in errors array with same row num as the current index of loop
-    if (bulkRes.errors.find((err) => err.rownum == i)) continue;
-
+    //if (bulkRes.errors.find((err) => err.rownum == i)) continue;
+    const hasErrors = errors === null || typeof errors === 'undefined';
+    if (hasErrors) {
+      continue;
+    }
     //If no errors add the item to vendor payload ex: {Payload: {Vectronic: {1234: [row]}}}
     if (isLotek) {
       const record = formattedRow as LotekRawTelemetry;
@@ -140,7 +149,6 @@ const importTelemetry = async (
       bulkRes.results.push(res);
     }
   }
-  // console.log(Payloads);
   return res.send(bulkRes);
 };
 
