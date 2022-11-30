@@ -84,91 +84,10 @@ type ParsedXLSXSheetResult = {
   rows: ParsedXLSXRowResult[];
 };
 
-type SheetRequirements = {
-  sheetName: string; //Convert this to a type
-  requiredHeaders: string[];
-};
-
-const metadataRequiredHeaders = [
-  'Wildlife Health ID',
-  'Animal ID',
-  'Species',
-  'Population Unit',
-  'Region',
-  'Sex',
-  'Animal Status',
-  'Capture Date',
-  'Capture Latitude',
-  'Capture Longitude',
-  'Capture UTM Easting',
-  'Capture UTM Northing',
-  'Capture UTM Zone',
-  'Capture Comment',
-  'Ear Tag Right ID',
-  'Ear Tag Right Colour',
-  'Ear Tag Left ID',
-  'Ear Tag Left Colour',
-  'Compulsory Inspection ID',
-  'COORS ID',
-  'Leg Band ID',
-  'Microchip ID',
-  'Nickname',
-  'Pit Tag ID',
-  'RAPP Ear Tag ID',
-  'Recapture ID',
-  'Wing Band ID',
-  'HWCN ID',
-  'Telemetry Device ID',
-  'Device Deployment Status',
-  'Device Make',
-  'Device Model',
-  'Device Type',
-  'Frequency',
-  'Frequency Unit',
-  'Fix Interval',
-  'Fix Interval Rate',
-  'Satellite Network',
-  'Vaginal Implant Transmitter ID',
-  'Camera Device ID',
-  'Dropoff Device ID',
-  'Dropoff Frequency',
-  'Dropoff Frequency Unit',
-  'Malfunction Date',
-  'Malfunction Comment',
-  'Device Malfunction Type',
-  'Device Retrieval Date',
-  'Device Retrieval Comment',
-  'Animal Mortality Date',
-  'Suspected Mortality Cause',
-  'Mortality Comment',
-];
-const telemetryRequiredHeaders = [
-  'Device ID',
-  'Latitude',
-  'Longitude',
-  'Acquisition Date',
-  'Elevation',
-  'Temperature',
-  'Satellite',
-  'Dilution',
-  'Main Voltage',
-  'Backup Voltage',
-];
 const deviceMetadataSheetName = 'Device Metadata';
 const telemetrySheetName = 'Telemetry';
 const validSheetNames = [deviceMetadataSheetName, telemetrySheetName];
 const extraCodeFields = ['species'];
-
-const sheetRequirements: SheetRequirements[] = [
-  {
-    sheetName: deviceMetadataSheetName,
-    requiredHeaders: metadataRequiredHeaders,
-  },
-  {
-    sheetName: telemetrySheetName,
-    requiredHeaders: telemetryRequiredHeaders,
-  },
-];
 
 const obtainColumnTypes = async () => {
   const sql =
@@ -254,19 +173,6 @@ const checkGenericErrors = async (row: IAnimalDeviceMetadata, codeFields: string
   return errors;
 };
 
-const verifyIdentifiers = (row: IAnimalDeviceMetadata): boolean => {
-  return true;
-  switch(row.species) {
-    case "Caribou":
-    default:
-      return !!(
-        row.species &&
-        row.sex &&
-        (row.wlh_id || row.animal_id || row.ear_tag_id)
-      );
-  }
-};
-
 const requireFields = (row: IAnimalDeviceMetadata): boolean => {
   if(row.species && row.device_id) {
     return true;
@@ -284,19 +190,6 @@ const verifyUniqueAnimals = async (row: ParsedXLSXRowResult): Promise<any> => {
   );
   const result_set = getRowResults(result, 'is_new_animal')[0];
   return result_set;
-}
-
-const verifyDevice = async (row: IAnimalDeviceMetadata): Promise<boolean> => {
-  if(!row.device_id) {
-    return false;
-  }
-  const sql = `SELECT EXISTS (SELECT * FROM collar WHERE device_id = ${row.device_id} AND is_valid(valid_to));`;
-  const { result, error, isError } = await query(
-    sql,
-    'failed to retrieve codes'
-  );
-
-  return result.rows[0].exists;
 }
 
 const verifyAssignment = async (row: IAnimalDeviceMetadata, user: string): Promise<ErrorsAndWarnings> => {
@@ -342,8 +235,8 @@ const checkAnimalDeviceErrorsAndWarns = async (rowres: ParsedXLSXRowResult, user
   }
   ret = await verifyAssignment(rowres.row, user);
   const unqanim = await verifyUniqueAnimals(rowres);
-  if(unqanim['is_new']) {
-    ret.warnings.push({message:`This row will create a new animal.`, prompt: true});
+  if(unqanim['is_new'] && unqanim['reason'] == 'no_overlap') {
+    ret.warnings.push({message:`There is an animal matching these markings, but due to the capture/mortality dates being imported, a new animal will be created.`, prompt: true});
   }
   return ret;
 }
@@ -365,11 +258,15 @@ const parseXlsx = async(
       'failed to retrieve headers'
     );
 
+    const files = await getFiles(['import_template'], false);
+    const templateBook = new XLSX.Workbook();
+    await templateBook.xlsx.load(Buffer.from(files[0].file, 'binary'));
+
     const code_header_names = result.rows.map((o) => o['code_header_name']);
     code_header_names.push(...extraCodeFields);
 
-    for (const req of sheetRequirements) {
-      const sheet = workbook.getWorksheet(req.sheetName);
+    for (const sheetName of validSheetNames) {
+      const sheet = workbook.getWorksheet(sheetName);
 
       const verifiedRowObj: ParsedXLSXRowResult[] = [];
       let headers: string[] = [];
@@ -377,7 +274,9 @@ const parseXlsx = async(
       headers = sheet.getRow(1).values as string[];
       headers = headers.filter((o) => o !== undefined);
 
-      req.requiredHeaders.forEach((value, idx) => {
+      const requiredHeaders = templateBook.getWorksheet(sheetName).getRow(1).values as string[];
+
+      requiredHeaders.slice(1).forEach((value, idx) => {
         if (headers[idx] != value) {
           console.log(`Recieved bad header: ${headers[idx]} != ${value}`);
           throw new Error(
@@ -653,16 +552,15 @@ const finalizeImport = async function (
   res: Response
 ): Promise<void> {
   const id = getUserIdentifier(req) as string;
-  console.log("Response body " + JSON.stringify(req.body, null, 2));
-  
   const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(req.body)}' );`;
   console.log(sql);
   const { result, error, isError } = await query(sql);
 
-  console.log(error?.message);
-  console.log(isError);
-  console.log(getRowResults(result, 'upsert_bulk_v2'));
-
+  if (isError) {
+    console.log(error?.message);
+    res.status(500).send({results: [], errors: [ {error: error.message} ]});
+    return;
+  }
   const resrows = getRowResults(result, 'upsert_bulk_v2');
   const assignments = resrows.map(obj => `'${obj.assignment_id}'`);
   const collars = resrows.map(obj => `'${obj.collar_id}'`);
@@ -672,7 +570,7 @@ const finalizeImport = async function (
   console.log(`collar_id = ANY(ARRAY[${collars.join()}]::uuid[])`)
   console.log(`critter_id = ANY(ARRAY[${animals.join()}]::uuid[])`)
   let r = {results: resrows} as IBulkResponse;
-  res.send(r);
+  res.status(200).send(r);
 };
 
 const computeXLSXCol = (idx: number): string => {
@@ -692,7 +590,7 @@ const getTemplateFile = async function (
 ): Promise<void> {
   const key = req.query.file_key as string;
   const files = await getFiles([key], false);
-  //console.log("File is " + JSON.stringify(files[0]) );
+
   const workbook = new XLSX.Workbook();
   await workbook.xlsx.load(Buffer.from(files[0].file, 'binary'));
 

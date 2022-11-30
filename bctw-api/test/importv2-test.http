@@ -1,0 +1,8 @@
+POST http://localhost:3000/import-finalize?idir={{idir}}
+Content-Type: application/json
+
+{
+    [
+        {"wlh_id":"99-999","animal_id":1,"species":"Caribou","region":"Cariboo","sex":"Male","device_id":123,"device_make":"Lotek"}
+    ]
+}
