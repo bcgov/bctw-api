@@ -40,6 +40,7 @@ import { S_API, S_BCTW } from '../constants';
 import { getFiles } from '../apis/onboarding_api';
 import { FileAttachment } from '../types/sms';
 import { QueryResultRow } from 'pg';
+import { GenericVendorTelemetry } from '../types/vendor';
 
 type ParsedCSVResult = {
   both: IAnimalDeviceMetadata[];
@@ -54,7 +55,7 @@ type CellErrorDescriptor = {
   valid_values?: string[];
 };
 
-interface ErrorsAndWarnings {
+export interface ErrorsAndWarnings {
   errors: ParsedXLSXCellError;
   warnings: WarningInfo[];
 }
@@ -62,15 +63,20 @@ interface ErrorsAndWarnings {
 type WarningInfo = {
   message: string;
   prompt: boolean;
-}
+};
 
 type ParsedXLSXCellError = {
-  [key in (keyof IAnimalDeviceMetadata) | 'identifier' | 'missing_data' | 'link']?: CellErrorDescriptor;
-}
+  [key in
+    | keyof IAnimalDeviceMetadata
+    | keyof GenericVendorTelemetry
+    | 'identifier'
+    | 'missing_data'
+    | 'link']?: CellErrorDescriptor;
+};
 
 type ColumnTypeMapping = {
-  [key in (keyof IAnimalDeviceMetadata)]?: 'number' | 'date' | 'string'; 
-}
+  [key in keyof IAnimalDeviceMetadata]?: 'number' | 'date' | 'string';
+};
 
 type ParsedXLSXRowResult = {
   row: IAnimalDeviceMetadata;
@@ -198,7 +204,11 @@ const obtainColumnTypes = async () => {
   return rawObj;
 };
 
-const checkGenericErrors = async (row: IAnimalDeviceMetadata, codeFields: string[], columnTypes: ColumnTypeMapping): Promise<ParsedXLSXCellError> => {
+const checkGenericErrors = async (
+  row: IAnimalDeviceMetadata,
+  codeFields: string[],
+  columnTypes: ColumnTypeMapping
+): Promise<ParsedXLSXCellError> => {
   const errors = {} as ParsedXLSXCellError;
 
   //const columnTypes = await obtainColumnTypes();
@@ -256,8 +266,8 @@ const checkGenericErrors = async (row: IAnimalDeviceMetadata, codeFields: string
 
 const verifyIdentifiers = (row: IAnimalDeviceMetadata): boolean => {
   return true;
-  switch(row.species) {
-    case "Caribou":
+  switch (row.species) {
+    case 'Caribou':
     default:
       return !!(
         row.species &&
@@ -268,13 +278,12 @@ const verifyIdentifiers = (row: IAnimalDeviceMetadata): boolean => {
 };
 
 const requireFields = (row: IAnimalDeviceMetadata): boolean => {
-  if(row.species && row.device_id) {
+  if (row.species && row.device_id) {
     return true;
-  }
-  else {
+  } else {
     return false;
   }
-}
+};
 
 const verifyUniqueAnimals = async (row: ParsedXLSXRowResult): Promise<any> => {
   const sql = `SELECT is_new_animal('${JSON.stringify(row.row)}'::jsonb)`;
@@ -284,10 +293,10 @@ const verifyUniqueAnimals = async (row: ParsedXLSXRowResult): Promise<any> => {
   );
   const result_set = getRowResults(result, 'is_new_animal')[0];
   return result_set;
-}
+};
 
 const verifyDevice = async (row: IAnimalDeviceMetadata): Promise<boolean> => {
-  if(!row.device_id) {
+  if (!row.device_id) {
     return false;
   }
   const sql = `SELECT EXISTS (SELECT * FROM collar WHERE device_id = ${row.device_id} AND is_valid(valid_to));`;
@@ -297,58 +306,107 @@ const verifyDevice = async (row: IAnimalDeviceMetadata): Promise<boolean> => {
   );
 
   return result.rows[0].exists;
-}
+};
 
-const verifyAssignment = async (row: IAnimalDeviceMetadata, user: string): Promise<ErrorsAndWarnings> => {
+const verifyAssignment = async (
+  row: IAnimalDeviceMetadata,
+  user: string
+): Promise<ErrorsAndWarnings> => {
   let linkData: ErrorsAndWarnings = { errors: {}, warnings: [] };
   const row_start = row.capture_date ?? new Date();
   const row_end = row.retrieval_date ?? row.mortality_date ?? null;
 
-  let sql = constructFunctionQuery('get_device_assignment_history', [row.device_id]);
+  let sql = constructFunctionQuery('get_device_assignment_history', [
+    row.device_id,
+  ]);
   let { result, error, isError } = await query(
     sql,
     'failed to retrieve device assignment'
   );
   const deviceLinks = getRowResults(result, 'get_device_assignment_history');
-  if(deviceLinks.some(link => dateRangesOverlap(link.attachment_start, link.attachment_end, row_start, row_end))) {
-    linkData.errors.device_id = {desc: 'This device is already assigned to an animal. Unlink this device and try again.', help: 'This device is already assigned to an animal. Unlink this device and try again.'};
-  }
-  else if(deviceLinks.length > 0) {
-    linkData.warnings.push({message:'There are previous deployments for device ID ' + row.device_id, prompt: false});
+  if (
+    deviceLinks.some((link) =>
+      dateRangesOverlap(
+        link.attachment_start,
+        link.attachment_end,
+        row_start,
+        row_end
+      )
+    )
+  ) {
+    linkData.errors.device_id = {
+      desc:
+        'This device is already assigned to an animal. Unlink this device and try again.',
+      help:
+        'This device is already assigned to an animal. Unlink this device and try again.',
+    };
+  } else if (deviceLinks.length > 0) {
+    linkData.warnings.push({
+      message: 'There are previous deployments for device ID ' + row.device_id,
+      prompt: false,
+    });
   }
   //console.log("Device links " + JSON.stringify(deviceLinks));
-  
-  if(row.critter_id) {
-    let sql = constructFunctionQuery('get_animal_collar_assignment_history', [user, row.critter_id]);
+
+  if (row.critter_id) {
+    let sql = constructFunctionQuery('get_animal_collar_assignment_history', [
+      user,
+      row.critter_id,
+    ]);
     let { result, error, isError } = await query(
       sql,
       'failed to retrieve animal assignment'
     );
-    const animalLinks = getRowResults(result, 'get_animal_collar_assignment_history');
+    const animalLinks = getRowResults(
+      result,
+      'get_animal_collar_assignment_history'
+    );
     //console.log("Animallinks for " + row.critter_id + " " + JSON.stringify(animalLinks));
-    if(animalLinks.some(link => dateRangesOverlap(link.attachment_start, link.attachment_end, row_start, row_end))) {
-      linkData.warnings.push({message:'You will be attaching multiple devices to this animal over the same time span.', prompt: true});
+    if (
+      animalLinks.some((link) =>
+        dateRangesOverlap(
+          link.attachment_start,
+          link.attachment_end,
+          row_start,
+          row_end
+        )
+      )
+    ) {
+      linkData.warnings.push({
+        message:
+          'You will be attaching multiple devices to this animal over the same time span.',
+        prompt: true,
+      });
     }
   }
   //console.log("Link data " + JSON.stringify(linkData));
   return linkData;
-}
+};
 
-const checkAnimalDeviceErrorsAndWarns = async (rowres: ParsedXLSXRowResult, user: string): Promise<ErrorsAndWarnings> => {
-  let ret: ErrorsAndWarnings = { errors: {}, warnings: [] } 
-  if(requireFields(rowres.row) == false) {
-    ret.errors.missing_data = {desc: 'You have not provided sufficient data.', help: 'You have not provided sufficient data.'};
+const checkAnimalDeviceErrorsAndWarns = async (
+  rowres: ParsedXLSXRowResult,
+  user: string
+): Promise<ErrorsAndWarnings> => {
+  let ret: ErrorsAndWarnings = { errors: {}, warnings: [] };
+  if (requireFields(rowres.row) == false) {
+    ret.errors.missing_data = {
+      desc: 'You have not provided sufficient data.',
+      help: 'You have not provided sufficient data.',
+    };
     return ret;
   }
   ret = await verifyAssignment(rowres.row, user);
   const unqanim = await verifyUniqueAnimals(rowres);
-  if(unqanim['is_new']) {
-    ret.warnings.push({message:`This row will create a new animal.`, prompt: true});
+  if (unqanim['is_new']) {
+    ret.warnings.push({
+      message: `This row will create a new animal.`,
+      prompt: true,
+    });
   }
   return ret;
-}
+};
 
-const parseXlsx = async(
+const parseXlsx = async (
   file: Express.Multer.File,
   user: string,
   callback: (obj: ParsedXLSXSheetResult[]) => void
@@ -409,26 +467,37 @@ const parseXlsx = async(
         const columnTypes = await obtainColumnTypes();
 
         const crow = removeEmptyProps(rowWithHeader);
-        const errors = await checkGenericErrors(crow, code_header_names, columnTypes);
-        const rowObj: ParsedXLSXRowResult = {row: crow as IAnimalDeviceMetadata, warnings: [], errors: errors, success: false};
-        
+        const errors = await checkGenericErrors(
+          crow,
+          code_header_names,
+          columnTypes
+        );
+        const rowObj: ParsedXLSXRowResult = {
+          row: crow as IAnimalDeviceMetadata,
+          warnings: [],
+          errors: errors,
+          success: false,
+        };
+
         //Converts dates from YYYY-MM-DDThh:mm:ss.sssZ format to YYYY-MM-DD format.
-        for(const _key of Object.keys(rowObj.row)) {
-          if(columnTypes[_key] == 'date') {
-            rowObj.row[_key] = new Date(rowObj.row[_key]).toISOString().split('T')[0];
+        for (const _key of Object.keys(rowObj.row)) {
+          if (columnTypes[_key] == 'date') {
+            rowObj.row[_key] = new Date(rowObj.row[_key])
+              .toISOString()
+              .split('T')[0];
           }
         }
 
-        if(sheet.name == deviceMetadataSheetName) {
+        if (sheet.name == deviceMetadataSheetName) {
           const errswrns = await checkAnimalDeviceErrorsAndWarns(rowObj, user);
-          rowObj.errors = {...rowObj.errors, ...errswrns.errors};
+          rowObj.errors = { ...rowObj.errors, ...errswrns.errors };
           rowObj.warnings.push(...errswrns.warnings);
         }
 
         rowObj.success = Object.keys(rowObj.errors).length == 0;
         verifiedRowObj.push(rowObj);
       }
-      sheetResults.push({headers: headers, rows: verifiedRowObj});
+      sheetResults.push({ headers: headers, rows: verifiedRowObj });
     }
   } catch (err) {
     console.log(err);
@@ -638,7 +707,7 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
 
   const onFinishedParsing = async (obj: ParsedXLSXSheetResult[]) => {
     cleanupUploadsDir(file.path);
-    if(obj.length) {
+    if (obj.length) {
       return res.send(obj);
     } else {
       return res.status(500).send('Failed parsing the XLSX file.');
@@ -646,16 +715,18 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
   };
 
   await parseXlsx(file, id, onFinishedParsing);
-}
+};
 
 const finalizeImport = async function (
   req: Request,
   res: Response
 ): Promise<void> {
   const id = getUserIdentifier(req) as string;
-  console.log("Response body " + JSON.stringify(req.body, null, 2));
-  
-  const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(req.body)}' );`;
+  console.log('Response body ' + JSON.stringify(req.body, null, 2));
+
+  const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(
+    req.body
+  )}' );`;
   console.log(sql);
   const { result, error, isError } = await query(sql);
 
@@ -664,14 +735,14 @@ const finalizeImport = async function (
   console.log(getRowResults(result, 'upsert_bulk_v2'));
 
   const resrows = getRowResults(result, 'upsert_bulk_v2');
-  const assignments = resrows.map(obj => `'${obj.assignment_id}'`);
-  const collars = resrows.map(obj => `'${obj.collar_id}'`);
-  const animals = resrows.map(obj => `'${obj.critter_id}'`);
+  const assignments = resrows.map((obj) => `'${obj.assignment_id}'`);
+  const collars = resrows.map((obj) => `'${obj.collar_id}'`);
+  const animals = resrows.map((obj) => `'${obj.critter_id}'`);
 
-  console.log(`assignment_id = ANY(ARRAY[${assignments.join()}]::uuid[])`)
-  console.log(`collar_id = ANY(ARRAY[${collars.join()}]::uuid[])`)
-  console.log(`critter_id = ANY(ARRAY[${animals.join()}]::uuid[])`)
-  let r = {results: resrows} as IBulkResponse;
+  console.log(`assignment_id = ANY(ARRAY[${assignments.join()}]::uuid[])`);
+  console.log(`collar_id = ANY(ARRAY[${collars.join()}]::uuid[])`);
+  console.log(`critter_id = ANY(ARRAY[${animals.join()}]::uuid[])`);
+  let r = { results: resrows } as IBulkResponse;
   res.send(r);
 };
 
@@ -764,12 +835,18 @@ const getTemplateFile = async function (
         allowBlank: true,
         error: 'Please use the drop down to select a valid value',
         errorTitle: 'Invalid Selection',
-        formulae: [`Validation!$${val_col}$2:$${val_col}$${code_descriptions.length + 1}`],
+        formulae: [
+          `Validation!$${val_col}$2:$${val_col}$${
+            code_descriptions.length + 1
+          }`,
+        ],
         showErrorMessage: true,
-        type: 'list'
-      }
-        
-      console.log(`Validation!${val_col}2:${val_col}${code_descriptions.length + 1}`);
+        type: 'list',
+      };
+
+      console.log(
+        `Validation!${val_col}2:${val_col}${code_descriptions.length + 1}`
+      );
     }
   }
 

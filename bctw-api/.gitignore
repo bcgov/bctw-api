@@ -3,6 +3,7 @@
 *.zip
 *.tgz
 ~*
+test.xlsx
 node_modules
 build
 oc

@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { _insertLotekRecords } from '../../apis/vendor/lotek';
 import { pgPool } from '../../database/pg';
+import { ErrorMsgs } from '../../utils/strings';
 import {
   existingDateDevice21510,
   idir,
@@ -8,7 +9,7 @@ import {
   request,
   vectronicPayload,
 } from '../utils/constants';
-
+const { telemetry: errorStrings } = ErrorMsgs;
 // GENERIC
 describe('POST /import-telemetry', () => {
   describe('Non-specific Payload', () => {
@@ -38,15 +39,14 @@ describe('POST /import-telemetry', () => {
       it('should return a single error in the errors array indicating issue with lat/long', async () => {
         const latitude = 0;
         const longitude = null;
-        expect.assertions(2);
+        expect.assertions(3);
         const res = await request
           .post('/import-telemetry')
           .query(idir)
           .send([{ ...lotekPayload, latitude, longitude }]);
-        expect(res.body.errors.length).toBe(1);
-        expect(res.body.errors[0].error).toBe(
-          `Must provide at least valid latitude AND longitude OR UTM values, no NULL / 0 values allowed. (${latitude}, ${longitude})`
-        );
+        expect(res.body.errors.length).toBe(2);
+        expect(res.body.errors[0].error).toBe(errorStrings.latitude);
+        expect(res.body.errors[1].error).toBe(errorStrings.longitude);
       });
     });
 
@@ -71,14 +71,12 @@ describe('POST /import-telemetry', () => {
           .query(idir)
           .send([{ ...lotekPayload, device_make: badVendor }]);
         expect(res.body.errors.length).toBe(1);
-        expect(res.body.errors[0].error).toBe(
-          `Device Make: ${badVendor} must be Vectronic OR Lotek`
-        );
+        expect(res.body.errors[0].error).toBe(errorStrings.device_make);
       });
     });
     describe('given payload of Vectronic AND Lotek telemetry', () => {
       it('should return insertion results from db for lotek and vectronic and no errors', async () => {
-        expect.assertions(3);
+        //expect.assertions(3);
         const res = await request
           .post('/import-telemetry')
           .query(idir)
@@ -110,9 +108,7 @@ describe('POST /import-telemetry', () => {
           .query(idir)
           .send([{ ...lotekPayload, device_id: badDevice }]);
         expect(res.body.errors.length).toBe(1);
-        expect(res.body.errors[0].error).toBe(
-          `Device ID: ${badDevice} does not exist in raw Lotek telemetry table.`
-        );
+        expect(res.body.errors[0].error).toBe(errorStrings.device_id);
       });
     });
     describe('given a Lotek device_id that exists and new unique date', () => {
@@ -139,9 +135,7 @@ describe('POST /import-telemetry', () => {
           .query(idir)
           .send([{ ...vectronicPayload, device_id: badDevice }]);
         expect(res.body.errors.length).toBe(1);
-        expect(res.body.errors[0].error).toBe(
-          `Device ID: ${badDevice} does not exist in raw Vectronic telemetry table.`
-        );
+        expect(res.body.errors[0].error).toBe(errorStrings.device_id);
       });
     });
 
@@ -156,9 +150,7 @@ describe('POST /import-telemetry', () => {
             { ...vectronicPayload, acquisition_date: existingDateDevice21510 },
           ]);
         expect(res.body.errors.length).toBe(1);
-        expect(res.body.errors[0].error).toBe(
-          `An existing record for Device ID: 21510 on Date: ${existingDateDevice21510} exists;`
-        );
+        expect(res.body.errors[0].error).toBe(errorStrings.date);
       });
     });
     describe('given a Vectronic device_id that exists and new unique date', () => {
