@@ -157,7 +157,7 @@ const validateAnimalDeviceData = async (
     };
     return ret;
   }
-  ret = await validateAnimalDeviceAssingment(
+  ret = await validateAnimalDeviceAssignment(
     rowres.row as IAnimalDeviceMetadata,
     user
   );
