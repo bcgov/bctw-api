@@ -171,7 +171,7 @@ const validateAnimalDeviceData = async (
   return ret;
 };
 
-const validateAnimalDeviceAssingment = async (
+const validateAnimalDeviceAssignment = async (
   row: IAnimalDeviceMetadata,
   user: string
 ): Promise<ErrorsAndWarnings> => {
@@ -275,7 +275,7 @@ const validateUniqueAnimal = async (row: ParsedXLSXRowResult): Promise<any> => {
 
 export {
   validateTelemetryRow,
-  validateAnimalDeviceAssingment,
+  validateAnimalDeviceAssignment,
   validateTelemetryRequiredFields,
   validateAnimalDeviceRequiredFields,
   validateUniqueAnimal,

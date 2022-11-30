@@ -42,7 +42,7 @@ import { FileAttachment } from '../types/sms';
 import { QueryResultRow } from 'pg';
 import { GenericVendorTelemetry } from '../types/vendor';
 import {
-  validateAnimalDeviceAssingment,
+  validateAnimalDeviceAssignment,
   validateAnimalDeviceData,
   validateAnimalDeviceRequiredFields,
   validateGenericRow,
