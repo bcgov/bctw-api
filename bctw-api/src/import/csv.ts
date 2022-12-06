@@ -70,6 +70,7 @@ export interface ErrorsAndWarnings {
 
 type WarningInfo = {
   message: string;
+  help: string;
   prompt: boolean;
 };
 

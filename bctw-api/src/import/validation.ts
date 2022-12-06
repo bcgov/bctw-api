@@ -22,6 +22,7 @@ import {
   ParsedXLSXRowResult,
 } from './csv';
 import { dateRangesOverlap } from './import_helpers';
+import { importMessages } from '../utils/strings';
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
@@ -143,6 +144,12 @@ const validateTelemetryRow = async (
   return output;
 };
 
+interface UniqueAnimalResult {
+  is_new?: boolean;
+  reason?: string;
+  is_error?: boolean;
+}
+
 const validateAnimalDeviceData = async (
   rowres: ParsedXLSXRowResult,
   user: string
@@ -162,9 +169,16 @@ const validateAnimalDeviceData = async (
     user
   );
   const unqanim = await validateUniqueAnimal(rowres);
-  if (unqanim['is_new']) {
+  if (unqanim.is_error) {
+    ret.errors.identifier = {
+      desc: 'This animal has insufficient marking information to uniquely identify it.',
+      help: 'This animal has insufficient marking information to uniquely identify it.'
+    }
+  }
+  else if (unqanim.is_new && unqanim.reason == 'no_overlap') {
     ret.warnings.push({
-      message: `This row will create a new animal.`,
+      message: importMessages.warningMessages.matchingMarkings.message,
+      help: importMessages.warningMessages.matchingMarkings.help((rowres.row as IAnimalDeviceMetadata).species),
       prompt: true,
     });
   }
@@ -205,7 +219,8 @@ const validateAnimalDeviceAssignment = async (
     };
   } else if (deviceLinks.length > 0) {
     linkData.warnings.push({
-      message: 'There are previous deployments for device ID ' + row.device_id,
+      message: importMessages.warningMessages.previousDeployment.message(row.device_id),
+      help: importMessages.warningMessages.previousDeployment.help,
       prompt: false,
     });
   }
@@ -237,7 +252,9 @@ const validateAnimalDeviceAssignment = async (
     ) {
       linkData.warnings.push({
         message:
-          'You will be attaching multiple devices to this animal over the same time span.',
+          importMessages.warningMessages.manyDeviceOneAnimal.message,
+        help:
+          importMessages.warningMessages.manyDeviceOneAnimal.help,
         prompt: true,
       });
     }
@@ -263,14 +280,17 @@ const validateAnimalDeviceRequiredFields = (
   return !!row.species && !!row.device_id;
 };
 
-const validateUniqueAnimal = async (row: ParsedXLSXRowResult): Promise<any> => {
+const validateUniqueAnimal = async (row: ParsedXLSXRowResult): Promise<UniqueAnimalResult> => {
   const sql = `SELECT is_new_animal('${JSON.stringify(row.row)}'::jsonb)`;
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve codes'
   );
+  if(isError) {
+    return {is_error: true};
+  }
   const result_set = getRowResults(result, 'is_new_animal')[0];
-  return result_set;
+  return result_set as UniqueAnimalResult;
 };
 
 export {
