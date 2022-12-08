@@ -591,8 +591,8 @@ const getTemplateFile = async function (
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
-  workbook.xlsx.writeFile('src/import/test.xlsx').then(() => {
-    res.download('src/import/test.xlsx');
+  workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
+    res.download('src/import/bctw_data_import_template.xlsx');
   });
 };
 

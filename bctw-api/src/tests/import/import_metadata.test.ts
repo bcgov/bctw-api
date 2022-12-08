@@ -216,8 +216,9 @@ describe('POST /import-finalize', () => {
                     .query(idir)
                     .send([blob, blob2]);
                 expect(res.status).toBe(200);
+                console.log(res.body.results);
                 expect(res.body.results[0].device_valid_from).toContain("2018-01-01");
-                expect(res.body.results[1].device_valid_from).toBe(null);
+                expect(res.body.results[1].device_valid_from).toContain("2018-12-12");
                 expect(res.body.results[0].assignment_id).not.toBe(res.body.results[1].assignment_id);
             });
         });
