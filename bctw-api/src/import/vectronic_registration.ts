@@ -96,6 +96,7 @@ const parseVectronicKeyRegistrationXML = async (
 ): Promise<Response<IBulkResponse>> => {
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   const files = req.files as Express.Multer.File[];
+  //console.log(files[0]);
   const promises: Promise<QResult>[] = [];
 
   if (!files || !files.length) {
@@ -110,7 +111,7 @@ const parseVectronicKeyRegistrationXML = async (
   try {
     for (let idx = 0; idx < files.length; idx++) {
       const file = await readPromise(files[idx].path, { encoding: 'utf-8' });
-      console.log('parseVectronicKeyRegistrationXML xml file read:', file);
+      // console.log('parseVectronicKeyRegistrationXML xml file read:', file);
       const asJson: IKeyXAsJson = await new xml2js.Parser().parseStringPromise(
         file
       );
@@ -126,7 +127,7 @@ const parseVectronicKeyRegistrationXML = async (
         [idcollar, comtype, idcom, collarkey, collartype],
         false
       );
-      console.log(sql);
+      // console.log(sql);
       promises.push(query(sql, '', true));
     }
   } catch (err) {
