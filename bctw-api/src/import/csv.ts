@@ -23,6 +23,8 @@ import {
   validateTelemetryRow
 } from './validation';
 
+import { unlinkSync } from 'fs';
+
 type CellErrorDescriptor = {
   desc: string;
   help: string;
@@ -361,7 +363,9 @@ const getTemplateFile = async function (
   });
 
   workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
-    res.download('src/import/bctw_data_import_template.xlsx');
+    res.download('src/import/bctw_data_import_template.xlsx', () => {
+      unlinkSync('src/import/bctw_data_import_template.xlsx');
+    });
   });
 };
 

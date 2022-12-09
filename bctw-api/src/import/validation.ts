@@ -172,6 +172,21 @@ const validateAnimalDeviceData = async (
       help: importMessages.warningMessages.matchingMarkings.help((rowres.row as IAnimalDeviceMetadata).species),
     });
   }
+
+  const animdev = rowres.row as IAnimalDeviceMetadata;
+  if(animdev.retrieval_date && animdev.capture_date > animdev.retrieval_date) {
+    ret.errors.capture_date = {
+      desc: ErrorMsgs.metadata.badRetrievelDate,
+      help: ErrorMsgs.metadata.badRetrievelDate,
+    }
+  }
+  else if(animdev.mortality_date && animdev.capture_date > animdev.mortality_date) {
+    ret.errors.capture_date = {
+      desc: ErrorMsgs.metadata.badMortalityDate,
+      help: ErrorMsgs.metadata.badMortalityDate,
+    }
+  }
+
   return ret;
 };
 
@@ -263,7 +278,8 @@ const validateTelemetryRequiredFields = (
 const validateAnimalDeviceRequiredFields = (
   row: IAnimalDeviceMetadata
 ): boolean => {
-  return !!row.species && !!row.device_id;
+  return !!row.species && !!row.device_id && !!row.device_make && 
+  !!row.capture_date;
 };
 
 const validateUniqueAnimal = async (row: ParsedXLSXRowResult): Promise<UniqueAnimalResult> => {

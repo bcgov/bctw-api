@@ -14,6 +14,9 @@ const ErrorMsgs = {
     alreadyAttached: 'This device is already assigned to an animal. Unlink this device and try again.',
     missingData: 'You have not provided sufficient data.',
     badMarkings: 'This animal has insufficient marking information to uniquely identify it.',
+    badMortalityDate: 'Your capture date disagrees with the mortality date.',
+    badRetrievelDate: 'Your capture date disagrees with the retrieval date.',
+
   },
   fields: {
     code: {
