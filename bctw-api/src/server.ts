@@ -6,7 +6,6 @@ import multer from 'multer';
 import * as api from './start';
 import {
   finalizeImport,
-  importCsv,
   importXlsx,
   getTemplateFile,
 } from './import/csv';
@@ -113,7 +112,7 @@ export const app = express()
   // export/import
   .post('/export', api.getExportData)
   .post('/export-all', api.getAllExportData)
-  .post('/import-csv', upload.single('csv'), importXlsx)
+  .post('/import-xlsx', upload.single('validated-file'), importXlsx)
   .post('/import-finalize', finalizeImport)
   .post(
     '/import-xml',

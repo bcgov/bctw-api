@@ -1,43 +1,41 @@
 import {
-  getLowestNegativeVectronicIdPosition,
-  vectronicRecordExists,
+  vectronicRecordExists
 } from '../apis/vendor/vectronic';
 import {
-  doesVendorDeviceExist,
-  genericToVendorTelemetry,
+  doesVendorDeviceExist
 } from '../apis/vendor/vendor_helpers';
 import { S_API } from '../constants';
 import {
   constructFunctionQuery,
   getRowResults,
-  query,
+  query
 } from '../database/query';
-import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
+import { IAnimalDeviceMetadata } from '../types/import_types';
 import { GenericVendorTelemetry, ImportVendors } from '../types/vendor';
-import { ErrorMsgs } from '../utils/strings';
+import { ErrorMsgs, importMessages } from '../utils/strings';
 import {
   ColumnTypeMapping,
   ErrorsAndWarnings,
   ParsedXLSXCellError,
-  ParsedXLSXRowResult,
+  ParsedXLSXRowResult
 } from './csv';
 import { dateRangesOverlap } from './import_helpers';
-import { importMessages } from '../utils/strings';
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
   codeFields: string[],
-  columnTypes: ColumnTypeMapping
+  columnTypes: ColumnTypeMapping,
+  user: string
 ): Promise<ParsedXLSXCellError> => {
   const errors = {} as ParsedXLSXCellError;
 
-  //const columnTypes = await obtainColumnTypes();
+  const { fields: constants} = ErrorMsgs;
 
   for (const key of Object.keys(row)) {
     if (codeFields.includes(key)) {
       const sql = constructFunctionQuery(
         'get_code',
-        ['83245BCDC21F43A29CEDA78AE67DF223', key, 0],
+        [user, key, 0],
         false,
         S_API
       );
@@ -50,33 +48,26 @@ const validateGenericRow = async (
       );
       if (!code_descriptions.includes(row[key])) {
         errors[key] = {
-          desc: 'This value is not a valid code for this field.',
-          help:
-            'This field must contain a value from the list of acceptable values.',
+          ...constants.code,
           valid_values: code_descriptions,
         };
       }
     } else if (columnTypes[key] === 'date') {
       if (!(row[key] instanceof Date)) {
         errors[key] = {
-          desc: 'This field must be a valid date format.',
-          help:
-            'You have incorrectly formatted this date field. One way you can ensure correct formatting for a cell of this type is to change the Number Format dropdown in Excel.',
+          ...constants.date
         };
       }
     } else if (columnTypes[key] === 'number') {
       if (typeof row[key] !== 'number') {
         errors[key] = {
-          desc: 'This field must be a numeric value.',
-          help:
-            'This field is set to only accept numbers, including integers and floating points. Ensure you have not included any special characters.',
+         ...constants.number
         };
       }
     } else if (columnTypes[key] === 'boolean') {
       if (row[key] !== 'TRUE' && row[key] !== 'FALSE') {
         errors[key] = {
-          desc: 'Set this field to either TRUE or FALSE.',
-          help: '',
+          ...constants.bool
         };
       }
     }
@@ -159,8 +150,8 @@ const validateAnimalDeviceData = async (
     !validateAnimalDeviceRequiredFields(rowres.row as IAnimalDeviceMetadata)
   ) {
     ret.errors.missing_data = {
-      desc: 'You have not provided sufficient data.',
-      help: 'You have not provided sufficient data.',
+      desc: ErrorMsgs.metadata.missingData,
+      help:  ErrorMsgs.metadata.missingData,
     };
     return ret;
   }
@@ -171,15 +162,14 @@ const validateAnimalDeviceData = async (
   const unqanim = await validateUniqueAnimal(rowres);
   if (unqanim.is_error) {
     ret.errors.identifier = {
-      desc: 'This animal has insufficient marking information to uniquely identify it.',
-      help: 'This animal has insufficient marking information to uniquely identify it.'
+      desc: ErrorMsgs.metadata.badMarkings,
+      help: ErrorMsgs.metadata.badMarkings
     }
   }
   else if (unqanim.is_new && unqanim.reason == 'no_overlap') {
     ret.warnings.push({
       message: importMessages.warningMessages.matchingMarkings.message,
       help: importMessages.warningMessages.matchingMarkings.help((rowres.row as IAnimalDeviceMetadata).species),
-      prompt: true,
     });
   }
   return ret;
@@ -212,16 +202,13 @@ const validateAnimalDeviceAssignment = async (
     )
   ) {
     linkData.errors.device_id = {
-      desc:
-        'This device is already assigned to an animal. Unlink this device and try again.',
-      help:
-        'This device is already assigned to an animal. Unlink this device and try again.',
+      desc: ErrorMsgs.metadata.alreadyAttached,
+      help: ErrorMsgs.metadata.alreadyAttached,
     };
   } else if (deviceLinks.length > 0) {
     linkData.warnings.push({
       message: importMessages.warningMessages.previousDeployment.message(row.device_id),
       help: importMessages.warningMessages.previousDeployment.help,
-      prompt: false,
     });
   }
   //console.log("Device links " + JSON.stringify(deviceLinks));
@@ -255,7 +242,6 @@ const validateAnimalDeviceAssignment = async (
           importMessages.warningMessages.manyDeviceOneAnimal.message,
         help:
           importMessages.warningMessages.manyDeviceOneAnimal.help,
-        prompt: true,
       });
     }
   }

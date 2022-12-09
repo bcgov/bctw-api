@@ -10,6 +10,30 @@ const ErrorMsgs = {
     date: `Record of telemetry exists for this Device ID on this Date`,
     device_id: `Device ID does not exist in telemetry table.`,
   },
+  metadata: {
+    alreadyAttached: 'This device is already assigned to an animal. Unlink this device and try again.',
+    missingData: 'You have not provided sufficient data.',
+    badMarkings: 'This animal has insufficient marking information to uniquely identify it.',
+  },
+  fields: {
+    code: {
+      desc: 'This value is not a valid code for this field.',
+      help: 'This field must contain a value from the list of acceptable values.'
+    },
+    date: {
+      desc: 'This field must be a valid date format.',
+      help: 'You have incorrectly formatted this date field. One way you can ensure correct formatting for a cell of this type is to change the Number Format dropdown in Excel.',
+    },
+    number: {
+      desc: 'This field must be a numeric value.',
+      help:
+        'This field is set to only accept numbers, including integers and floating points. Ensure you have not included any special characters.',
+    },
+    bool: {
+      desc: 'Set this field to either TRUE or FALSE.',
+      help: 'Set this field to either TRUE or FALSE.',
+    }
+  }
 };
 
 
