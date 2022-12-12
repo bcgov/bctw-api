@@ -273,7 +273,7 @@ const getTemplateFile = async function (
   const files = await getFiles([key], false);
 
   const workbook = new XLSX.Workbook();
-  await workbook.xlsx.load(Buffer.from(files[0].file, 'binary'));
+  await workbook.xlsx.load(Buffer.from(files[0].file, 'base64'));
 
   const sheet = workbook.getWorksheet('Device Metadata');
   const valSheet = workbook.getWorksheet('Validation');
@@ -364,14 +364,11 @@ const getTemplateFile = async function (
   });
   //'src/import/bctw_data_import_template.xlsx'
   workbook.xlsx
-    .writeFile('bctw-api/build/uploads/bctw_data_import_template.xlsx')
+    .writeFile('src/import/bctw_data_import_template.xlsx')
     .then(() => {
-      res.download(
-        'bctw-api/build/uploads/bctw_data_import_template.xlsx',
-        () => {
-          unlinkSync('bctw-api/build/uploads/bctw_data_import_template.xlsx');
-        }
-      );
+      res.download('src/import/bctw_data_import_template.xlsx', () => {
+        unlinkSync('src/import/bctw_data_import_template.xlsx');
+      });
     });
 };
 
