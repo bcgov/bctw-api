@@ -364,30 +364,29 @@ const getTemplateFile = async function (
     }
   }
 
-
-
-  /*workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
-    res.download('src/import/bctw_data_import_template.xlsx', () => {
-      unlinkSync('src/import/bctw_data_import_template.xlsx');
-    });
-  });*/
-  res.attachment('bctw_data_import_template.xlsx');
-  //workbook.xlsx.write(res).then(() => {res.end()});
-  const outputBuff = await workbook.xlsx.writeBuffer();
-  console.log("Output:")
-  console.log(outputBuff);
-
   res.set({
     'Content-Disposition': `attachment; filename="filename.xlsx"`,
     'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
 
-  workbook.xlsx.write(res)
+  workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
+    res.download('src/import/bctw_data_import_template.xlsx', () => {
+      //unlinkSync('src/import/bctw_data_import_template.xlsx');
+    });
+  });
+  /*res.attachment('bctw_data_import_template.xlsx');
+  const outputBuff = await workbook.xlsx.writeBuffer();
+  console.log("Output:")
+  console.log(outputBuff);*/
+
+
+
+  /*workbook.xlsx.write(res)
   .then(() =>{
     
   }).then(() => {
     res.end();
-  })
+  })*/
   
 };
 
