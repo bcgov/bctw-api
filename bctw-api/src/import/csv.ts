@@ -268,6 +268,7 @@ const getTemplateFile = async function (
   req: Request,
   res: Response
 ): Promise<void> {
+
   const key = req.query.file_key as string;
   const files = await getFiles([key], false);
 
@@ -362,11 +363,15 @@ const getTemplateFile = async function (
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
-  workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
+  res.charset = 'binary';
+
+  /*workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
     res.download('src/import/bctw_data_import_template.xlsx', () => {
       unlinkSync('src/import/bctw_data_import_template.xlsx');
     });
-  });
+  });*/
+  const buffer = await workbook.xlsx.writeBuffer();
+  res.end(buffer, 'binary');
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };
