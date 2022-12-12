@@ -361,7 +361,7 @@ const getTemplateFile = async function (
 
   res.set({
     'Content-Type':
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/octet-stream',
   });
 
   /*workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
