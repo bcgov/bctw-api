@@ -2,25 +2,24 @@ import { Request, Response } from 'express';
 import {
   constructFunctionQuery,
   getRowResults,
-  query
+  query,
 } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
+import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
 import {
-  IAnimalDeviceMetadata,
-  IBulkResponse
-} from '../types/import_types';
-import {
-  cleanupUploadsDir, mapXlsxHeader,
-  removeEmptyProps
+  cleanupUploadsDir,
+  mapXlsxHeader,
+  removeEmptyProps,
 } from './import_helpers';
 import * as XLSX from 'exceljs';
-import * as XLSX_Ext from '../types/xlsx_types'
+import * as XLSX_Ext from '../types/xlsx_types';
 import { getFiles } from '../apis/onboarding_api';
 import { S_API } from '../constants';
 import { GenericVendorTelemetry } from '../types/vendor';
 import {
-  validateAnimalDeviceData, validateGenericRow,
-  validateTelemetryRow
+  validateAnimalDeviceData,
+  validateGenericRow,
+  validateTelemetryRow,
 } from './validation';
 
 import { unlinkSync } from 'fs';
@@ -132,7 +131,8 @@ const parseXlsx = async (
       headers = sheet.getRow(1).values as string[];
       headers = headers.filter((o) => o !== undefined);
 
-      const requiredHeaders = templateBook.getWorksheet(sheetName).getRow(1).values as string[];
+      const requiredHeaders = templateBook.getWorksheet(sheetName).getRow(1)
+        .values as string[];
 
       requiredHeaders.slice(1).forEach((value, idx) => {
         if (headers[idx] != value) {
@@ -213,7 +213,6 @@ const parseXlsx = async (
   callback(sheetResults);
 };
 
-
 const importXlsx = async function (req: Request, res: Response): Promise<void> {
   const id = getUserIdentifier(req) as string;
   const file = req.file;
@@ -238,18 +237,20 @@ const finalizeImport = async function (
   res: Response
 ): Promise<void> {
   const id = getUserIdentifier(req) as string;
-  const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(req.body)}' );`;
+  const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(
+    req.body
+  )}' );`;
   console.log(sql);
   const { result, error, isError } = await query(sql);
 
   if (isError) {
     console.log(error?.message);
-    res.status(500).send({results: [], errors: [ {error: error.message} ]});
+    res.status(500).send({ results: [], errors: [{ error: error.message }] });
     return;
   }
   const resrows = getRowResults(result, 'upsert_bulk_v2');
 
-  let r = {results: resrows} as IBulkResponse;
+  let r = { results: resrows } as IBulkResponse;
   res.status(200).send(r);
 };
 
@@ -361,12 +362,17 @@ const getTemplateFile = async function (
     'Content-Type':
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-
-  workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
-    res.download('src/import/bctw_data_import_template.xlsx', () => {
-      unlinkSync('src/import/bctw_data_import_template.xlsx');
+  //'src/import/bctw_data_import_template.xlsx'
+  workbook.xlsx
+    .writeFile('bctw-api/build/uploads/bctw_data_import_template.xlsx')
+    .then(() => {
+      res.download(
+        'bctw-api/build/uploads/bctw_data_import_template.xlsx',
+        () => {
+          unlinkSync('bctw-api/build/uploads/bctw_data_import_template.xlsx');
+        }
+      );
     });
-  });
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };
