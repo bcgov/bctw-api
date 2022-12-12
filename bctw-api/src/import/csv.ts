@@ -369,8 +369,8 @@ const getTemplateFile = async function (
       unlinkSync('src/import/bctw_data_import_template.xlsx');
     });
   });*/
-  const buffer = await workbook.xlsx.writeBuffer();
-  res.end(buffer, 'binary');
+  res.attachment('bctw_data_import_template.xlsx');
+  workbook.xlsx.write(res).then(() => {res.end()});
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };
