@@ -363,9 +363,6 @@ const getTemplateFile = async function (
     'Content-Type':
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-<<<<<<< HEAD
-
-  res.charset = 'binary';
 
   /*workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
     res.download('src/import/bctw_data_import_template.xlsx', () => {
@@ -374,19 +371,6 @@ const getTemplateFile = async function (
   });*/
   const buffer = await workbook.xlsx.writeBuffer();
   res.end(buffer, 'binary');
-=======
-  //'src/import/bctw_data_import_template.xlsx'
-  workbook.xlsx
-    .writeFile('bctw-api/build/uploads/bctw_data_import_template.xlsx')
-    .then(() => {
-      res.download(
-        'bctw-api/build/uploads/bctw_data_import_template.xlsx',
-        () => {
-          unlinkSync('bctw-api/build/uploads/bctw_data_import_template.xlsx');
-        }
-      );
-    });
->>>>>>> a8c6788e2f4e6d763894b6cbadf743aa9a92eed0
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };
