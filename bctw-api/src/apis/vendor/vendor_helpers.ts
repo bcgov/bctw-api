@@ -1,8 +1,26 @@
 import { query } from '../../database/query';
 import { Request, Response } from 'express';
-import { performManualLotekUpdate } from './lotek';
-import { performManualVectronicUpdate } from './vectronic';
-import { ManualVendorAPIResponse, ManualVendorInput } from '../../types/vendor';
+import { performManualLotekUpdate, _insertLotekRecords } from './lotek';
+import {
+  getLowestNegativeVectronicIdPosition,
+  performManualVectronicUpdate,
+  vectronicRecordExists,
+  _insertVectronicRecords,
+} from './vectronic';
+import {
+  GenericVendorTelemetry,
+  ImportVendors,
+  LotekRawTelemetry,
+  ManualLotekTelemetry,
+  ManualVectronicTelemetry,
+  ManualVendorAPIResponse,
+  ManualVendorInput,
+  VectronicRawTelemetry,
+  VendorType,
+} from '../../types/vendor';
+import { IBulkResponse } from '../../types/import_types';
+import dayjs, { Dayjs } from 'dayjs';
+import { RAW_LOTEK, RAW_VECTRONIC } from '../../constants';
 
 export interface IVendorCredential {
   username: string;
@@ -126,4 +144,83 @@ const fetchVendorTelemetryData = async (
   return res.send(ret);
 };
 
-export { fetchVendorTelemetryData, retrieveCredentials, ToLowerCaseObjectKeys };
+const doesVendorDeviceExist = async (
+  vendor: ImportVendors,
+  device_id: number
+): Promise<boolean> => {
+  const tables = {
+    Vectronic: {
+      table: RAW_VECTRONIC,
+      id: 'idcollar',
+    },
+    Lotek: {
+      table: RAW_LOTEK,
+      id: 'deviceid',
+    },
+  };
+  const sql = `
+  select ${tables[vendor].id} 
+  from ${tables[vendor].table} 
+  where ${tables[vendor].id} = ${device_id} 
+  limit 1`;
+
+  const res = await query(sql);
+  return !!res.result?.rows?.length;
+};
+
+const genericToVendorTelemetry = (
+  tel: GenericVendorTelemetry,
+  idPosition?: number
+): VectronicRawTelemetry | LotekRawTelemetry => {
+  if (tel.device_make === ImportVendors.Vectronic) {
+    return {
+      idPosition,
+      idCollar: tel.device_id,
+      latitude: tel.latitude,
+      longitude: tel.longitude,
+      acquisitionTime: tel.acquisition_date,
+      height: tel.elevation,
+      //frequency
+      temperature: tel.temperature,
+      //satellite
+      //dilution
+      mainVoltage: tel.main_voltage,
+      backupVoltage: tel.backup_voltage,
+    } as VectronicRawTelemetry;
+  }
+  //Lotek
+  else {
+    return {
+      // ChannelStatus: null,
+      // UploadTimeStamp: null,
+      Latitude: tel.latitude,
+      Longitude: tel.longitude,
+      Altitude: tel.elevation,
+      // ECEFx: null,
+      // ECEFy: null,
+      // ECEFz: null,
+      // RxStatus: null,
+      // PDOP: null,
+      MainV: tel.main_voltage,
+      BkUpV: tel.backup_voltage,
+      Temperature: tel.temperature,
+      // FixDuration: null,
+      // bHasTempVoltage: null,
+      // DevName: null,
+      // DeltaTime: null,
+      // FixType: null,
+      // CEPRadius: null,
+      // CRC: null,
+      DeviceID: tel.device_id,
+      RecDateTime: tel.acquisition_date,
+    } as LotekRawTelemetry;
+  }
+};
+
+export {
+  fetchVendorTelemetryData,
+  retrieveCredentials,
+  ToLowerCaseObjectKeys,
+  genericToVendorTelemetry,
+  doesVendorDeviceExist,
+};

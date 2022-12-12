@@ -1,4 +1,5 @@
 import { Dayjs } from 'dayjs';
+import { Animal } from './animal';
 
 /**
  * columns fetched from the api_vectronics_collar_data table
@@ -10,6 +11,11 @@ export type APIVectronicData = {
 };
 
 export type VendorType = 'Vectronic' | 'Lotek' | 'ATS';
+
+export enum ImportVendors {
+  Vectronic = 'Vectronic',
+  Lotek = 'Lotek',
+}
 
 /** object returned from a successful call to the
  * vendor_insert_raw_vectronic pg function
@@ -107,6 +113,53 @@ export type LotekRawTelemetry = {
   CRC;
   DeviceID;
   RecDateTime;
+};
+
+//Add optional
+export type ManualVectronicTelemetry = {
+  idCollar: number;
+  latitude: number;
+  longitude: number;
+  acquisitionTime: Dayjs; //change to date
+  height?: number;
+  //frequency
+  temperature?: number;
+  //satellite
+  //dilution;
+  mainVoltage?: number;
+  backupVoltage?: number;
+};
+
+export type ManualLotekTelemetry = {
+  DeviceID: number;
+  Latitude: number;
+  Longitude: number;
+  RecDateTime: Dayjs;
+  Altitude?: number;
+  //frequency
+  Temperature?: number;
+  //satellite
+  //Dilution
+  MainV?: number;
+  BkUpV?: number;
+};
+
+export type GenericVendorTelemetry = {
+  device_id: number;
+  device_make: ImportVendors;
+  latitude?: number;
+  longitude?: number;
+  utm_northing?: number;
+  utm_easting?: number;
+  utm_zone?: number;
+  acquisition_date: Dayjs;
+  elevation?: number;
+  //frequency?: number;
+  temperature?: number;
+  //satelite?: string; //Drop this one
+  //dilution?: string; DOP
+  main_voltage?: number;
+  backup_voltage?: number;
 };
 
 export type LotekToken = {

@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { retrieveCredentials, ToLowerCaseObjectKeys } from './vendor_helpers';
 import { getRowResults, query } from '../../database/query';
 import {
@@ -14,10 +14,10 @@ const LOTEK_CREDENTIAL_ID = process.env.LOTEK_API_CREDENTIAL_NAME;
 /**
  *
  */
-const _insertLotekRecords = async function (
+export const _insertLotekRecords = async function (
   rows: LotekRawTelemetry[]
 ): Promise<ManualVendorAPIResponse> {
-  console.log(`${rows.length} records for lotek device ${rows[0].DeviceID}`);
+  //console.log(`${rows.length} records for lotek device ${rows[0].DeviceID}`);
   const fn_name = 'vendor_insert_raw_lotek';
   const records = rows.filter((e) => e && e.DeviceID);
 
@@ -156,4 +156,15 @@ const performManualLotekUpdate = async (
   return [...dbResults, ...failed];
 };
 
-export { performManualLotekUpdate, _fetchAPIToken };
+//Mimics db function -> concat(deviceid, '_', recdatetime),
+const getLotekTimeID = (
+  device_id: number,
+  recDateTime: Dayjs
+): string | undefined => {
+  const d = dayjs(recDateTime);
+  //Need to provide atleast one to be able to safely create unique timeid
+  if (!d.hour() && !d.minute && !d.second) return;
+  return `${device_id}_${dayjs(recDateTime).format('YYYY-MM-DDTHH:mm:ss')}`;
+};
+
+export { performManualLotekUpdate, _fetchAPIToken, getLotekTimeID };

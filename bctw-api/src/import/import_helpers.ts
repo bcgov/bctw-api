@@ -28,6 +28,28 @@ const mapCsvHeader = (header: string): string => {
   }
 }
 
+const mapXlsxHeader = (header: string): string => {
+  const trimmed = header.trim();
+  switch(trimmed) {
+    case "Wildlife Health ID":
+      return "wlh_id";
+    case "Suspected Mortality Cause":
+      return "proximate_cause_of_death";
+    case "Device Retrieval Date":
+      return "retrieval_date";
+    case "Device Retrieval Comments":
+      return "retrieval_comment";
+    case "Telemetry Device ID":
+      return "device_id";
+    case "Vaginal Implant Transmitter ID":
+      return "implant_device_id";
+    case "Animal Mortality Date":
+      return "mortality_date";
+    default:
+      return trimmed.toLowerCase().split(' ').join('_');
+  }
+}
+
 /**
  * deletes an uploaded csv file
  * @param path fully qualified path of the file to be removed
@@ -55,12 +77,24 @@ const removeEmptyProps = (obj) => {
   return obj;
 }
 
+const dateRangesOverlap = (startDateA : Date, endDateA : Date, startDateB : Date, endDateB : Date): boolean => {
+  startDateA = new Date(startDateA);
+  startDateB = new Date(startDateB);
+
+  endDateA = endDateA ? new Date(endDateA) : new Date(8640000000000000);
+  endDateB = endDateB ? new Date(endDateB) : new Date(8640000000000000);
+
+  return startDateA <= endDateB && endDateA >= startDateB;
+}
+
 // converts an objects values to a string
 const rowToCsv = (row): string => Object.values(row).join(',');
 
 export {
   cleanupUploadsDir,
   mapCsvHeader,
+  mapXlsxHeader,
   removeEmptyProps,
   rowToCsv,
+  dateRangesOverlap
 }

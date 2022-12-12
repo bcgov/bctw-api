@@ -4,7 +4,11 @@ import helmet from 'helmet';
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
-import { importCsv } from './import/csv';
+import {
+  finalizeImport,
+  importXlsx,
+  getTemplateFile,
+} from './import/csv';
 import {
   getUserIdentifierDomain,
   matchAny,
@@ -25,7 +29,7 @@ const unauthorizedURLs: Record<string, string> = {
 };
 
 // setup the express server
-const app = express()
+export const app = express()
   .use(helmet())
   .use(cors())
   .use(express.urlencoded({ extended: true }))
@@ -108,12 +112,16 @@ const app = express()
   // export/import
   .post('/export', api.getExportData)
   .post('/export-all', api.getAllExportData)
-  .post('/import-csv', upload.single('csv'), importCsv)
+  .post('/import-xlsx', upload.single('validated-file'), importXlsx)
+  .post('/import-finalize', finalizeImport)
   .post(
     '/import-xml',
     upload.array('xml'),
     api.parseVectronicKeyRegistrationXML
   )
+  .post('/import-telemetry', api.importTelemetry)
+  .get('/get-template', getTemplateFile)
+  .get('/get-collars-keyx', api.retrieveCollarKeyXRelation)
   // vendor
   .post('/fetch-telemetry', api.fetchVendorTelemetryData)
 
@@ -129,22 +137,24 @@ const app = express()
 // run the server.
 // Nodemon was giving issues with port 3000, add new one to env to solve problem.
 const PORT = 3000;
-http.createServer(app).listen(PORT, () => {
-  console.log(`listening on port ${PORT}`);
-  pgPool.connect((err, client) => {
-    const serverMsg = `${process.env.POSTGRES_SERVER_HOST ?? 'localhost'}:${
-      process.env.POSTGRES_SERVER_PORT ?? 5432
-    }`;
-    if (err) {
-      console.log(
-        `error connecting to postgresql server host at ${serverMsg}: ${err}`
-      );
-    } else
-      console.log(`postgres server successfully connected at ${serverMsg}`);
-    client?.release();
+if (process.env.NODE_ENV !== 'test') {
+  http.createServer(app).listen(PORT, () => {
+    console.log(`listening on port ${PORT}`);
+    pgPool.connect((err, client) => {
+      const serverMsg = `${process.env.POSTGRES_SERVER_HOST ?? 'localhost'}:${
+        process.env.POSTGRES_SERVER_PORT ?? 5432
+      }`;
+      if (err) {
+        console.log(
+          `error connecting to postgresql server host at ${serverMsg}: ${err}`
+        );
+      } else
+        console.log(`postgres server successfully connected at ${serverMsg}`);
+      client?.release();
+    });
+    const disableAlerts = process.env.DISABLE_TELEMETRY_ALERTS;
+    if (!(disableAlerts === 'true')) {
+      listenForTelemetryAlerts();
+    }
   });
-  const disableAlerts = process.env.DISABLE_TELEMETRY_ALERTS;
-  if (!(disableAlerts === 'true')) {
-    listenForTelemetryAlerts();
-  }
-});
+}
