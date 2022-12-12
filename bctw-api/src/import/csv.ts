@@ -269,7 +269,6 @@ const getTemplateFile = async function (
   req: Request,
   res: Response
 ): Promise<void> {
-
   const key = req.query.file_key as string;
   //const files = await getFiles([key], true);
 
