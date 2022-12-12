@@ -270,7 +270,7 @@ const getTemplateFile = async function (
   res: Response
 ): Promise<void> {
   const key = req.query.file_key as string;
-  const files = await getFiles([key], false);
+  const files = await getFiles([key]);
 
   const workbook = new XLSX.Workbook();
   await workbook.xlsx.load(Buffer.from(files[0].file, 'base64'));
