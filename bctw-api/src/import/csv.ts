@@ -271,10 +271,20 @@ const getTemplateFile = async function (
 ): Promise<void> {
 
   const key = req.query.file_key as string;
-  const files = await getFiles([key], false);
+  //const files = await getFiles([key], true);
+
+  const file_sql = `select file_key, file_name, file_type, contents_base64 from files where file_key = 'import_template'`;
+  const { result: file_result} = await query(
+    file_sql,
+    'failed to retrieve headers'
+  );
+
+  const b64string = file_result.rows[0].contents_base64;
 
   const workbook = new XLSX.Workbook();
-  await workbook.xlsx.load(Buffer.from(files[0].file, 'utf8'));
+  const buff = await Buffer.from(b64string, 'base64');
+  console.log(buff);
+  await workbook.xlsx.load(buff);
 
   const sheet = workbook.getWorksheet('Device Metadata');
   const valSheet = workbook.getWorksheet('Validation');
@@ -352,17 +362,10 @@ const getTemplateFile = async function (
         showErrorMessage: true,
         type: 'list',
       };
-
-      console.log(
-        `Validation!${val_col}2:${val_col}${code_descriptions.length + 1}`
-      );
     }
   }
 
-  res.set({
-    'Content-Type':
-      'text/html',
-  });
+
 
   /*workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
     res.download('src/import/bctw_data_import_template.xlsx', () => {
@@ -370,7 +373,23 @@ const getTemplateFile = async function (
     });
   });*/
   res.attachment('bctw_data_import_template.xlsx');
-  workbook.xlsx.write(res).then(() => {res.end()});
+  //workbook.xlsx.write(res).then(() => {res.end()});
+  const outputBuff = await workbook.xlsx.writeBuffer();
+  console.log("Output:")
+  console.log(outputBuff);
+
+  res.set({
+    'Content-Disposition': `attachment; filename="filename.xlsx"`,
+    'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+
+  workbook.xlsx.write(res)
+  .then(() =>{
+    
+  }).then(() => {
+    res.end();
+  })
+  
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };
