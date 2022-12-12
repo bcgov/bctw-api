@@ -269,16 +269,11 @@ const getTemplateFile = async function (
   req: Request,
   res: Response
 ): Promise<void> {
-
   const key = req.query.file_key as string;
   const files = await getFiles([key]);
 
   const workbook = new XLSX.Workbook();
-<<<<<<< HEAD
   await workbook.xlsx.load(Buffer.from(files[0].file, 'base64'));
-=======
-  await workbook.xlsx.load(Buffer.from(files[0].file, 'utf8'));
->>>>>>> e53c6836f5655ee2d39865fd63bb8ac64580b277
 
   const sheet = workbook.getWorksheet('Device Metadata');
   const valSheet = workbook.getWorksheet('Validation');
@@ -364,27 +359,12 @@ const getTemplateFile = async function (
   }
 
   res.set({
-    'Content-Type':
-      'text/html',
+    'Content-Type': 'text/html',
   });
-<<<<<<< HEAD
-  //'src/import/bctw_data_import_template.xlsx'
-  workbook.xlsx
-    .writeFile('src/import/bctw_data_import_template.xlsx')
-    .then(() => {
-      res.download('src/import/bctw_data_import_template.xlsx', () => {
-        unlinkSync('src/import/bctw_data_import_template.xlsx');
-      });
-=======
-
-  /*workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
-    res.download('src/import/bctw_data_import_template.xlsx', () => {
-      unlinkSync('src/import/bctw_data_import_template.xlsx');
->>>>>>> e53c6836f5655ee2d39865fd63bb8ac64580b277
-    });
-  });*/
   res.attachment('bctw_data_import_template.xlsx');
-  workbook.xlsx.write(res).then(() => {res.end()});
+  workbook.xlsx.write(res).then(() => {
+    res.end();
+  });
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };
