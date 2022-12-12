@@ -274,7 +274,7 @@ const getTemplateFile = async function (
   const files = await getFiles([key], false);
 
   const workbook = new XLSX.Workbook();
-  await workbook.xlsx.load(Buffer.from(files[0].file, 'binary'));
+  await workbook.xlsx.load(Buffer.from(files[0].file, 'utf8'));
 
   const sheet = workbook.getWorksheet('Device Metadata');
   const valSheet = workbook.getWorksheet('Validation');
@@ -361,7 +361,7 @@ const getTemplateFile = async function (
 
   res.set({
     'Content-Type':
-      'application/octet-stream',
+      'text/html',
   });
 
   /*workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
