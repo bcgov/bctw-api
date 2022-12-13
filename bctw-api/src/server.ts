@@ -4,11 +4,7 @@ import helmet from 'helmet';
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
-import {
-  finalizeImport,
-  importXlsx,
-  getTemplateFile,
-} from './import/csv';
+import { finalizeImport, importXlsx, getTemplateFile } from './import/csv';
 import {
   getUserIdentifierDomain,
   matchAny,
@@ -33,6 +29,7 @@ export const app = express()
   .use(helmet())
   .use(cors())
   .use(express.urlencoded({ extended: true }))
+  .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
     // determine if user is authorized
@@ -120,7 +117,6 @@ export const app = express()
     api.parseVectronicKeyRegistrationXML
   )
   .post('/import-telemetry', api.importTelemetry)
-  .get('/get-template', getTemplateFile)
   .get('/get-collars-keyx', api.retrieveCollarKeyXRelation)
   // vendor
   .post('/fetch-telemetry', api.fetchVendorTelemetryData)
