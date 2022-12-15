@@ -222,8 +222,9 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
 
   const onFinishedParsing = async (obj: ParsedXLSXSheetResult[]) => {
     cleanupUploadsDir(file.path);
+    //console.log('Finished parsing! Object has keys ' + JSON.stringify(obj));
     if (obj.length) {
-      return res.send(obj);
+      return res.status(200).send(obj);
     } else {
       return res.status(500).send('Failed parsing the XLSX file.');
     }
@@ -282,7 +283,6 @@ const getTemplateFile = async function (
 
   const workbook = new XLSX.Workbook();
   const buff = await Buffer.from(b64string, 'base64');
-  console.log(buff);
   await workbook.xlsx.load(buff);
 
   const sheet = workbook.getWorksheet(deviceMetadataSheetName);

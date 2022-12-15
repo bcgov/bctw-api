@@ -198,35 +198,36 @@ const validateAnimalDeviceAssignment = async (
   const row_start = row.capture_date ?? new Date();
   const row_end = row.retrieval_date ?? row.mortality_date ?? null;
 
-  let sql = constructFunctionQuery('get_device_assignment_history', [
-    row.device_id,
-  ]);
-  let { result, error, isError } = await query(
-    sql,
-    'failed to retrieve device assignment'
-  );
-  const deviceLinks = getRowResults(result, 'get_device_assignment_history');
-  if (
-    deviceLinks.some((link) =>
-      dateRangesOverlap(
-        link.attachment_start,
-        link.attachment_end,
-        row_start,
-        row_end
+  if (typeof row.device_id == 'number') {
+    let sql = constructFunctionQuery('get_device_assignment_history', [
+      row.device_id,
+    ]);
+    let { result, error, isError } = await query(
+      sql
+    );
+  
+    const deviceLinks = getRowResults(result, 'get_device_assignment_history');
+    if (
+      deviceLinks.some((link) =>
+        dateRangesOverlap(
+          link.attachment_start,
+          link.attachment_end,
+          row_start,
+          row_end
+        )
       )
-    )
-  ) {
-    linkData.errors.device_id = {
-      desc: ErrorMsgs.metadata.alreadyAttached,
-      help: ErrorMsgs.metadata.alreadyAttached,
-    };
-  } else if (deviceLinks.length > 0) {
-    linkData.warnings.push({
-      message: importMessages.warningMessages.previousDeployment.message(row.device_id),
-      help: importMessages.warningMessages.previousDeployment.help,
-    });
+    ) {
+      linkData.errors.device_id = {
+        desc: ErrorMsgs.metadata.alreadyAttached,
+        help: ErrorMsgs.metadata.alreadyAttached,
+      };
+    } else if (deviceLinks.length > 0) {
+      linkData.warnings.push({
+        message: importMessages.warningMessages.previousDeployment.message(row.device_id),
+        help: importMessages.warningMessages.previousDeployment.help,
+      });
+    }
   }
-  //console.log("Device links " + JSON.stringify(deviceLinks));
 
   if (row.critter_id) {
     let sql = constructFunctionQuery('get_animal_collar_assignment_history', [
