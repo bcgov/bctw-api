@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
-import { _insertLotekRecords } from '../../apis/vendor/lotek';
-import { pgPool } from '../../database/pg';
-import { ErrorMsgs } from '../../utils/strings';
+import { ErrorMsgs } from '../../src/utils/strings';
+// import { _insertLotekRecords } from '../../apis/vendor/lotek';
+// import { pgPool } from '../../database/pg';
+// import { ErrorMsgs } from '../../utils/strings';
 import {
   existingDateDevice21510,
   idir,

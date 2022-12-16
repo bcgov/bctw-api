@@ -1,6 +1,8 @@
 import { idir, request } from '../utils/constants';
 
 const req = request.post('/import-xml').query(idir);
+const existingKeyX = 'tests/utils/files/Collar45323_Registration.keyx';
+const newKeyX = 'tests/utils/files/Collar45333_Registration.keyx';
 
 describe('KeyX Import Endpoint', () => {
   describe('POST /import-xml', () => {
@@ -13,7 +15,7 @@ describe('KeyX Import Endpoint', () => {
         const res = await request
           .post('/import-xml')
           .query(idir)
-          .attach('xml', 'src/tests/utils/files/Collar45323_Registration.keyx');
+          .attach('xml', existingKeyX);
         expect(res.body.errors.length).toBe(1);
       });
     });
@@ -22,7 +24,7 @@ describe('KeyX Import Endpoint', () => {
         const res = await request
           .post('/import-xml')
           .query(idir)
-          .attach('xml', 'src/tests/utils/files/Collar45333_Registration.keyx');
+          .attach('xml', newKeyX);
         expect(res.body.results.length).toBe(1);
       });
     });

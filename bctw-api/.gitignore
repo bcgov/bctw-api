@@ -10,3 +10,4 @@ oc
 docker-compose.yml
 .devcontainer
 .vscode
+*.keyx

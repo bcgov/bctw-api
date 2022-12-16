@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
 import supertest from 'supertest';
-import { app } from '../../server';
+import { app } from '../../src/server';
 
 const request = supertest(app);
 

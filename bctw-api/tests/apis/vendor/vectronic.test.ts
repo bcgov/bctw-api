@@ -2,7 +2,11 @@ import dayjs from 'dayjs';
 import {
   getLowestNegativeVectronicIdPosition,
   vectronicRecordExists,
-} from '../../../apis/vendor/vectronic';
+} from '../../../src/apis/vendor/vectronic';
+// import {
+//   getLowestNegativeVectronicIdPosition,
+//   vectronicRecordExists,
+// } from '../../../apis/vendor/vectronic';
 import {
   existingDateDevice21510,
   VectronicDevice,
