@@ -1,5 +1,5 @@
-import { doesVendorDeviceExist } from '../../../apis/vendor/vendor_helpers';
-import { ImportVendors } from '../../../types/vendor';
+import { doesVendorDeviceExist } from '../../../src/apis/vendor/vendor_helpers';
+import { ImportVendors } from '../../../src/types/vendor';
 import { lotekPayload, vectronicPayload } from '../../utils/constants';
 
 describe('Vendor Helpers Functions', () => {
