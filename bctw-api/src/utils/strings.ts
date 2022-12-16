@@ -12,11 +12,10 @@ const ErrorMsgs = {
   },
   metadata: {
     alreadyAttached: 'This device is already assigned to an animal. Unlink this device and try again.',
-    missingData: 'You have not provided sufficient data.',
+    missingData: 'This row is missing a required field. Ensure you have entered a species, a device ID, a device make, and a capture date.',
     badMarkings: 'This animal has insufficient marking information to uniquely identify it.',
     badMortalityDate: 'Your capture date disagrees with the mortality date.',
-    badRetrievelDate: 'Your capture date disagrees with the retrieval date.',
-
+    badRetrievelDate: 'Your capture date disagrees with the retrieval date.'
   },
   fields: {
     code: {

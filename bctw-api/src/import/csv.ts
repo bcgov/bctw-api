@@ -67,7 +67,7 @@ type ParsedXLSXSheetResult = {
 
 const deviceMetadataSheetName = 'Device Metadata';
 const telemetrySheetName = 'Telemetry';
-const validSheetNames = [deviceMetadataSheetName, telemetrySheetName];
+const validSheetNames = [deviceMetadataSheetName];//, telemetrySheetName];
 const extraCodeFields = ['species'];
 
 const obtainColumnTypes = async (): Promise<ColumnTypeMapping> => {
@@ -222,8 +222,9 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
 
   const onFinishedParsing = async (obj: ParsedXLSXSheetResult[]) => {
     cleanupUploadsDir(file.path);
+    //console.log('Finished parsing! Object has keys ' + JSON.stringify(obj));
     if (obj.length) {
-      return res.send(obj);
+      return res.status(200).send(obj);
     } else {
       return res.status(500).send('Failed parsing the XLSX file.');
     }
@@ -282,10 +283,14 @@ const getTemplateFile = async function (
 
   const workbook = new XLSX.Workbook();
   const buff = await Buffer.from(b64string, 'base64');
-  console.log(buff);
   await workbook.xlsx.load(buff);
 
-  const sheet = workbook.getWorksheet('Device Metadata');
+  const sheet = workbook.getWorksheet(deviceMetadataSheetName);
+
+  /***Temporary removal, should delete these two lines when telemetry import is implemented. */
+  const telemetrySheet = workbook.getWorksheet(telemetrySheetName);
+  workbook.removeWorksheet(telemetrySheet.id);
+
   const valSheet = workbook.getWorksheet('Validation');
   const headerRow = sheet.getRow(1);
 
@@ -371,23 +376,9 @@ const getTemplateFile = async function (
 
   workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
     res.download('src/import/bctw_data_import_template.xlsx', () => {
-      //unlinkSync('src/import/bctw_data_import_template.xlsx');
+      unlinkSync('src/import/bctw_data_import_template.xlsx');
     });
   });
-  /*res.attachment('bctw_data_import_template.xlsx');
-  const outputBuff = await workbook.xlsx.writeBuffer();
-  console.log("Output:")
-  console.log(outputBuff);*/
-
-
-
-  /*workbook.xlsx.write(res)
-  .then(() =>{
-    
-  }).then(() => {
-    res.end();
-  })*/
-  
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };
