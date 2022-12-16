@@ -107,7 +107,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([newAnimalDevicePayload]);
+                    .send({payload: [newAnimalDevicePayload]});
                 expect(res.status).toBe(200);
             })
         });
@@ -117,7 +117,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([newAnimalDevicePayload, newAnimalDevicePayloadDifferentTime]);
+                    .send({payload: [newAnimalDevicePayload, newAnimalDevicePayloadDifferentTime]});
                 expect(res.status).toBe(200);
                 expect(res.body.results.length).toBe(2);
                 expect(res.body.results[0].critter_id).toEqual(res.body.results[1].critter_id);
@@ -129,7 +129,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([newAnimalDevicePayload, newAnimalDevicePayloadWithMortality]);
+                    .send({payload: [newAnimalDevicePayload, newAnimalDevicePayloadWithMortality]});
                 expect(res.status).toBe(200);
                 expect(res.body.results.length).toBe(2);
                 expect(res.body.results[0].critter_id).not.toEqual(res.body.results[1].critter_id);
@@ -141,7 +141,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([newAnimalDevicePayload, newAnimalDevicePayload]);
+                    .send({payload: [newAnimalDevicePayload, newAnimalDevicePayload]});
                 expect(res.status).toBe(500);
             })
         });
@@ -153,7 +153,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([newAnimalExistingDevice]);
+                    .send({payload: [newAnimalExistingDevice]});
                 expect(res.status).toBe(200);
                 expect(res.body.results[0].collar_id).toBe(device.result.rows[0].collar_id);
             })
@@ -165,7 +165,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([existingAnimalNewDevice]);
+                    .send({payload: [existingAnimalNewDevice]});
                 expect(res.status).toBe(200);
                 expect(res.body.results[0].critter_id).toBe(critter_id);
             })
@@ -177,7 +177,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([existingMarkingsAfterMort]);
+                    .send({payload: [existingMarkingsAfterMort]});
                 expect(res.status).toBe(200);
                 expect(res.body.results[0].critter_id).not.toBe(critter_id);
             })
@@ -188,7 +188,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([animalGenericMarkings]);
+                    .send({payload: [animalGenericMarkings]});
                 expect(res.status).toBe(500);
             })
         });
@@ -201,7 +201,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([blob]);
+                    .send({payload: [blob]});
                 expect(res.status).toBe(200);
                 expect(res.body.results[0].device_valid_from).toContain("2018-01-01");
             });
@@ -214,7 +214,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([blob, blob2]);
+                    .send({payload: [blob, blob2]});
                 expect(res.status).toBe(200);
                 console.log(res.body.results);
                 expect(res.body.results[0].device_valid_from).toContain("2018-01-01");
@@ -229,7 +229,7 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([blob]);
+                    .send({payload: [blob]});
                 expect(res.status).toBe(200);
                 expect(res.body.results[0].device_valid_from).toBe(null);
             });
@@ -241,11 +241,25 @@ describe('POST /import-finalize', () => {
                 const res = await request
                     .post('/import-finalize')
                     .query(idir)
-                    .send([blob]);
+                    .send({payload: [blob]});
                 expect(res.status).toBe(200);
                 expect(res.body.results[0].device_valid_from).toContain("2022-02-13");
             });
         });
+        describe('Add a new animal but assign to another user', () => {
+            it('Should create the animal successfully and grant manager permission to specified user', async () => {
+                const res = await request
+                    .post('/import-finalize')
+                    .query(idir)
+                    .send({user_id: 12, payload: [newAnimalDevicePayload]});
+                expect(res.status).toBe(200);
+                /*
+                * This test kinda needs improvement.
+                * Ideally needs to have some way to check that there is now an entry in user_animal_assignment matching the provided id.
+                * For now we can at least test that it doesn't throw any errors.
+                */
+            })
+        })
     });
 
 });
