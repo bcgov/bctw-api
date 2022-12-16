@@ -205,6 +205,11 @@ const validateAnimalDeviceAssignment = async (
     let { result, error, isError } = await query(
       sql
     );
+
+    if(isError) {
+      console.log('Type of device id ' + typeof row.device_id);
+      console.log(error.message);
+    }
   
     const deviceLinks = getRowResults(result, 'get_device_assignment_history');
     if (
