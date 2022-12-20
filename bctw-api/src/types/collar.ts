@@ -29,7 +29,7 @@ export interface ICollar extends BCTWBaseType {
   purchase_month: number; // TODO: remove
   purchase_year: number; // TODO: remove
   retrieval_date: Date;
-  retrieved: boolean;
+  retrieved_ind: boolean;
   satellite_network: string;
   user_comment: string; // TODO: remove
   vendor_activation_status: boolean; // TODO: remove
@@ -67,7 +67,7 @@ export class Collar implements ICollar {
   purchase_month: number; // TODO: remove
   purchase_year: number; // TODO: remove
   retrieval_date: Date;
-  retrieved: boolean;
+  retrieved_ind: boolean;
   satellite_network: string;
   user_comment: string; // TODO: remove
   valid_from: Date;
