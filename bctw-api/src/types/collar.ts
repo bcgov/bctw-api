@@ -2,7 +2,7 @@ import { BCTWBaseType } from './base_types';
 
 export interface ICollar extends BCTWBaseType {
   // activation_comment: string;
-  // activation_status: boolean;
+  // activation_status_ind: boolean;
   camera_device_id: number;
   collar_transaction_id: string;
   // device_comment: string;
@@ -37,7 +37,7 @@ export interface ICollar extends BCTWBaseType {
 
 export class Collar implements ICollar {
   // activation_comment: string;
-  // activation_status: boolean;
+  // activation_status_ind: boolean;
   camera_device_id: number;
   collar_id: string;
   collar_transaction_id: string;

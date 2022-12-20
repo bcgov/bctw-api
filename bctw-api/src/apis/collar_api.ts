@@ -81,7 +81,7 @@ const getUnattachedDeviceSQL = function (
       ${
         getAllProps
           ? 'c.*,'
-          : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status,'
+          : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status_ind,'
       }
       ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type"
     FROM ${S_API}.collar_v c 
@@ -149,7 +149,7 @@ const getAttachedDeviceSQL = function (
       ${
         getAllProps
           ? 'c.*,'
-          : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status,'
+          : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status_ind,'
       }
       ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type",
       a.critter_id, a.animal_id, a.wlh_id,
@@ -225,7 +225,7 @@ const getAllCollars = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const base = `select collar_id, device_id, frequency, device_make, device_status, device_type, device_model, activation_status FROM ${S_API}.collar_v`;
+  const base = `select collar_id, device_id, frequency, device_make, device_status, device_type, device_model, activation_status_ind FROM ${S_API}.collar_v`;
 
   const filter = getFilterFromRequest(req);
   const page = (req.query?.page || 0) as number;
@@ -253,11 +253,11 @@ const getCollarsAndDeviceIds = async function (
   const base = `SELECT ${applyCount(
     page
   )}* FROM (SELECT collar_id, device_id, frequency, device_make, device_status, 
-    device_type, device_model, activation_status FROM ${S_API}.collar_v 
+    device_type, device_model, activation_status_ind FROM ${S_API}.collar_v 
     UNION SELECT crypto.gen_random_uuid() as collar_id, deviceid AS device_id, NULL::float AS frequency, 
     vendor::varchar AS device_make, NULL::varchar AS device_status, 
     NULL::varchar AS device_type, 'Unassigned Collar'::varchar AS device_model, 
-    NULL::boolean AS activation_status FROM ${S_BCTW}.unassigned_telemetry_v) as s`;
+    NULL::boolean AS activation_status_ind FROM ${S_BCTW}.unassigned_telemetry_v) as s`;
   const filter = getFilterFromRequest(req);
   const sql = constructGetQuery({
     base,
