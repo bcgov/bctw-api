@@ -1,13 +1,9 @@
-import csvtojson from 'csvtojson';
-const fs = require('fs').promises;
-import {
-  IATSRow,
-  IDeviceReadingEvent,
-  ITransmissionEvent,
-} from 'types/ats';
-import { isWithin24Hrs, parseAsCT, parseAsLocal } from '../../utils/time';
-import { Dayjs } from 'dayjs';
-const dayjs = require('dayjs')
+import csvtojson from "csvtojson";
+const fs = require("fs").promises;
+import { IATSRow, IDeviceReadingEvent, ITransmissionEvent } from "types/ats";
+import { isWithin24Hrs, parseAsCT, parseAsLocal } from "../../utils/time";
+import { Dayjs } from "dayjs";
+const dayjs = require("dayjs");
 
 /**
  * helper functions for transforming the CSV files to JSON
@@ -32,8 +28,8 @@ const parseCsv = async (path): Promise<any[]> => {
  */
 const parseDateFromEventData = (row: IDeviceReadingEvent): Dayjs => {
   let date: Dayjs = parseAsLocal(row.Date);
-  date = date.hour(+(row.Hour));
-  date = date.minute(+(row.Minute));
+  date = date.hour(+row.Hour);
+  date = date.minute(+row.Minute);
   return date;
 };
 
@@ -49,12 +45,12 @@ const filterCollarDataAfter = (
   return data.filter((d) => dayjs(d.Date).isAfter(olderThan));
 };
 
-const filterTransmissionDataAfter =  (
+const filterTransmissionDataAfter = (
   data: ITransmissionEvent[],
   olderThan: Dayjs
 ): ITransmissionEvent[] => {
-  return data.filter((d) => dayjs(d.DateCT).isAfter(olderThan))
-}
+  return data.filter((d) => dayjs(d.DateCT).isAfter(olderThan));
+};
 
 // merge data and transmission record
 const createMergedRecord = (
@@ -66,17 +62,17 @@ const createMergedRecord = (
   delete copyOfTransmission.Latitude;
   delete copyOfTransmission.Longitude;
   const r = Object.assign(data, copyOfTransmission);
-  r.Date = parseDateFromEventData(data).format('YYYY-MM-DD H:mm');
+  r.Date = parseDateFromEventData(data).format("YYYY-MM-DD H:mm");
   return r;
 };
 
 /**
- * Combines entries from both files into a single bctw.ats_collar_data record.
+ * Combines entries from both files into a single bctw.telemetry_api_ats record.
  * In the sample data looked at so far, the cumulative_d file has more entries on a given
- * day than the transmission record does. 
+ * day than the transmission record does.
  * This function iterates the device event log and looks for a matching transmission record that:
  *   have the same device ID
- *   has a transmission timestamp that AFTER the device event timestamp that within 24 hours 
+ *   has a transmission timestamp that AFTER the device event timestamp that within 24 hours
  * Sometimes there are more than one transmission per day. In this case, assuming that the:
  *   temperature record is the event when the collar takes a reading
  *   transmission record is when the collar transmitted the events to the satellite
@@ -104,7 +100,9 @@ const mergeATSData = (
     });
 
     if (!sameDayTransmissions.length) {
-      console.log(`no transmissions found within 24 hours after the device event - ${tsDeviceEvent.format()}`)
+      console.log(
+        `no transmissions found within 24 hours after the device event - ${tsDeviceEvent.format()}`
+      );
       return;
     }
 
@@ -116,8 +114,14 @@ const mergeATSData = (
     const closestTransmissionAfter = closest.length
       ? closest[0]
       : sameDayTransmissions[0];
-      
-    console.log(`device ${record.CollarSerialNumber} event at ${tsDeviceEvent.format()}, closest transmission at ${closestTransmissionAfter.DateCT}`);
+
+    console.log(
+      `device ${
+        record.CollarSerialNumber
+      } event at ${tsDeviceEvent.format()}, closest transmission at ${
+        closestTransmissionAfter.DateCT
+      }`
+    );
 
     const mergedRecord: IATSRow = createMergedRecord(
       record,

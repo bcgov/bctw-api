@@ -14,7 +14,7 @@ interface IDeviceReadingEvent {
   HDOP: string;
   NumSats: string;
   FixTime: string;
-  '2D/3D': string;
+  "2D/3D": string;
   Date: string;
 }
 
@@ -27,7 +27,7 @@ interface ITransmissionEvent {
   Mortality: string;
   BreakOff: string;
   GpsOnTime: string;
-  SatOnTime: string
+  SatOnTime: string;
   SatErrors: string;
   GmtOffset: string;
   LowBatt: string;
@@ -37,7 +37,7 @@ interface ITransmissionEvent {
   CEPradius_km: string;
 }
 
-// a row in the ats_collar_data database table
+// a row in the telemetry_api_ats database table
 interface IATSRow extends ITransmissionEvent {
   Temperature: string;
   Activity: string;
@@ -49,8 +49,4 @@ interface IATSRow extends ITransmissionEvent {
   Date: string;
 }
 
-export {
-  IDeviceReadingEvent,
-  ITransmissionEvent,
-  IATSRow,
-}
+export { IDeviceReadingEvent, ITransmissionEvent, IATSRow };

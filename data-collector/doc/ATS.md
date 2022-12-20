@@ -19,7 +19,7 @@ ATS does not have an API, and so this method uses the [Cypress](https://www.cypr
   1. parses the .CSV files into JSON
   1. filters out data that is older than the latest row inserted to the raw ATS data table.
   1. iterates the collar data event file rows, finds a matching transmission row
-  1. creates an object representing a row in the `ats_collar_data` table.
+  1. creates an object representing a row in the `telemetry_api_ats` table.
   1. inserts the records to the database.
 
 ### Technical Details:
