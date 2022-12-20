@@ -6,7 +6,7 @@ const DISABLE_PERMISSION_EMAIL =
   process.env.DISABLE_PERMISSION_EMAILS === 'true';
 const BCTW_EMAIL = process.env.BCTW_EMAIL ?? 'bctw@gov.bc.ca';
 
-const RAW_LOTEK = 'lotek_collar_data';
+const RAW_LOTEK = 'telemetry_api_lotek';
 const RAW_VECTRONIC = 'vectronics_collar_data';
 
 const PERMISSION_APPROVED_ID =

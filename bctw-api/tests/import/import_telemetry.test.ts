@@ -100,7 +100,7 @@ describe('POST /import-telemetry', () => {
 
   // LOTEK
   describe('Lotek Payload', () => {
-    describe('given a device_id that does not exist in lotek_collar_data table', () => {
+    describe('given a device_id that does not exist in telemetry_api_lotek table', () => {
       it('should return single error in errors array indicating device_id doesnt exist', async () => {
         const badDevice = 123123;
         expect.assertions(2);
