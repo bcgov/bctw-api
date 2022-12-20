@@ -31,7 +31,7 @@ const disconnect = function (err) {
 
 const getAllCollars = function () {
   console.log("Vectronic: V1.5");
-  const sql = "select * from api_vectronics_collar_data";
+  const sql = "select * from api_vectronic_credential";
 
   const done = function (err, data) {
     if (err) {
@@ -70,7 +70,7 @@ const insertCollarRecords = function (err, result, collar, callback) {
   }
 
   pgPool.query(
-    `update api_vectronics_collar_data set dtlast_fetch = now() where idcollar = ${collar.idcollar};`,
+    `update api_vectronic_credential set dtlast_fetch = now() where idcollar = ${collar.idcollar};`,
     lastFetchCallback
   );
 

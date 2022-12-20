@@ -24,7 +24,7 @@ const VECT_API_TS_FORMAT = 'YYYY-MM-DDTHH:mm:ss';
 const _getVectronicAPIKeys = async function (
   device_ids: number[] = []
 ): Promise<APIVectronicData[]> {
-  let sql = 'select * from api_vectronics_collar_data';
+  let sql = 'select * from api_vectronic_credential';
   if (device_ids.length) {
     sql += ` where idcollar = any('{${device_ids.join()}}')`;
   }
@@ -59,7 +59,7 @@ const _fetchVectronicTelemetry = async function (
   const s = dayjs(start).format(VECT_API_TS_FORMAT);
   const e = dayjs(end).format(VECT_API_TS_FORMAT);
   const url = `${VECT_API_URL}/${idcollar}/gps?collarkey=${collarkey}&afterScts=${s}&beforeScts=${e}`;
-  const updateFetchDateSql = `update api_vectronic_collar_data set dtlast_fetch = now() where idcollar = ${idcollar};`;
+  const updateFetchDateSql = `update api_vectronic_credential set dtlast_fetch = now() where idcollar = ${idcollar};`;
   //console.log('vetronic url: ', url);
   let errStr = '';
   // call the vectronic api, using the agent created with the env variable cert key
@@ -133,7 +133,7 @@ const performManualVectronicUpdate = async (
   end: string,
   device_ids: number[] = []
 ): Promise<ManualVendorAPIResponse[]> => {
-  // retrieve the collar keys from the api_vectronics_collar_data table
+  // retrieve the collar keys from the api_vectronic_credential table
   const vectCollars = await _getVectronicAPIKeys(device_ids);
   if (!vectCollars.length) {
     console.error('no vectronic api rows found');

@@ -14,7 +14,7 @@ const readPromise = promisify(readFile);
 
 const VECT_KEY_UPSERT_FN = `upsert_vectronic_key`;
 
-// interface representing an api_vectronics_collar_data table row
+// interface representing an api_vectronic_credential table row
 interface IKeyX {
   idcollar: string;
   collarkey: string;
@@ -42,7 +42,7 @@ interface IKeyXAsJson {
 
 /**
  * class that takes @param {IKeyXAsJson} as a constructor parameter
- * creates an object representing an api_vectronics_collar_data table row
+ * creates an object representing an api_vectronic_credential table row
  */
 class VectronicKeyxRow implements IKeyX {
   idcollar: string;
@@ -85,7 +85,7 @@ const retrieveCollarKeyXRelation = async (
 
 /**
  * exposed as an API for handling the bulk import of Vectronic .keyx registration collars
- * parses the .keyx files and inserts results to the bctw.api_vectronics_collar_data table
+ * parses the .keyx files and inserts results to the bctw.api_vectronic_credential table
  * to allow the data-collector module to retrieve telemetry records for the device
  * note: the collar record is no longer created as this workflow assumes collar metadata
  * will be uploaded at a later point.

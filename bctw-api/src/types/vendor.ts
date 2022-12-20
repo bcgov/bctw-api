@@ -2,7 +2,7 @@ import { Dayjs } from 'dayjs';
 import { Animal } from './animal';
 
 /**
- * columns fetched from the api_vectronics_collar_data table
+ * columns fetched from the api_vectronic_credential table
  * used in the API call for Vectronic
  */
 export type APIVectronicData = {
