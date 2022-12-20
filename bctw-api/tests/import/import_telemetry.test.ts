@@ -127,7 +127,7 @@ describe('POST /import-telemetry', () => {
 
   // VECTRONIC
   describe('Vectronic Payload', () => {
-    describe('given a device_id that does not exist in vectronics_collar_data table', () => {
+    describe('given a device_id that does not exist in telemetry_api_vectronic table', () => {
       it('should return single error in errors array indicating device_id doesnt exist', async () => {
         const badDevice = 123123;
         expect.assertions(2);

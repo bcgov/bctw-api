@@ -152,7 +152,7 @@ const performManualVectronicUpdate = async (
   const failed = apiResults.filter(
     (f) => !Array.isArray(f)
   ) as ManualVendorAPIResponse[];
-  // for any successful api results, insert them into the vectronics_collar_data table.
+  // for any successful api results, insert them into the telemetry_api_vectronic table.
   const promisesDb = apiResults
     .filter((rows) => Array.isArray(rows) && rows.length)
     .map((rows) => _insertVectronicRecords(rows as VectronicRawTelemetry[]));
