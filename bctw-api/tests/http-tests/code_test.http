@@ -21,7 +21,7 @@ content-type: application/json
 
 {
   "codes": [
-    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0, "code_header":"region"}
+    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_header":"region"}
   ]
 }
 
@@ -31,7 +31,7 @@ content-type: application/json
 
 {
   "codes": [
-    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_sort_order": 0, "code_header":"regxxion"}
+    {"code_name": "tokyo", "code_description": "Tokyo, Japan", "code_header":"regxxion"}
   ]
 }
 
