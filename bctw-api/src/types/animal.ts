@@ -47,7 +47,7 @@ export interface IAnimal extends BCTWBaseType {
   release_utm_zone: number;
   species: string;
   sex: string;
-  translocation: boolean;
+  translocation_ind: boolean;
   user_comment: string; // TODO: remove
   wlh_id: string;
 }
@@ -101,7 +101,7 @@ export class Animal implements IAnimal {
   release_date: Date;
   sex: string;
   species: string;
-  translocation: boolean;
+  translocation_ind: boolean;
   wlh_id: string;
   user_comment: string; // TODO: remove
   valid_from: Date;
