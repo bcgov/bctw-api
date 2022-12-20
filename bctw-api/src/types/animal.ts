@@ -1,6 +1,6 @@
 import { BCTWBaseType } from './base_types';
 export interface IAnimal extends BCTWBaseType {
-//  animal_comment: string;
+  //  animal_comment: string;
   animal_id: string;
   animal_status: string;
   capture_date: Date;
@@ -36,7 +36,7 @@ export interface IAnimal extends BCTWBaseType {
   population_unit: string;
   probable_cause_of_death: string;
   ultimate_cause_of_death: string;
-  recapture: boolean;
+  recapture_ind: boolean;
   region: string;
   release_comment: string;
   release_date: Date;
@@ -53,7 +53,7 @@ export interface IAnimal extends BCTWBaseType {
 }
 
 export class Animal implements IAnimal {
-//  animal_comment: string;
+  //  animal_comment: string;
   critter_id: string;
   critter_transaction_id: string;
   animal_id: string;
@@ -71,13 +71,13 @@ export class Animal implements IAnimal {
   animal_colouration: string;
   ear_tag_id: string; // TODO: remove
   ear_tag_left_colour: string;
-//  ear_tag_left_id: string;
+  //  ear_tag_left_id: string;
   ear_tag_right_colour: string;
-//  ear_tag_right_id: string;
+  //  ear_tag_right_id: string;
   estimated_age: number;
   // juvenile_at_heel: boolean;
   juvenile_at_heel: string; // TODO: remove
-  // juvenile_at_heel_count: number; 
+  // juvenile_at_heel_count: number;
   life_stage: string;
   map_colour: string;
   mortality_comment: string;
@@ -90,7 +90,7 @@ export class Animal implements IAnimal {
   probable_cause_of_death: string;
   ultimate_cause_of_death: string;
   population_unit: string;
-  recapture: boolean;
+  recapture_ind: boolean;
   region: string;
   release_comment: string;
   release_latitude: number;
