@@ -51,7 +51,7 @@ const _fetchLotekTelemetry = async function (
 ): Promise<LotekRawTelemetry[] | ManualVendorAPIResponse> {
   const s = dayjs(start).format('YYYY-MM-DDTHH:mm:ss');
   const e = dayjs(end).format('YYYY-MM-DDTHH:mm:ss');
-  const updateFetchDateSql = `update api_lotek_collar_data set dtlast_fetch = now() where ndeviceid = ${device_id} ;`;
+  const updateFetchDateSql = `update api_lotek_credential set dtlast_fetch = now() where ndeviceid = ${device_id} ;`;
 
   const url = `${uri}/gps?deviceId=${device_id}&dtStart=${s}&dtEnd=${e}`;
   let errStr = '';

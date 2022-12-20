@@ -56,13 +56,13 @@ const insertCollarData = async function (records) {
 };
 
 /*
-Upserts collar data into api_lotek_collar_data table
+Upserts collar data into api_lotek_credential table
 Used to record all Lotek devices for bctw
 */
 const insertAPICollarData = async function (collar: ICollar) {
   const { nDeviceID, strSpecialID, dtCreated, strSatellite } = collar;
   const keys = Object.keys(collar);
-  const sql = `insert into bctw.api_lotek_collar_data (${keys.toString()}, dtrecord_added)
+  const sql = `insert into bctw.api_lotek_credential (${keys.toString()}, dtrecord_added)
   values (${nDeviceID}, '${strSpecialID}', '${dtCreated}', '${strSatellite}', now())
   ON CONFLICT (ndeviceid) DO UPDATE SET ${keys
     .slice(1)
@@ -93,7 +93,7 @@ const iterateCollars = async function (collar: ICollar) {
   }
   await insertAPICollarData(collar).catch((err) => {
     console.log(
-      `Error inserting ${collar} into api_lotek_collar_data table...`,
+      `Error inserting ${collar} into api_lotek_credential table...`,
       err
     );
   });
