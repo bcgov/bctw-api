@@ -4,7 +4,7 @@ apiVersion: "v1"
 metadata:
   name: "bctw-cronjob-vectronic"
   annotations:
-    description: "Cron job to call Vectronic API using Node.js"
+    description: "Cron job to call vectronic API using Node.js"
     tags: "scheduler,cron job,external, vectronic"
 objects:
   - kind: "CronJob"
@@ -31,7 +31,7 @@ objects:
             spec:
               containers:
                 - name: "${JOB_NAME}"
-                  image: "docker-registry.default.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}"
+                  image: "image-registry.openshift-image-registry.svc:5000/${IMAGE_NAMESPACE}/${IMAGE_NAME}"
                   command:
                     - "npm"
                     - "run"
@@ -57,29 +57,17 @@ objects:
                           name: bctw
                     - name: POSTGRES_DB
                       value: bctw
-                    - name: LOTEK_USER
-                      valueFrom:
-                        secretKeyRef:
-                          key: username
-                          name: lotex
-                    - name: LOTEK_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          key: password
-                          name: lotex
-                    - name: LOTEK_URL
-                      value: "https://webservice.lotek.com/API"
                     - name: VECTRONICS_URL
                       value: "https://api.vectronic-wildlife.com/v2/collar"
               restartPolicy: "Never"
               terminationGracePeriodSeconds: 30
-              activeDeadlineSeconds: 90
+              activeDeadlineSeconds: 300
               dnsPolicy: "ClusterFirst"
 parameters:
   - name: "NAMESPACE"
     displayName: "Namespace"
     description: "Name of the Namespace where to deploy the Scheduled Job"
-    value: "dgsbmb-test"
+    value: "0dff19-prod"
     required: true
   - name: "JOB_NAME"
     displayName: "Job Name"
@@ -89,18 +77,17 @@ parameters:
   - name: "IMAGE_NAMESPACE"
     displayName: "Image Namespace"
     description: "The locate of the image to use for this cron job."
-    value: "dgsbmb-tools"
+    value: "0dff19-tools"
     required: true
   - name: "IMAGE_NAME"
     displayName: "Image Name"
     description: "The image name to use for this cron job."
-    value: "data-collector:latest"
+    value: "bctw-data-collector:dev"
     required: true
   - name: "SCHEDULE"
     displayName: "Cron Schedule"
     description: "Cron Schedule to Execute the Job (in UTC)"
-    # Currently targeting 2:00 PM daily
-    value: "0 2 * * *" # at 1 o'clock
+    value: "0 9 * * *" # at 9 utc (01:00 pst)
     # value: '*/5 * * * *' #every five minutes
     required: true
   - name: "SUCCESS_JOBS_HISTORY_LIMIT"
