@@ -22,9 +22,9 @@ const disconnect = function (err) {
   pgPool.end();
   const now = moment().utc();
   if (err) {
-    return console.log(`${now}: Failed to process Vectronics collars: `, err);
+    return console.log(`${now}: Failed to process vectronic collars: `, err);
   }
-  console.log(`${now}: Successfully processed Vectronics collars.`);
+  console.log(`${now}: Successfully processed vectronic collars.`);
   let endTimer = performance.now();
   console.log(`Runtime: ${(endTimer - startTimer) / 1000} secs`);
 };
@@ -35,7 +35,7 @@ const getAllCollars = function () {
 
   const done = function (err, data) {
     if (err) {
-      return console.log("Failed to fetch Vectronics collars: ", err);
+      return console.log("Failed to fetch vectronic collars: ", err);
     }
     async.concatSeries(data.rows, iterateCollars, disconnect);
   };

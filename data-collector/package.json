@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rimraf ./build && tsc",
     "start": "node app.js",
-    "vectronics": "node build/vectronics.js",
+    "vectronic": "node build/vectronic.js",
     "lotek": "node build/lotek.js",
     "vendor-merge": "node build/vendor-merge.js",
     "ats": "node build/ats.js",
