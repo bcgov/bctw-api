@@ -67,7 +67,7 @@ type ParsedXLSXSheetResult = {
 
 const deviceMetadataSheetName = 'Device Metadata';
 const telemetrySheetName = 'Telemetry';
-const validSheetNames = [deviceMetadataSheetName];//, telemetrySheetName];
+const validSheetNames = [deviceMetadataSheetName]; //, telemetrySheetName];
 const extraCodeFields = ['species'];
 
 const obtainColumnTypes = async (): Promise<ColumnTypeMapping> => {
@@ -273,8 +273,8 @@ const getTemplateFile = async function (
   const key = req.query.file_key as string;
   //const files = await getFiles([key], true);
 
-  const file_sql = `select file_key, file_name, file_type, contents_base64 from files where file_key = 'import_template'`;
-  const { result: file_result} = await query(
+  const file_sql = `select file_key, file_name, file_type, contents_base64 from file where file_key = 'import_template'`;
+  const { result: file_result } = await query(
     file_sql,
     'failed to retrieve headers'
   );
@@ -371,14 +371,17 @@ const getTemplateFile = async function (
 
   res.set({
     'Content-Disposition': `attachment; filename="filename.xlsx"`,
-    'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    'Content-Type':
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
-  workbook.xlsx.writeFile('src/import/bctw_data_import_template.xlsx').then(() => {
-    res.download('src/import/bctw_data_import_template.xlsx', () => {
-      unlinkSync('src/import/bctw_data_import_template.xlsx');
+  workbook.xlsx
+    .writeFile('src/import/bctw_data_import_template.xlsx')
+    .then(() => {
+      res.download('src/import/bctw_data_import_template.xlsx', () => {
+        unlinkSync('src/import/bctw_data_import_template.xlsx');
+      });
     });
-  });
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };
