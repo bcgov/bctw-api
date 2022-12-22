@@ -53,7 +53,7 @@
     "eslint-config-prettier": "^7.1.0",
     "jest": "^27.0.4",
     "kill-port": "^2.0.0",
-    "nodemon": "^2.0.16",
+    "nodemon": "^2.0.20",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "supertest": "^6.3.1",
