@@ -29,7 +29,7 @@ const dayjs = require("dayjs");
 let tokenConfig = {};
 let lotekUrl: string;
 
-//Extending the console.log to start with UTC time.
+//Extending the console.log to start with UTC time
 
 var log = console.log;
 console.log = function () {
