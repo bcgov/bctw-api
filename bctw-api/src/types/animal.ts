@@ -33,6 +33,7 @@ export interface IAnimal extends BCTWBaseType {
   mortality_utm_easting: number;
   mortality_utm_northing: number;
   mortality_utm_zone: number;
+  mortality_captivity_status_ind: boolean;
   population_unit: string;
   probable_cause_of_death: string;
   ultimate_cause_of_death: string;
@@ -87,6 +88,7 @@ export class Animal implements IAnimal {
   mortality_utm_easting: number;
   mortality_utm_northing: number;
   mortality_utm_zone: number;
+  mortality_captivity_status_ind: boolean;
   probable_cause_of_death: string;
   ultimate_cause_of_death: string;
   population_unit: string;
