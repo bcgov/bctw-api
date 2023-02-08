@@ -33,6 +33,7 @@ const getDBCritters = function (req: Request, res: Response): void {
   const critter = req.query?.critter_id ? `'${req.query?.critter_id}'` : `NULL`;
   const fn_name = 'get_telemetry';
   const sql = `select geojson from ${S_BCTW}.${fn_name}('${getUserIdentifier(req)}', '${start}', '${end}', ${critter})`;
+  console.log(sql)
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
@@ -89,7 +90,8 @@ const getCritterTracks = async function (
         'properties', json_build_object(
           'critter_id', critter_id,
           'population_unit', population_unit,
-          'species', species
+          'species', species,
+          'map_colour', geojson->'properties'->>'map_colour'
         ),
         'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
       ) as "geojson"
@@ -101,7 +103,8 @@ const getCritterTracks = async function (
     group by
       critter_id,
       population_unit,
-      species;
+      species,
+      geojson->'properties'->>'map_colour';
   `;
   const { result, error, isError } = await query(sql);
   if (isError) {
