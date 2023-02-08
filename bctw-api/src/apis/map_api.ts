@@ -33,7 +33,6 @@ const getDBCritters = function (req: Request, res: Response): void {
   const critter = req.query?.critter_id ? `'${req.query?.critter_id}'` : `NULL`;
   const fn_name = 'get_telemetry';
   const sql = `select geojson from ${S_BCTW}.${fn_name}('${getUserIdentifier(req)}', '${start}', '${end}', ${critter})`;
-  console.log(sql)
   const done = function (err, data) {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
