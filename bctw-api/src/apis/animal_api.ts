@@ -87,7 +87,7 @@ const _getAttachedSQL = (
         ${
           getAllProps
             ? 'a.*,'
-            : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'
+            : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit, a.sex,'
         }
         ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
       FROM ${cac_v} ca
