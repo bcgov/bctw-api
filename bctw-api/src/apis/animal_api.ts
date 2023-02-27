@@ -82,12 +82,12 @@ const _getAttachedSQL = (
     WITH ${alias} AS (
       SELECT
         ca.assignment_id, ca.device_id, ca.collar_id, ca.collar_transaction_id, ca.critter_transaction_id, 
-        ca.frequency, ca.device_status, ca.device_make, ca.activation_status_ind, ca.device_model, ca.latitude, ca.longitude,
+        ca.frequency, ca.device_status, ca.device_make, ca.device_type, ca.activation_status_ind, ca.device_model, ca.latitude, ca.longitude,
         ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end, ca.last_fetch_date, ca.last_transmission_date,
         ${
           getAllProps
             ? 'a.*,'
-            : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit,'
+            : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit, a.sex,'
         }
         ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
       FROM ${cac_v} ca
