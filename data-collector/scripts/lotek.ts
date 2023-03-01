@@ -132,7 +132,11 @@ const getAllCollars = async function () {
 
   const { body, error } = await needle("get", url, tokenConfig);
   if (error) {
-    return console.log("Could not get collar list: ", error);
+    throw new Error(`Could not get collar list: ${error}`);
+  }
+  if (!body.length) {
+    console.log("No devices returned from Lotek...");
+    return;
   }
   /*
     Async workflow of cycling through all the collars.
@@ -164,6 +168,10 @@ const getAlerts = async () => {
   let { body, error } = await needle<ILotekAlert[]>("get", url, tokenConfig);
   if (error) {
     console.log(`error retrieving results from Lotek alert API: ${error}`);
+    return;
+  }
+  if (!body.length) {
+    console.log("No Lotek alerts found...");
     return;
   }
   const lastAlert =
@@ -334,8 +342,10 @@ const main = async function () {
   const config = { content_type: "application/x-www-form-urlencoded" };
 
   const { body, error } = await needle("post", loginURL, data, config);
-  if (error) {
-    console.log(`unable to retrieve lotek API login token ${error}`);
+  const err = error || body.error_description || body.error;
+  if (err) {
+    console.log(`unable to retrieve lotek API login token. Error: "${err}"`);
+    return;
   }
   await insertAPICollarData(LOTEK_TEST_COLLAR).catch((err) => {
     console.log(err);
@@ -362,31 +372,7 @@ const main = async function () {
   } catch (e) {
     console.log("Error occured within the script", e);
   } finally {
-    //Check pool is drained and close database connection
-    //Maximum retries set to 50, expected 0-4
-    // let retry = CLOSE_POOL_RETRIES;
-    // while (true) {
-    //   if (!retry) {
-    //     console.log(
-    //       `DB tried ${CLOSE_POOL_RETRIES} safe times to close and was unsuccessful...`
-    //     );
-    //     break;
-    //   }
-    //   const emptyPool = await isPoolEmpty();
-    //   if (emptyPool) {
-    //     console.log("PHASE[3] drain pool COMPLETE");
-    //     break;
-    //   } else {
-    //     retry--;
-    //   }
-    // }
     await safelyDrainAndClosePool(CLOSE_POOL_RETRIES);
-    // await pgPool
-    //   .end()
-    //   .then(() =>
-    //     console.log(`PHASE[4] Closing database connection... COMPLETE`)
-    //   )
-    //   .catch((err) => console.log(`Problem occured when ending pool...`, err));
     console.log(
       `Process took ${(performance.now() - START_TIMER) / 1000} seconds 🦌`
     );
