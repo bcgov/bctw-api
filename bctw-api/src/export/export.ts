@@ -107,8 +107,9 @@ const getAllExportData = async function (
   const end = req.body.range.end;
   const polygons =
     'ARRAY[ ' + req.body.polygons.map((o) => `'${o}'`).join(', ') + ']::text[]';
-  const sql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}', ${polygons}); `;
-
+  const lastTelemetryOnly = req.body.lastTelemetryOnly;
+  const attachedOnly = req.body.attachedOnly;
+  const sql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `;
   const { result, error, isError } = await query(
     sql,
     'failed to retrieve telemetry'
