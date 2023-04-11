@@ -23,6 +23,11 @@ import {
 } from './validation';
 
 import { unlinkSync } from 'fs';
+import { _insertLotekRecords } from '../apis/vendor/lotek';
+import { pgPool } from '../database/pg';
+import axios, { AxiosError } from 'axios';
+import { formatAxiosError } from '../utils/error';
+import { dateRangesOverlap } from './import_helpers';
 
 type CellErrorDescriptor = {
   desc: string;
@@ -233,12 +238,165 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
   await parseXlsx(file, id, onFinishedParsing);
 };
 
+const formatTemplateRowForCritterbase = (row: any) => {
+  const critter = {
+    wlh_id: row.wlh_id,
+    animal_id: row.animal_id,
+    sex: row.sex
+  }
+  return {
+    critter: critter,
+    detail: true
+  }
+}
+
+const isNewAnimal = async (critterbase_critters: any[], bctw_animal: any): Promise<string | null> => {
+
+    const overlappingCritters = critterbase_critters.filter(critter => {
+      const mortality = critter.mortality[0];
+      return critter.capture.some(c => dateRangesOverlap(c.capture_timestamp, mortality.mortality_timestamp, bctw_animal.capture_date, bctw_animal.mortality_date));
+    });
+
+    if(overlappingCritters.length > 1) {
+      throw Error('Found many valid critters for these markings over the same captured-mortality lifespan. The critter trying to be referenced is therefore ambiguous, aborting. Try again with more markings if possible.')
+    }
+    
+
+    if(overlappingCritters.length == 0) {
+      return null;
+    }
+    else {
+      return overlappingCritters[0].critter_id;
+    }
+}
+
+const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any) => {
+  const critterBody = {
+    wlh_id: bctw_animal.wlh_id,
+    animal_id: bctw_animal.animal_id,
+    sex: bctw_animal.sex
+  }
+
+  let errStr;
+  const critter = await axios
+  .post('http://127.0.0.1:8000/api/critters/create', critterBody)
+  .catch((err: AxiosError) => {
+    errStr = formatAxiosError(err);
+  });
+
+  if(!critter) throw Error("Failed to create critter in critterbase");
+
+  const new_critter_id = critter.data.critter_id;
+
+  const locationBody = {
+    longitude: bctw_animal.capture_longitude,
+    latitude: bctw_animal.capture_latitude
+  }
+
+  const location = await axios
+  .post('http://127.0.0.1:8000/api/locations/create', locationBody)
+  .catch((err: AxiosError) => {
+    errStr = formatAxiosError(err);
+  });
+
+  if(!location) throw Error("Error create location in critterbase.");
+
+  const captureBody = {
+    critter_id: new_critter_id,
+    location_id: location.data.location_id,
+    capture_timestamp: bctw_animal.capture_date,
+    capture_comment: bctw_animal.capture_comment
+  } 
+
+  const capture = await axios
+  .post('http://127.0.0.1:8000/api/captures/create', captureBody)
+  .catch((err: AxiosError) => {
+    errStr = formatAxiosError(err);
+  });
+
+  if(!capture) throw Error("Could not create capture in critterbase.");
+  
+  if(bctw_animal.mortality_date) {
+    const mortalityBody = {
+      critter_id: new_critter_id,
+      mortality_timestamp: bctw_animal.mortality_date,
+      mortality_comment: bctw_animal.mortality_comment
+    }
+
+    const mortality = await axios
+    .post('http://127.0.0.1:8000/api/captures/create', mortalityBody)
+    .catch((err: AxiosError) => {
+      errStr = formatAxiosError(err);
+    });
+  }
+
+  return critter.data;
+}
+
+const upsertBulkv2 = async (id: string, req: any) => {
+  const responseArray: any[] = [];
+  const client = await pgPool.connect();
+  await client.query('BEGIN');
+  //try {
+    if(req.user_id) {
+      //To do
+    }
+  
+    for(const pair of req.body.payload) {
+      const data_start = pair.capture_date;
+      const data_end = pair.retrieval_date ?? pair.mortality_date ?? null;
+      const animal_end = pair?.mortality_date ?? null;
+  
+      const res = await client.query(`SELECT bctw.get_device_id_for_bulk_import('${id}', '${JSON.stringify(req.body)}', '${data_start}', '${data_end}')`);
+      const resRows = getRowResults(res, 'get_device_id_for_bulk_import');
+      const link_collar_id = resRows[0];
+
+      let errStr;
+      const critters = await axios
+      .post('http://127.0.0.1:8000/api/critters/unique', formatTemplateRowForCritterbase(pair))
+      .catch((err: AxiosError) => {
+        errStr = formatAxiosError(err);
+      });
+      if(errStr) {
+        console.log(errStr);
+      }
+      if(!critters) {
+        throw Error("Something went wrong contacting critterbase.");
+      }
+
+      const new_critter_id = await isNewAnimal(critters.data, pair);
+
+      let link_critter_id;
+      if(new_critter_id == null) {
+        //Make new critter
+        const new_critter = await insertTemplateAnimalIntoCritterbase(pair);
+        link_critter_id = new_critter.critter_id;
+      }
+      else {
+        link_critter_id = new_critter_id;
+        //Check if user has permission to manage animal.
+        //Make entry in user_animal_assignment table.
+      }
+      
+      const link_res = await client.query(`SELECT bctw.link_collar_to_animal('${id}', '${link_collar_id}', '${link_critter_id}', '${data_start}', '${data_start}', '${data_end}', '${data_end}')`)
+      const link_row = getRowResults(link_res, 'bctw.link_collar_to_animal')[0];
+      console.log(`link_row was ${JSON.stringify(link_row)}`);
+      if(link_row.error) {
+        throw Error(`Could not link collar id ${link_collar_id} with critter id ${link_critter_id}`)
+      }
+      responseArray.push(link_row);
+    }
+ // }
+  await client.query('ROLLBACK');
+  return responseArray;
+}
+
 const finalizeImport = async function (
   req: Request,
   res: Response
 ): Promise<void> {
   const id = getUserIdentifier(req) as string;
-  const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(
+  /*const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(
     req.body
   )}' );`;
   console.log(sql);
@@ -251,8 +409,10 @@ const finalizeImport = async function (
   }
   const resrows = getRowResults(result, 'upsert_bulk_v2');
 
-  let r = { results: resrows } as IBulkResponse;
-  res.status(200).send(r);
+  let r = { results: resrows } as IBulkResponse;*/
+
+  await upsertBulkv2(id, req);
+  res.status(200);
 };
 
 const computeXLSXCol = (idx: number): string => {
