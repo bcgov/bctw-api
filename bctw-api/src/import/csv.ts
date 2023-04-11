@@ -238,7 +238,7 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
   await parseXlsx(file, id, onFinishedParsing);
 };
 
-const formatTemplateRowForCritterbase = (row: any) => {
+const formatTemplateRowForUniqueLookup = (row: any) => {
   const critter = {
     wlh_id: row.wlh_id,
     animal_id: row.animal_id,
@@ -274,7 +274,8 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any) => {
   const critterBody = {
     wlh_id: bctw_animal.wlh_id,
     animal_id: bctw_animal.animal_id,
-    sex: bctw_animal.sex
+    sex: bctw_animal.sex,
+    taxon_name_common: bctw_animal.species
   }
 
   let errStr;
@@ -287,26 +288,32 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any) => {
   if(!critter) throw Error("Failed to create critter in critterbase");
 
   const new_critter_id = critter.data.critter_id;
+  let location: any = null;
+  if(bctw_animal.capture_longitude || bctw_animal.capture_latitude) {
+    const locationBody = {
+      longitude: bctw_animal.capture_longitude,
+      latitude: bctw_animal.capture_latitude
+    }
+  
+    const locationRes = await axios
+    .post('http://127.0.0.1:8000/api/locations/create', locationBody)
+    .catch((err: AxiosError) => {
+      errStr = formatAxiosError(err);
+    });
+  
+    if(!locationRes) throw Error("Failed to create location in critterbase.");
 
-  const locationBody = {
-    longitude: bctw_animal.capture_longitude,
-    latitude: bctw_animal.capture_latitude
+    location = locationRes.data;
   }
-
-  const location = await axios
-  .post('http://127.0.0.1:8000/api/locations/create', locationBody)
-  .catch((err: AxiosError) => {
-    errStr = formatAxiosError(err);
-  });
-
-  if(!location) throw Error("Error create location in critterbase.");
-
+  
   const captureBody = {
     critter_id: new_critter_id,
-    location_id: location.data.location_id,
+    location_id: location?.location_id,
     capture_timestamp: bctw_animal.capture_date,
     capture_comment: bctw_animal.capture_comment
   } 
+
+  console.log(`Capture body was ${JSON.stringify(captureBody)}`)
 
   const capture = await axios
   .post('http://127.0.0.1:8000/api/captures/create', captureBody)
@@ -324,10 +331,12 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any) => {
     }
 
     const mortality = await axios
-    .post('http://127.0.0.1:8000/api/captures/create', mortalityBody)
+    .post('http://127.0.0.1:8000/api/mortality/create', mortalityBody)
     .catch((err: AxiosError) => {
       errStr = formatAxiosError(err);
     });
+
+    if(!mortality) throw Error("Could not create mortality in critterbase");
   }
 
   return critter.data;
@@ -337,12 +346,15 @@ const upsertBulkv2 = async (id: string, req: any) => {
   const responseArray: any[] = [];
   const client = await pgPool.connect();
   await client.query('BEGIN');
-  //try {
+  try {
     if(req.user_id) {
       //To do
     }
   
     for(const pair of req.body.payload) {
+
+      console.log('Pair was ' + JSON.stringify(pair))
+
       const data_start = pair.capture_date;
       const data_end = pair.retrieval_date ?? pair.mortality_date ?? null;
       const animal_end = pair?.mortality_date ?? null;
@@ -353,7 +365,7 @@ const upsertBulkv2 = async (id: string, req: any) => {
 
       let errStr;
       const critters = await axios
-      .post('http://127.0.0.1:8000/api/critters/unique', formatTemplateRowForCritterbase(pair))
+      .post('http://127.0.0.1:8000/api/critters/unique', formatTemplateRowForUniqueLookup(pair))
       .catch((err: AxiosError) => {
         errStr = formatAxiosError(err);
       });
@@ -379,15 +391,23 @@ const upsertBulkv2 = async (id: string, req: any) => {
       }
       
       const link_res = await client.query(`SELECT bctw.link_collar_to_animal('${id}', '${link_collar_id}', '${link_critter_id}', '${data_start}', '${data_start}', '${data_end}', '${data_end}')`)
-      const link_row = getRowResults(link_res, 'bctw.link_collar_to_animal')[0];
+      const link_row = getRowResults(link_res, 'link_collar_to_animal')[0];
       console.log(`link_row was ${JSON.stringify(link_row)}`);
       if(link_row.error) {
         throw Error(`Could not link collar id ${link_collar_id} with critter id ${link_critter_id}`)
       }
       responseArray.push(link_row);
     }
- // }
-  await client.query('ROLLBACK');
+  }
+  catch (e) {
+    console.log(e);
+    await client.query('ROLLBACK');
+    throw Error(JSON.stringify(e));
+  }
+  finally {
+    await client.query('ROLLBACK');
+  }
+  console.log("SUCCESS, response is: " + JSON.stringify(responseArray));
   return responseArray;
 }
 
@@ -410,9 +430,14 @@ const finalizeImport = async function (
   const resrows = getRowResults(result, 'upsert_bulk_v2');
 
   let r = { results: resrows } as IBulkResponse;*/
+  try {
+    const response = await upsertBulkv2(id, req);
+    res.status(200).send(response);
+  }
+  catch(e) {
+    res.status(500).send(e);
+  }
 
-  await upsertBulkv2(id, req);
-  res.status(200);
 };
 
 const computeXLSXCol = (idx: number): string => {
