@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 // api layer schema
 const S_API = `bctw_dapi_v1`;
 // main schema
@@ -5,6 +7,8 @@ const S_BCTW = `bctw`;
 const DISABLE_PERMISSION_EMAIL =
   process.env.DISABLE_PERMISSION_EMAILS === 'true';
 const BCTW_EMAIL = process.env.BCTW_EMAIL ?? 'bctw@gov.bc.ca';
+const CB_API = process.env.CRITTERBASE_API ?? 'http://localhost:8080/api';
+const CB_API_KEY = process.env.CRITTERBASE_API_KEY ?? 'missing API KEY';
 
 const RAW_LOTEK = 'telemetry_api_lotek';
 const RAW_VECTRONIC = 'telemetry_api_vectronic';
@@ -36,6 +40,14 @@ const MORTALITY_EMAIL =
 const MORTALITY_SMS =
   process.env.BCTW_GCNOTIFY_SMS_MORTALITY_DETECTED ??
   'e0ad95d9-56f3-4ad5-bab9-85c31ddef926';
+
+const critterbase = axios.create({
+  baseURL: CB_API,
+  headers: {
+    'API-KEY': CB_API_KEY,
+  },
+});
+
 export {
   S_API,
   S_BCTW,
@@ -52,4 +64,6 @@ export {
   MORTALITY_SMS,
   RAW_LOTEK,
   RAW_VECTRONIC,
+  CB_API,
+  critterbase,
 };

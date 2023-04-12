@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { S_API, S_BCTW } from '../constants';
+import { CB_API, S_API, S_BCTW, critterbase } from '../constants';
 import {
   appendFilter,
   applyCount,
@@ -18,6 +18,7 @@ import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
 import { getLastPingSQL } from './collar_api';
+import axios from 'axios';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
@@ -154,6 +155,10 @@ const getAnimals = async function (
   const page = (req.query.page || 0) as number;
   const type = req.query.critterType as eCritterFetchType;
   const search = getFilterFromRequest(req);
+
+  const critters = await critterbase.get(`/critters`);
+  console.log(critters);
+
   let sql;
   if (type === eCritterFetchType.unassigned) {
     sql = _getUnattachedSQL(username, page, search);
