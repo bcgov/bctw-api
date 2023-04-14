@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+import { formatAxiosError } from '../src/utils/error';
 // api layer schema
 const S_API = `bctw_dapi_v1`;
 // main schema
@@ -7,7 +7,7 @@ const S_BCTW = `bctw`;
 const DISABLE_PERMISSION_EMAIL =
   process.env.DISABLE_PERMISSION_EMAILS === 'true';
 const BCTW_EMAIL = process.env.BCTW_EMAIL ?? 'bctw@gov.bc.ca';
-const CB_API = process.env.CRITTERBASE_API ?? 'http://localhost:8080/api';
+const CB_API_URL = process.env.CRITTERBASE_API ?? 'http://localhost:8080/api';
 const CB_API_KEY = process.env.CRITTERBASE_API_KEY ?? 'missing API KEY';
 
 const RAW_LOTEK = 'telemetry_api_lotek';
@@ -42,11 +42,20 @@ const MORTALITY_SMS =
   'e0ad95d9-56f3-4ad5-bab9-85c31ddef926';
 
 const critterbase = axios.create({
-  baseURL: CB_API,
+  baseURL: CB_API_URL,
   headers: {
     'API-KEY': CB_API_KEY,
   },
 });
+
+// critterbase.interceptors.response.use(
+//   (res) => res,
+//   (err) => {
+//     const formattedErr = formatAxiosError(err);
+//     console.log(formattedErr);
+//     return formattedErr;
+//   }
+// );
 
 export {
   S_API,
@@ -64,6 +73,6 @@ export {
   MORTALITY_SMS,
   RAW_LOTEK,
   RAW_VECTRONIC,
-  CB_API,
+  CB_API_URL,
   critterbase,
 };
