@@ -28,6 +28,7 @@ import { pgPool } from '../database/pg';
 import axios, { AxiosError } from 'axios';
 import { formatAxiosError } from '../utils/error';
 import { dateRangesOverlap } from './import_helpers';
+import { critterBaseRequest } from '../critterbase/critterbase_api';
 
 type CellErrorDescriptor = {
   desc: string;
@@ -238,14 +239,42 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
   await parseXlsx(file, id, onFinishedParsing);
 };
 
-const formatTemplateRowForUniqueLookup = (row: any) => {
-  const critter = {
+const getCritterbaseCritterFromRow = (row: any) => {
+  return {
     wlh_id: row.wlh_id,
     animal_id: row.animal_id,
     sex: row.sex
   }
+}
+
+const getCritterbaseMarkingsFromRow = (row: any) => {
+  const marking: any[] = [];
+  if(row.ear_tag_left_colour || row.ear_tag_left_id) {
+    const ear_tag_left = {
+      primary_colour: row.ear_tag_left_colour ?? null,
+      identifier: row.ear_tag_left_id ?? null,
+      marking_type: 'Ear Tag',
+      body_location: 'Left Ear'
+    };
+    marking.push(ear_tag_left);
+  }
+
+  if(row.ear_tag_right_id|| row.ear_tag_right_colour) {
+    const ear_tag_right = {
+      primary_colour: row.ear_tag_right_colour ?? null,
+      identifier: row.ear_tag_right_id ?? null,
+      marking_type: 'Ear Tag',
+      body_location: 'Right Ear'
+    }
+    marking.push(ear_tag_right);
+  }
+  return marking;
+}
+
+const formatTemplateRowForUniqueLookup = (row: any) => {
   return {
-    critter: critter,
+    critter: getCritterbaseCritterFromRow(row),
+    markings: getCritterbaseMarkingsFromRow(row),
     detail: true
   }
 }
@@ -253,8 +282,8 @@ const formatTemplateRowForUniqueLookup = (row: any) => {
 const isNewAnimal = async (critterbase_critters: any[], bctw_animal: any): Promise<string | null> => {
 
     const overlappingCritters = critterbase_critters.filter(critter => {
-      const mortality = critter.mortality[0];
-      return critter.capture.some(c => dateRangesOverlap(c.capture_timestamp, mortality.mortality_timestamp, bctw_animal.capture_date, bctw_animal.mortality_date));
+      const mortality_timestamp = critter.mortality.length ? critter.mortality[0].mortality_timestamp : null;
+      return critter.capture.some(c => dateRangesOverlap(c.capture_timestamp, mortality_timestamp, bctw_animal.capture_date, bctw_animal.mortality_date));
     });
 
     if(overlappingCritters.length > 1) {
@@ -278,16 +307,24 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any) => {
     taxon_name_common: bctw_animal.species
   }
 
-  let errStr;
-  const critter = await axios
-  .post('http://127.0.0.1:8000/api/critters/create', critterBody)
-  .catch((err: AxiosError) => {
-    errStr = formatAxiosError(err);
-  });
+  const critter = await critterBaseRequest('POST', 'critters/create', critterBody);
 
   if(!critter) throw Error("Failed to create critter in critterbase");
 
   const new_critter_id = critter.data.critter_id;
+
+  if(bctw_animal.population_unit) {
+    //Somewhat redundant to be making this request multiple times during import. May be something to optimize out later.
+    const population_units = await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`);
+    const population_unit = population_units.data.find(a => a.unit_name == bctw_animal.population_unit);
+    const collection_body = {
+      collection_unit_id: population_unit.collection_unit_id,
+      critter_id: new_critter_id
+    }
+    const pop_success = await critterBaseRequest('POST', 'collection-units/create', collection_body)
+    if(!pop_success) throw Error('Something went wrong while creating the population unit in critterbase.');
+  }
+
   let location: any = null;
   if(bctw_animal.capture_longitude || bctw_animal.capture_latitude) {
     const locationBody = {
@@ -295,11 +332,7 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any) => {
       latitude: bctw_animal.capture_latitude
     }
   
-    const locationRes = await axios
-    .post('http://127.0.0.1:8000/api/locations/create', locationBody)
-    .catch((err: AxiosError) => {
-      errStr = formatAxiosError(err);
-    });
+    const locationRes = await critterBaseRequest('POST', 'locations/create', locationBody);
   
     if(!locationRes) throw Error("Failed to create location in critterbase.");
 
@@ -308,20 +341,24 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any) => {
   
   const captureBody = {
     critter_id: new_critter_id,
-    location_id: location?.location_id,
+    capture_location_id: location?.location_id,
     capture_timestamp: bctw_animal.capture_date,
     capture_comment: bctw_animal.capture_comment
   } 
 
-  console.log(`Capture body was ${JSON.stringify(captureBody)}`)
-
-  const capture = await axios
-  .post('http://127.0.0.1:8000/api/captures/create', captureBody)
-  .catch((err: AxiosError) => {
-    errStr = formatAxiosError(err);
-  });
+  const capture = await critterBaseRequest('POST', 'captures/create', captureBody);
 
   if(!capture) throw Error("Could not create capture in critterbase.");
+
+  const bctw_markings = getCritterbaseMarkingsFromRow(bctw_animal);
+  if(bctw_markings.length) {
+    for(const m of bctw_markings) {
+      m.critter_id = new_critter_id,
+      m.capture_id = capture.data.capture_id;
+      const marking = await critterBaseRequest('POST', 'markings/create', m);
+      if(!marking) throw Error("Could not create marking in critterbase.");
+    }
+  }
   
   if(bctw_animal.mortality_date) {
     const mortalityBody = {
@@ -330,12 +367,7 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any) => {
       mortality_comment: bctw_animal.mortality_comment
     }
 
-    const mortality = await axios
-    .post('http://127.0.0.1:8000/api/mortality/create', mortalityBody)
-    .catch((err: AxiosError) => {
-      errStr = formatAxiosError(err);
-    });
-
+    const mortality = await critterBaseRequest('POST', 'mortality/create', mortalityBody);
     if(!mortality) throw Error("Could not create mortality in critterbase");
   }
 
@@ -358,20 +390,14 @@ const upsertBulkv2 = async (id: string, req: any) => {
       const data_start = pair.capture_date;
       const data_end = pair.retrieval_date ?? pair.mortality_date ?? null;
       const animal_end = pair?.mortality_date ?? null;
-  
-      const res = await client.query(`SELECT bctw.get_device_id_for_bulk_import('${id}', '${JSON.stringify(req.body)}', '${data_start}', '${data_end}')`);
+      
+      const deviceIdBulkSQL = `SELECT bctw.get_device_id_for_bulk_import('${id}', '${JSON.stringify(pair)}', '${data_start}', '${data_end}')`
+      const res = await client.query(deviceIdBulkSQL);
       const resRows = getRowResults(res, 'get_device_id_for_bulk_import');
       const link_collar_id = resRows[0];
 
-      let errStr;
-      const critters = await axios
-      .post('http://127.0.0.1:8000/api/critters/unique', formatTemplateRowForUniqueLookup(pair))
-      .catch((err: AxiosError) => {
-        errStr = formatAxiosError(err);
-      });
-      if(errStr) {
-        console.log(errStr);
-      }
+      const critters = await critterBaseRequest('POST', 'critters/unique', formatTemplateRowForUniqueLookup(pair));
+
       if(!critters) {
         throw Error("Something went wrong contacting critterbase.");
       }
@@ -398,14 +424,13 @@ const upsertBulkv2 = async (id: string, req: any) => {
       }
       responseArray.push(link_row);
     }
+
+    await client.query('COMMIT');
   }
   catch (e) {
     console.log(e);
     await client.query('ROLLBACK');
     throw Error(JSON.stringify(e));
-  }
-  finally {
-    await client.query('ROLLBACK');
   }
   console.log("SUCCESS, response is: " + JSON.stringify(responseArray));
   return responseArray;
@@ -416,20 +441,6 @@ const finalizeImport = async function (
   res: Response
 ): Promise<void> {
   const id = getUserIdentifier(req) as string;
-  /*const sql = `SELECT bctw.upsert_bulk_v2('${id}', '${JSON.stringify(
-    req.body
-  )}' );`;
-  console.log(sql);
-  const { result, error, isError } = await query(sql);
-
-  if (isError) {
-    console.log(error?.message);
-    res.status(500).send({ results: [], errors: [{ error: error.message }] });
-    return;
-  }
-  const resrows = getRowResults(result, 'upsert_bulk_v2');
-
-  let r = { results: resrows } as IBulkResponse;*/
   try {
     const response = await upsertBulkv2(id, req);
     res.status(200).send(response);
