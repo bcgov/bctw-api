@@ -1,11 +1,15 @@
+import { AxiosError, AxiosResponse } from 'axios';
+import console, { error } from 'console';
 import { QueryResult, QueryResultRow } from 'pg';
 import { S_BCTW } from '../constants';
 import {
   IConstructQueryParameters,
-  SearchFilter,
   QResult,
+  SearchFilter,
 } from '../types/query';
-import { isProd, isTest, pgPool } from './pg';
+import { formatAxiosError } from '../utils/error';
+import { isTest, pgPool } from './pg';
+import { response } from 'express';
 
 // helper functions for constructing db queries
 
@@ -175,19 +179,36 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
  * note: most put/post requests will pass true for this parameter
  */
 const query = async (
-  sql: string,
+  sqlOrAxios: string | Promise<AxiosResponse<any>>,
   msgIfErr?: string,
   asTransaction = false
 ): Promise<QResult> => {
-  let result, error;
+  let result: Partial<QueryResult> = {};
+  let error;
   let isError = false;
+  const isSQL = typeof sqlOrAxios === 'string';
   try {
-    result = await queryAsync(asTransaction ? transactionify(sql) : sql);
+    if (isSQL) {
+      result = await queryAsync(
+        asTransaction
+          ? transactionify(sqlOrAxios as string)
+          : (sqlOrAxios as string)
+      );
+    } else {
+      const axiosReq = sqlOrAxios as Promise<AxiosResponse<any>>;
+      const axiosRes = await axiosReq;
+      result.rows = axiosRes.data;
+    }
   } catch (e) {
     isError = true;
-    error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
+    if (isSQL) {
+      error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
+    } else {
+      console.log(e);
+      error = new Error(formatAxiosError(e as AxiosError));
+    }
   }
-  return { result, error, isError };
+  return { result, error, isError } as QResult;
 };
 
 /**
@@ -271,6 +292,113 @@ const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
   return '';
 };
 
+/**
+ ** merges b[] into a[] on match of property value
+ * @param a[]
+ * @param b[]
+ * @param property the property to merge with
+ * @returns {merged, nonMerged, isFullyMerged}
+ *
+ * @return {merged} is both (a + b)[] ie: {...a, ...b}[]
+ * @return {nonMerged: {aArray, bArray}} is remaining unmerged a and b elements
+ * @return {isFullyMerged} indicates if all elements from b[] were merged into a[]
+ *
+ */
+interface INonMerged<A, B> {
+  aArray: Array<A>;
+  bArray: Array<B>;
+}
+interface IMerge<A, B> {
+  merged: Array<A & B>;
+  nonMerged: INonMerged<A, B>;
+  isFullyMerged: boolean;
+}
+const merge = <
+  A extends Record<string, unknown>,
+  B extends Record<string, unknown>
+>(
+  a: Array<A>,
+  b: Array<B>,
+  property: keyof A & keyof B
+): IMerge<A, B> => {
+  const hashMap = new Map();
+  const merged: Array<A & B> = [];
+  const nonMerged: INonMerged<A, B> = { aArray: [], bArray: [] };
+  const abort = {
+    merged: [],
+    nonMerged: { aArray: a, bArray: b },
+    isFullyMerged: false,
+  };
+  const abortLog = (arrayName: string) => {
+    console.log(
+      `query.ts -> ${
+        merge.name
+      }() aborted. Element in array "${arrayName}" missing property: ${String(
+        property
+      )}`
+    );
+  };
+  if (!b.length || !a.length) {
+    return abort;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (!a[i][property]) {
+      abortLog('a');
+      return abort;
+    }
+    hashMap.set(a[i][property], a[i]);
+  }
+  for (let k = 0; k < b.length; k++) {
+    if (!b[k][property]) {
+      abortLog('b');
+      return abort;
+    }
+    const obj = hashMap.get(b[k][property]);
+    if (obj) {
+      merged.push(Object.assign({}, obj, b[k]));
+      hashMap.delete(b[k][property]);
+    } else {
+      nonMerged.bArray.push(b[k]);
+    }
+  }
+  nonMerged.aArray = Array.from(hashMap.values());
+  return {
+    merged,
+    nonMerged,
+    isFullyMerged: a.length === merged.length,
+  };
+};
+type MQResult = { data: Array<Record<string, unknown>> } & Pick<
+  QResult,
+  'error' | 'isError'
+>;
+const mergeQueries = (a: QResult, b: QResult, mergeKey: string): MQResult => {
+  let error;
+  if (a.isError) {
+    return {
+      data: a.result.rows,
+      ...a,
+    };
+  }
+  if (b.isError) {
+    return {
+      data: b.result.rows,
+      ...b,
+    };
+  }
+  const { merged, nonMerged, isFullyMerged } = merge(
+    a.result.rows,
+    b.result.rows,
+    mergeKey
+  );
+  if (!isFullyMerged) {
+    console.log(
+      `issue fully merging queries with "${mergeKey}" missing a:${nonMerged.aArray.length} b:${nonMerged.bArray.length}`
+    );
+  }
+  return { data: merged, error, isError: false };
+};
+
 export {
   applyCount,
   getRowResults,
@@ -278,4 +406,6 @@ export {
   constructFunctionQuery,
   constructGetQuery,
   appendFilter,
+  merge,
+  mergeQueries,
 };

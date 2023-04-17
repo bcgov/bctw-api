@@ -1,11 +1,13 @@
-import { Request, Response } from 'express';
-import { S_API, S_BCTW } from '../constants';
+import { Request, Response, response } from 'express';
+import { S_API, S_BCTW, critterbase } from '../constants';
 import {
   appendFilter,
   applyCount,
   constructFunctionQuery,
   constructGetQuery,
+  // crossPlatformQuery,
   getRowResults,
+  mergeQueries,
   query,
 } from '../database/query';
 import {
@@ -17,7 +19,6 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
-import { getLastPingSQL } from './collar_api';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
@@ -73,29 +74,20 @@ const deleteAnimal = async function (
 const _getAttachedSQL = (
   username: string,
   page: number,
-  search?: SearchFilter,
-  critter_id?: string,
-  getAllProps = false
+  search?: SearchFilter
+  // critter_id?: string,
+  // getAllProps = false
 ): string => {
   const alias = 'attached';
   const base = `
-    WITH ${alias} AS (
-      SELECT
-        ca.assignment_id, ca.device_id, ca.collar_id, ca.collar_transaction_id, ca.critter_transaction_id, 
-        ca.frequency, ca.device_status, ca.device_make, ca.device_type, ca.activation_status_ind, ca.device_model, ca.latitude, ca.longitude,
-        ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end, ca.last_fetch_date, ca.last_transmission_date,
-        ${
-          getAllProps
-            ? 'a.*,'
-            : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit, a.sex,'
-        }
-        ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
-      FROM ${cac_v} ca
-      JOIN ${S_API}.animal_v a ON ca.critter_transaction_id = a.critter_transaction_id
-    ) SELECT ${applyCount(page)}* from ${alias}
-      WHERE permission_type IS NOT NULL
-      ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
-
+  WITH ${alias} AS (
+    SELECT c.*, cac.critter_id, cac.attachment_start,
+    ${fn_get_user_animal_permission}('${username}', cac.critter_id) AS "permission_type"
+    FROM ${S_BCTW}.collar_v c
+    JOIN ${S_BCTW}.collar_animal_assignment cac
+    ON cac.collar_id = c.collar_id
+  ) SELECT ${applyCount(page)}* FROM ${alias} WHERE permission_type IS NOT NULL
+  `;
   const filter = search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({
     base,
@@ -106,6 +98,36 @@ const _getAttachedSQL = (
       { field: `${alias}.device_id` },
     ],
   });
+  //
+  // const base = `
+  //   WITH ${alias} AS (
+  //     SELECT
+  //       ca.assignment_id, ca.device_id, ca.collar_id, ca.collar_transaction_id, ca.critter_transaction_id,
+  //       ca.frequency, ca.device_status, ca.device_make, ca.device_type, ca.activation_status_ind, ca.device_model, ca.latitude, ca.longitude,
+  //       ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end, ca.last_fetch_date, ca.last_transmission_date,
+  //       ${
+  //         getAllProps
+  //           ? 'a.*,'
+  //           : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit, a.sex,'
+  //       }
+  //       ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
+  //     FROM ${cac_v} ca
+  //     JOIN ${S_API}.animal_v a ON ca.critter_transaction_id = a.critter_transaction_id
+  //   ) SELECT ${applyCount(page)}* from ${alias}
+  //     WHERE permission_type IS NOT NULL
+  //     ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
+
+  // const filter = search ? appendFilter(search, `${alias}.`, true) : '';
+  // return constructGetQuery({
+  //   base,
+  //   page,
+  //   filter,
+  //   order: [
+  //     { field: `${alias}.attachment_start `, order: 'asc' },
+  //     { field: `${alias}.device_id` },
+  //   ],
+  // });
+  // return base;
 };
 
 // generate SQL for retrieving animals that are not attached to a device
@@ -154,17 +176,31 @@ const getAnimals = async function (
   const page = (req.query.page || 0) as number;
   const type = req.query.critterType as eCritterFetchType;
   const search = getFilterFromRequest(req);
+
+  //a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit, a.sex,
+
   let sql;
   if (type === eCritterFetchType.unassigned) {
     sql = _getUnattachedSQL(username, page, search);
   } else if (type === eCritterFetchType.assigned) {
     sql = _getAttachedSQL(username, page, search);
   }
-  const { result, error, isError } = await query(sql);
+
+  const bctwQuery = await query(sql);
+  const critterQuery = await query(
+    critterbase.post('/critters', {
+      critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
+    })
+  );
+  const { data, error, isError } = mergeQueries(
+    bctwQuery,
+    critterQuery,
+    'critter_id'
+  );
   if (isError) {
-    return res.status(500).send(error.message);
+    return res.status(400).json(error.message);
   }
-  return res.send(result.rows);
+  return res.status(200).json(data);
 };
 
 /**
@@ -183,11 +219,11 @@ const getAnimal = async function (
   if (hasCollar.isError) {
     return handleQueryError(hasCollar, res);
   }
-  const sql =
-    hasCollar.result.rowCount > 0
-      ? _getAttachedSQL(username, 1, undefined, critter_id, true)
-      : _getUnattachedSQL(username, 1, undefined, critter_id, true);
-  const { result, error, isError } = await query(sql);
+  // const sql =
+  //   hasCollar.result.rowCount > 0
+  //     ? _getAttachedSQL(username, 1, undefined, critter_id, true)
+  //     : _getUnattachedSQL(username, 1, undefined, critter_id, true);
+  const { result, error, isError } = await query('temp place holder');
   if (isError) {
     return res.status(500).send(error.message);
   }
