@@ -74,9 +74,9 @@ const deleteAnimal = async function (
 const _getAttachedSQL = (
   username: string,
   page: number,
-  search?: SearchFilter,
-  critter_id?: string,
-  getAllProps = false
+  search?: SearchFilter
+  // critter_id?: string,
+  // getAllProps = false
 ): string => {
   const alias = 'attached';
   const base = `
@@ -192,7 +192,7 @@ const getAnimals = async function (
       critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
     })
   );
-  const { result, error, isError } = mergeQueries(
+  const { data, error, isError } = mergeQueries(
     bctwQuery,
     critterQuery,
     'critter_id'
@@ -200,7 +200,7 @@ const getAnimals = async function (
   if (isError) {
     return res.status(400).json(error.message);
   }
-  return res.status(200).json(result.rows);
+  return res.status(200).json(data);
 };
 
 /**
@@ -219,11 +219,11 @@ const getAnimal = async function (
   if (hasCollar.isError) {
     return handleQueryError(hasCollar, res);
   }
-  const sql =
-    hasCollar.result.rowCount > 0
-      ? _getAttachedSQL(username, 1, undefined, critter_id, true)
-      : _getUnattachedSQL(username, 1, undefined, critter_id, true);
-  const { result, error, isError } = await query(sql);
+  // const sql =
+  //   hasCollar.result.rowCount > 0
+  //     ? _getAttachedSQL(username, 1, undefined, critter_id, true)
+  //     : _getUnattachedSQL(username, 1, undefined, critter_id, true);
+  const { result, error, isError } = await query('temp place holder');
   if (isError) {
     return res.status(500).send(error.message);
   }

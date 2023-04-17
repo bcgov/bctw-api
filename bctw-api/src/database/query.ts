@@ -368,15 +368,23 @@ const merge = <
     isFullyMerged: a.length === merged.length,
   };
 };
-
-const mergeQueries = (a: QResult, b: QResult, mergeKey: string): QResult => {
-  const result: Partial<QueryResult> = {};
+type MQResult = { data: Array<Record<string, unknown>> } & Pick<
+  QResult,
+  'error' | 'isError'
+>;
+const mergeQueries = (a: QResult, b: QResult, mergeKey: string): MQResult => {
   let error;
   if (a.isError) {
-    return a;
+    return {
+      data: a.result.rows,
+      ...a,
+    };
   }
   if (b.isError) {
-    return b;
+    return {
+      data: b.result.rows,
+      ...b,
+    };
   }
   const { merged, nonMerged, isFullyMerged } = merge(
     a.result.rows,
@@ -388,8 +396,7 @@ const mergeQueries = (a: QResult, b: QResult, mergeKey: string): QResult => {
       `issue fully merging queries with "${mergeKey}" missing a:${nonMerged.aArray.length} b:${nonMerged.bArray.length}`
     );
   }
-  result.rows = merged;
-  return { result, error, isError: false } as QResult;
+  return { data: merged, error, isError: false };
 };
 
 export {
