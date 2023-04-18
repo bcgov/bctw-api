@@ -19,11 +19,13 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
+import { isError } from 'util';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
 const fn_get_critter_history = 'get_animal_history';
 const cac_v = `${S_API}.currently_attached_collars_v`;
+const is_valid = `${S_BCTW}.is_valid`;
 
 /**
  * body can be single object or array of Animals
@@ -80,17 +82,14 @@ const _getAttachedSQL = (
   const alias = 'attached';
   const base = `
   WITH ${alias} AS (
-    SELECT c.*, cac.critter_id, cac.attachment_start,
+    SELECT c.collar_transaction_id, c.device_id, cac.*, 
+    cac.attachment_end, c.frequency, c.device_deployment_status, c.device_make, c.device_status,
     ${fn_get_user_animal_permission}('${username}', cac.critter_id) AS "permission_type"
-    FROM ${S_BCTW}.collar_v c
-    JOIN ${S_BCTW}.collar_animal_assignment cac
+    FROM ${S_BCTW}.collar_current_v c
+    JOIN ${S_BCTW}.collar_animal_assignment_v cac
     ON cac.collar_id = c.collar_id
   ) SELECT ${applyCount(page)}* FROM ${alias} WHERE permission_type IS NOT NULL
-  ${
-    critter_id &&
-    ` 
-    AND ${alias}.critter_id = '${critter_id}'`
-  }`;
+  `;
 
   const filter = search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({
@@ -160,17 +159,23 @@ const getAnimals = async function (
     sql = _getAttachedSQL(username, page, search);
   }
 
-  const bctwQuery = await query(sql);
-  const critterQuery = await query(
-    critterbase.post('/critters', {
-      critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
-    })
-  );
-  const { merged, allMerged, error, isError } = mergeQueries(
-    bctwQuery,
-    critterQuery,
+  // const bctwQuery = await query(sql);
+  // const critterQuery = await query(
+  //   critterbase.post('/critters', {
+  //     critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
+  //   })
+  // );
+  // const { merged, allMerged, error, isError } = await mergeQueries(
+  //   bctwQuery,
+  //   critterQuery,
+  //   'critter_id'
+  // );
+  const { merged, allMerged, error, isError } = await mergeQueries(
+    query(sql),
+    query(critterbase.get('/critters')),
     'critter_id'
   );
+
   if (isError) {
     return res.status(400).json(error.message);
   }
