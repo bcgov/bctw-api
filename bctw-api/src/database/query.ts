@@ -1,5 +1,4 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import console, { error } from 'console';
 import { QueryResult, QueryResultRow } from 'pg';
 import { S_BCTW } from '../constants';
 import {
@@ -9,7 +8,6 @@ import {
 } from '../types/query';
 import { formatAxiosError } from '../utils/error';
 import { isTest, pgPool } from './pg';
-import { response } from 'express';
 
 // helper functions for constructing db queries
 
@@ -297,22 +295,20 @@ const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
  * @param a[]
  * @param b[]
  * @param property the property to merge with
- * @returns {merged, nonMerged, isFullyMerged}
+ * @returns {merged, nonMerged, perfectMerge}
  *
  * @return {merged} is both (a + b)[] ie: {...a, ...b}[]
  * @return {nonMerged: {aArray, bArray}} is remaining unmerged a and b elements
- * @return {isFullyMerged} indicates if all elements from b[] were merged into a[]
+ * @return {perfectMerge} indicates if all elements from b[] were merged into a[]
  *
  */
-interface INonMerged<A, B> {
-  aArray: Array<A>;
-  bArray: Array<B>;
-}
-interface IMerge<A, B> {
-  merged: Array<A & B>;
-  nonMerged: INonMerged<A, B>;
-  isFullyMerged: boolean;
-}
+// interface INonMerged<A, B> {
+//   aArray: Array<A>;
+//   bArray: Array<B>;
+// }
+type Merged = {
+  _merged: boolean;
+};
 const merge = <
   A extends Record<string, unknown>,
   B extends Record<string, unknown>
@@ -320,15 +316,13 @@ const merge = <
   a: Array<A>,
   b: Array<B>,
   property: keyof A & keyof B
-): IMerge<A, B> => {
+): Array<A & B & Merged> | Array<A & Merged> => {
   const hashMap = new Map();
-  const merged: Array<A & B> = [];
-  const nonMerged: INonMerged<A, B> = { aArray: [], bArray: [] };
-  const abort = {
-    merged: [],
-    nonMerged: { aArray: a, bArray: b },
-    isFullyMerged: false,
-  };
+  // const abort = {
+  //   merged: [],
+  //   nonMerged: { aArray: a, bArray: b },
+  //   perfectMerge: false,
+  // };
   const abortLog = (arrayName: string) => {
     console.log(
       `query.ts -> ${
@@ -338,35 +332,30 @@ const merge = <
       )}`
     );
   };
+
   if (!b.length || !a.length) {
-    return abort;
+    return [];
   }
   for (let i = 0; i < a.length; i++) {
     if (!a[i][property]) {
       abortLog('a');
-      return abort;
+      return [];
     }
-    hashMap.set(a[i][property], a[i]);
+    const hashObj = Object.assign({ _merged: false }, a[i]);
+    hashMap.set(a[i][property], hashObj);
   }
   for (let k = 0; k < b.length; k++) {
     if (!b[k][property]) {
       abortLog('b');
-      return abort;
+      return [];
     }
     const obj = hashMap.get(b[k][property]);
     if (obj) {
-      merged.push(Object.assign({}, obj, b[k]));
-      hashMap.delete(b[k][property]);
-    } else {
-      nonMerged.bArray.push(b[k]);
+      obj._merged = true;
+      hashMap.set(b[k][property], Object.assign(obj, b[k]));
     }
   }
-  nonMerged.aArray = Array.from(hashMap.values());
-  return {
-    merged,
-    nonMerged,
-    isFullyMerged: a.length === merged.length,
-  };
+  return Array.from(hashMap.values());
 };
 type MQResult = { data: Array<Record<string, unknown>> } & Pick<
   QResult,
@@ -374,7 +363,7 @@ type MQResult = { data: Array<Record<string, unknown>> } & Pick<
 >;
 const mergeQueries = (a: QResult, b: QResult, mergeKey: string): MQResult => {
   let error;
-  if (a.isError) {
+  if (a.isError || b.isError) {
     return {
       data: a.result.rows,
       ...a,
@@ -382,21 +371,13 @@ const mergeQueries = (a: QResult, b: QResult, mergeKey: string): MQResult => {
   }
   if (b.isError) {
     return {
-      data: b.result.rows,
+      //If b query throws error. Still return the original a results.
+      data: a.result.rows,
       ...b,
     };
   }
-  const { merged, nonMerged, isFullyMerged } = merge(
-    a.result.rows,
-    b.result.rows,
-    mergeKey
-  );
-  if (!isFullyMerged) {
-    console.log(
-      `issue fully merging queries with "${mergeKey}" missing a:${nonMerged.aArray.length} b:${nonMerged.bArray.length}`
-    );
-  }
-  return { data: merged, error, isError: false };
+  const data = merge(a.result.rows, b.result.rows, mergeKey);
+  return { data, error, isError: false };
 };
 
 export {
