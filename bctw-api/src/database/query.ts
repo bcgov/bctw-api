@@ -1,5 +1,4 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import console, { error } from 'console';
 import { QueryResult, QueryResultRow } from 'pg';
 import { S_BCTW } from '../constants';
 import {
@@ -9,7 +8,6 @@ import {
 } from '../types/query';
 import { formatAxiosError } from '../utils/error';
 import { isTest, pgPool } from './pg';
-import { response } from 'express';
 
 // helper functions for constructing db queries
 
@@ -292,27 +290,25 @@ const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
   return '';
 };
 
+type Merged = {
+  _merged: boolean;
+};
+type MergeReturn<A, B> = {
+  merged: Array<A & B & Merged> | Array<A & Merged>;
+  allMerged: boolean;
+};
 /**
  ** merges b[] into a[] on match of property value
+ ** at most return will be the same length of a array.
  * @param a[]
  * @param b[]
  * @param property the property to merge with
- * @returns {merged, nonMerged, isFullyMerged}
+ * @returns {merged, allMerged}
  *
- * @return {merged} is both (a + b)[] ie: {...a, ...b}[]
- * @return {nonMerged: {aArray, bArray}} is remaining unmerged a and b elements
- * @return {isFullyMerged} indicates if all elements from b[] were merged into a[]
+ * @return {merged} elements in arary are either {...a, ...b} OR {...a}
+ * @return {allMerged} indicates if all elements from b[] were merged into a[]
  *
  */
-interface INonMerged<A, B> {
-  aArray: Array<A>;
-  bArray: Array<B>;
-}
-interface IMerge<A, B> {
-  merged: Array<A & B>;
-  nonMerged: INonMerged<A, B>;
-  isFullyMerged: boolean;
-}
 const merge = <
   A extends Record<string, unknown>,
   B extends Record<string, unknown>
@@ -320,15 +316,10 @@ const merge = <
   a: Array<A>,
   b: Array<B>,
   property: keyof A & keyof B
-): IMerge<A, B> => {
+): MergeReturn<A, B> => {
   const hashMap = new Map();
-  const merged: Array<A & B> = [];
-  const nonMerged: INonMerged<A, B> = { aArray: [], bArray: [] };
-  const abort = {
-    merged: [],
-    nonMerged: { aArray: a, bArray: b },
-    isFullyMerged: false,
-  };
+  let mergeCount = 0;
+  const abortReturn = { merged: [], allMerged: false };
   const abortLog = (arrayName: string) => {
     console.log(
       `query.ts -> ${
@@ -338,65 +329,70 @@ const merge = <
       )}`
     );
   };
+
   if (!b.length || !a.length) {
-    return abort;
+    return abortReturn;
   }
   for (let i = 0; i < a.length; i++) {
     if (!a[i][property]) {
       abortLog('a');
-      return abort;
+      return abortReturn;
     }
-    hashMap.set(a[i][property], a[i]);
+    const hashObj = Object.assign({ _merged: false }, a[i]);
+    hashMap.set(a[i][property], hashObj);
   }
   for (let k = 0; k < b.length; k++) {
     if (!b[k][property]) {
       abortLog('b');
-      return abort;
+      return abortReturn;
     }
     const obj = hashMap.get(b[k][property]);
     if (obj) {
-      merged.push(Object.assign({}, obj, b[k]));
-      hashMap.delete(b[k][property]);
-    } else {
-      nonMerged.bArray.push(b[k]);
+      obj._merged = true;
+      mergeCount++;
+      hashMap.set(b[k][property], Object.assign(obj, b[k]));
     }
   }
-  nonMerged.aArray = Array.from(hashMap.values());
+  const mergedArray = Array.from(hashMap.values());
   return {
-    merged,
-    nonMerged,
-    isFullyMerged: a.length === merged.length,
+    merged: mergedArray,
+    allMerged: mergeCount === mergedArray.length,
   };
 };
-type MQResult = { data: Array<Record<string, unknown>> } & Pick<
-  QResult,
-  'error' | 'isError'
->;
+
+type MQResult = MergeReturn<
+  Pick<QueryResult, 'rows'>,
+  Pick<QueryResult, 'rows'>
+> &
+  Pick<QResult, 'error' | 'isError'>;
+/**
+ ** merges two queries together. uses result.rows for a / b arrays
+ * @param a return from query func
+ * @param b return from query func
+ * @param mergeKey the property to merge with
+ * @returns {merged, allMerged, error, isError}
+ *
+ * @return {merged} elements in arary are either {...a, ...b} OR {...a}
+ * @return {allMerged} indicates if all elements from b[] were merged into a[]
+ * @return {error} error from either queries
+ * @return {isError} boolean indicator for an error
+ **Note: if error occurs, merge prop will use the a.result.rows
+ **if both queries have errors, it will first return a errors first.
+ *
+ */
 const mergeQueries = (a: QResult, b: QResult, mergeKey: string): MQResult => {
   let error;
-  if (a.isError) {
-    return {
-      data: a.result.rows,
-      ...a,
-    };
-  }
-  if (b.isError) {
-    return {
-      data: b.result.rows,
-      ...b,
-    };
-  }
-  const { merged, nonMerged, isFullyMerged } = merge(
-    a.result.rows,
-    b.result.rows,
-    mergeKey
-  );
-  if (!isFullyMerged) {
+  //On error of a OR b query return a.result.rows
+  const errorReturn = { merged: a.result.rows, allMerged: false };
+  if (a.isError) return { ...errorReturn, ...a };
+  if (b.isError) return { ...errorReturn, ...b };
+  const { merged, allMerged } = merge(a.result.rows, b.result.rows, mergeKey);
+  if (!allMerged) {
     console.log(
-      `issue fully merging queries with "${mergeKey}" missing a:${nonMerged.aArray.length} b:${nonMerged.bArray.length}`
+      `not all results from bArray were merged into aArray using "${mergeKey}"`
     );
   }
-  return { data: merged, error, isError: false };
+  return { merged, allMerged, error, isError: false };
 };
 
 export {

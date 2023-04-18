@@ -70,13 +70,12 @@ const deleteAnimal = async function (
   return res.send(getRowResults(result, fn_name, true));
 };
 
-// generate SQL for retrieving animals that are attached to a device
+// generate SQL for retrieving collar data for animals attached to a device
 const _getAttachedSQL = (
   username: string,
   page: number,
-  search?: SearchFilter
-  // critter_id?: string,
-  // getAllProps = false
+  search?: SearchFilter,
+  critter_id?: string
 ): string => {
   const alias = 'attached';
   const base = `
@@ -87,7 +86,12 @@ const _getAttachedSQL = (
     JOIN ${S_BCTW}.collar_animal_assignment cac
     ON cac.collar_id = c.collar_id
   ) SELECT ${applyCount(page)}* FROM ${alias} WHERE permission_type IS NOT NULL
-  `;
+  ${
+    critter_id &&
+    ` 
+    AND ${alias}.critter_id = '${critter_id}'`
+  }`;
+
   const filter = search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({
     base,
@@ -98,36 +102,6 @@ const _getAttachedSQL = (
       { field: `${alias}.device_id` },
     ],
   });
-  //
-  // const base = `
-  //   WITH ${alias} AS (
-  //     SELECT
-  //       ca.assignment_id, ca.device_id, ca.collar_id, ca.collar_transaction_id, ca.critter_transaction_id,
-  //       ca.frequency, ca.device_status, ca.device_make, ca.device_type, ca.activation_status_ind, ca.device_model, ca.latitude, ca.longitude,
-  //       ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end, ca.last_fetch_date, ca.last_transmission_date,
-  //       ${
-  //         getAllProps
-  //           ? 'a.*,'
-  //           : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit, a.sex,'
-  //       }
-  //       ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
-  //     FROM ${cac_v} ca
-  //     JOIN ${S_API}.animal_v a ON ca.critter_transaction_id = a.critter_transaction_id
-  //   ) SELECT ${applyCount(page)}* from ${alias}
-  //     WHERE permission_type IS NOT NULL
-  //     ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
-
-  // const filter = search ? appendFilter(search, `${alias}.`, true) : '';
-  // return constructGetQuery({
-  //   base,
-  //   page,
-  //   filter,
-  //   order: [
-  //     { field: `${alias}.attachment_start `, order: 'asc' },
-  //     { field: `${alias}.device_id` },
-  //   ],
-  // });
-  // return base;
 };
 
 // generate SQL for retrieving animals that are not attached to a device
@@ -192,7 +166,7 @@ const getAnimals = async function (
       critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
     })
   );
-  const { data, error, isError } = mergeQueries(
+  const { merged, allMerged, error, isError } = mergeQueries(
     bctwQuery,
     critterQuery,
     'critter_id'
@@ -200,7 +174,7 @@ const getAnimals = async function (
   if (isError) {
     return res.status(400).json(error.message);
   }
-  return res.status(200).json(data);
+  return res.status(200).json(merged);
 };
 
 /**
