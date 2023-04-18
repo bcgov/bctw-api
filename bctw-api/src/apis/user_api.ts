@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
-import { S_API, S_BCTW } from '../constants';
+import { S_API, S_BCTW, critterbase } from '../constants';
 import {
   appendFilter,
   constructFunctionQuery,
   constructGetQuery,
   getRowResults,
+  mergeQueries,
   query,
 } from '../database/query';
 import {
@@ -140,16 +141,11 @@ const getUsers = async function (
  * @param req.params.user username to get acccess for
  * @param filters array of @type {eCritterPermission} to retrieve
  * @returns list of @type {Animal} and attached device properties
- * TODO: Get animal data from critterbase API
  */
 const getUserCritterAccess = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-
-  const time0 = performance.now();
-
-
   const { user } = req.params;
   if (!user) {
     return res.status(500).send(`must supply user parameter`);
@@ -177,53 +173,24 @@ const getUserCritterAccess = async function (
     base,
     filter: appendFilter(getFilterFromRequest(req), false, false),
   });
-  const time1 = performance.now();
 
-  const { result, error, isError } = await query(sql);
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  console.log(`BCTW operation took ${performance.now() - time1} ms`);
-  const time2 = performance.now();
+  console.log(sql)
 
-  const critter_data = await get_critters_by_ids(
-    result.rows.map((row) => row.critter_id)
+  const bctwQuery = await query(sql);
+  const critterQuery = await query(
+    critterbase.post('/critters', {
+      critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
+    })
   );
-  console.log(`Critterbase operation took ${performance.now() - time2} ms`);
-  const time3 = performance.now();
-
-  const combinedData = result.rows.map((row) => {
-    const critter = critter_data.data.find(
-      (critter) => critter.critter_id === row.critter_id
-    );
-
-    if (!critter) {
-      return row;
-    }
-
-    const {
-      taxon_name_common,
-      taxon_name_latin,
-      collection_unit,
-      ...rest
-    } = critter;
-    const collectionUnitNames = collection_unit
-      .map((unit) => unit.unit_name)
-      .join(', ');
-
-    return {
-      ...row,
-      species: taxon_name_common ?? taxon_name_latin,
-      collection_unit: collectionUnitNames,
-      ...rest,
-    };
-  });
-  console.log(`Join operation took ${performance.now() - time3} ms`);
-  console.log(`Total time: ${performance.now() - time0} ms`);
-
-  critter_data.data.merge
-
-  return res.send(combinedData);
+  const { data, error, isError } = mergeQueries(
+    bctwQuery,
+    critterQuery,
+    'critter_id'
+  );
+  if (isError) {
+    return res.status(400).json(error.message);
+  }
+  return res.status(200).json(data);
 };
 
 interface ICritterAccess {
