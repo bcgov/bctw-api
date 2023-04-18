@@ -25,7 +25,6 @@ const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
 const fn_get_critter_history = 'get_animal_history';
 const cac_v = `${S_API}.currently_attached_collars_v`;
-const is_valid = `${S_BCTW}.is_valid`;
 
 /**
  * body can be single object or array of Animals
