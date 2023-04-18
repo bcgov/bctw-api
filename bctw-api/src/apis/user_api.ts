@@ -174,15 +174,26 @@ const getUserCritterAccess = async function (
     filter: appendFilter(getFilterFromRequest(req), false, false),
   });
 
-  console.log(sql)
-
   const bctwQuery = await query(sql);
-  const critterQuery = await query(
-    critterbase.post('/critters', {
-      critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
-    })
-  );
-  const { data, error, isError } = mergeQueries(
+
+  let critterQuery;
+
+  // Returns only user-assigned critters
+  // 'manager', 'editor', and 'observer' filters are applied in the BCTW query
+  // 'none' filter must be managed here to include data which may only be in critterbase
+  if (filters && !('none' in params)) {
+    critterQuery = await query(
+      critterbase.post('/critters', {
+        critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
+      })
+    );
+    // Return all critters (only used for admin animal-manager)
+  } else {
+    critterQuery = await query(
+      critterbase.get('/critters', { params: { minimal: true } })
+    );
+  }
+  const { merged, error, isError } = mergeQueries(
     bctwQuery,
     critterQuery,
     'critter_id'
@@ -190,7 +201,7 @@ const getUserCritterAccess = async function (
   if (isError) {
     return res.status(400).json(error.message);
   }
-  return res.status(200).json(data);
+  return res.status(200).json(merged);
 };
 
 interface ICritterAccess {
