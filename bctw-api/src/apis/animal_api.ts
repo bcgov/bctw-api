@@ -166,7 +166,7 @@ const getAnimals = async function (
       critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
     })
   );
-  const { data, error, isError } = mergeQueries(
+  const { merged, allMerged, error, isError } = mergeQueries(
     bctwQuery,
     critterQuery,
     'critter_id'
@@ -174,7 +174,7 @@ const getAnimals = async function (
   if (isError) {
     return res.status(400).json(error.message);
   }
-  return res.status(200).json(data);
+  return res.status(200).json(merged);
 };
 
 /**

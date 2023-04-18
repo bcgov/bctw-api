@@ -290,25 +290,25 @@ const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
   return '';
 };
 
-/**
- ** merges b[] into a[] on match of property value
- * @param a[]
- * @param b[]
- * @param property the property to merge with
- * @returns {merged, nonMerged, perfectMerge}
- *
- * @return {merged} is both (a + b)[] ie: {...a, ...b}[]
- * @return {nonMerged: {aArray, bArray}} is remaining unmerged a and b elements
- * @return {perfectMerge} indicates if all elements from b[] were merged into a[]
- *
- */
-// interface INonMerged<A, B> {
-//   aArray: Array<A>;
-//   bArray: Array<B>;
-// }
 type Merged = {
   _merged: boolean;
 };
+type MergeReturn<A, B> = {
+  merged: Array<A & B & Merged> | Array<A & Merged>;
+  allMerged: boolean;
+};
+/**
+ ** merges b[] into a[] on match of property value
+ ** at most return will be the same length of a array.
+ * @param a[]
+ * @param b[]
+ * @param property the property to merge with
+ * @returns {merged, allMerged}
+ *
+ * @return {merged} elements in arary are either {...a, ...b} OR {...a}
+ * @return {allMerged} indicates if all elements from b[] were merged into a[]
+ *
+ */
 const merge = <
   A extends Record<string, unknown>,
   B extends Record<string, unknown>
@@ -316,13 +316,10 @@ const merge = <
   a: Array<A>,
   b: Array<B>,
   property: keyof A & keyof B
-): Array<A & B & Merged> | Array<A & Merged> => {
+): MergeReturn<A, B> => {
   const hashMap = new Map();
-  // const abort = {
-  //   merged: [],
-  //   nonMerged: { aArray: a, bArray: b },
-  //   perfectMerge: false,
-  // };
+  let mergeCount = 0;
+  const abortReturn = { merged: [], allMerged: false };
   const abortLog = (arrayName: string) => {
     console.log(
       `query.ts -> ${
@@ -334,12 +331,12 @@ const merge = <
   };
 
   if (!b.length || !a.length) {
-    return [];
+    return abortReturn;
   }
   for (let i = 0; i < a.length; i++) {
     if (!a[i][property]) {
       abortLog('a');
-      return [];
+      return abortReturn;
     }
     const hashObj = Object.assign({ _merged: false }, a[i]);
     hashMap.set(a[i][property], hashObj);
@@ -347,37 +344,55 @@ const merge = <
   for (let k = 0; k < b.length; k++) {
     if (!b[k][property]) {
       abortLog('b');
-      return [];
+      return abortReturn;
     }
     const obj = hashMap.get(b[k][property]);
     if (obj) {
       obj._merged = true;
+      mergeCount++;
       hashMap.set(b[k][property], Object.assign(obj, b[k]));
     }
   }
-  return Array.from(hashMap.values());
+  const mergedArray = Array.from(hashMap.values());
+  return {
+    merged: mergedArray,
+    allMerged: mergeCount === mergedArray.length,
+  };
 };
-type MQResult = { data: Array<Record<string, unknown>> } & Pick<
-  QResult,
-  'error' | 'isError'
->;
+
+type MQResult = MergeReturn<
+  Pick<QueryResult, 'rows'>,
+  Pick<QueryResult, 'rows'>
+> &
+  Pick<QResult, 'error' | 'isError'>;
+/**
+ ** merges two queries together. uses result.rows for a / b arrays
+ * @param a return from query func
+ * @param b return from query func
+ * @param mergeKey the property to merge with
+ * @returns {merged, allMerged, error, isError}
+ *
+ * @return {merged} elements in arary are either {...a, ...b} OR {...a}
+ * @return {allMerged} indicates if all elements from b[] were merged into a[]
+ * @return {error} error from either queries
+ * @return {isError} boolean indicator for an error
+ **Note: if error occurs, merge prop will use the a.result.rows
+ **if both queries have errors, it will first return a errors first.
+ *
+ */
 const mergeQueries = (a: QResult, b: QResult, mergeKey: string): MQResult => {
   let error;
-  if (a.isError || b.isError) {
-    return {
-      data: a.result.rows,
-      ...a,
-    };
+  //On error of a OR b query return a.result.rows
+  const errorReturn = { merged: a.result.rows, allMerged: false };
+  if (a.isError) return { ...errorReturn, ...a };
+  if (b.isError) return { ...errorReturn, ...b };
+  const { merged, allMerged } = merge(a.result.rows, b.result.rows, mergeKey);
+  if (!allMerged) {
+    console.log(
+      `not all results from bArray were merged into aArray using "${mergeKey}"`
+    );
   }
-  if (b.isError) {
-    return {
-      //If b query throws error. Still return the original a results.
-      data: a.result.rows,
-      ...b,
-    };
-  }
-  const data = merge(a.result.rows, b.result.rows, mergeKey);
-  return { data, error, isError: false };
+  return { merged, allMerged, error, isError: false };
 };
 
 export {
