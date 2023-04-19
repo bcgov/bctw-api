@@ -27,7 +27,7 @@ Content-Type: application/json
 			]
 		},
 		{
-			"key": "population_unit",
+			"key": "collection_unit",
 			"operator": "=",
 			"term": [
 				"{{your_pop_unit}}"
@@ -54,7 +54,7 @@ Content-Type: application/json
 			]
 		},
 		{
-			"key": "population_unit",
+			"key": "collection_unit",
 			"operator": "<>",
 			"term": [
 				"north cariboo"
@@ -162,7 +162,7 @@ Content-Type: application/json
 			]
 		},
 		{
-			"key": "population_unit",
+			"key": "collection_unit",
 			"operator": "=",
 			"term": [
 				"north cariboo"
@@ -218,7 +218,7 @@ Content-Type: application/json
 			]
 		},
 		{
-			"key": "population_unit",
+			"key": "collection_unit",
 			"operator": "=",
 			"term": [
 				"{{your_pop_unit}}"

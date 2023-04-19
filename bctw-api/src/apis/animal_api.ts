@@ -1,4 +1,4 @@
-import { Request, Response, response } from 'express';
+import { Request, Response } from 'express';
 import { S_API, S_BCTW, critterbase } from '../constants';
 import {
   appendFilter,
@@ -27,9 +27,7 @@ const fn_get_critter_history = 'get_animal_history';
 const cac_v = `${S_API}.currently_attached_collars_v`;
 
 /**
- * TODO CRITTERBASE INTEGRATION
  * body can be single object or array of Animals
- * @returns the upserted @type {Animal} list
  */
 const upsertAnimal = async function (
   req: Request,
@@ -131,7 +129,7 @@ const _getUnattachedSQL = (
     base,
     page,
     filter,
-    order: [{ field: `${alias}.valid_from `, order: 'desc' }],
+    // order: [{ field: `${alias}.valid_from `, order: 'desc' }],
   });
 };
 
@@ -149,8 +147,6 @@ const getAnimals = async function (
   const type = req.query.critterType as eCritterFetchType;
   const search = getFilterFromRequest(req);
 
-  //a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit, a.sex,
-
   let sql;
   if (type === eCritterFetchType.unassigned) {
     sql = _getUnattachedSQL(username, page, search);
@@ -161,7 +157,7 @@ const getAnimals = async function (
   const bctwQuery = await query(sql);
   const critterQuery = await query(
     critterbase.post('/critters', {
-      critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
+      critter_ids: bctwQuery.result.rows?.map((row) => row.critter_id),
     })
   );
   const { merged, allMerged, error, isError } = await mergeQueries(
@@ -169,9 +165,8 @@ const getAnimals = async function (
     critterQuery,
     'critter_id'
   );
-
   if (isError) {
-    return res.status(400).json(error.message);
+    return res.status(200).json(error.message);
   }
   return res.status(200).json(merged);
 };

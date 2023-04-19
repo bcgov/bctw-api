@@ -47,7 +47,7 @@ const newAnimalDevicePayloadWithMortality = {
 
 const existingAnimalNewDevice = {
   animal_id: '29',
-  population_unit: 'Itcha-Ilgachuz',
+  collection_unit: 'Itcha-Ilgachuz',
   species: 'Caribou',
   capture_date: '2019-01-01',
   device_id: 123,
@@ -86,7 +86,7 @@ const deviceWithManyRows = {
 };
 
 const animalGenericMarkings = {
-  population_unit: 'Itcha-Ilgachuz',
+  collection_unit: 'Itcha-Ilgachuz',
   species: 'Caribou',
   sex: 'Male',
   device_id: 45402,

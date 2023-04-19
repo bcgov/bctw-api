@@ -186,6 +186,11 @@ const query = async (
   let isError = false;
   const isSQL = typeof sqlOrAxios === 'string';
   try {
+    if (!sqlOrAxios) {
+      const err = 'raw SQL string or Axios request must be provided to query';
+      console.log(err);
+      throw new Error(err);
+    }
     if (isSQL) {
       result = await queryAsync(
         asTransaction
@@ -278,7 +283,7 @@ const appendFilter = (
  */
 const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
   if (
-    ['animal_id', 'wlh_id', 'population_unit', 'animal_status'].includes(
+    ['animal_id', 'wlh_id', 'collection_unit', 'animal_status'].includes(
       columnName
     )
   ) {
@@ -402,8 +407,14 @@ const mergeQueries = async <
   }
   //On error of a OR b query return a.result.rows
   const errorReturn = { merged: aArray.result.rows, allMerged: false };
-  if (aArray.isError) return { ...errorReturn, ...aArray };
-  if (bArray.isError) return { ...errorReturn, ...bArray };
+  // console.log(aArray.error.message);
+  // console.log(bArray.error.message);
+  if (aArray.isError) {
+    return { ...errorReturn, ...aArray };
+  }
+  if (bArray.isError) {
+    return { ...errorReturn, ...bArray };
+  }
   const { merged, allMerged } = merge(
     aArray.result.rows,
     bArray.result.rows,
