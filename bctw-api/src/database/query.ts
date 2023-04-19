@@ -311,7 +311,7 @@ type MQResult = MergeReturn<
  *
  * @return {merged} elements in arary are either {...a, ...b} OR {...a}
  * @return {allMerged} indicates if all elements from b[] were merged into a[]
- *
+ ** Note: this is equivalant to doing a left join on the first query
  */
 const merge = <
   A extends Record<string, unknown>,
@@ -375,7 +375,7 @@ const merge = <
  * @return {allMerged} indicates if all elements from b[] were merged into a[]
  * @return {error} error from either queries
  * @return {isError} boolean indicator for an error
- **Note: if error occurs, merge prop will use the a.result.rows
+ **Note: if error occurs, merge will return a.result.rows
  **if both queries have errors, it will first return a errors first.
  *
  */
