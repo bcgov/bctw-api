@@ -16,6 +16,7 @@ import {
 import { eCritterPermission, IUserInput, eUserRole } from '../types/user';
 import { get_critters_by_ids } from './critterbase/critter';
 import { performance } from 'perf_hooks';
+import { QResult } from '../types/query';
 
 interface IUserProps {
   user: IUserInput;
@@ -137,10 +138,11 @@ const getUsers = async function (
 };
 
 /**
- * @returns a list of critters the user has at least observer access to
- * @param req.params.user username to get acccess for
- * @param filters array of @type {eCritterPermission} to retrieve
- * @returns list of @type {Animal} and attached device properties
+ * Retrieves a list of critters the user has at least observer access to.
+ * @async
+ * @param {Request} req - Request object containing user and filters.
+ * @param {Response} res - Response object to send the result.
+ * @returns {Promise<Response>} A list of critters with attached device properties.
  */
 const getUserCritterAccess = async function (
   req: Request,
@@ -148,14 +150,11 @@ const getUserCritterAccess = async function (
 ): Promise<Response> {
   const { user } = req.params;
   if (!user) {
-    return res.status(500).send(`must supply user parameter`);
+    return res.status(500).send('Must supply user parameter');
   }
-  const params: (string | string[])[] = [user];
-  /**
-   * permission filters are appended to the query, ex '?editor,manager'
-   * split the string into an array so the query can handle it
-   */
   const { filters, page } = req.query;
+  const params: (string | string[])[] = [user];
+
   if (filters) {
     params.push(String(filters).split(','));
   }
@@ -173,31 +172,27 @@ const getUserCritterAccess = async function (
     base,
     filter: appendFilter(getFilterFromRequest(req), false, false),
   });
+  const bctwQuery = query(sql);
 
-  const bctwQuery = await query(sql);
+  const getCrittersByIds = async (critterIds) =>
+    query(critterbase.post('/critters', { critter_ids: critterIds }));
 
-  let critterQuery;
+  const getAllCritters = async () =>
+    query(critterbase.get('/critters', { params: { minimal: true } }));
 
-  // Returns only user-assigned critters
-  // 'manager', 'editor', and 'observer' filters are applied in the BCTW query
-  // 'none' filter must be managed here to include data which may only be in critterbase
-  if (filters && !('none' in params)) {
-    critterQuery = await query(
-      critterbase.post('/critters', {
-        critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
-      })
-    );
-    // Return all critters (only used for admin animal-manager)
-  } else {
-    critterQuery = await query(
-      critterbase.get('/critters', { params: { minimal: true } })
-    );
-  }
-  const { merged, error, isError } = mergeQueries(
+  const critterQuery = async () =>
+    !('none' in params)
+      ? getCrittersByIds(
+          (await bctwQuery).result.rows.map((row) => row.critter_id)
+        )
+      : getAllCritters();
+
+  const { merged, error, isError } = await mergeQueries(
     bctwQuery,
-    critterQuery,
+    critterQuery(),
     'critter_id'
   );
+
   if (isError) {
     return res.status(400).json(error.message);
   }
