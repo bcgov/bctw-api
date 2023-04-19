@@ -204,8 +204,8 @@ const getUserCritterAccess = async function (
 
   // Merge the query results
   const { merged, error, isError } = await mergeQueries(
-    bctwQuery,
     critterQuery(),
+    bctwQuery,
     'critter_id'
   );
   if (isError) {
