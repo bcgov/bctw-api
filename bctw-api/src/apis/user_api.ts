@@ -14,9 +14,6 @@ import {
   MISSING_USERNAME,
 } from '../database/requests';
 import { eCritterPermission, IUserInput, eUserRole } from '../types/user';
-import { get_critters_by_ids } from './critterbase/critter';
-import { performance } from 'perf_hooks';
-import { QResult } from '../types/query';
 
 interface IUserProps {
   user: IUserInput;
@@ -137,8 +134,15 @@ const getUsers = async function (
   return res.send(getRowResults(result, fn_name));
 };
 
+interface IUserCritterParams {
+  user: string;
+  filters?: string;
+  page?: string;
+}
+
 /**
- * Retrieves a list of critters the user has at least observer access to.
+ * Retrieves a list of critters filtered by assigned relation to a user and permission filter params.
+ * TODO: handle logic when ONLY 'none' filter is present (there is currently no use case for this)
  * @async
  * @param {Request} req - Request object containing user and filters.
  * @param {Response} res - Response object to send the result.
@@ -148,19 +152,24 @@ const getUserCritterAccess = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { user } = req.params;
+  // Extract parameters from request object and initialize the params array
+  const { user, filters, page } = ({
+    ...req.query,
+    ...req.params,
+  } as unknown) as IUserCritterParams;
   if (!user) {
-    return res.status(500).send('Must supply user parameter');
+    return res.status(500).send('Must supply user parameter'); // TODO: this should be a 400 level error, but unsure how bctw is handling errors
   }
-  const { filters, page } = req.query;
-  const params: (string | string[])[] = [user];
 
+  const params: (string | string[])[] = [user];
   if (filters) {
     params.push(String(filters).split(','));
   }
   if (page) {
     params.push(page.toString());
   }
+
+  // Construct the base and final SQL queries
   const base = constructFunctionQuery(
     fn_user_critter_access,
     params,
@@ -172,30 +181,37 @@ const getUserCritterAccess = async function (
     base,
     filter: appendFilter(getFilterFromRequest(req), false, false),
   });
+
+  // bctwQuery without await, so that mergeQueries can parallelize if possible
   const bctwQuery = query(sql);
 
+  // Functions to get critters by their IDs or get all critters
   const getCrittersByIds = async (critterIds) =>
     query(critterbase.post('/critters', { critter_ids: critterIds }));
-
   const getAllCritters = async () =>
     query(critterbase.get('/critters', { params: { minimal: true } }));
 
+  // 'none' filter needs to be handled here so that critters outside of bctw.user_animal_assignment table are returned
+  // determines which critterbase query to run based on presence of 'none' filter
   const critterQuery = async () =>
     !('none' in params)
-      ? getCrittersByIds(
+      ? // critterbase query depends on bctw critter_ids, hence await
+        getCrittersByIds(
           (await bctwQuery).result.rows.map((row) => row.critter_id)
         )
-      : getAllCritters();
+      : // critterbase query is indep of bctw query, so they can be parallelized in mergeQueries
+        getAllCritters();
 
+  // Merge the query results
   const { merged, error, isError } = await mergeQueries(
     bctwQuery,
     critterQuery(),
     'critter_id'
   );
-
   if (isError) {
     return res.status(400).json(error.message);
   }
+
   return res.status(200).json(merged);
 };
 
