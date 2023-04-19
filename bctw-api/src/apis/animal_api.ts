@@ -118,26 +118,21 @@ const _getUnattachedSQL = (
   const alias = 'unattached';
   const base = `
     WITH ${alias} AS (
-      SELECT
-        ${
-          getAllProps
-            ? 'cuc.*,'
-            : 'cuc.critter_id, cuc.animal_id, cuc.species, cuc.wlh_id, cuc.animal_status, cuc.population_unit, cuc.valid_from,'
-        }
-        ${fn_get_user_animal_permission}('${username}', cuc.critter_id) AS "permission_type"
-      FROM bctw_dapi_v1.currently_unattached_critters_v cuc
-    ) SELECT ${applyCount(page)}* from ${alias}
+      SELECT caa.critter_id, ${fn_get_user_animal_permission}('${username}', caa.critter_id) AS "permission_type"
+      FROM ${S_API}.collar_animal_assignment_v caa
+      WHERE NOT is_valid(now(), caa.valid_from, caa.valid_to) 
+      AND NOT (caa.critter_id IN ( 
+        SELECT currently_attached_collars_v.critter_id
+        FROM bctw_dapi_v1.currently_attached_collars_v))
+    ) SELECT ${applyCount(page)}* FROM ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
+
   const filter = search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({
     base,
     page,
     filter,
-    order: [
-      { field: `${alias}.valid_from `, order: 'desc' },
-      { field: `${alias}.wlh_id` },
-    ],
   });
 };
 
@@ -174,11 +169,6 @@ const getAnimals = async function (
     critterQuery,
     'critter_id'
   );
-  // const { merged, allMerged, error, isError } = await mergeQueries(
-  //   query(sql),
-  //   query(critterbase.get('/critters')),
-  //   'critter_id'
-  // );
 
   if (isError) {
     return res.status(400).json(error.message);
