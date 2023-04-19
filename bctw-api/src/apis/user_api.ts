@@ -194,7 +194,7 @@ const getUserCritterAccess = async function (
   // 'none' filter needs to be handled here so that critters outside of bctw.user_animal_assignment table are returned
   // determines which critterbase query to run based on presence of 'none' filter
   const critterQuery = async () =>
-    !('none' in params)
+    !filters?.includes('none')
       ? // critterbase query depends on bctw critter_ids, hence await
         getCrittersByIds(
           (await bctwQuery).result.rows.map((row) => row.critter_id)
