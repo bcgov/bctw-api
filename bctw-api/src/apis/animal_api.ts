@@ -19,6 +19,7 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
+import { isError } from 'util';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
@@ -77,21 +78,23 @@ const _getAttachedSQL = (
   search?: SearchFilter,
   critter_id?: string
 ): string => {
+  // ca.assignment_id, ca.device_id, ca.collar_id, ca.collar_transaction_id, ca.critter_transaction_id,
+  //       ca.frequency, ca.device_status, ca.device_make, ca.device_type, ca.activation_status_ind, ca.device_model, ca.latitude, ca.longitude,
+  //       ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end, ca.last_fetch_date, ca.last_transmission_date,
   const alias = 'attached';
   const base = `
   WITH ${alias} AS (
-    SELECT c.*, cac.critter_id, cac.attachment_start,
-    ${fn_get_user_animal_permission}('${username}', cac.critter_id) AS "permission_type"
-    FROM ${S_BCTW}.collar_v c
-    JOIN ${S_BCTW}.collar_animal_assignment cac
-    ON cac.collar_id = c.collar_id
-  ) SELECT ${applyCount(page)}* FROM ${alias} WHERE permission_type IS NOT NULL
-  ${
-    critter_id &&
-    ` 
-    AND ${alias}.critter_id = '${critter_id}'`
-  }`;
+    SELECT cac.*, ${fn_get_user_animal_permission}('${username}', cac.critter_id) AS "permission_type"
+    FROM ${cac_v} cac
 
+  ) SELECT ${applyCount(page)}* FROM ${alias} WHERE permission_type IS NOT NULL
+  ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}
+  `;
+  // SELECT c.collar_transaction_id, c.device_id, cac.*,
+  // cac.attachment_end, c.frequency, c.device_deployment_status, c.device_make, c.device_status,
+  // FROM ${S_BCTW}.collar_current_v c
+  // JOIN ${S_BCTW}.collar_animal_assignment_v cac
+  // ON cac.collar_id = c.collar_id
   const filter = search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({
     base,
@@ -166,11 +169,17 @@ const getAnimals = async function (
       critter_ids: bctwQuery.result.rows.map((row) => row.critter_id),
     })
   );
-  const { merged, allMerged, error, isError } = mergeQueries(
+  const { merged, allMerged, error, isError } = await mergeQueries(
     bctwQuery,
     critterQuery,
     'critter_id'
   );
+  // const { merged, allMerged, error, isError } = await mergeQueries(
+  //   query(sql),
+  //   query(critterbase.get('/critters')),
+  //   'critter_id'
+  // );
+
   if (isError) {
     return res.status(400).json(error.message);
   }
