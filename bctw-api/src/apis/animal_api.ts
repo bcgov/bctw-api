@@ -27,6 +27,7 @@ const fn_get_critter_history = 'get_animal_history';
 const cac_v = `${S_API}.currently_attached_collars_v`;
 
 /**
+ * TODO CRITTERBASE INTEGRATION
  * body can be single object or array of Animals
  */
 const upsertAnimal = async function (
