@@ -18,7 +18,7 @@ import {
 import * as XLSX from 'exceljs';
 import * as XLSX_Ext from '../types/xlsx_types';
 import { getFiles } from '../apis/onboarding_api';
-import { S_API } from '../constants';
+import { S_API, critterbase } from '../constants';
 import { GenericVendorTelemetry } from '../types/vendor';
 import {
   validateAnimalDeviceData,
@@ -29,12 +29,7 @@ import {
 import { unlinkSync } from 'fs';
 import { _insertLotekRecords } from '../apis/vendor/lotek';
 import { pgPool } from '../database/pg';
-import axios, { AxiosError } from 'axios';
-import { formatAxiosError } from '../utils/error';
-import { dateRangesOverlap } from './import_helpers';
-import { critterBaseRequest } from '../critterbase/critterbase_api';
-import { Collar } from '../types/collar';
-import { Animal } from '../types/animal';
+//import { critterBaseRequest } from '../critterbase/critterbase_api';
 import {v4 as uuidv4} from 'uuid';
 import dayjs from 'dayjs';
 
@@ -173,7 +168,7 @@ const parseXlsx = async (
         headers.forEach(
           (key, idx) =>
             (rowWithHeader[key] =
-              row?.values?.length && idx + 1 < row.values.length
+              row?.values?.length && idx + 1 < (row.values.length as number)
                 ? row.values[idx + 1]
                 : undefined)
         );
@@ -333,11 +328,11 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any, bulk_payloa
 
   if(bctw_animal.population_unit) {
     //Somewhat redundant to be making this request multiple times during import. May be something to optimize out later.
-    const population_units = await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`);
+    const population_units = await query(critterbase.get(`collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`));//await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`);
     if(!population_units) {
       throw Error('Critterbase does not have population units for this species.');
     }
-    const population_unit = population_units.data.find(a => a.unit_name == bctw_animal.population_unit);
+    const population_unit = population_units.result.rows.find(a => a.unit_name == bctw_animal.population_unit);
     const collection_body = {
       collection_unit_id: population_unit.collection_unit_id,
       critter_id: new_critter_id
@@ -442,8 +437,8 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       }
       responseArray.push(link_row);
     }
-    const bulk_result = await critterBaseRequest('POST', 'bulk', bulk_payload);
-    if(!bulk_result || bulk_result.status != 201) {
+    const bulk_result = await query(critterbase.post('/bulk', bulk_payload));//await critterBaseRequest('POST', 'bulk', bulk_payload);
+    if(!bulk_result || bulk_result.isError) {
       throw Error('Something went wrong when inserting rows into critterbase.');
     }
 

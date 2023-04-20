@@ -10,7 +10,6 @@ import {
   getRowResults,
   query
 } from '../database/query';
-import { Collar } from '../types/collar';
 import { IAnimalDeviceMetadata } from '../types/import_types';
 import { GenericVendorTelemetry, ImportVendors } from '../types/vendor';
 import { ErrorMsgs, importMessages } from '../utils/strings';
@@ -21,8 +20,7 @@ import {
   ParsedXLSXRowResult
 } from './csv';
 import { dateRangesOverlap, determineExistingAnimal } from './import_helpers';
-import { Animal } from '../types/animal';
-import { critterBaseRequest } from '../critterbase/critterbase_api';
+
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
