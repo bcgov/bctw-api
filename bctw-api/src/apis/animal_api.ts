@@ -189,10 +189,10 @@ const getAnimal = async function (
   if (hasCollar.isError) {
     return handleQueryError(hasCollar, res);
   }
-  // const sql =
-  //   hasCollar.result.rowCount > 0
-  //     ? _getAttachedSQL(username, 1, undefined, critter_id, true)
-  //     : _getUnattachedSQL(username, 1, undefined, critter_id, true);
+  const sql =
+    hasCollar.result.rowCount > 0
+      ? _getAttachedSQL(username, 1, undefined, critter_id)
+      : _getUnattachedSQL(username, 1, undefined, critter_id);
   const { result, error, isError } = await query('temp place holder');
   if (isError) {
     return res.status(500).send(error.message);
