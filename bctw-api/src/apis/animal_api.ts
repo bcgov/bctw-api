@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
-import { S_API, S_BCTW } from '../constants';
+import { S_API, S_BCTW, critterbase } from '../constants';
 import {
   appendFilter,
   applyCount,
   constructFunctionQuery,
   constructGetQuery,
+  // crossPlatformQuery,
   getRowResults,
+  mergeQueries,
   query,
 } from '../database/query';
 import {
@@ -17,7 +19,7 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
-import { getLastPingSQL } from './collar_api';
+import { isError } from 'util';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
@@ -25,8 +27,8 @@ const fn_get_critter_history = 'get_animal_history';
 const cac_v = `${S_API}.currently_attached_collars_v`;
 
 /**
+ * TODO CRITTERBASE INTEGRATION
  * body can be single object or array of Animals
- * @returns the upserted @type {Animal} list
  */
 const upsertAnimal = async function (
   req: Request,
@@ -50,6 +52,7 @@ const upsertAnimal = async function (
 };
 
 /**
+ * TODO CRITTERBASE INTEGRATION
  * deletes an animal
  * @param userIdentifier
  * @param critterIds
@@ -69,33 +72,24 @@ const deleteAnimal = async function (
   return res.send(getRowResults(result, fn_name, true));
 };
 
-// generate SQL for retrieving animals that are attached to a device
+/**
+ * * CRITTERBASE INTEGRATED *
+ * generate SQL for retrieving collar data for animals attached to a device
+ */
 const _getAttachedSQL = (
   username: string,
   page: number,
   search?: SearchFilter,
-  critter_id?: string,
-  getAllProps = false
+  critter_id?: string
 ): string => {
   const alias = 'attached';
   const base = `
-    WITH ${alias} AS (
-      SELECT
-        ca.assignment_id, ca.device_id, ca.collar_id, ca.collar_transaction_id, ca.critter_transaction_id, 
-        ca.frequency, ca.device_status, ca.device_make, ca.device_type, ca.activation_status_ind, ca.device_model, ca.latitude, ca.longitude,
-        ca.attachment_start, ca.data_life_start, ca.data_life_end, ca.attachment_end, ca.last_fetch_date, ca.last_transmission_date,
-        ${
-          getAllProps
-            ? 'a.*,'
-            : 'a.critter_id, a.animal_id, a.species, a.wlh_id, a.animal_status, a.population_unit, a.sex,'
-        }
-        ${fn_get_user_animal_permission}('${username}', a.critter_id) AS "permission_type"
-      FROM ${cac_v} ca
-      JOIN ${S_API}.animal_v a ON ca.critter_transaction_id = a.critter_transaction_id
-    ) SELECT ${applyCount(page)}* from ${alias}
-      WHERE permission_type IS NOT NULL
-      ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
-
+  WITH ${alias} AS (
+    SELECT cac.*, ${fn_get_user_animal_permission}('${username}', cac.critter_id) AS "permission_type"
+    FROM ${cac_v} cac
+  ) SELECT ${applyCount(page)}* FROM ${alias} WHERE permission_type IS NOT NULL
+  ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}
+  `;
   const filter = search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({
     base,
@@ -108,41 +102,40 @@ const _getAttachedSQL = (
   });
 };
 
-// generate SQL for retrieving animals that are not attached to a device
+/**
+ * * CRITTERBASE INTEGRATED *
+ * generate SQL for retrieving animals that are not attached to a device
+ */
 const _getUnattachedSQL = (
   username: string,
   page: number,
   search?: SearchFilter,
-  critter_id?: string,
-  getAllProps = false
+  critter_id?: string
 ): string => {
   const alias = 'unattached';
   const base = `
     WITH ${alias} AS (
-      SELECT
-        ${
-          getAllProps
-            ? 'cuc.*,'
-            : 'cuc.critter_id, cuc.animal_id, cuc.species, cuc.wlh_id, cuc.animal_status, cuc.population_unit, cuc.valid_from,'
-        }
-        ${fn_get_user_animal_permission}('${username}', cuc.critter_id) AS "permission_type"
-      FROM bctw_dapi_v1.currently_unattached_critters_v cuc
-    ) SELECT ${applyCount(page)}* from ${alias}
+      SELECT caa.critter_id, ${fn_get_user_animal_permission}('${username}', caa.critter_id) AS "permission_type"
+      FROM ${S_API}.collar_animal_assignment_v caa
+      WHERE NOT is_valid(now(), caa.valid_from, caa.valid_to) 
+      AND NOT (caa.critter_id IN ( 
+        SELECT currently_attached_collars_v.critter_id
+        FROM bctw_dapi_v1.currently_attached_collars_v))
+    ) SELECT ${applyCount(page)}* FROM ${alias}
       WHERE permission_type IS NOT NULL
       ${critter_id ? ` AND ${alias}.critter_id = '${critter_id}'` : ''}`;
+
   const filter = search ? appendFilter(search, `${alias}.`, true) : '';
   return constructGetQuery({
     base,
     page,
     filter,
-    order: [
-      { field: `${alias}.valid_from `, order: 'desc' },
-      { field: `${alias}.wlh_id` },
-    ],
+    // order: [{ field: `${alias}.valid_from `, order: 'desc' }],
   });
 };
 
 /**
+ * * CRITTERBASE INTEGRATED *
  * retrieves a list of @type {Animal}, based on the user's permissions
  * and the @param critterType specified
  */
@@ -154,20 +147,33 @@ const getAnimals = async function (
   const page = (req.query.page || 0) as number;
   const type = req.query.critterType as eCritterFetchType;
   const search = getFilterFromRequest(req);
+
   let sql;
   if (type === eCritterFetchType.unassigned) {
     sql = _getUnattachedSQL(username, page, search);
   } else if (type === eCritterFetchType.assigned) {
     sql = _getAttachedSQL(username, page, search);
   }
-  const { result, error, isError } = await query(sql);
+
+  const bctwQuery = await query(sql);
+  const critterQuery = await query(
+    critterbase.post('/critters', {
+      critter_ids: bctwQuery.result.rows?.map((row) => row.critter_id),
+    })
+  );
+  const { merged, allMerged, error, isError } = await mergeQueries(
+    bctwQuery,
+    critterQuery,
+    'critter_id'
+  );
   if (isError) {
-    return res.status(500).send(error.message);
+    return res.status(200).json(error.message);
   }
-  return res.send(result.rows);
+  return res.status(200).json(merged);
 };
 
 /**
+ * TODO CRITTERBASE INTEGRATION
  * fetches an individual animal supplied with a @param critter_id
  * will first query db to determine if the animal is attached, and return
  * attachment-specific columns
@@ -185,9 +191,9 @@ const getAnimal = async function (
   }
   const sql =
     hasCollar.result.rowCount > 0
-      ? _getAttachedSQL(username, 1, undefined, critter_id, true)
-      : _getUnattachedSQL(username, 1, undefined, critter_id, true);
-  const { result, error, isError } = await query(sql);
+      ? _getAttachedSQL(username, 1, undefined, critter_id)
+      : _getUnattachedSQL(username, 1, undefined, critter_id);
+  const { result, error, isError } = await query('temp place holder');
   if (isError) {
     return res.status(500).send(error.message);
   }
@@ -195,6 +201,7 @@ const getAnimal = async function (
 };
 
 /**
+ * TODO CRITTERBASE INTEGRATION
  * retrieves a history of metadata changes made to a animal
  */
 const getAnimalHistory = async function (
