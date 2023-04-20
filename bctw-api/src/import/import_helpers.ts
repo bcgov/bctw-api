@@ -153,13 +153,13 @@ const formatTemplateRowForUniqueLookup = (row: any) => {
 }
 
 const determineExistingAnimal = async (bctw_animal: any): Promise<any | null> => {
-  console.log(formatTemplateRowForUniqueLookup(bctw_animal));
+  //console.log(formatTemplateRowForUniqueLookup(bctw_animal));
     const critterbase_critters = await query(critterbase.post('/critters/unique', formatTemplateRowForUniqueLookup(bctw_animal))); //await critterBaseRequest('POST', 'critters/unique', formatTemplateRowForUniqueLookup(bctw_animal));
 
-    if(!critterbase_critters) {
+    if(critterbase_critters.isError) {
       throw Error("Something went wrong contacting critterbase.");
     }
-    console.log(JSON.stringify(critterbase_critters, null, 2));
+    //console.log(JSON.stringify(critterbase_critters, null, 2));
     const overlappingCritters = critterbase_critters.result.rows.filter(critter => {
       const mortality_timestamp = critter.mortality.length ? critter.mortality[0].mortality_timestamp : null;
       return critter.capture.some(c => dateRangesOverlap(c.capture_timestamp, mortality_timestamp, bctw_animal.capture_date, bctw_animal.mortality_date));
