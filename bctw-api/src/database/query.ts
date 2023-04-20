@@ -338,8 +338,14 @@ const merge = <
       )}`
     );
   };
-
+  if (!Array.isArray(a)) {
+    a = [a];
+  }
+  if (!Array.isArray(b)) {
+    b = [b];
+  }
   if (!b.length || !a.length) {
+    console.log('issue merging a or b is empty');
     return abortReturn;
   }
   for (let i = 0; i < a.length; i++) {

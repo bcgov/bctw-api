@@ -14,12 +14,14 @@ import {
   getFilterFromRequest,
   getUserIdentifier,
   handleQueryError,
+  handleResponse,
 } from '../database/requests';
 import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
 import { isError } from 'util';
+import { error } from 'console';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
@@ -166,10 +168,7 @@ const getAnimals = async function (
     critterQuery,
     'critter_id'
   );
-  if (isError) {
-    return res.status(200).json(error.message);
-  }
-  return res.status(200).json(merged);
+  return handleResponse(res, merged, error);
 };
 
 /**
@@ -193,11 +192,12 @@ const getAnimal = async function (
     hasCollar.result.rowCount > 0
       ? _getAttachedSQL(username, 1, undefined, critter_id)
       : _getUnattachedSQL(username, 1, undefined, critter_id);
-  const { result, error, isError } = await query('temp place holder');
-  if (isError) {
-    return res.status(500).send(error.message);
-  }
-  return res.send(result.rows[0]);
+  const { merged, allMerged, error, isError } = await mergeQueries(
+    query(sql),
+    query(critterbase.get(`/critters/${critter_id}`)),
+    'critter_id'
+  );
+  return handleResponse(res, merged, error);
 };
 
 /**
