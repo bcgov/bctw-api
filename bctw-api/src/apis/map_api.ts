@@ -96,7 +96,7 @@ const getCritterTracks = async function (
         'type', 'Feature',
         'properties', json_build_object(
           'critter_id', critter_id,
-          'collection_unit', collection_unit,
+          'population_unit', population_unit,
           'species', species,
           'map_colour', geojson->'properties'->>'map_colour'
         ),
@@ -109,7 +109,7 @@ const getCritterTracks = async function (
       st_asText(geom) <> 'POINT(0 0)'
     group by
       critter_id,
-      collection_unit,
+      population_unit,
       species,
       geojson->'properties'->>'map_colour';
   `;
