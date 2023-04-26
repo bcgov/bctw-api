@@ -189,7 +189,7 @@ const getUserCritterAccess = async function (
   const getCrittersByIds = async (critterIds) =>
     query(critterbase.post('/critters', { critter_ids: critterIds }));
   const getAllCritters = async () =>
-    query(critterbase.get('/critters', { params: { minimal: true } }));
+    query(critterbase.get('/critters'));
 
   // 'none' filter needs to be handled here so that critters outside of bctw.user_animal_assignment table are returned
   // determines which critterbase query to run based on presence of 'none' filter
