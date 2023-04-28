@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { S_BCTW } from '../constants';
+import { S_BCTW, critterbase } from '../constants';
 import { pgPool } from '../database/pg';
 import {
   query,
@@ -9,6 +9,7 @@ import {
 import { getUserIdentifier } from '../database/requests';
 import { IBulkResponse } from '../types/import_types';
 import { HistoricalTelemetryInput } from '../types/point';
+import { GeoJSON } from '../types/map';
 
 /**
  * Request that the backend make an estimate on the amount of telemetry data points a user may request
@@ -31,6 +32,55 @@ const getPingsEstimate = function (req: Request, res: Response): void {
   pgPool.query(sql, done);
 };
 
+function getUniqueCritterIds(data): string[] {
+  const critterIds = new Set<string>();
+
+  for (const feature of data.features) {
+    const critterId = feature.properties.critter_id;
+    critterIds.add(critterId);
+  }
+
+  return Array.from(critterIds);
+}
+
+const getCrittersByIds = async (critterIds) =>
+query(critterbase.post('/critters', { critter_ids: critterIds }));
+
+interface FeatureCollection {
+  type: string;
+  features: GeoJSON[];
+}
+
+// Join the additional critter data with the original object
+async function joinCritterData(geoData: FeatureCollection, critterData): Promise<FeatureCollection> {
+  console.log('critterData:', critterData); // Add this line
+
+  const newData: FeatureCollection = {
+    type: geoData.type,
+    features: geoData.features.map((feature) => {
+      const critterId = feature.properties.critter_id;
+      console.log('Searching for critterId:', critterId); // Add this line
+      const additionalData = critterData.find(critter => critter.critter_id === critterId);
+      console.log('additionalData for critterId:', critterId, additionalData); // Add this line
+
+      if (additionalData) {
+        return {
+          ...feature,
+          properties: {
+            ...feature.properties,
+            ...additionalData,
+          },
+        };
+      } else {
+        return feature;
+      }
+    }),
+  };
+
+  return newData;
+}
+
+
 /**
  * Request all collars the user has access to.
  */
@@ -41,7 +91,7 @@ const getDBCritters = function (req: Request, res: Response): void {
   const sql = `select geojson from ${S_BCTW}.${fn_name}('${getUserIdentifier(
     req
   )}', '${start}', '${end}', ${critter})`;
-  const done = function (err, data) {
+  const done = async (err, data) => {
     if (err) {
       return res.status(500).send(`Failed to query database: ${err}`);
     }
@@ -50,8 +100,13 @@ const getDBCritters = function (req: Request, res: Response): void {
       type: 'FeatureCollection',
       features: features,
     };
-    res.send(featureCollection);
+    const critterIds = getUniqueCritterIds(featureCollection);
+    const critterDataResponse = await getCrittersByIds(critterIds);
+    const critterData = critterDataResponse.result.rows; // Extract the rows property from the response object
+    const combinedData = await joinCritterData(featureCollection, critterData);
+    res.send(combinedData);
   };
+  console.log(sql)
   pgPool.query(sql, done);
 };
 
@@ -96,8 +151,6 @@ const getCritterTracks = async function (
         'type', 'Feature',
         'properties', json_build_object(
           'critter_id', critter_id,
-          'population_unit', population_unit,
-          'species', species,
           'map_colour', geojson->'properties'->>'map_colour'
         ),
         'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
@@ -109,8 +162,6 @@ const getCritterTracks = async function (
       st_asText(geom) <> 'POINT(0 0)'
     group by
       critter_id,
-      population_unit,
-      species,
       geojson->'properties'->>'map_colour';
   `;
   const { result, error, isError } = await query(sql);
