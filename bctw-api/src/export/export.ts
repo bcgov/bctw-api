@@ -118,6 +118,7 @@ const getAllExportData = async function (
   console.log(JSON.stringify(req.body.collection_unit));
 
   const filterBody = {
+    critter_ids: req.body.critter_id,
     wlh_ids: req.body.wlh_id,
     animal_ids: req.body.animal_id,
     taxon_name_commons: req.body.taxon,
@@ -133,7 +134,7 @@ const getAllExportData = async function (
   );
 
   let json1: any[];
-  if(filterBody.wlh_ids || filterBody.animal_ids || filterBody.taxon_name_commons || filterBody.collection_units) {
+  if(Object.values(filterBody).some(a => a !== undefined)) {
     const filteredIds = critters.result.rows.map((c) => c.critter_id);
     json1 = bctwExportQuery.result.rows.filter(r => filteredIds.includes(r.critter_id));
   }
