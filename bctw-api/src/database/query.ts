@@ -306,6 +306,7 @@ type MQResult = MergeReturn<
   Pick<QueryResult, 'rows'>
 > &
   Pick<QResult, 'error' | 'isError'>;
+
 /**
  * Merges elements in array `b` into array `a` based on the matching values of the specified property.
  * The resulting merged array will have the same length as array `a`.

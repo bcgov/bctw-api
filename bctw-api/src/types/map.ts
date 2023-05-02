@@ -34,4 +34,9 @@ type GeoJSON = {
   properties: GeoJSONProperty;
 };
 
-export type { GeoMetry, GeoJSONProperty, GeoJSON };
+interface FeatureCollection {
+  type: string;
+  features: GeoJSON[];
+}
+
+export type { GeoMetry, GeoJSONProperty, GeoJSON, FeatureCollection };
