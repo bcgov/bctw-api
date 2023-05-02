@@ -328,7 +328,7 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any, bulk_payloa
 
   if(bctw_animal.population_unit) {
     //Somewhat redundant to be making this request multiple times during import. May be something to optimize out later.
-    const population_units = await query(critterbase.get(`collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`));//await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`);
+    const population_units = await query(critterbase.get(`xref/collection-units/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`));//await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`);
     if(!population_units) {
       throw Error('Critterbase does not have population units for this species.');
     }
