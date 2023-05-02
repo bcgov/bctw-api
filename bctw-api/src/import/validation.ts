@@ -19,7 +19,8 @@ import {
   ParsedXLSXCellError,
   ParsedXLSXRowResult
 } from './csv';
-import { dateRangesOverlap } from './import_helpers';
+import { dateRangesOverlap, determineExistingAnimal } from './import_helpers';
+
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
@@ -159,7 +160,7 @@ const validateAnimalDeviceData = async (
     rowres.row as IAnimalDeviceMetadata,
     user
   );
-  const unqanim = await validateUniqueAnimal(rowres);
+  const unqanim = await validateUniqueAnimal(rowres.row as IAnimalDeviceMetadata);
   if (unqanim.is_error) {
     ret.errors.identifier = {
       desc: ErrorMsgs.metadata.badMarkings,
@@ -195,7 +196,7 @@ const validateAnimalDeviceAssignment = async (
   user: string
 ): Promise<ErrorsAndWarnings> => {
   let linkData: ErrorsAndWarnings = { errors: {}, warnings: [] };
-  const row_start = row.capture_date ?? new Date();
+  const row_start = row.capture_date;
   const row_end = row.retrieval_date ?? row.mortality_date ?? null;
 
   if (typeof row.device_id == 'number') {
@@ -212,8 +213,8 @@ const validateAnimalDeviceAssignment = async (
         dateRangesOverlap(
           link.attachment_start,
           link.attachment_end,
-          row_start,
-          row_end
+          row_start as unknown as string,
+          row_end as unknown as string
         )
       )
     ) {
@@ -248,8 +249,8 @@ const validateAnimalDeviceAssignment = async (
         dateRangesOverlap(
           link.attachment_start,
           link.attachment_end,
-          row_start,
-          row_end
+          row_start as unknown as string,
+          row_end as unknown as string
         )
       )
     ) {
@@ -283,17 +284,15 @@ const validateAnimalDeviceRequiredFields = (
   !!row.capture_date;
 };
 
-const validateUniqueAnimal = async (row: ParsedXLSXRowResult): Promise<UniqueAnimalResult> => {
-  const sql = `SELECT is_new_animal('${JSON.stringify(row.row)}'::jsonb)`;
-  const { result, error, isError } = await query(
-    sql,
-    'failed to retrieve codes'
-  );
-  if(isError) {
-    return {is_error: true};
+const validateUniqueAnimal = async (row: IAnimalDeviceMetadata): Promise<UniqueAnimalResult> => {
+  try {
+    const existing = await determineExistingAnimal(row);
+    return {is_new: true}
   }
-  const result_set = getRowResults(result, 'is_new_animal')[0];
-  return result_set as UniqueAnimalResult;
+  catch (e) {
+    console.log(e);
+    return {is_error: true}
+  }
 };
 
 export {

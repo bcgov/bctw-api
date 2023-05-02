@@ -186,6 +186,11 @@ const query = async (
   let isError = false;
   const isSQL = typeof sqlOrAxios === 'string';
   try {
+    if (!sqlOrAxios) {
+      const err = 'raw SQL string or Axios request must be provided to query';
+      console.log(err);
+      throw new Error(err);
+    }
     if (isSQL) {
       result = await queryAsync(
         asTransaction
@@ -194,15 +199,22 @@ const query = async (
       );
     } else {
       const axiosReq = sqlOrAxios as Promise<AxiosResponse<any>>;
-      const axiosRes = await axiosReq;
-      result.rows = axiosRes.data;
+      //try {
+        const axiosRes = await axiosReq;
+        result.rows = axiosRes.data;
+      /*}
+      catch(e) {
+        console.log('Failed await: ' + e);
+      }*/
+      
     }
   } catch (e) {
     isError = true;
     if (isSQL) {
+      console.log('Errored in SQL path.')
       error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
     } else {
-      console.log(e);
+      console.log('Errored in non - SQL path.');
       error = new Error(formatAxiosError(e as AxiosError));
     }
   }
@@ -279,7 +291,7 @@ const appendFilter = (
  */
 const determineTableAlias = (columnName: string): 'a.' | 'c.' | '' => {
   if (
-    ['animal_id', 'wlh_id', 'population_unit', 'animal_status'].includes(
+    ['animal_id', 'wlh_id', 'collection_unit', 'animal_status'].includes(
       columnName
     )
   ) {
@@ -297,6 +309,11 @@ type MergeReturn<A, B> = {
   merged: Array<A & B & Merged> | Array<A & Merged>;
   allMerged: boolean;
 };
+type MQResult = MergeReturn<
+  Pick<QueryResult, 'rows'>,
+  Pick<QueryResult, 'rows'>
+> &
+  Pick<QResult, 'error' | 'isError'>;
 /**
  ** merges b[] into a[] on match of property value
  ** at most return will be the same length of a array.
@@ -307,7 +324,7 @@ type MergeReturn<A, B> = {
  *
  * @return {merged} elements in arary are either {...a, ...b} OR {...a}
  * @return {allMerged} indicates if all elements from b[] were merged into a[]
- *
+ ** Note: this is equivalant to doing a left join on the first query
  */
 const merge = <
   A extends Record<string, unknown>,
@@ -329,8 +346,14 @@ const merge = <
       )}`
     );
   };
-
+  if (!Array.isArray(a)) {
+    a = [a];
+  }
+  if (!Array.isArray(b)) {
+    b = [b];
+  }
   if (!b.length || !a.length) {
+    console.log('issue merging a or b is empty');
     return abortReturn;
   }
   for (let i = 0; i < a.length; i++) {
@@ -360,11 +383,6 @@ const merge = <
   };
 };
 
-type MQResult = MergeReturn<
-  Pick<QueryResult, 'rows'>,
-  Pick<QueryResult, 'rows'>
-> &
-  Pick<QResult, 'error' | 'isError'>;
 /**
  ** merges two queries together. uses result.rows for a / b arrays
  * @param a return from query func
@@ -376,23 +394,54 @@ type MQResult = MergeReturn<
  * @return {allMerged} indicates if all elements from b[] were merged into a[]
  * @return {error} error from either queries
  * @return {isError} boolean indicator for an error
- **Note: if error occurs, merge prop will use the a.result.rows
+ **Note: if error occurs, merge will return a.result.rows
  **if both queries have errors, it will first return a errors first.
  *
  */
-const mergeQueries = (a: QResult, b: QResult, mergeKey: string): MQResult => {
+const isPromise = (value: any) => {
+  return Boolean(value && typeof value.then === 'function');
+};
+
+const mergeQueries = async <
+  A extends Promise<QResult> | QResult,
+  B extends Promise<QResult> | QResult
+>(
+  a: A extends B ? A : B,
+  b: A extends B ? B : A,
+  mergeKey: string
+): Promise<MQResult> => {
   let error;
+  let aArray;
+  let bArray;
+  if (isPromise(a) || isPromise(b)) {
+    [aArray, bArray] = await Promise.all([a, b]);
+  } else {
+    aArray = a;
+    bArray = b;
+  }
   //On error of a OR b query return a.result.rows
-  const errorReturn = { merged: a.result.rows, allMerged: false };
-  if (a.isError) return { ...errorReturn, ...a };
-  if (b.isError) return { ...errorReturn, ...b };
-  const { merged, allMerged } = merge(a.result.rows, b.result.rows, mergeKey);
+  const errorReturn = { merged: aArray.result.rows, allMerged: false };
+  // console.log(aArray.error.message);
+  // console.log(bArray.error.message);
+  if (aArray.isError) {
+    return { ...errorReturn, ...aArray };
+  }
+  if (bArray.isError) {
+    return { ...errorReturn, ...bArray };
+  }
+  const { merged, allMerged } = merge(
+    aArray.result.rows,
+    bArray.result.rows,
+    mergeKey
+  );
   if (!allMerged) {
     console.log(
       `not all results from bArray were merged into aArray using "${mergeKey}"`
     );
   }
-  return { merged, allMerged, error, isError: false };
+  //Temp fix to handle return type error
+  const mergeCast: any = merged;
+  return { merged: mergeCast, allMerged, error, isError: false };
 };
 
 export {

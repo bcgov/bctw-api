@@ -1,4 +1,16 @@
+import dayjs from 'dayjs';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 import * as fs from 'fs';
+import proj4 from 'proj4';
+import { critterbase } from '../constants';
+import { query,
+} from '../database/query';
+//import { critterBaseRequest } from '../critterbase/critterbase_api';
+
+
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 /**
  * converts csv headers to the database column names
@@ -77,18 +89,94 @@ const removeEmptyProps = (obj) => {
   return obj;
 }
 
-const dateRangesOverlap = (startDateA : Date, endDateA : Date, startDateB : Date, endDateB : Date): boolean => {
-  startDateA = new Date(startDateA);
-  startDateB = new Date(startDateB);
+const dateRangesOverlap = (startDateA: string, endDateA: string, startDateB: string, endDateB: string): boolean => {
+  const startA = dayjs(startDateA);
+  const startB = dayjs(startDateB);
 
-  endDateA = endDateA ? new Date(endDateA) : new Date(8640000000000000);
-  endDateB = endDateB ? new Date(endDateB) : new Date(8640000000000000);
+  const endA = endDateA ? dayjs(endDateA) : dayjs('2300-01-01');
+  const endB = endDateB ? dayjs(endDateB) : dayjs('2300-01-01');
 
-  return startDateA <= endDateB && endDateA >= startDateB;
+  return startA.isSameOrBefore(endB) && endA.isSameOrAfter(startB);
+}
+
+const isOnSameDay = (date1: string, date2: string): boolean => {
+  return dayjs(date1).isSame(dayjs(date2), 'day');
+}
+
+const projectUTMToLatLon = (utm_north: number, utm_east: number, utm_zone: number = 10) => {
+  const utmProjection = `+proj=utm +zone=${utm_zone} +north +datum=WGS84 +units=m +no_defs`;
+  const wgs84Projection = `+proj=longlat +datum=WGS84 +no_defs`;
+  return proj4(utmProjection, wgs84Projection, [utm_east, utm_north]);
 }
 
 // converts an objects values to a string
 const rowToCsv = (row): string => Object.values(row).join(',');
+
+const getCritterbaseCritterFromRow = (row: any) => {
+  return {
+    wlh_id: row.wlh_id,
+    animal_id: row.animal_id,
+    sex: row.sex
+  }
+}
+
+const getCritterbaseMarkingsFromRow = (row: any) => {
+  const marking: any[] = [];
+  if(row.ear_tag_left_colour || row.ear_tag_left_id) {
+    const ear_tag_left = {
+      primary_colour: row.ear_tag_left_colour ?? null,
+      identifier: row.ear_tag_left_id ?? null,
+      marking_type: 'Ear Tag',
+      body_location: 'Left Ear'
+    };
+    marking.push(ear_tag_left);
+  }
+
+  if(row.ear_tag_right_id|| row.ear_tag_right_colour) {
+    const ear_tag_right = {
+      primary_colour: row.ear_tag_right_colour ?? null,
+      identifier: row.ear_tag_right_id ?? null,
+      marking_type: 'Ear Tag',
+      body_location: 'Right Ear'
+    }
+    marking.push(ear_tag_right);
+  }
+  return marking;
+}
+
+const formatTemplateRowForUniqueLookup = (row: any) => {
+  return {
+    critter: getCritterbaseCritterFromRow(row),
+    markings: getCritterbaseMarkingsFromRow(row),
+    detail: true
+  }
+}
+
+const determineExistingAnimal = async (bctw_animal: any): Promise<any | null> => {
+  //console.log(formatTemplateRowForUniqueLookup(bctw_animal));
+    const critterbase_critters = await query(critterbase.post('/critters/unique', formatTemplateRowForUniqueLookup(bctw_animal))); //await critterBaseRequest('POST', 'critters/unique', formatTemplateRowForUniqueLookup(bctw_animal));
+
+    if(critterbase_critters.isError) {
+      throw Error("Something went wrong contacting critterbase.");
+    }
+    //console.log(JSON.stringify(critterbase_critters, null, 2));
+    const overlappingCritters = critterbase_critters.result.rows.filter(critter => {
+      const mortality_timestamp = critter.mortality.length ? critter.mortality[0].mortality_timestamp : null;
+      return critter.capture.some(c => dateRangesOverlap(c.capture_timestamp, mortality_timestamp, bctw_animal.capture_date, bctw_animal.mortality_date));
+    });
+
+    if(overlappingCritters.length > 1) {
+      throw Error('Found many valid critters for these markings over the same captured-mortality lifespan. The critter trying to be referenced is therefore ambiguous, aborting. Try again with more markings if possible.')
+    }
+    
+
+    if(overlappingCritters.length == 0) {
+      return null;
+    }
+    else {
+      return overlappingCritters[0];
+    }
+}
 
 export {
   cleanupUploadsDir,
@@ -96,5 +184,9 @@ export {
   mapXlsxHeader,
   removeEmptyProps,
   rowToCsv,
-  dateRangesOverlap
+  dateRangesOverlap,
+  isOnSameDay,
+  projectUTMToLatLon,
+  determineExistingAnimal,
+  getCritterbaseMarkingsFromRow
 }
