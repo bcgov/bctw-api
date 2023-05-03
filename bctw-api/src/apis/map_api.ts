@@ -46,7 +46,7 @@ const PING_OUTLINE_COLOUR = '#b2b2b2';
  * @param {string} id - The UUID of the critter.
  * @returns {string} A color in hexadecimal format.
  */
-function uuidToColor(id: string): string {
+const uuidToColor = (id: string): string => {
   // A simple hashing function to convert the UUID into a number
   function hashCode(str) {
     let hash = 0;
@@ -67,13 +67,13 @@ function uuidToColor(id: string): string {
   const color = intToRGB(hash);
 
   return `#${color}`;
-}
+};
 
 // Join the additional critter data with the original object
-function joinCritterData(
+const mergeGeoProperties = (
   geoData: FeatureCollection,
   critterData
-): FeatureCollection {
+): FeatureCollection => {
   // Unpack and merge the GeoJSON Properties with critterbase data
   const mergedData = merge(
     geoData.features.map((feature) => feature.properties),
@@ -108,12 +108,12 @@ function joinCritterData(
     type: geoData.type,
     features: joinedFeatures,
   };
-}
+};
 
 /**
  * Returns an array of critter_ids from a GeoJSON Features array
  */
-function getGeoJSONCritterIds(features: GeoJSON[]): string[] {
+const getGeoJSONCritterIds = (features: GeoJSON[]): string[] => {
   const critterIds = new Set<string>();
 
   for (const feature of features) {
@@ -122,7 +122,7 @@ function getGeoJSONCritterIds(features: GeoJSON[]): string[] {
   }
 
   return Array.from(critterIds);
-}
+};
 
 /**
  * Retrieves critter telemetry data from the database and combines it with critter metadata
@@ -147,7 +147,7 @@ const getDBCritters = async (req: Request, res: Response): Promise<void> => {
     if (!critterDataResponse.isError) {
       const critterData = critterDataResponse.result.rows;
       //merge critter data into GeoJSON
-      const combinedData = joinCritterData(featureCollection, critterData);
+      const combinedData = mergeGeoProperties(featureCollection, critterData);
       res.send(combinedData);
     } else {
       res.send(featureCollection);
@@ -158,62 +158,46 @@ const getDBCritters = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
- * Request all the critter tracks with an date interval
- * These geometries are build on the fly.
+ * Request all the critter tracks within a date interval.
+ * These geometries are built on the fly.
  */
-const getCritterTracks = async function (
+const getCritterTracks = async (
   req: Request,
   res: Response
-): Promise<Response> {
-  const tim1 = performance.now();
-  const { start, end } = req.query;
-  const critter = req.query?.critter_id ? `'${req.query?.critter_id}'` : `NULL`;
+): Promise<Response> => {
+  const { start, end, critter_id: critterId } = req.query;
+
   if (!start || !end) {
     return res.status(404).send('Must have a valid start and end date');
   }
-  const username = getUserIdentifier(req);
-  const sql =
-    // unassigned === 'true' ?
-    // `
-    //   select
-    //   jsonb_build_object (
-    //     'type', 'Feature',
-    //     'properties', json_build_object(
-    //       'collar_id', collar_id,
-    //       'device_id', device_id
-    //     ),
-    //     'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
-    //   ) as "geojson"
-    // from
-    //   get_unattached_telemetry('${username}', '${start}', '${end}')
-    // where
-    //   st_asText(geom) <> 'POINT(0 0)'
-    // group by
-    //   collar_id,
-    //   device_id;
-    // ` :
 
-    `
-    select
+  const username = getUserIdentifier(req);
+  const critter = critterId ? `'${critterId}'` : 'NULL';
+
+  const sql = `
+    SELECT
       jsonb_build_object (
         'type', 'Feature',
         'properties', json_build_object(
           'critter_id', critter_id
         ),
-        'geometry', st_asGeoJSON(st_makeLine(geom order by date_recorded asc))::jsonb
-      ) as "geojson"
-    from
+        'geometry', st_asGeoJSON(st_makeLine(geom ORDER BY date_recorded ASC))::jsonb
+      ) AS "geojson"
+    FROM
       get_telemetry('${username}', '${start}', '${end}', ${critter})
-    where
-      critter_id is not null and
+    WHERE
+      critter_id IS NOT NULL AND
       st_asText(geom) <> 'POINT(0 0)'
-    group by
+    GROUP BY
       critter_id;
   `;
+
   const { result, error, isError } = await query(sql);
+
   if (isError) {
     return res.status(500).send(error.message);
   }
+
   const features = result.rows.map((row) => {
     const geojson = row.geojson;
     const critterId = geojson.properties.critter_id;
@@ -230,7 +214,7 @@ const getCritterTracks = async function (
     type: 'FeatureCollection',
     features: features,
   };
-  console.log(`db tracks took ${performance.now() - tim1} ms`);
+
   return res.send(featureCollection);
 };
 
