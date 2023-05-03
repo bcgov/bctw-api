@@ -147,15 +147,13 @@ const getCritterbaseMarkingsFromRow = (row: any) => {
 const formatTemplateRowForUniqueLookup = (row: any) => {
   return {
     critter: getCritterbaseCritterFromRow(row),
-    markings: getCritterbaseMarkingsFromRow(row),
-    detail: true
+    markings: getCritterbaseMarkingsFromRow(row)
   }
 }
 
 const determineExistingAnimal = async (bctw_animal: any): Promise<any | null> => {
   //console.log(formatTemplateRowForUniqueLookup(bctw_animal));
-    const critterbase_critters = await query(critterbase.post('/critters/unique', formatTemplateRowForUniqueLookup(bctw_animal))); //await critterBaseRequest('POST', 'critters/unique', formatTemplateRowForUniqueLookup(bctw_animal));
-
+    const critterbase_critters = await query(critterbase.post('/critters/unique?format=detailed', formatTemplateRowForUniqueLookup(bctw_animal)));
     if(critterbase_critters.isError) {
       throw Error("Something went wrong contacting critterbase.");
     }
