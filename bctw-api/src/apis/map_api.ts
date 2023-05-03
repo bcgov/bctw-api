@@ -34,22 +34,19 @@ const getPingsEstimate = function (req: Request, res: Response): void {
   pgPool.query(sql, done);
 };
 
-function getUniqueCritterIds(data): string[] {
-  const critterIds = new Set<string>();
-
-  for (const feature of data.features) {
-    const critterId = feature.properties.critter_id;
-    critterIds.add(critterId);
-  }
-
-  return Array.from(critterIds);
-}
-
 //TODO: Import this from a common place
 const getCrittersByIds = async (critterIds) =>
   query(critterbase.post('/critters', { critter_ids: critterIds }));
 
-function uuidToColor(critter_id: string): string {
+//TODO: This should be a constant in the UI
+const PING_OUTLINE_COLOUR = '#b2b2b2';
+
+/**
+ * Generates a unique color based on the given uuid string.
+ * @param {string} id - The UUID of the critter.
+ * @returns {string} A color in hexadecimal format.
+ */
+function uuidToColor(id: string): string {
   // A simple hashing function to convert the UUID into a number
   function hashCode(str) {
     let hash = 0;
@@ -65,19 +62,18 @@ function uuidToColor(critter_id: string): string {
     return '00000'.substring(0, 6 - c.length) + c;
   }
 
-  // Generate a unique color based on the critter_id
-  const hash = hashCode(critter_id);
+  // Generate a unique color based on the uuid
+  const hash = hashCode(id);
   const color = intToRGB(hash);
 
   return `#${color}`;
 }
 
 // Join the additional critter data with the original object
-async function joinCritterData(
+function joinCritterData(
   geoData: FeatureCollection,
   critterData
-): Promise<FeatureCollection> {
-
+): FeatureCollection {
   // Unpack and merge the GeoJSON Properties with critterbase data
   const mergedData = merge(
     geoData.features.map((feature) => feature.properties),
@@ -96,7 +92,7 @@ async function joinCritterData(
     const mergedProperties = mergedPropertiesMap.get(
       critterId
     ) as GeoJSONProperty;
-    const map_colour = `${uuidToColor(critterId)},#b2b2b2`;
+    const map_colour = `${uuidToColor(critterId)},${PING_OUTLINE_COLOUR}`;
 
     return {
       ...feature,
@@ -115,37 +111,50 @@ async function joinCritterData(
 }
 
 /**
- * Request all collars the user has access to.
+ * Returns an array of critter_ids from a GeoJSON Features array
  */
-const getDBCritters = function (req: Request, res: Response): void {
-  const { start, end } = req.query;
-  const critter = req.query?.critter_id ? `'${req.query?.critter_id}'` : `NULL`;
-  const fn_name = 'get_telemetry';
-  const sql = `select geojson from ${S_BCTW}.${fn_name}('${getUserIdentifier(
+function getGeoJSONCritterIds(features: GeoJSON[]): string[] {
+  const critterIds = new Set<string>();
+
+  for (const feature of features) {
+    const critterId = feature.properties.critter_id;
+    critterIds.add(critterId);
+  }
+
+  return Array.from(critterIds);
+}
+
+/**
+ * Retrieves critter telemetry data from the database and combines it with critter metadata
+ */
+const getDBCritters = async (req: Request, res: Response): Promise<void> => {
+  const { start, end, critter_id } = req.query;
+  const critter = critter_id ? `'${critter_id}'` : 'NULL';
+  const sql = `SELECT geojson FROM ${S_BCTW}.get_telemetry('${getUserIdentifier(
     req
   )}', '${start}', '${end}', ${critter})`;
-  const done = async (err, data) => {
-    const tim1 = performance.now();
-    if (err) {
-      return res.status(500).send(`Failed to query database: ${err}`);
-    }
-    const features = data.rows.map((row) => row.geojson);
-    const featureCollection = {
-      type: 'FeatureCollection',
-      features: features,
-    };
-    const critterIds = getUniqueCritterIds(featureCollection);
-    const critterDataResponse = await getCrittersByIds(critterIds);
-    const critterData = critterDataResponse.result.rows; // Extract the rows property from the response object
-    console.log(
-      `db + critterbase operations took ${performance.now() - tim1} ms`
-    );
 
-    const combinedData = await joinCritterData(featureCollection, critterData);
-    res.send(combinedData);
-  };
-  console.log(sql);
-  pgPool.query(sql, done);
+  try {
+    // Retrieve telemetry data
+    const { rows } = await pgPool.query(sql);
+    const features = rows.map((row) => row.geojson);
+    const featureCollection = { type: 'FeatureCollection', features };
+
+    // Retrieve critterbase data
+    const critterDataResponse = await getCrittersByIds(
+      getGeoJSONCritterIds(features)
+    );
+    if (!critterDataResponse.isError) {
+      const critterData = critterDataResponse.result.rows;
+      //merge critter data into GeoJSON
+      const combinedData = joinCritterData(featureCollection, critterData);
+      res.send(combinedData);
+    } else {
+      res.send(featureCollection);
+    }
+  } catch (err) {
+    res.status(500).send(`Failed to query database: ${err}`);
+  }
 };
 
 /**
@@ -210,7 +219,9 @@ const getCritterTracks = async function (
     const critterId = geojson.properties.critter_id;
 
     // Add the map_color to the properties object
-    geojson.properties.map_colour = `${uuidToColor(critterId)},#b2b2b2`;
+    geojson.properties.map_colour = `${uuidToColor(
+      critterId
+    )},${PING_OUTLINE_COLOUR}`;
 
     return geojson;
   });
