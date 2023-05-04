@@ -11,7 +11,6 @@ import { getUserIdentifier } from '../database/requests';
 import { IBulkResponse } from '../types/import_types';
 import { HistoricalTelemetryInput } from '../types/point';
 import { FeatureCollection, GeoJSON, GeoJSONProperty } from '../types/map';
-import { performance } from 'perf_hooks';
 
 /**
  * Request that the backend make an estimate on the amount of telemetry data points a user may request
@@ -47,24 +46,55 @@ const PING_OUTLINE_COLOUR = '#b2b2b2';
  * @returns {string} A color in hexadecimal format.
  */
 const uuidToColor = (id: string): string => {
-  // A simple hashing function to convert the UUID into a number
-  function hashCode(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  function uuidToInt(uuid) {
+    const noDashes = uuid.replace(/-/g, '');
+    const substring = noDashes.substring(0, 9);
+    return parseInt(substring, 16);
+  }
+
+  function intToHSL(i: number) {
+    const hue = i % 360;
+    let saturation = (i % 50) + 50; // Ensuring saturation is between 50% and 100%
+    let lightness = (i % 60) + 20; // Ensuring lightness is between 20% and 80%
+
+    // Avoiding earthy tones for hues in the range of 20-170 by adjusting the saturation and lightness values
+    if (hue >= 20 && hue <= 170) {
+      saturation = (i % 40) + 60; // Ensuring saturation is between 60% and 100%
+      lightness = (i % 50) + 40; // Ensuring lightness is between 40% and 90%
     }
-    return hash;
+
+    return { h: hue, s: saturation, l: lightness };
   }
 
-  // Convert the hash value into an RGB color
-  function intToRGB(i: number) {
-    const c = (i & 0x00ffffff).toString(16).toUpperCase();
-    return '00000'.substring(0, 6 - c.length) + c;
+  function HSLToRGB(hsl) {
+    const { h, s, l } = hsl;
+    const scaledS = s / 100;
+    const scaledL = l / 100;
+    const c = (1 - Math.abs(2 * scaledL - 1)) * scaledS;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = scaledL - c / 2;
+
+    let r, g, b;
+    if (h >= 0 && h < 60) [r, g, b] = [c, x, 0];
+    else if (h >= 60 && h < 120) [r, g, b] = [x, c, 0];
+    else if (h >= 120 && h < 180) [r, g, b] = [0, c, x];
+    else if (h >= 180 && h < 240) [r, g, b] = [0, x, c];
+    else if (h >= 240 && h < 300) [r, g, b] = [x, 0, c];
+    else [r, g, b] = [c, 0, x];
+
+    return [(r + m) * 255, (g + m) * 255, (b + m) * 255].map((val) =>
+      Math.round(val)
+    );
   }
 
-  // Generate a unique color based on the uuid
-  const hash = hashCode(id);
-  const color = intToRGB(hash);
+  function RGBToHex(rgb) {
+    return rgb.map((val) => val.toString(16).padStart(2, '0')).join('');
+  }
+
+  const intVal = uuidToInt(id);
+  const hsl = intToHSL(intVal);
+  const rgb = HSLToRGB(hsl);
+  const color = RGBToHex(rgb);
 
   return `#${color}`;
 };
