@@ -37,15 +37,13 @@ const getPingsEstimate = function (req: Request, res: Response): void {
 const getCrittersByIds = async (critterIds) =>
   query(critterbase.post('/critters', { critter_ids: critterIds }));
 
-//TODO: This should be a constant in the UI
-const PING_OUTLINE_COLOUR = '#b2b2b2';
-
 /**
  * Generates a unique color based on the given uuid string.
+ * TODO: It may make more sense to move this into the ui with the other pings set-up
  * @param {string} id - The UUID of the critter.
  * @returns {string} A color in hexadecimal format.
  */
-const uuidToColor = (id: string): string => {
+const uuidToColor = (id: string) => {
   function uuidToInt(uuid) {
     const noDashes = uuid.replace(/-/g, '');
     const substring = noDashes.substring(0, 9);
@@ -91,12 +89,23 @@ const uuidToColor = (id: string): string => {
     return rgb.map((val) => val.toString(16).padStart(2, '0')).join('');
   }
 
-  const intVal = uuidToInt(id);
-  const hsl = intToHSL(intVal);
-  const rgb = HSLToRGB(hsl);
-  const color = RGBToHex(rgb);
+  function generateOutlineColor(hsl) {
+    const { h, s, l } = hsl;
+    const outlineL = l >= 50 ? l - 40 : l + 40;
+    return { h, s, l: outlineL };
+  }
 
-  return `#${color}`;
+  const intVal = uuidToInt(id);
+  const hslFillColor = intToHSL(intVal);
+  const hslOutlineColor = generateOutlineColor(hslFillColor);
+
+  const rgbFillColor = HSLToRGB(hslFillColor);
+  const rgbOutlineColor = HSLToRGB(hslOutlineColor);
+
+  const hexFillColor = RGBToHex(rgbFillColor);
+  const hexOutlineColor = RGBToHex(rgbOutlineColor);
+
+  return { fillColor: `#${hexFillColor}`, outlineColor: `#${hexOutlineColor}` };
 };
 
 // Join the additional critter data with the original object
@@ -111,18 +120,13 @@ const mergeGeoProperties = (
     'critter_id'
   ).merged as GeoJSONProperty[];
 
-  // Map the merged properties to the critter_id
-  const mergedPropertiesMap = new Map(
-    mergedData.map((property) => [property.critter_id, property])
-  );
-
   // Update the features array with the merged properties and map_colour
-  const joinedFeatures: GeoJSON[] = geoData.features.map((feature) => {
+  const joinedFeatures: GeoJSON[] = geoData.features.map((feature, index) => {
     const critterId = feature.properties.critter_id;
-    const mergedProperties = mergedPropertiesMap.get(
-      critterId
-    ) as GeoJSONProperty;
-    const map_colour = `${uuidToColor(critterId)},${PING_OUTLINE_COLOUR}`;
+    const mergedProperties = mergedData[index];
+
+    const colors = uuidToColor(critterId);
+    const map_colour = `${colors.fillColor},${colors.outlineColor}`;
 
     return {
       ...feature,
@@ -168,7 +172,10 @@ const getDBCritters = async (req: Request, res: Response): Promise<void> => {
     // Retrieve telemetry data
     const { rows } = await pgPool.query(sql);
     const features = rows.map((row) => row.geojson);
-    const featureCollection = { type: 'FeatureCollection', features };
+    const featureCollection: FeatureCollection = {
+      type: 'FeatureCollection',
+      features,
+    };
 
     // Retrieve critterbase data
     const critterDataResponse = await getCrittersByIds(
@@ -233,9 +240,8 @@ const getCritterTracks = async (
     const critterId = geojson.properties.critter_id;
 
     // Add the map_color to the properties object
-    geojson.properties.map_colour = `${uuidToColor(
-      critterId
-    )},${PING_OUTLINE_COLOUR}`;
+    const colors = uuidToColor(critterId);
+    geojson.properties.map_colour = `${colors.fillColor},${colors.outlineColor}`;
 
     return geojson;
   });
