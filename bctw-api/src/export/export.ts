@@ -1,14 +1,16 @@
 import { Request, Response } from 'express';
-import { fn_get_critter_history } from '../apis/animal_api';
+import { fn_get_critter_history, getAnimals, getAnimalsInternal } from '../apis/animal_api';
 import { fn_get_collar_history } from '../apis/collar_api';
-import { S_API, S_BCTW } from '../constants';
+import { S_API, S_BCTW, critterbase } from '../constants';
 import {
   appendFilter,
   constructFunctionQuery,
   constructGetQuery,
+  mergeQueries,
   query,
 } from '../database/query';
 import { getFilterFromRequest, getUserIdentifier } from '../database/requests';
+import { eCritterFetchType } from '../types/animal';
 
 enum eExportType {
   all = 'all',
@@ -102,22 +104,57 @@ const getAllExportData = async function (
   res: Response
 ): Promise<Response> {
   const idir = getUserIdentifier(req);
-  const queries = JSON.stringify(req.body.queries);
+  const queries = JSON.stringify(req.body.bctw_queries);
   const start = req.body.range.start;
   const end = req.body.range.end;
   const polygons =
     'ARRAY[ ' + req.body.polygons.map((o) => `'${o}'`).join(', ') + ']::text[]';
   const lastTelemetryOnly = req.body.lastTelemetryOnly;
   const attachedOnly = req.body.attachedOnly;
-  const sql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `;
-  const { result, error, isError } = await query(
-    sql,
+
+  if(!idir) throw Error('No IDIR');
+  // Functions to get critters by their IDs or get all critters.
+
+  console.log(JSON.stringify(req.body.collection_unit));
+
+  const filterBody = {
+    critter_ids: req.body.critter_id,
+    wlh_ids: req.body.wlh_id,
+    animal_ids: req.body.animal_id,
+    taxon_name_commons: req.body.taxon,
+    collection_units: req.body.collection_unit
+  }
+  const critters = await query(critterbase.post('/critters/filter', filterBody ));
+  
+  const exportsql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `;
+  console.log(exportsql);
+  const bctwExportQuery = await query(
+    exportsql,
     'failed to retrieve telemetry'
   );
-  if (isError) {
-    return res.status(500).send(error.message);
+
+  let json1: any[];
+  if(Object.values(filterBody).some(a => a !== undefined)) {
+    const filteredIds = critters.result.rows.map((c) => c.critter_id);
+    json1 = bctwExportQuery.result.rows.filter(r => filteredIds.includes(r.critter_id));
   }
-  return res.send(result.rows);
+  else {
+    json1 = bctwExportQuery.result.rows;
+  }
+   
+  const json2 = critters.result.rows;
+
+  const merged = json1.map(x => Object.assign(x, json2.find(y => y.critter_id == x.critter_id)));
+  for(const m of merged) {
+    if(m.collection_units) {
+      for(const c of m.collection_units) {
+        m[c.category_name] = c.unit_name
+      }
+      delete m.collection_units;
+    }
+  }
+
+  return res.send(merged);
 };
 
 export { getExportData, getAllExportData };

@@ -136,6 +136,28 @@ const _getUnattachedSQL = (
   });
 };
 
+const getAnimalsInternal = async (username: string, page: number, type: eCritterFetchType, search: SearchFilter | undefined) => {
+  let sql;
+  if (type === eCritterFetchType.unassigned) {
+    sql = _getUnattachedSQL(username, page, search);
+  } else if (type === eCritterFetchType.assigned) {
+    sql = _getAttachedSQL(username, page, search);
+  }
+
+  const bctwQuery = await query(sql);
+  const critterQuery = await query(
+    critterbase.post('/critters', {
+      critter_ids: bctwQuery.result.rows?.map((row) => row.critter_id),
+    })
+  );
+  //const { merged, allMerged, error, isError } = 
+  return await mergeQueries(
+    bctwQuery,
+    critterQuery,
+    'critter_id'
+  );
+}
+
 /**
  * * CRITTERBASE INTEGRATED *
  * retrieves a list of @type {Animal}, based on the user's permissions
@@ -150,24 +172,8 @@ const getAnimals = async function (
   const type = req.query.critterType as eCritterFetchType;
   const search = getFilterFromRequest(req);
 
-  let sql;
-  if (type === eCritterFetchType.unassigned) {
-    sql = _getUnattachedSQL(username, page, search);
-  } else if (type === eCritterFetchType.assigned) {
-    sql = _getAttachedSQL(username, page, search);
-  }
-
-  const bctwQuery = await query(sql);
-  const critterQuery = await query(
-    critterbase.post('/critters', {
-      critter_ids: bctwQuery.result.rows?.map((row) => row.critter_id),
-    })
-  );
-  const { merged, allMerged, error, isError } = await mergeQueries(
-    bctwQuery,
-    critterQuery,
-    'critter_id'
-  );
+  const { merged, allMerged, error, isError } = await getAnimalsInternal(username, page, type, search);
+  
   return handleResponse(res, merged, error);
 };
 
@@ -236,6 +242,7 @@ export {
   getAnimal,
   getAnimals,
   getAnimalHistory,
+  getAnimalsInternal,
   fn_get_critter_history,
   cac_v,
 };

@@ -199,14 +199,22 @@ const query = async (
       );
     } else {
       const axiosReq = sqlOrAxios as Promise<AxiosResponse<any>>;
-      const axiosRes = await axiosReq;
-      result.rows = axiosRes.data;
+      //try {
+        const axiosRes = await axiosReq;
+        result.rows = axiosRes.data;
+      /*}
+      catch(e) {
+        console.log('Failed await: ' + e);
+      }*/
+      
     }
   } catch (e) {
     isError = true;
     if (isSQL) {
+      console.log('Errored in SQL path.')
       error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
     } else {
+      console.log('Errored in non - SQL path.');
       error = new Error(formatAxiosError(e as AxiosError));
     }
   }
