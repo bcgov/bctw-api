@@ -200,7 +200,7 @@ const getAnimal = async function (
       : _getUnattachedSQL(username, 1, undefined, critter_id);
   const { merged, allMerged, error, isError } = await mergeQueries(
     query(sql),
-    query(critterbase.get(`/critters/${critter_id}`)),
+    query(critterbase.get(`/critters/${critter_id}?format=detailed`)),
     'critter_id'
   );
   return handleResponse(res, merged, error);
