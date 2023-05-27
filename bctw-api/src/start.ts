@@ -11,6 +11,7 @@ import {
   getAnimalHistory,
   getAnimals,
   upsertAnimal,
+  getAttachedHistoric
 } from './apis/animal_api';
 import {
   addCode,
@@ -166,6 +167,7 @@ export {
   getCollarChangeHistory,
   getCritterTracks,
   getDBCritters,
+  getAttachedHistoric,
   getPingsEstimate,
   getExportData,
   getAllExportData,
