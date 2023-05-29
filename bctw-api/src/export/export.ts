@@ -104,7 +104,7 @@ const getAllExportData = async function (
   res: Response
 ): Promise<Response> {
   const idir = getUserIdentifier(req);
-  const queries = JSON.stringify(req.body.bctw_queries);
+  
   const start = req.body.range.start;
   const end = req.body.range.end;
   const polygons =
@@ -122,10 +122,19 @@ const getAllExportData = async function (
     wlh_ids: req.body.wlh_id,
     animal_ids: req.body.animal_id,
     taxon_name_commons: req.body.taxon,
-    collection_units: req.body.collection_unit
+    collection_units: req.body.collection_units
   }
   const critters = await query(critterbase.post('/critters/filter', filterBody ));
-  
+  if(critters.result.rows.length > 0 && critters.result.rows.length < 40) {
+    req.body.bctw_queries.push({
+      key: 'critter_id',
+      operator: 'Equals',
+      term: critters.result.rows.map(c => c.critter_id)
+    })
+  }
+
+  const queries = JSON.stringify(req.body.bctw_queries);
+
   const exportsql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `;
   console.log(exportsql);
   const bctwExportQuery = await query(
@@ -154,6 +163,8 @@ const getAllExportData = async function (
     }
   }
 
+  console.log(`Determined this many critter rows: ${critters.result.rows.length}`)
+  console.log(`Determined this many bctw rows: ${bctwExportQuery.result.rows.length}`)
   return res.send(merged);
 };
 

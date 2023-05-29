@@ -63,6 +63,7 @@ export const app = express()
   .get('/get-pings-estimate', api.getPingsEstimate)
   // animals
   .get('/get-animals', api.getAnimals)
+  .get('/get-attached-historic', api.getAttachedHistoric)
   .get('/get-animal-history/:animal_id', api.getAnimalHistory)
   .post('/upsert-animal', api.upsertAnimal)
   // devices
