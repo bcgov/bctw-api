@@ -19,6 +19,7 @@ type GeoJSONProperty = Pick<
     live_stage: string; // aka life_stage
     date_recorded: Date; // vendor_merge_view telemetry date recorded
     device_vendor: string; // aka collar_make
+    map_colour: string;
   };
 
 type GeoMetry = {
@@ -33,4 +34,9 @@ type GeoJSON = {
   properties: GeoJSONProperty;
 };
 
-export type { GeoMetry, GeoJSONProperty, GeoJSON };
+interface FeatureCollection {
+  type: string;
+  features: GeoJSON[];
+}
+
+export type { GeoMetry, GeoJSONProperty, GeoJSON, FeatureCollection };
