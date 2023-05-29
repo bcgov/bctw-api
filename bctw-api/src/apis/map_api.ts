@@ -37,33 +37,37 @@ const getPingsEstimate = function (req: Request, res: Response): void {
 const getCrittersByIds = async (critterIds) =>
   query(critterbase.post('/critters', { critter_ids: critterIds }));
 
+// Converts a uuid to an integer value
+const uuidToInt = (uuid: string): number => {
+  const noDashes = uuid.replace(/-/g, '');
+  const substring = noDashes.substring(0, 9);
+  return parseInt(substring, 16);
+};
+
+// Converts an integer value to an HSL color
+const intToHSL = (i: number): { h: number; s: number; l: number } => {
+  const hue = (i / 1000) % 360;
+  let saturation = (i % 50) + 50; // Ensuring saturation is between 50% and 100%
+  let lightness = (i % 60) + 20; // Ensuring lightness is between 20% and 80%
+
+  // Avoiding earthy tones for hues in the range of 20-170 by adjusting the saturation and lightness values
+  if (hue >= 20 && hue <= 170) {
+    saturation = (i % 40) + 60; // Ensuring saturation is between 60% and 100%
+    lightness = (i % 50) + 40; // Ensuring lightness is between 40% and 90%
+  }
+
+  return { h: hue, s: saturation, l: lightness };
+};
+
 /**
  * Generates a unique color based on the given uuid string.
  * TODO: It may make more sense to move this into the ui with the other pings set-up
  * @param {string} id - The UUID of the critter.
  * @returns {string} A color in hexadecimal format.
  */
-const uuidToColor = (id: string) => {
-  function uuidToInt(uuid) {
-    const noDashes = uuid.replace(/-/g, '');
-    const substring = noDashes.substring(0, 9);
-    return parseInt(substring, 16);
-  }
-
-  function intToHSL(i: number) {
-    const hue = i % 360;
-    let saturation = (i % 50) + 50; // Ensuring saturation is between 50% and 100%
-    let lightness = (i % 60) + 20; // Ensuring lightness is between 20% and 80%
-
-    // Avoiding earthy tones for hues in the range of 20-170 by adjusting the saturation and lightness values
-    if (hue >= 20 && hue <= 170) {
-      saturation = (i % 40) + 60; // Ensuring saturation is between 60% and 100%
-      lightness = (i % 50) + 40; // Ensuring lightness is between 40% and 90%
-    }
-
-    return { h: hue, s: saturation, l: lightness };
-  }
-
+const uuidToColor = (
+  id: string
+): { fillColor: string; outlineColor: string } => {
   function HSLToRGB(hsl) {
     const { h, s, l } = hsl;
     const scaledS = s / 100;
@@ -292,4 +296,9 @@ export {
   getDBCritters,
   upsertPointTelemetry,
   getPingsEstimate,
+  uuidToColor,
+  mergeGeoProperties,
+  getGeoJSONCritterIds,
+  uuidToInt,
+  intToHSL,
 };
