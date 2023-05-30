@@ -5,7 +5,7 @@ import {
   query,
 } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
-import { IAnimalDeviceMetadata, IBulkResponse } from '../types/import_types';
+import { IAnimalDeviceMetadata } from '../types/import_types';
 import {
   cleanupUploadsDir,
   determineExistingAnimal,
@@ -27,9 +27,7 @@ import {
 } from './validation';
 
 import { unlinkSync } from 'fs';
-import { _insertLotekRecords } from '../apis/vendor/lotek';
 import { pgPool } from '../database/pg';
-//import { critterBaseRequest } from '../critterbase/critterbase_api';
 import {v4 as uuidv4} from 'uuid';
 import dayjs from 'dayjs';
 
@@ -82,7 +80,7 @@ const extraCodeFields = ['species'];
 const obtainColumnTypes = async (): Promise<ColumnTypeMapping> => {
   const sql =
     "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'animal' OR table_name = 'collar';";
-  const { result, error, isError } = await query(sql);
+  const { result } = await query(sql);
   const rawObj = result.rows.reduce(
     (o, keyval) => ({ ...o, [keyval['column_name']]: keyval['data_type'] }),
     {}
@@ -119,7 +117,7 @@ const parseXlsx = async (
     await workbook.xlsx.readFile(file.path);
 
     const header_sql = 'SELECT code_header_name FROM code_header;';
-    const { result, error, isError } = await query(
+    const { result } = await query(
       header_sql,
       'failed to retrieve headers'
     );
@@ -482,8 +480,6 @@ const getTemplateFile = async function (
   req: Request,
   res: Response
 ): Promise<void> {
-  const key = req.query.file_key as string;
-  //const files = await getFiles([key], true);
 
   const file_sql = `select file_key, file_name, file_type, contents_base64 from file where file_key = 'import_template'`;
   const { result: file_result } = await query(
@@ -509,7 +505,7 @@ const getTemplateFile = async function (
   let val_header_idx = 0;
 
   const header_sql = 'SELECT code_header_name FROM code_header;';
-  const { result, error, isError } = await query(
+  const { result, isError } = await query(
     header_sql,
     'failed to retrieve headers'
   );
@@ -532,7 +528,7 @@ const getTemplateFile = async function (
         false,
         S_API
       );
-      const { result, error, isError } = await query(
+      const { result, isError } = await query(
         sql,
         'failed to retrieve codes'
       );

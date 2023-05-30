@@ -3,7 +3,6 @@ import dayjs, { Dayjs } from 'dayjs';
 import { getRowResults, query } from '../../database/query';
 import {
   APIVectronicData,
-  ManualVectronicTelemetry,
   ManualVendorAPIResponse,
   VectronicRawTelemetry,
 } from '../../types/vendor';
@@ -59,8 +58,6 @@ const _fetchVectronicTelemetry = async function (
   const s = dayjs(start).format(VECT_API_TS_FORMAT);
   const e = dayjs(end).format(VECT_API_TS_FORMAT);
   const url = `${VECT_API_URL}/${idcollar}/gps?collarkey=${collarkey}&afterScts=${s}&beforeScts=${e}`;
-  const updateFetchDateSql = `update api_vectronic_credential set dtlast_fetch = now() where idcollar = ${idcollar};`;
-  //console.log('vetronic url: ', url);
   let errStr = '';
   // call the vectronic api, using the agent created with the env variable cert key
   const results = await axios
@@ -68,16 +65,8 @@ const _fetchVectronicTelemetry = async function (
     .catch((err: AxiosError) => {
       errStr = formatAxiosError(err);
     });
-  const { result: updateFetchDateResult, error, isError } = await query(
-    updateFetchDateSql,
-    '',
-    true
-  );
+
   if (results && results.data.length) {
-    let { data } = results;
-    if (!isError) {
-      data = { ...data, fetchDate: dayjs() };
-    }
     return results.data;
   } else {
     return {

@@ -1,5 +1,4 @@
 import { Dayjs } from 'dayjs';
-import { Animal } from './animal';
 
 /**
  * columns fetched from the api_vectronic_credential table

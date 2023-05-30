@@ -65,11 +65,7 @@ const _fetchLotekTelemetry = async function (
       errStr = `Device not registered with account '${credentials.username}'`;
     }
   }
-  const { result: updateFetchDateResult, error, isError } = await query(
-    updateFetchDateSql,
-    '',
-    true
-  );
+  const { error, isError } = await query(updateFetchDateSql, '', true);
   if (error) console.log(error);
   if (results && results.data.length) {
     let { data } = results;

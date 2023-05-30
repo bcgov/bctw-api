@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { QResult, SearchFilter } from '../types/query';
-import { IUserInput } from '../types/user';
 
 // helpers for processing express Request objects
 
@@ -10,7 +9,10 @@ const MISSING_USERNAME = 'must supply user identifier';
  * parses the request query for 'column' and 'search' fields
  * @returns {SearchFilter}
  */
-const getFilterFromRequest = (req: Request, isPost: boolean = false): SearchFilter | undefined => {
+const getFilterFromRequest = (
+  req: Request,
+  isPost = false
+): SearchFilter | undefined => {
   const query = isPost ? req.body : req.query;
   const o = {} as SearchFilter;
 

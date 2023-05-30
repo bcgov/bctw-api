@@ -1,16 +1,9 @@
 import { Request, Response } from 'express';
-import { fn_get_critter_history, getAnimals, getAnimalsInternal } from '../apis/animal_api';
+import { fn_get_critter_history } from '../apis/animal_api';
 import { fn_get_collar_history } from '../apis/collar_api';
-import { S_API, S_BCTW, critterbase } from '../constants';
-import {
-  appendFilter,
-  constructFunctionQuery,
-  constructGetQuery,
-  mergeQueries,
-  query,
-} from '../database/query';
-import { getFilterFromRequest, getUserIdentifier } from '../database/requests';
-import { eCritterFetchType } from '../types/animal';
+import { S_API, critterbase } from '../constants';
+import { constructFunctionQuery, query } from '../database/query';
+import { getUserIdentifier } from '../database/requests';
 
 enum eExportType {
   all = 'all',
@@ -104,7 +97,7 @@ const getAllExportData = async function (
   res: Response
 ): Promise<Response> {
   const idir = getUserIdentifier(req);
-  
+
   const start = req.body.range.start;
   const end = req.body.range.end;
   const polygons =
@@ -112,7 +105,7 @@ const getAllExportData = async function (
   const lastTelemetryOnly = req.body.lastTelemetryOnly;
   const attachedOnly = req.body.attachedOnly;
 
-  if(!idir) throw Error('No IDIR');
+  if (!idir) throw Error('No IDIR');
   // Functions to get critters by their IDs or get all critters.
 
   console.log(JSON.stringify(req.body.collection_unit));
@@ -122,15 +115,17 @@ const getAllExportData = async function (
     wlh_ids: req.body.wlh_id,
     animal_ids: req.body.animal_id,
     taxon_name_commons: req.body.taxon,
-    collection_units: req.body.collection_units
-  }
-  const critters = await query(critterbase.post('/critters/filter', filterBody ));
-  if(critters.result.rows.length > 0 && critters.result.rows.length < 40) {
+    collection_units: req.body.collection_units,
+  };
+  const critters = await query(
+    critterbase.post('/critters/filter', filterBody)
+  );
+  if (critters.result.rows.length > 0 && critters.result.rows.length < 40) {
     req.body.bctw_queries.push({
       key: 'critter_id',
       operator: 'Equals',
-      term: critters.result.rows.map(c => c.critter_id)
-    })
+      term: critters.result.rows.map((c) => c.critter_id),
+    });
   }
 
   const queries = JSON.stringify(req.body.bctw_queries);
@@ -143,28 +138,38 @@ const getAllExportData = async function (
   );
 
   let json1: any[];
-  if(Object.values(filterBody).some(a => a !== undefined)) {
+  if (Object.values(filterBody).some((a) => a !== undefined)) {
     const filteredIds = critters.result.rows.map((c) => c.critter_id);
-    json1 = bctwExportQuery.result.rows.filter(r => filteredIds.includes(r.critter_id));
-  }
-  else {
+    json1 = bctwExportQuery.result.rows.filter((r) =>
+      filteredIds.includes(r.critter_id)
+    );
+  } else {
     json1 = bctwExportQuery.result.rows;
   }
-   
+
   const json2 = critters.result.rows;
 
-  const merged = json1.map(x => Object.assign(x, json2.find(y => y.critter_id == x.critter_id)));
-  for(const m of merged) {
-    if(m.collection_units) {
-      for(const c of m.collection_units) {
-        m[c.category_name] = c.unit_name
+  const merged = json1.map((x) =>
+    Object.assign(
+      x,
+      json2.find((y) => y.critter_id == x.critter_id)
+    )
+  );
+  for (const m of merged) {
+    if (m.collection_units) {
+      for (const c of m.collection_units) {
+        m[c.category_name] = c.unit_name;
       }
       delete m.collection_units;
     }
   }
 
-  console.log(`Determined this many critter rows: ${critters.result.rows.length}`)
-  console.log(`Determined this many bctw rows: ${bctwExportQuery.result.rows.length}`)
+  console.log(
+    `Determined this many critter rows: ${critters.result.rows.length}`
+  );
+  console.log(
+    `Determined this many bctw rows: ${bctwExportQuery.result.rows.length}`
+  );
   return res.send(merged);
 };
 

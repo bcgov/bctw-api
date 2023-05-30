@@ -1,25 +1,15 @@
 import { query } from '../../database/query';
 import { Request, Response } from 'express';
-import { performManualLotekUpdate, _insertLotekRecords } from './lotek';
-import {
-  getLowestNegativeVectronicIdPosition,
-  performManualVectronicUpdate,
-  vectronicRecordExists,
-  _insertVectronicRecords,
-} from './vectronic';
+import { performManualLotekUpdate } from './lotek';
+import { performManualVectronicUpdate } from './vectronic';
 import {
   GenericVendorTelemetry,
   ImportVendors,
   LotekRawTelemetry,
-  ManualLotekTelemetry,
-  ManualVectronicTelemetry,
   ManualVendorAPIResponse,
   ManualVendorInput,
   VectronicRawTelemetry,
-  VendorType,
 } from '../../types/vendor';
-import { IBulkResponse } from '../../types/import_types';
-import dayjs, { Dayjs } from 'dayjs';
 import { RAW_LOTEK, RAW_VECTRONIC } from '../../constants';
 
 export interface IVendorCredential {
