@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
 import { Request, Response } from 'express';
-import { S_API } from '../constants';
-import { constructFunctionQuery, constructGetQuery, getRowResults, query } from '../database/query';
-import { getUserIdentifier } from '../database/requests';
+import { S_API, critterbase } from '../constants';
+import { constructFunctionQuery, constructGetQuery, getRowResults, merge, mergeQueries, query } from '../database/query';
+import { getUserIdentifier, handleResponse } from '../database/requests';
 import { PGMortalityAlertEvent } from '../types/sms';
 import handleMortalityAlert from '../utils/gcNotify';
+import { QResult } from '../types/query';
 
 /**
  * retrieves telemetry alerts
@@ -16,11 +17,25 @@ const getUserTelemetryAlerts = async function (
   const fn_name = 'get_user_telemetry_alerts';
   const base = constructFunctionQuery(fn_name, [getUserIdentifier(req)], false, S_API);
   const sql = constructGetQuery({ base });
-  const { result, error, isError } = await query(sql);
-  if (isError) {
-    return res.status(500).send(error.message);
+  const bctwQuery = await query(sql);
+  if (bctwQuery.isError) {
+    return res.status(500).send(bctwQuery.error.message);
   }
-  return res.send(getRowResults(result, fn_name));
+
+  const getBctwRes = getRowResults(bctwQuery.result, fn_name);
+
+  const critterQuery = await query(
+    critterbase.post('/critters', {
+      critter_ids: getBctwRes?.map((row) => row.critter_id)
+    })
+  );
+
+  const clone = Object.assign({}, bctwQuery);
+  clone.result.rows = Array.isArray(getBctwRes) ? getBctwRes : [getBctwRes];
+
+  const { merged, error } = await mergeQueries(clone, critterQuery, 'critter_id');
+
+  return handleResponse(res, merged, error);
 }
 
 /**
