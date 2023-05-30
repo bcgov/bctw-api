@@ -206,6 +206,50 @@ const getAnimal = async function (
   return handleResponse(res, merged, error);
 };
 
+const getAttachedHistoric = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const username = getUserIdentifier(req) as string;
+  const sql = `WITH attached AS (
+    SELECT c.*, bctw.get_user_animal_permission('${username}', c.critter_id) AS "permission_type"
+    FROM collar_animal_assignment c
+      ),
+    a AS (SELECT COUNT(*) OVER() as row_count, *, 
+      get_closest_collar_record(attached.collar_id, attached.attachment_start) AS collar_transaction_id FROM 
+      attached)
+    SELECT 
+    a.collar_id,
+    a.critter_id, 
+    device_id,
+    frequency,
+    frequency_unit,
+    attachment_start,
+    attachment_end,
+    permission_type
+    FROM a 
+    JOIN collar c ON a.collar_transaction_id = c.collar_transaction_id 
+    WHERE permission_type IS NOT NULL`;
+  const bctwQuery = await query(sql);
+  const critterQuery = await query(
+    critterbase.post('/critters', {
+      critter_ids: bctwQuery.result.rows?.map((row) => row.critter_id),
+    })
+  );
+
+  if(critterQuery.result.rows.length == 0) {
+    return res.send(bctwQuery.result.rows);
+  }
+  else {
+    const { merged, allMerged, error, isError } = await mergeQueries(
+      bctwQuery,
+      critterQuery,
+      'critter_id'
+    );
+    return handleResponse(res, merged, error);
+  }
+}
+
 /**
  * TODO CRITTERBASE INTEGRATION
  * retrieves a history of metadata changes made to a animal
@@ -243,6 +287,7 @@ export {
   getAnimals,
   getAnimalHistory,
   getAnimalsInternal,
+  getAttachedHistoric,
   fn_get_critter_history,
   cac_v,
 };

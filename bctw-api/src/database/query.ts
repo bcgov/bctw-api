@@ -314,28 +314,28 @@ type MQResult = MergeReturn<
   Pick<QueryResult, 'rows'>
 > &
   Pick<QResult, 'error' | 'isError'>;
+
 /**
- ** merges b[] into a[] on match of property value
- ** at most return will be the same length of a array.
- * @param a[]
- * @param b[]
- * @param property the property to merge with
- * @returns {merged, allMerged}
+ * Merges elements in array `b` into array `a` based on the matching values of the specified property.
+ * The resulting merged array will have the same length as array `a`.
+ * Note: This is equivalent to a LEFT JOIN
  *
- * @return {merged} elements in arary are either {...a, ...b} OR {...a}
- * @return {allMerged} indicates if all elements from b[] were merged into a[]
- ** Note: this is equivalant to doing a left join on the first query
+ * @param {Array<A>} a - The primary array of objects to merge
+ * @param {Array<B>} b - The secondary array of objects to merge
+ * @param {K} property - The common property to merge on
+ * @returns {MergeReturn<A, B>} Object with following properties:
+ * - `merged`: The merged array. Elements in array are either {...a, ...b} OR {...a}
+ * - `allMerged`: Boolean indicates if all elements in primary array had properties joined.
  */
 const merge = <
   A extends Record<string, unknown>,
-  B extends Record<string, unknown>
+  B extends Record<string, unknown>,
+  K extends keyof A & keyof B
 >(
   a: Array<A>,
   b: Array<B>,
-  property: keyof A & keyof B
+  property: K
 ): MergeReturn<A, B> => {
-  const hashMap = new Map();
-  let mergeCount = 0;
   const abortReturn = { merged: [], allMerged: false };
   const abortLog = (arrayName: string) => {
     console.log(
@@ -346,6 +346,8 @@ const merge = <
       )}`
     );
   };
+
+  // Validate input arrays
   if (!Array.isArray(a)) {
     a = [a];
   }
@@ -356,27 +358,30 @@ const merge = <
     console.log('issue merging a or b is empty');
     return abortReturn;
   }
-  for (let i = 0; i < a.length; i++) {
-    if (!a[i][property]) {
+
+  // Hash the secondary array & Instantiate empty mergedArray and counter
+  const mapB = new Map<unknown, B>(
+    b.map((row) => [row[property] as unknown, row])
+  );
+  const mergedArray: Array<A & B & Merged> = [];
+  let mergeCount = 0;
+
+  // Iterate through primary array, joining data from hash if possible
+  for (const rowA of a) {
+    if (!rowA[property]) {
       abortLog('a');
       return abortReturn;
     }
-    const hashObj = Object.assign({ _merged: false }, a[i]);
-    hashMap.set(a[i][property], hashObj);
-  }
-  for (let k = 0; k < b.length; k++) {
-    if (!b[k][property]) {
-      abortLog('b');
-      return abortReturn;
-    }
-    const obj = hashMap.get(b[k][property]);
-    if (obj) {
-      obj._merged = true;
+    if (mapB.has(rowA[property])) {
+      const rowB = mapB.get(rowA[property]) as B;
+      mergedArray.push({ ...rowA, ...rowB, _merged: true });
       mergeCount++;
-      hashMap.set(b[k][property], Object.assign(obj, b[k]));
+    } else {
+      mergedArray.push({ ...rowA, ...({} as B), _merged: false });
     }
   }
-  const mergedArray = Array.from(hashMap.values());
+
+  // Return merged data and all-merged indicator
   return {
     merged: mergedArray,
     allMerged: mergeCount === mergedArray.length,
