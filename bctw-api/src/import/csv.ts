@@ -15,8 +15,8 @@ import {
   projectUTMToLatLon,
   removeEmptyProps,
 } from './import_helpers';
-import * as XLSX from 'exceljs';
-import * as XLSX_Ext from '../types/xlsx_types';
+import { Workbook } from 'exceljs';
+import { ExtendedWorksheet } from '../types/xlsx_types';
 import { getFiles } from '../apis/onboarding_api';
 import { S_API, critterbase } from '../constants';
 import { GenericVendorTelemetry } from '../types/vendor';
@@ -28,7 +28,7 @@ import {
 
 import { unlinkSync } from 'fs';
 import { pgPool } from '../database/pg';
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
 
 type CellErrorDescriptor = {
@@ -113,17 +113,14 @@ const parseXlsx = async (
   const sheetResults: ParsedXLSXSheetResult[] = [];
 
   try {
-    const workbook = new XLSX.Workbook();
+    const workbook = new Workbook();
     await workbook.xlsx.readFile(file.path);
 
     const header_sql = 'SELECT code_header_name FROM code_header;';
-    const { result } = await query(
-      header_sql,
-      'failed to retrieve headers'
-    );
+    const { result } = await query(header_sql, 'failed to retrieve headers');
 
     const files = await getFiles(['import_template'], false);
-    const templateBook = new XLSX.Workbook();
+    const templateBook = new Workbook();
     await templateBook.xlsx.load(Buffer.from(files[0].file, 'binary'));
 
     const code_header_names = result.rows.map((o) => o['code_header_name']);
@@ -240,78 +237,91 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
   await parseXlsx(file, id, onFinishedParsing);
 };
 
-
-
-
 const createNewLocationFromRow = (bctw_animal: IAnimalDeviceMetadata) => {
-  if(bctw_animal.capture_longitude || bctw_animal.capture_latitude) {
+  if (bctw_animal.capture_longitude || bctw_animal.capture_latitude) {
     const locationBody = {
       location_id: uuidv4(),
       longitude: bctw_animal.capture_longitude,
-      latitude: bctw_animal.capture_latitude
-    }
+      latitude: bctw_animal.capture_latitude,
+    };
     return locationBody;
   }
-  if(bctw_animal.capture_utm_easting || bctw_animal.capture_utm_northing) {
-    const [longitude, latitude] = projectUTMToLatLon( bctw_animal.capture_utm_northing, bctw_animal.capture_utm_easting, bctw_animal.capture_utm_zone ?? 10);
+  if (bctw_animal.capture_utm_easting || bctw_animal.capture_utm_northing) {
+    const [longitude, latitude] = projectUTMToLatLon(
+      bctw_animal.capture_utm_northing,
+      bctw_animal.capture_utm_easting,
+      bctw_animal.capture_utm_zone ?? 10
+    );
     const locationBody = {
       location_id: uuidv4(),
       longitude: longitude,
-      latitude: latitude
-    }
+      latitude: latitude,
+    };
     return locationBody;
   }
   return null;
-}
+};
 
-const createNewCaptureFromRow = (critter_id: string, bctw_animal: IAnimalDeviceMetadata, location_id: string | null) => {
+const createNewCaptureFromRow = (
+  critter_id: string,
+  bctw_animal: IAnimalDeviceMetadata,
+  location_id: string | null
+) => {
   const captureBody = {
     capture_id: uuidv4(),
     critter_id: critter_id,
     capture_location_id: location_id,
     capture_timestamp: dayjs(bctw_animal.capture_date).format(),
-    capture_comment: bctw_animal.capture_comment
-  } 
+    capture_comment: bctw_animal.capture_comment,
+  };
 
   return captureBody;
-}
+};
 
-const createNewMarkingsFromRow = (critter_id: string, capture_id: string, bctw_animal: IAnimalDeviceMetadata) => {
+const createNewMarkingsFromRow = (
+  critter_id: string,
+  capture_id: string,
+  bctw_animal: IAnimalDeviceMetadata
+) => {
   const bctw_markings = getCritterbaseMarkingsFromRow(bctw_animal);
   const critterbase_markings: any[] = [];
-  if(bctw_markings.length) {
-    for(const m of bctw_markings) {
-      m.critter_id = critter_id,
-      m.capture_id = capture_id;
+  if (bctw_markings.length) {
+    for (const m of bctw_markings) {
+      (m.critter_id = critter_id), (m.capture_id = capture_id);
       critterbase_markings.push(m);
     }
   }
   return critterbase_markings;
-}
+};
 
-const createNewMortalityFromRow = (critter_id: string, bctw_animal: IAnimalDeviceMetadata) => {
-  if(bctw_animal.mortality_date) {
+const createNewMortalityFromRow = (
+  critter_id: string,
+  bctw_animal: IAnimalDeviceMetadata
+) => {
+  if (bctw_animal.mortality_date) {
     const mortalityBody = {
       critter_id: critter_id,
       mortality_timestamp: dayjs(bctw_animal.mortality_date).format(),
-      mortality_comment: bctw_animal.mortality_comment
-    }
+      mortality_comment: bctw_animal.mortality_comment,
+    };
     return mortalityBody;
   }
   return null;
-}
+};
 
 interface IBulkCritterbasePayload {
-  critters: Record<string, any>[],
-  markings: Record<string, any>[],
-  collections: Record<string, any>[]
-  locations: Record<string, any>[],
-  captures: Record<string, any>[],
-  mortalities: Record<string, any>[]
+  critters: Record<string, any>[];
+  markings: Record<string, any>[];
+  collections: Record<string, any>[];
+  locations: Record<string, any>[];
+  captures: Record<string, any>[];
+  mortalities: Record<string, any>[];
 }
 
-const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any, bulk_payload: IBulkCritterbasePayload) => {
-  
+const insertTemplateAnimalIntoCritterbase = async (
+  bctw_animal: any,
+  bulk_payload: IBulkCritterbasePayload
+) => {
   const new_critter_id: string = uuidv4();
 
   const critterBody = {
@@ -319,43 +329,57 @@ const insertTemplateAnimalIntoCritterbase = async (bctw_animal: any, bulk_payloa
     wlh_id: bctw_animal.wlh_id,
     animal_id: bctw_animal.animal_id,
     sex: bctw_animal.sex,
-    taxon_name_common: bctw_animal.species
-  }
+    taxon_name_common: bctw_animal.species,
+  };
 
   bulk_payload.critters.push(critterBody);
 
-  if(bctw_animal.population_unit) {
+  if (bctw_animal.population_unit) {
     //Somewhat redundant to be making this request multiple times during import. May be something to optimize out later.
-    const population_units = await query(critterbase.get(`xref/collection-units/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`));//await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`);
-    if(!population_units) {
-      throw Error('Critterbase does not have population units for this species.');
+    const population_units = await query(
+      critterbase.get(
+        `xref/collection-units/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`
+      )
+    ); //await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`);
+    if (!population_units) {
+      throw Error(
+        'Critterbase does not have population units for this species.'
+      );
     }
-    const population_unit = population_units.result.rows.find(a => a.unit_name == bctw_animal.population_unit);
+    const population_unit = population_units.result.rows.find(
+      (a) => a.unit_name == bctw_animal.population_unit
+    );
     const collection_body = {
       collection_unit_id: population_unit.collection_unit_id,
-      critter_id: new_critter_id
-    }
+      critter_id: new_critter_id,
+    };
     bulk_payload.collections.push(collection_body);
   }
 
   const location = createNewLocationFromRow(bctw_animal);
 
-  if(location) {
+  if (location) {
     bulk_payload.locations.push(location);
   }
 
-  const capture = createNewCaptureFromRow(new_critter_id, bctw_animal, location?.location_id);
+  const capture = createNewCaptureFromRow(
+    new_critter_id,
+    bctw_animal,
+    location?.location_id
+  );
   bulk_payload.captures.push(capture);
 
-  bulk_payload.markings.push(...createNewMarkingsFromRow(new_critter_id, capture.capture_id, bctw_animal));
-  
+  bulk_payload.markings.push(
+    ...createNewMarkingsFromRow(new_critter_id, capture.capture_id, bctw_animal)
+  );
+
   const mortality = createNewMortalityFromRow(new_critter_id, bctw_animal);
-  if(mortality) {
+  if (mortality) {
     bulk_payload.mortalities.push(mortality);
   }
 
   return new_critter_id;
-}
+};
 
 const upsertBulkv2 = async (id: string, req: Request) => {
   const responseArray: any[] = [];
@@ -363,7 +387,7 @@ const upsertBulkv2 = async (id: string, req: Request) => {
   await client.query('BEGIN');
   try {
     let user_id = id;
-    if(req.body.user_id) {
+    if (req.body.user_id) {
       const overrideSql = `SELECT bctw.get_user_keycloak(${req.body.user_id})`;
       const res = await client.query(overrideSql);
       user_id = getRowResults(res, 'get_user_keycloak')[0];
@@ -375,14 +399,17 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       markings: [],
       locations: [],
       captures: [],
-      mortalities: []
-    }
-  
-    for(const pair of req.body.payload) {
+      mortalities: [],
+    };
+
+    for (const pair of req.body.payload) {
       const data_start: string = pair.capture_date;
-      const data_end: string | null = pair.retrieval_date ?? pair.mortality_date ?? null;
+      const data_end: string | null =
+        pair.retrieval_date ?? pair.mortality_date ?? null;
       const formattedEnd = data_end ? "'" + data_end + "'" : null;
-      const deviceIdBulkSQL = `SELECT bctw.get_device_id_for_bulk_import('${id}', '${JSON.stringify(pair)}', '${data_start}', ${formattedEnd})`
+      const deviceIdBulkSQL = `SELECT bctw.get_device_id_for_bulk_import('${id}', '${JSON.stringify(
+        pair
+      )}', '${data_start}', ${formattedEnd})`;
 
       const res = await client.query(deviceIdBulkSQL);
       const resRows = getRowResults(res, 'get_device_id_for_bulk_import');
@@ -391,33 +418,71 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       const existing_critter = await determineExistingAnimal(pair);
 
       let link_critter_id;
-      if(existing_critter == null) {
+      if (existing_critter == null) {
         //Make new critter
-        const new_critter_id = await insertTemplateAnimalIntoCritterbase(pair, bulk_payload);
+        const new_critter_id = await insertTemplateAnimalIntoCritterbase(
+          pair,
+          bulk_payload
+        );
         link_critter_id = new_critter_id;
-      }
-      else {
-        const res = await client.query(`SELECT bctw.get_user_animal_permission('${id}', '${existing_critter.critter_id}')`)
-        const curr_permission_level = getRowResults(res, 'get_user_animal_permission')[0];
-        if(!curr_permission_level || ['observer', 'none', 'editor'].some(a => a === curr_permission_level)) {
-          throw Error('You do not have permission to manage the critter with critter id ' + link_critter_id);
+      } else {
+        const res = await client.query(
+          `SELECT bctw.get_user_animal_permission('${id}', '${existing_critter.critter_id}')`
+        );
+        const curr_permission_level = getRowResults(
+          res,
+          'get_user_animal_permission'
+        )[0];
+        if (
+          !curr_permission_level ||
+          ['observer', 'none', 'editor'].some(
+            (a) => a === curr_permission_level
+          )
+        ) {
+          throw Error(
+            'You do not have permission to manage the critter with critter id ' +
+              link_critter_id
+          );
         }
         link_critter_id = existing_critter.critter_id;
-        const existing_captures: Record<string, any>[] = existing_critter.capture;
-        const existing_mortalities: Record<string, any>[] = existing_critter.mortality;
+        const existing_captures: Record<string, any>[] =
+          existing_critter.capture;
+        const existing_mortalities: Record<string, any>[] =
+          existing_critter.mortality;
         //const existing_markings: any[] = existing_critter.marking; <-- Maybe do something more intelligent with the markings at some point.
-        if(existing_captures.every(a => !isOnSameDay(a.capture_timestamp, pair.capture_date))) {
+        if (
+          existing_captures.every(
+            (a) => !isOnSameDay(a.capture_timestamp, pair.capture_date)
+          )
+        ) {
           const location = createNewLocationFromRow(pair);
-          if(location) {
+          if (location) {
             bulk_payload.locations.push(location);
           }
-          const capture = createNewCaptureFromRow(existing_critter.critter_id, pair, location?.location_id);
+          const capture = createNewCaptureFromRow(
+            existing_critter.critter_id,
+            pair,
+            location?.location_id
+          );
           bulk_payload.captures.push(capture);
-          bulk_payload.markings.push(...createNewMarkingsFromRow(existing_critter.critter_id, capture.capture_id, pair));
+          bulk_payload.markings.push(
+            ...createNewMarkingsFromRow(
+              existing_critter.critter_id,
+              capture.capture_id,
+              pair
+            )
+          );
         }
-        if(existing_mortalities.every(a => !isOnSameDay(a.mortality_timestamp, pair.mortality_date))) {
-          const mortality = createNewMortalityFromRow(existing_critter.critter_id, pair);
-          if(mortality) {
+        if (
+          existing_mortalities.every(
+            (a) => !isOnSameDay(a.mortality_timestamp, pair.mortality_date)
+          )
+        ) {
+          const mortality = createNewMortalityFromRow(
+            existing_critter.critter_id,
+            pair
+          );
+          if (mortality) {
             bulk_payload.mortalities.push(mortality);
           }
         }
@@ -426,29 +491,32 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       await client.query(`INSERT INTO bctw.user_animal_assignment 
         (user_id, critter_id, created_by_user_id, permission_type)
         VALUES (bctw.get_user_id('${user_id}'), '${link_critter_id}', bctw.get_user_id('${id}'), 'manager')`);
-      
-      const link_res = await client.query(`SELECT bctw.link_collar_to_animal('${id}', '${link_collar_id}', '${link_critter_id}', '${data_start}', '${data_start}', ${formattedEnd}, ${formattedEnd})`)
+
+      const link_res = await client.query(
+        `SELECT bctw.link_collar_to_animal('${id}', '${link_collar_id}', '${link_critter_id}', '${data_start}', '${data_start}', ${formattedEnd}, ${formattedEnd})`
+      );
       const link_row = getRowResults(link_res, 'link_collar_to_animal')[0];
       console.log(`link_row was ${JSON.stringify(link_row)}`);
-      if(link_row.error) {
-        throw Error(`Could not link collar id ${link_collar_id} with critter id ${link_critter_id}`)
+      if (link_row.error) {
+        throw Error(
+          `Could not link collar id ${link_collar_id} with critter id ${link_critter_id}`
+        );
       }
       responseArray.push(link_row);
     }
-    const bulk_result = await query(critterbase.post('/bulk', bulk_payload));//await critterBaseRequest('POST', 'bulk', bulk_payload);
-    if(!bulk_result || bulk_result.isError) {
+    const bulk_result = await query(critterbase.post('/bulk', bulk_payload)); //await critterBaseRequest('POST', 'bulk', bulk_payload);
+    if (!bulk_result || bulk_result.isError) {
       throw Error('Something went wrong when inserting rows into critterbase.');
     }
 
     await client.query('COMMIT');
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e);
     await client.query('ROLLBACK');
     throw Error(JSON.stringify(e));
   }
   return responseArray;
-}
+};
 
 const finalizeImport = async function (
   req: Request,
@@ -458,11 +526,9 @@ const finalizeImport = async function (
   try {
     const response = await upsertBulkv2(id, req);
     res.status(200).send(response);
-  }
-  catch(e) {
+  } catch (e) {
     res.status(500).send(e);
   }
-
 };
 
 const computeXLSXCol = (idx: number): string => {
@@ -480,7 +546,6 @@ const getTemplateFile = async function (
   req: Request,
   res: Response
 ): Promise<void> {
-
   const file_sql = `select file_key, file_name, file_type, contents_base64 from file where file_key = 'import_template'`;
   const { result: file_result } = await query(
     file_sql,
@@ -489,11 +554,14 @@ const getTemplateFile = async function (
 
   const b64string = file_result.rows[0].contents_base64;
 
-  const workbook = new XLSX.Workbook();
+  const workbook = new Workbook();
   const buff = await Buffer.from(b64string, 'base64');
   await workbook.xlsx.load(buff);
 
-  const sheet = workbook.getWorksheet(deviceMetadataSheetName);
+  // ExtendedWorksheet provides access to bulk dataValidations
+  const sheet = (workbook.getWorksheet(
+    deviceMetadataSheetName
+  ) as unknown) as ExtendedWorksheet;
 
   /***Temporary removal, should delete these two lines when telemetry import is implemented. */
   const telemetrySheet = workbook.getWorksheet(telemetrySheetName);
@@ -528,10 +596,7 @@ const getTemplateFile = async function (
         false,
         S_API
       );
-      const { result, isError } = await query(
-        sql,
-        'failed to retrieve codes'
-      );
+      const { result, isError } = await query(sql, 'failed to retrieve codes');
 
       if (isError) {
         res
