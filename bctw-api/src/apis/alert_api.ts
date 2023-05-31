@@ -1,11 +1,10 @@
 import dayjs from 'dayjs';
 import { Request, Response } from 'express';
 import { S_API, critterbase } from '../constants';
-import { constructFunctionQuery, constructGetQuery, getRowResults, merge, mergeQueries, query } from '../database/query';
+import { constructFunctionQuery, constructGetQuery, getRowResults, mergeQueries, query } from '../database/query';
 import { getUserIdentifier, handleResponse } from '../database/requests';
 import { PGMortalityAlertEvent } from '../types/sms';
 import handleMortalityAlert from '../utils/gcNotify';
-import { QResult } from '../types/query';
 
 /**
  * retrieves telemetry alerts

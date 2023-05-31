@@ -6,8 +6,6 @@ export type QResult = {
   isError: boolean;
 };
 
-export type SupportedOperators = '<' | '>' | '=' | '<>' | '>=' | '<=';
-
 type SearchFilter = {
   keys: string[];
   term: string[];

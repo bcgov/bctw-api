@@ -48,11 +48,6 @@ export interface IBulkResponse {
   results: QueryResultRow[];
 }
 
-export interface ICrittersWithDevices {
-  rowIndex: number;
-  row: IAnimalDeviceMetadata;
-}
-
 export { isAnimalAndDevice, isAnimal, isCollar, isHistoricalTelemtry };
 
 export interface IAnimalDeviceMetadata extends IAnimal, ICollar {}

@@ -103,7 +103,7 @@ const isOnSameDay = (date1: string, date2: string): boolean => {
   return dayjs(date1).isSame(dayjs(date2), 'day');
 }
 
-const projectUTMToLatLon = (utm_north: number, utm_east: number, utm_zone: number = 10) => {
+const projectUTMToLatLon = (utm_north: number, utm_east: number, utm_zone = 10) => {
   const utmProjection = `+proj=utm +zone=${utm_zone} +north +datum=WGS84 +units=m +no_defs`;
   const wgs84Projection = `+proj=longlat +datum=WGS84 +no_defs`;
   return proj4(utmProjection, wgs84Projection, [utm_east, utm_north]);
