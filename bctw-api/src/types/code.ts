@@ -1,12 +1,3 @@
-interface IInput {
-  // created_at: Date;
-  // updated_at: Date;
-  // created_by_user_id: number;
-  // updated_by_user_id: number;
-  valid_from?: Date;
-  valid_to?: Date;
-}
-
 type CodeHeaderInput = {
   code_header_name: string;
   code_header_title: string;

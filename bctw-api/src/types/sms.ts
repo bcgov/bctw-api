@@ -1,4 +1,3 @@
-import { type } from 'os';
 import { Animal } from './animal';
 import { Collar } from './collar';
 import { eUserRole, IOnboardEmailDetails, IOnboardInput, IUserInput, User } from './user';
