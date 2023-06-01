@@ -12,7 +12,8 @@
     "kill": "npx kill-port 3000 & pkill -f nodemon",
     "start:dev": "nodemon -r dotenv/config ./src/server.ts",
     "start:reload": "./node_modules/.bin/nodemon -r dotenv/config src/server.ts --exec ts-node",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "dead:code": "ts-prune | (! grep -v 'used in module')"
   },
   "repository": {
     "type": "git",
@@ -63,6 +64,7 @@
     "supervisor": "^0.12.0",
     "ts-jest": "^27.0.3",
     "ts-node": "^9.0.0",
+    "ts-prune": "^0.10.3",
     "typescript": "^4.3.2"
   }
 }

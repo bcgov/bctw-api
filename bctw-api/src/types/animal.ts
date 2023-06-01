@@ -1,4 +1,6 @@
 import { BCTWBaseType } from './base_types';
+
+// TODO: Remove (bctw.animal table is deprecated)
 export interface IAnimal extends BCTWBaseType {
   //  animal_comment: string;
   animal_id: string;
@@ -53,6 +55,7 @@ export interface IAnimal extends BCTWBaseType {
   wlh_id: string;
 }
 
+// TODO: Remove (bctw.animal table is deprecated)
 export class Animal implements IAnimal {
   //  animal_comment: string;
   critter_id: string;

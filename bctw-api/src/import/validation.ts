@@ -15,7 +15,7 @@ import {
   ParsedXLSXCellError,
   ParsedXLSXRowResult,
 } from './csv';
-import { dateRangesOverlap } from './import_helpers';
+import { dateRangesOverlap, determineExistingAnimal } from './import_helpers';
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
@@ -237,7 +237,6 @@ const validateAnimalDeviceAssignment = async (
       result,
       'get_animal_collar_assignment_history'
     );
-    //console.log("Animallinks for " + row.critter_id + " " + JSON.stringify(animalLinks));
     if (
       animalLinks.some((link) =>
         dateRangesOverlap(
@@ -254,19 +253,7 @@ const validateAnimalDeviceAssignment = async (
       });
     }
   }
-  //console.log("Link data " + JSON.stringify(linkData));
   return linkData;
-};
-
-const validateTelemetryRequiredFields = (
-  row: GenericVendorTelemetry
-): boolean => {
-  return (
-    !!row.device_id &&
-    !!row.device_make &&
-    ((!!row.latitude && !!row.longitude) ||
-      (!!row.utm_easting && !!row.utm_northing && !!row.utm_zone))
-  );
 };
 
 const validateAnimalDeviceRequiredFields = (
@@ -281,6 +268,7 @@ const validateUniqueAnimal = async (
   row: IAnimalDeviceMetadata
 ): Promise<UniqueAnimalResult> => {
   try {
+    await determineExistingAnimal(row);
     return { is_new: true };
   } catch (e) {
     console.log(e);
@@ -288,12 +276,4 @@ const validateUniqueAnimal = async (
   }
 };
 
-export {
-  validateTelemetryRow,
-  validateAnimalDeviceAssignment,
-  validateTelemetryRequiredFields,
-  validateAnimalDeviceRequiredFields,
-  validateUniqueAnimal,
-  validateGenericRow,
-  validateAnimalDeviceData,
-};
+export { validateTelemetryRow, validateGenericRow, validateAnimalDeviceData };
