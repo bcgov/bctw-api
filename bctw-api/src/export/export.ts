@@ -4,6 +4,8 @@ import { fn_get_collar_history } from '../apis/collar_api';
 import { S_API, critterbase } from '../constants';
 import { constructFunctionQuery, query } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
+import { Critter } from '../types/critter';
+import { DeviceTelemetry } from '../types/export_types';
 
 enum eExportType {
   all = 'all',
@@ -50,7 +52,6 @@ const getExportData = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  // console.log(req.body);
   const { type, range, collar_ids, critter_ids } = req.body;
   const username = getUserIdentifier(req);
   if (!username) {
@@ -137,7 +138,7 @@ const getAllExportData = async function (
     'failed to retrieve telemetry'
   );
 
-  let json1: any[];
+  let json1: DeviceTelemetry[];
   if (Object.values(filterBody).some((a) => a !== undefined)) {
     const filteredIds = critters.result.rows.map((c) => c.critter_id);
     json1 = bctwExportQuery.result.rows.filter((r) =>
@@ -147,7 +148,7 @@ const getAllExportData = async function (
     json1 = bctwExportQuery.result.rows;
   }
 
-  const json2 = critters.result.rows;
+  const json2: Critter[] = critters.result.rows;
 
   const merged = json1.map((x) =>
     Object.assign(
@@ -155,14 +156,8 @@ const getAllExportData = async function (
       json2.find((y) => y.critter_id == x.critter_id)
     )
   );
-  for (const m of merged) {
-    if (m.collection_units) {
-      for (const c of m.collection_units) {
-        m[c.category_name] = c.unit_name;
-      }
-      delete m.collection_units;
-    }
-  }
+
+  const strippedMerged = merged.map(({ collection_units, ...rest }) => rest);
 
   console.log(
     `Determined this many critter rows: ${critters.result.rows.length}`
@@ -170,7 +165,7 @@ const getAllExportData = async function (
   console.log(
     `Determined this many bctw rows: ${bctwExportQuery.result.rows.length}`
   );
-  return res.send(merged);
+  return res.send(strippedMerged);
 };
 
 export { getExportData, getAllExportData };
