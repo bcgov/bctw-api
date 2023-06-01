@@ -30,7 +30,11 @@ import { unlinkSync } from 'fs';
 import { pgPool } from '../database/pg';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
-import { CaptureUpsert, CollectionUpsert, CritterUpsert, LocationUpsert, MarkingUpsert, MortalityUpsert } from '../types/critter';
+import {
+  CritterUpsert,
+  IBulkCritterbasePayload,
+  MarkingUpsert,
+} from '../types/critter';
 
 type CellErrorDescriptor = {
   desc: string;
@@ -240,20 +244,20 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
   await parseXlsx(file, id, onFinishedParsing);
 };
 
-const createNewLocationFromRow = (bctw_animal: IAnimalDeviceMetadata) => {
-  if (bctw_animal.capture_longitude || bctw_animal.capture_latitude) {
+const createNewLocationFromRow = (incomingCritter: IAnimalDeviceMetadata) => {
+  if (incomingCritter.capture_longitude || incomingCritter.capture_latitude) {
     const locationBody = {
       location_id: uuidv4(),
-      longitude: bctw_animal.capture_longitude,
-      latitude: bctw_animal.capture_latitude,
+      longitude: incomingCritter.capture_longitude,
+      latitude: incomingCritter.capture_latitude,
     };
     return locationBody;
   }
-  if (bctw_animal.capture_utm_easting || bctw_animal.capture_utm_northing) {
+  if (incomingCritter.capture_utm_easting || incomingCritter.capture_utm_northing) {
     const [longitude, latitude] = projectUTMToLatLon(
-      bctw_animal.capture_utm_northing,
-      bctw_animal.capture_utm_easting,
-      bctw_animal.capture_utm_zone ?? 10
+      incomingCritter.capture_utm_northing,
+      incomingCritter.capture_utm_easting,
+      incomingCritter.capture_utm_zone ?? 10
     );
     const locationBody = {
       location_id: uuidv4(),
@@ -267,15 +271,15 @@ const createNewLocationFromRow = (bctw_animal: IAnimalDeviceMetadata) => {
 
 const createNewCaptureFromRow = (
   critter_id: string,
-  bctw_animal: IAnimalDeviceMetadata,
+  incomingCritter: IAnimalDeviceMetadata,
   location_id: string | null
 ) => {
   const captureBody = {
     capture_id: uuidv4(),
     critter_id: critter_id,
     capture_location_id: location_id,
-    capture_timestamp: dayjs(bctw_animal.capture_date).format(),
-    capture_comment: bctw_animal.capture_comment,
+    capture_timestamp: dayjs(incomingCritter.capture_date).format(),
+    capture_comment: incomingCritter.capture_comment,
   };
 
   return captureBody;
@@ -284,9 +288,9 @@ const createNewCaptureFromRow = (
 const createNewMarkingsFromRow = (
   critter_id: string,
   capture_id: string,
-  bctw_animal: IAnimalDeviceMetadata
+  incomingCritter: IAnimalDeviceMetadata
 ) => {
-  const bctw_markings = getCritterbaseMarkingsFromRow(bctw_animal);
+  const bctw_markings = getCritterbaseMarkingsFromRow(incomingCritter);
   const critterbase_markings: MarkingUpsert[] = [];
   if (bctw_markings.length) {
     for (const m of bctw_markings) {
@@ -299,58 +303,49 @@ const createNewMarkingsFromRow = (
 
 const createNewMortalityFromRow = (
   critter_id: string,
-  bctw_animal: IAnimalDeviceMetadata
+  incomingCritter: IAnimalDeviceMetadata
 ) => {
-  if (bctw_animal.mortality_date) {
+  if (incomingCritter.mortality_date) {
     const mortalityBody = {
       critter_id: critter_id,
-      mortality_timestamp: dayjs(bctw_animal.mortality_date).format(),
-      mortality_comment: bctw_animal.mortality_comment,
+      mortality_timestamp: dayjs(incomingCritter.mortality_date).format(),
+      mortality_comment: incomingCritter.mortality_comment,
     };
     return mortalityBody;
   }
   return null;
 };
 
-interface IBulkCritterbasePayload {
-  critters: CritterUpsert[];
-  markings: MarkingUpsert[];
-  collections: CollectionUpsert[];
-  locations: LocationUpsert[];
-  captures: CaptureUpsert[];
-  mortalities: MortalityUpsert[];
-}
-
 const insertTemplateAnimalIntoCritterbase = async (
-  bctw_animal: IAnimalDeviceMetadata,
+  incomingCritter: IAnimalDeviceMetadata,
   bulk_payload: IBulkCritterbasePayload
 ) => {
   const new_critter_id: string = uuidv4();
 
   const critterBody: CritterUpsert = {
     critter_id: new_critter_id,
-    wlh_id: bctw_animal.wlh_id,
-    animal_id: bctw_animal.animal_id,
-    sex: bctw_animal.sex,
-    taxon_name_common: bctw_animal.species,
+    wlh_id: incomingCritter.wlh_id,
+    animal_id: incomingCritter.animal_id,
+    sex: incomingCritter.sex,
+    taxon_name_common: incomingCritter.species,
   };
 
   bulk_payload.critters.push(critterBody);
 
-  if (bctw_animal.population_unit) {
+  if (incomingCritter.population_unit) {
     //Somewhat redundant to be making this request multiple times during import. May be something to optimize out later.
     const population_units = await query(
       critterbase.get(
-        `xref/collection-units/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`
+        `xref/collection-units/?category_name=Population Unit&taxon_name_common=${incomingCritter.species}`
       )
-    ); //await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${bctw_animal.species}`);
+    ); //await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${incomingCritter.species}`);
     if (!population_units) {
       throw Error(
         'Critterbase does not have population units for this species.'
       );
     }
     const population_unit = population_units.result.rows.find(
-      (a) => a.unit_name == bctw_animal.population_unit
+      (a) => a.unit_name == incomingCritter.population_unit
     );
     const collection_body = {
       collection_unit_id: population_unit.collection_unit_id,
@@ -359,7 +354,7 @@ const insertTemplateAnimalIntoCritterbase = async (
     bulk_payload.collections.push(collection_body);
   }
 
-  const location = createNewLocationFromRow(bctw_animal);
+  const location = createNewLocationFromRow(incomingCritter);
 
   if (location) {
     bulk_payload.locations.push(location);
@@ -367,16 +362,16 @@ const insertTemplateAnimalIntoCritterbase = async (
 
   const capture = createNewCaptureFromRow(
     new_critter_id,
-    bctw_animal,
+    incomingCritter,
     location?.location_id
   );
   bulk_payload.captures.push(capture);
 
   bulk_payload.markings.push(
-    ...createNewMarkingsFromRow(new_critter_id, capture.capture_id, bctw_animal)
+    ...createNewMarkingsFromRow(new_critter_id, capture.capture_id, incomingCritter)
   );
 
-  const mortality = createNewMortalityFromRow(new_critter_id, bctw_animal);
+  const mortality = createNewMortalityFromRow(new_critter_id, incomingCritter);
   if (mortality) {
     bulk_payload.mortalities.push(mortality);
   }

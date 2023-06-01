@@ -1,26 +1,20 @@
-import { Animal } from './animal';
 import { Collar } from './collar';
+import { ICritter } from './critter';
 
-type GeoJSONProperty = Pick<
-  Animal,
-  | 'species'
-  | 'animal_id'
-  | 'juvenile_at_heel'
-  | 'animal_status'
-  | 'population_unit'
-> &
+type GeoJSONPropertyBCTW = 
   Pick<
     Collar,
-    'collar_id' | 'device_id' | 'frequency' | 'satellite_network'
+    'collar_id' | 'device_id' | 'frequency' | 'frequency_unit'
   > & {
-    id: number; // row id
     critter_id: string; // aka id
     critter_transaction_id: string;
-    live_stage: string; // aka life_stage
     date_recorded: Date; // vendor_merge_view telemetry date recorded
     device_vendor: string; // aka collar_make
-    map_colour: string;
+    elevation: number;
   };
+
+type GeoJSONPropertyCombined = 
+  GeoJSONPropertyBCTW & ICritter
 
 type GeoMetry = {
   type: 'Point';
@@ -31,7 +25,7 @@ type GeoJSON = {
   id: number;
   type: 'Feature';
   geometry: GeoMetry;
-  properties: GeoJSONProperty;
+  properties: GeoJSONPropertyBCTW | GeoJSONPropertyCombined;
 };
 
 interface FeatureCollection {
@@ -39,4 +33,4 @@ interface FeatureCollection {
   features: GeoJSON[];
 }
 
-export type { GeoMetry, GeoJSONProperty, GeoJSON, FeatureCollection };
+export type { GeoMetry, GeoJSONPropertyBCTW, GeoJSONPropertyCombined, GeoJSON, FeatureCollection };

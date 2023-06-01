@@ -175,12 +175,12 @@ const formatTemplateRowForUniqueLookup = (row: IAnimalDeviceMetadata) => {
 };
 
 const determineExistingAnimal = async (
-  bctw_animal: IAnimalDeviceMetadata
+  incomingCritter: IAnimalDeviceMetadata
 ): Promise<DetailedCritter | null> => {
   const critterbase_critters = await query(
     critterbase.post(
       '/critters/unique?format=detailed',
-      formatTemplateRowForUniqueLookup(bctw_animal)
+      formatTemplateRowForUniqueLookup(incomingCritter)
     )
   );
   if (critterbase_critters.isError) {
@@ -195,8 +195,8 @@ const determineExistingAnimal = async (
         dateRangesOverlap(
           c.capture_timestamp,
           mortality_timestamp,
-          (bctw_animal.capture_date as unknown) as string,
-          (bctw_animal.mortality_date as unknown) as string
+          (incomingCritter.capture_date as unknown) as string,
+          (incomingCritter.mortality_date as unknown) as string
         )
       );
     }

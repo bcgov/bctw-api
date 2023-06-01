@@ -1,9 +1,6 @@
-interface Geom {
-  type: 'Point';
-  coordinates: [number, number];
-}
+import { GeoMetry } from "./map";
 
-export interface DeviceTelemetry {
+export interface IDeviceTelemetry {
   critter_id: string;
   collar_id: string;
   device_id: number;
@@ -13,7 +10,7 @@ export interface DeviceTelemetry {
   bc_albers_x: number;
   bc_albers_y: number;
   acquisition_date: string;
-  geom: Geom;
+  geom: GeoMetry;
   elevation: number;
   mainbattvolt: number;
   bckupbattvolt: number;

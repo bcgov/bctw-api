@@ -4,8 +4,8 @@ import { fn_get_collar_history } from '../apis/collar_api';
 import { S_API, critterbase } from '../constants';
 import { constructFunctionQuery, query } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
-import { Critter } from '../types/critter';
-import { DeviceTelemetry } from '../types/export_types';
+import { ICritter } from '../types/critter';
+import { IDeviceTelemetry } from '../types/export_types';
 
 enum eExportType {
   all = 'all',
@@ -138,7 +138,7 @@ const getAllExportData = async function (
     'failed to retrieve telemetry'
   );
 
-  let json1: DeviceTelemetry[];
+  let json1: IDeviceTelemetry[];
   if (Object.values(filterBody).some((a) => a !== undefined)) {
     const filteredIds = critters.result.rows.map((c) => c.critter_id);
     json1 = bctwExportQuery.result.rows.filter((r) =>
@@ -148,7 +148,7 @@ const getAllExportData = async function (
     json1 = bctwExportQuery.result.rows;
   }
 
-  const json2: Critter[] = critters.result.rows;
+  const json2: ICritter[] = critters.result.rows;
 
   const merged = json1.map((x) =>
     Object.assign(

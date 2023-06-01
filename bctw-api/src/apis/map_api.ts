@@ -10,8 +10,13 @@ import {
 import { getUserIdentifier } from '../database/requests';
 import { IBulkResponse } from '../types/import_types';
 import { HistoricalTelemetryInput } from '../types/point';
-import { FeatureCollection, GeoJSON, GeoJSONProperty } from '../types/map';
-import { Critter } from '../types/critter';
+import {
+  FeatureCollection,
+  GeoJSON,
+  GeoJSONPropertyBCTW,
+  GeoJSONPropertyCombined,
+} from '../types/map';
+import { ICritter } from '../types/critter';
 
 /**
  * Request that the backend make an estimate on the amount of telemetry data points a user may request
@@ -116,17 +121,19 @@ const uuidToColor = (
 // Join the additional critter data with the original object
 const mergeGeoProperties = (
   geoData: FeatureCollection,
-  critterData: Critter[]
+  critterData: ICritter[]
 ): FeatureCollection => {
   // Unpack and merge the GeoJSON Properties with critterbase data
   const mergedData = merge(
-    geoData.features.map((feature) => feature.properties),
-    critterData as Record<keyof Critter, unknown>[],
+    geoData.features.map(
+      (feature) => feature.properties
+    ) as GeoJSONPropertyBCTW[],
+    critterData as Record<keyof ICritter, unknown>[],
     'critter_id'
-  ).merged as GeoJSONProperty[];
+  ).merged as GeoJSONPropertyCombined[];
 
   // Update the features array with the merged properties and map_colour
-  const joinedFeatures: GeoJSON[] = geoData.features.map((feature, index) => {
+  const joinedFeatures = geoData.features.map((feature, index) => {
     const critterId = feature.properties.critter_id;
     const mergedProperties = mergedData[index];
 
