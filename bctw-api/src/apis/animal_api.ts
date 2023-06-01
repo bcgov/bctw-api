@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { S_API, S_BCTW, critterbase } from '../constants';
 import {
+  MQResult,
   appendFilter,
   applyCount,
   constructFunctionQuery,
@@ -38,7 +39,7 @@ const upsertAnimal = async function (
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
   const sql = constructFunctionQuery(
     fn_upsert_animal,
-    [getUserIdentifier(req), animals],
+    [getUserIdentifier(req), animals as Record<keyof Animal, unknown>[]],
     true
   );
   const { result, error, isError } = await query(sql, '', true);
@@ -139,7 +140,7 @@ const getAnimalsInternal = async (
   page: number,
   type: eCritterFetchType,
   search: SearchFilter | undefined
-) => {
+): Promise<MQResult> => {
   let sql;
   if (type === eCritterFetchType.unassigned) {
     sql = _getUnattachedSQL(username, page, search);

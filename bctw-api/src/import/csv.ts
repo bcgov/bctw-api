@@ -30,6 +30,7 @@ import { unlinkSync } from 'fs';
 import { pgPool } from '../database/pg';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
+import { CaptureUpsert, CollectionUpsert, CritterUpsert, LocationUpsert, MarkingUpsert, MortalityUpsert } from '../types/critter';
 
 type CellErrorDescriptor = {
   desc: string;
@@ -169,7 +170,9 @@ const parseXlsx = async (
         );
         const columnTypes = await obtainColumnTypes();
 
-        const crow = removeEmptyProps(rowWithHeader);
+        const crow = removeEmptyProps(
+          rowWithHeader as IAnimalDeviceMetadata | GenericVendorTelemetry
+        );
         const errors = await validateGenericRow(
           crow,
           code_header_names,
@@ -284,7 +287,7 @@ const createNewMarkingsFromRow = (
   bctw_animal: IAnimalDeviceMetadata
 ) => {
   const bctw_markings = getCritterbaseMarkingsFromRow(bctw_animal);
-  const critterbase_markings: any[] = [];
+  const critterbase_markings: MarkingUpsert[] = [];
   if (bctw_markings.length) {
     for (const m of bctw_markings) {
       (m.critter_id = critter_id), (m.capture_id = capture_id);
@@ -310,21 +313,21 @@ const createNewMortalityFromRow = (
 };
 
 interface IBulkCritterbasePayload {
-  critters: Record<string, any>[];
-  markings: Record<string, any>[];
-  collections: Record<string, any>[];
-  locations: Record<string, any>[];
-  captures: Record<string, any>[];
-  mortalities: Record<string, any>[];
+  critters: CritterUpsert[];
+  markings: MarkingUpsert[];
+  collections: CollectionUpsert[];
+  locations: LocationUpsert[];
+  captures: CaptureUpsert[];
+  mortalities: MortalityUpsert[];
 }
 
 const insertTemplateAnimalIntoCritterbase = async (
-  bctw_animal: any,
+  bctw_animal: IAnimalDeviceMetadata,
   bulk_payload: IBulkCritterbasePayload
 ) => {
   const new_critter_id: string = uuidv4();
 
-  const critterBody = {
+  const critterBody: CritterUpsert = {
     critter_id: new_critter_id,
     wlh_id: bctw_animal.wlh_id,
     animal_id: bctw_animal.animal_id,
@@ -382,7 +385,7 @@ const insertTemplateAnimalIntoCritterbase = async (
 };
 
 const upsertBulkv2 = async (id: string, req: Request) => {
-  const responseArray: any[] = [];
+  const responseArray: unknown[] = [];
   const client = await pgPool.connect(); //Using client directly here, since we want this entire procedure to be wrapped in a transaction.
   await client.query('BEGIN');
   try {
@@ -402,10 +405,11 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       mortalities: [],
     };
 
-    for (const pair of req.body.payload) {
-      const data_start: string = pair.capture_date;
-      const data_end: string | null =
-        pair.retrieval_date ?? pair.mortality_date ?? null;
+    const pairs: IAnimalDeviceMetadata[] = req.body.payload;
+
+    for (const pair of pairs) {
+      const data_start = pair.capture_date;
+      const data_end = pair.retrieval_date ?? pair.mortality_date ?? null;
       const formattedEnd = data_end ? "'" + data_end + "'" : null;
       const deviceIdBulkSQL = `SELECT bctw.get_device_id_for_bulk_import('${id}', '${JSON.stringify(
         pair
@@ -445,14 +449,16 @@ const upsertBulkv2 = async (id: string, req: Request) => {
           );
         }
         link_critter_id = existing_critter.critter_id;
-        const existing_captures: Record<string, any>[] =
-          existing_critter.capture;
-        const existing_mortalities: Record<string, any>[] =
-          existing_critter.mortality;
+        const existing_captures = existing_critter.capture;
+        const existing_mortalities = existing_critter.mortality;
         //const existing_markings: any[] = existing_critter.marking; <-- Maybe do something more intelligent with the markings at some point.
         if (
           existing_captures.every(
-            (a) => !isOnSameDay(a.capture_timestamp, pair.capture_date)
+            (a) =>
+              !isOnSameDay(
+                a.capture_timestamp,
+                (pair.capture_date as unknown) as string
+              )
           )
         ) {
           const location = createNewLocationFromRow(pair);
@@ -475,7 +481,11 @@ const upsertBulkv2 = async (id: string, req: Request) => {
         }
         if (
           existing_mortalities.every(
-            (a) => !isOnSameDay(a.mortality_timestamp, pair.mortality_date)
+            (a) =>
+              !isOnSameDay(
+                a.mortality_timestamp,
+                (pair.mortality_date as unknown) as string
+              )
           )
         ) {
           const mortality = createNewMortalityFromRow(
@@ -586,13 +596,15 @@ const getTemplateFile = async function (
   const code_header_names = result.rows.map((o) => o['code_header_name']);
   code_header_names.push(...extraCodeFields);
 
+  const idir = req.query.idir as string;
+
   for (let header_idx = 1; header_idx < headerRow.cellCount; header_idx++) {
     const cell = headerRow.getCell(header_idx);
     const code_header = mapXlsxHeader(cell.text);
     if (code_header_names.includes(code_header)) {
       const sql = constructFunctionQuery(
         'get_code',
-        [req.query.idir, code_header, 0],
+        [idir, code_header, 0],
         false,
         S_API
       );

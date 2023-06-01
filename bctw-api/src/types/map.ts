@@ -7,7 +7,7 @@ type GeoJSONProperty = Pick<
   | 'animal_id'
   | 'juvenile_at_heel'
   | 'animal_status'
-  | 'collection_unit'
+  | 'population_unit'
 > &
   Pick<
     Collar,

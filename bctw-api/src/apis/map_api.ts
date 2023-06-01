@@ -11,6 +11,7 @@ import { getUserIdentifier } from '../database/requests';
 import { IBulkResponse } from '../types/import_types';
 import { HistoricalTelemetryInput } from '../types/point';
 import { FeatureCollection, GeoJSON, GeoJSONProperty } from '../types/map';
+import { Critter } from '../types/critter';
 
 /**
  * Request that the backend make an estimate on the amount of telemetry data points a user may request
@@ -115,12 +116,12 @@ const uuidToColor = (
 // Join the additional critter data with the original object
 const mergeGeoProperties = (
   geoData: FeatureCollection,
-  critterData
+  critterData: Critter[]
 ): FeatureCollection => {
   // Unpack and merge the GeoJSON Properties with critterbase data
   const mergedData = merge(
     geoData.features.map((feature) => feature.properties),
-    critterData,
+    critterData as Record<keyof Critter, unknown>[],
     'critter_id'
   ).merged as GeoJSONProperty[];
 
@@ -276,7 +277,10 @@ const upsertPointTelemetry = async function (
   const fn_name = 'add_historical_telemetry';
   const sql = constructFunctionQuery(
     fn_name,
-    [userIdentifier, records],
+    [
+      userIdentifier,
+      records as Record<keyof HistoricalTelemetryInput, unknown>[],
+    ],
     true,
     S_BCTW
   );

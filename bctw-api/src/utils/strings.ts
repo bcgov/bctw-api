@@ -42,7 +42,7 @@ const ErrorMsgs = {
 const importMessages = {
   warningMessages: {
     previousDeployment: {
-      message: (device_id) => `I am re-using Device ID ${device_id} for a new deployment.`,
+      message: (device_id: string | number): string => `I am re-using Device ID ${device_id} for a new deployment.`,
       help: 'We found records of other deployments for this device ID in our database, but none of them overlapped the time period you are trying to import.' + 
       ' You can safely import this deployment if you are sure it differs from what\'s already been tracked.'
     },
@@ -54,7 +54,7 @@ const importMessages = {
     },
     matchingMarkings: {
       message: 'I am importing a new animal, even though this same combination of markings identifies an existing animal.',
-      help: (species) => `We already have records of a ${species} that matches the markings you have provided. 
+      help: (species: string): string => `We already have records of a ${species} that matches the markings you have provided. 
       However, we are inferring that a seperate animal be created. 
       This can happen if you provide a mortality date that predates the original capture date of an existing critter, 
       or you provide a deployment date after the mortality date of the existing critter.`

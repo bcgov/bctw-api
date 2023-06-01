@@ -22,7 +22,7 @@ describe('query', () => {
       merged.forEach((m) => expect(m._merged).toBe(false));
     });
     it('merge is empty when property that does not exist', () => {
-      const { merged, allMerged } = merge(a, b, 'bad_id' as any);
+      const { merged, allMerged } = merge(a, b, 'bad_id' as never);
       expect(allMerged).toBe(false);
       expect(merged.length).toBe(0);
     });

@@ -64,7 +64,7 @@ class VectronicKeyxRow implements IKeyX {
 const retrieveCollarKeyXRelation = async (
   req: Request,
   res: Response
-): Promise<any> => {
+): Promise<unknown> => {
   const userid = getUserIdentifier(req);
   let param: string | string[] | undefined = `'${userid}'`;
   const { device_ids } = req.query;
