@@ -6,8 +6,6 @@ export type QResult = {
   isError: boolean;
 };
 
-export type SupportedOperators = '<' | '>' | '=' | '<>' | '>=' | '<=';
-
 type SearchFilter = {
   keys: string[];
   term: string[];
@@ -35,9 +33,20 @@ enum TelemetryType {
 // define a callback function type for queries
 type QueryResultCbFn = (err: Error, result?: QueryResult) => void;
 
+type QueryParamsType =
+  | undefined
+  | string
+  | number
+  | boolean
+  | Date
+  | Record<string, unknown>
+  | (string | number)[]
+  | Record<string, unknown>[];
+
 export {
   IConstructQueryParameters,
   QueryResultCbFn,
   TelemetryType,
   SearchFilter,
+  QueryParamsType,
 };

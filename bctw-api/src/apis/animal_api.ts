@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { S_API, S_BCTW, critterbase } from '../constants';
 import {
+  MQResult,
   appendFilter,
   applyCount,
   constructFunctionQuery,
@@ -20,8 +21,6 @@ import { createBulkResponse } from '../import/bulk_handlers';
 import { Animal, eCritterFetchType } from '../types/animal';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
-import { isError } from 'util';
-import { error } from 'console';
 
 const fn_upsert_animal = 'upsert_animal';
 const fn_get_user_animal_permission = `${S_BCTW}.get_user_animal_permission`;
@@ -40,7 +39,7 @@ const upsertAnimal = async function (
   const animals: Animal[] = !Array.isArray(req.body) ? [req.body] : req.body;
   const sql = constructFunctionQuery(
     fn_upsert_animal,
-    [getUserIdentifier(req), animals],
+    [getUserIdentifier(req), animals as Record<keyof Animal, unknown>[]],
     true
   );
   const { result, error, isError } = await query(sql, '', true);
@@ -136,7 +135,12 @@ const _getUnattachedSQL = (
   });
 };
 
-const getAnimalsInternal = async (username: string, page: number, type: eCritterFetchType, search: SearchFilter | undefined) => {
+const getAnimalsInternal = async (
+  username: string,
+  page: number,
+  type: eCritterFetchType,
+  search: SearchFilter | undefined
+): Promise<MQResult> => {
   let sql;
   if (type === eCritterFetchType.unassigned) {
     sql = _getUnattachedSQL(username, page, search);
@@ -150,13 +154,9 @@ const getAnimalsInternal = async (username: string, page: number, type: eCritter
       critter_ids: bctwQuery.result.rows?.map((row) => row.critter_id),
     })
   );
-  //const { merged, allMerged, error, isError } = 
-  return await mergeQueries(
-    bctwQuery,
-    critterQuery,
-    'critter_id'
-  );
-}
+  //const { merged, allMerged, error, isError } =
+  return await mergeQueries(bctwQuery, critterQuery, 'critter_id');
+};
 
 /**
  * * CRITTERBASE INTEGRATED *
@@ -172,8 +172,13 @@ const getAnimals = async function (
   const type = req.query.critterType as eCritterFetchType;
   const search = getFilterFromRequest(req);
 
-  const { merged, allMerged, error, isError } = await getAnimalsInternal(username, page, type, search);
-  
+  const { merged, error } = await getAnimalsInternal(
+    username,
+    page,
+    type,
+    search
+  );
+
   return handleResponse(res, merged, error);
 };
 
@@ -198,7 +203,7 @@ const getAnimal = async function (
     hasCollar.result.rowCount > 0
       ? _getAttachedSQL(username, 1, undefined, critter_id)
       : _getUnattachedSQL(username, 1, undefined, critter_id);
-  const { merged, allMerged, error, isError } = await mergeQueries(
+  const { merged, error } = await mergeQueries(
     query(sql),
     query(critterbase.get(`/critters/${critter_id}?format=detailed`)),
     'critter_id'
@@ -237,18 +242,17 @@ const getAttachedHistoric = async function (
     })
   );
 
-  if(critterQuery.result.rows.length == 0) {
+  if (critterQuery.result.rows.length == 0) {
     return res.send(bctwQuery.result.rows);
-  }
-  else {
-    const { merged, allMerged, error, isError } = await mergeQueries(
+  } else {
+    const { merged, error } = await mergeQueries(
       bctwQuery,
       critterQuery,
       'critter_id'
     );
     return handleResponse(res, merged, error);
   }
-}
+};
 
 /**
  * TODO CRITTERBASE INTEGRATION

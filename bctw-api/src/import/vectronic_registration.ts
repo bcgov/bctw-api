@@ -9,7 +9,7 @@ import {
 } from '../database/query';
 import { QResult } from '../types/query';
 import { IBulkResponse } from '../types/import_types';
-import { getFilterFromRequest, getUserIdentifier } from '../database/requests';
+import { getUserIdentifier } from '../database/requests';
 const readPromise = promisify(readFile);
 
 const VECT_KEY_UPSERT_FN = `upsert_vectronic_key`;
@@ -64,7 +64,7 @@ class VectronicKeyxRow implements IKeyX {
 const retrieveCollarKeyXRelation = async (
   req: Request,
   res: Response
-): Promise<any> => {
+): Promise<unknown> => {
   const userid = getUserIdentifier(req);
   let param: string | string[] | undefined = `'${userid}'`;
   const { device_ids } = req.query;

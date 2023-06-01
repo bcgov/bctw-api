@@ -1,13 +1,17 @@
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import * as fs from 'fs';
 import proj4 from 'proj4';
 import { critterbase } from '../constants';
-import { query,
-} from '../database/query';
-//import { critterBaseRequest } from '../critterbase/critterbase_api';
-
+import { query } from '../database/query';
+import {
+  DetailedCritter,
+  CritterUpsert,
+  MarkingUpsert,
+} from '../types/critter';
+import { IAnimalDeviceMetadata } from '../types/import_types';
+import { GenericVendorTelemetry } from '../types/vendor';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -34,33 +38,36 @@ const mapCsvHeader = (header: string): string => {
     case 'Code Description Long':
     case 'Valid From':
     case 'Valid To':
-      return trimmed.split(' ').map(p => p.toLowerCase()).join('_');
+      return trimmed
+        .split(' ')
+        .map((p) => p.toLowerCase())
+        .join('_');
     default:
       return trimmed;
   }
-}
+};
 
 const mapXlsxHeader = (header: string): string => {
   const trimmed = header.trim();
-  switch(trimmed) {
-    case "Wildlife Health ID":
-      return "wlh_id";
-    case "Suspected Mortality Cause":
-      return "proximate_cause_of_death";
-    case "Device Retrieval Date":
-      return "retrieval_date";
-    case "Device Retrieval Comments":
-      return "retrieval_comment";
-    case "Telemetry Device ID":
-      return "device_id";
-    case "Vaginal Implant Transmitter ID":
-      return "implant_device_id";
-    case "Animal Mortality Date":
-      return "mortality_date";
+  switch (trimmed) {
+    case 'Wildlife Health ID':
+      return 'wlh_id';
+    case 'Suspected Mortality Cause':
+      return 'proximate_cause_of_death';
+    case 'Device Retrieval Date':
+      return 'retrieval_date';
+    case 'Device Retrieval Comments':
+      return 'retrieval_comment';
+    case 'Telemetry Device ID':
+      return 'device_id';
+    case 'Vaginal Implant Transmitter ID':
+      return 'implant_device_id';
+    case 'Animal Mortality Date':
+      return 'mortality_date';
     default:
       return trimmed.toLowerCase().split(' ').join('_');
   }
-}
+};
 
 /**
  * deletes an uploaded csv file
@@ -79,7 +86,9 @@ const cleanupUploadsDir = async (path: string): Promise<void> => {
  * @param obj the object parsed from json
  * @returns an object with properties considered empty removed
  */
-const removeEmptyProps = (obj) => {
+const removeEmptyProps = (
+  obj: IAnimalDeviceMetadata | GenericVendorTelemetry
+): IAnimalDeviceMetadata | GenericVendorTelemetry => {
   for (const propName in obj) {
     const val = obj[propName];
     if (val === null || val === undefined || val === '') {
@@ -87,9 +96,14 @@ const removeEmptyProps = (obj) => {
     }
   }
   return obj;
-}
+};
 
-const dateRangesOverlap = (startDateA: string, endDateA: string, startDateB: string, endDateB: string): boolean => {
+const dateRangesOverlap = (
+  startDateA: string,
+  endDateA: string,
+  startDateB: string,
+  endDateB: string
+): boolean => {
   const startA = dayjs(startDateA);
   const startB = dayjs(startDateB);
 
@@ -97,84 +111,109 @@ const dateRangesOverlap = (startDateA: string, endDateA: string, startDateB: str
   const endB = endDateB ? dayjs(endDateB) : dayjs('2300-01-01');
 
   return startA.isSameOrBefore(endB) && endA.isSameOrAfter(startB);
-}
+};
 
 const isOnSameDay = (date1: string, date2: string): boolean => {
   return dayjs(date1).isSame(dayjs(date2), 'day');
-}
+};
 
-const projectUTMToLatLon = (utm_north: number, utm_east: number, utm_zone: number = 10) => {
+const projectUTMToLatLon = (
+  utm_north: number,
+  utm_east: number,
+  utm_zone = 10
+): number[] => {
   const utmProjection = `+proj=utm +zone=${utm_zone} +north +datum=WGS84 +units=m +no_defs`;
   const wgs84Projection = `+proj=longlat +datum=WGS84 +no_defs`;
   return proj4(utmProjection, wgs84Projection, [utm_east, utm_north]);
-}
+};
 
 // converts an objects values to a string
-const rowToCsv = (row): string => Object.values(row).join(',');
+const rowToCsv = (row: IAnimalDeviceMetadata): string =>
+  Object.values(row).join(',');
 
-const getCritterbaseCritterFromRow = (row: any) => {
+const getCritterbaseCritterFromRow = (
+  row: IAnimalDeviceMetadata
+): Partial<CritterUpsert> => {
   return {
     wlh_id: row.wlh_id,
     animal_id: row.animal_id,
-    sex: row.sex
-  }
-}
+    sex: row.sex,
+  };
+};
 
-const getCritterbaseMarkingsFromRow = (row: any) => {
-  const marking: any[] = [];
-  if(row.ear_tag_left_colour || row.ear_tag_left_id) {
+const getCritterbaseMarkingsFromRow = (
+  row: IAnimalDeviceMetadata
+): MarkingUpsert[] => {
+  const marking: MarkingUpsert[] = [];
+  if (row.ear_tag_left_colour || row.ear_tag_left_id) {
     const ear_tag_left = {
       primary_colour: row.ear_tag_left_colour ?? null,
       identifier: row.ear_tag_left_id ?? null,
       marking_type: 'Ear Tag',
-      body_location: 'Left Ear'
+      body_location: 'Left Ear',
     };
     marking.push(ear_tag_left);
   }
 
-  if(row.ear_tag_right_id|| row.ear_tag_right_colour) {
+  if (row.ear_tag_right_id || row.ear_tag_right_colour) {
     const ear_tag_right = {
       primary_colour: row.ear_tag_right_colour ?? null,
       identifier: row.ear_tag_right_id ?? null,
       marking_type: 'Ear Tag',
-      body_location: 'Right Ear'
-    }
+      body_location: 'Right Ear',
+    };
     marking.push(ear_tag_right);
   }
   return marking;
-}
+};
 
-const formatTemplateRowForUniqueLookup = (row: any) => {
+const formatTemplateRowForUniqueLookup = (row: IAnimalDeviceMetadata) => {
   return {
     critter: getCritterbaseCritterFromRow(row),
-    markings: getCritterbaseMarkingsFromRow(row)
+    markings: getCritterbaseMarkingsFromRow(row),
+  };
+};
+
+const determineExistingAnimal = async (
+  incomingCritter: IAnimalDeviceMetadata
+): Promise<DetailedCritter | null> => {
+  const critterbase_critters = await query(
+    critterbase.post(
+      '/critters/unique?format=detailed',
+      formatTemplateRowForUniqueLookup(incomingCritter)
+    )
+  );
+  if (critterbase_critters.isError) {
+    throw Error('Something went wrong contacting critterbase.');
   }
-}
+  const overlappingCritters: DetailedCritter[] = critterbase_critters.result.rows.filter(
+    (critter) => {
+      const mortality_timestamp = critter.mortality.length
+        ? critter.mortality[0].mortality_timestamp
+        : null;
+      return critter.capture.some((c) =>
+        dateRangesOverlap(
+          c.capture_timestamp,
+          mortality_timestamp,
+          (incomingCritter.capture_date as unknown) as string,
+          (incomingCritter.mortality_date as unknown) as string
+        )
+      );
+    }
+  );
 
-const determineExistingAnimal = async (bctw_animal: any): Promise<any | null> => {
-  //console.log(formatTemplateRowForUniqueLookup(bctw_animal));
-    const critterbase_critters = await query(critterbase.post('/critters/unique?format=detailed', formatTemplateRowForUniqueLookup(bctw_animal)));
-    if(critterbase_critters.isError) {
-      throw Error("Something went wrong contacting critterbase.");
-    }
-    //console.log(JSON.stringify(critterbase_critters, null, 2));
-    const overlappingCritters = critterbase_critters.result.rows.filter(critter => {
-      const mortality_timestamp = critter.mortality.length ? critter.mortality[0].mortality_timestamp : null;
-      return critter.capture.some(c => dateRangesOverlap(c.capture_timestamp, mortality_timestamp, bctw_animal.capture_date, bctw_animal.mortality_date));
-    });
+  if (overlappingCritters.length > 1) {
+    throw Error(
+      'Found many valid critters for these markings over the same captured-mortality lifespan. The critter trying to be referenced is therefore ambiguous, aborting. Try again with more markings if possible.'
+    );
+  }
 
-    if(overlappingCritters.length > 1) {
-      throw Error('Found many valid critters for these markings over the same captured-mortality lifespan. The critter trying to be referenced is therefore ambiguous, aborting. Try again with more markings if possible.')
-    }
-    
-
-    if(overlappingCritters.length == 0) {
-      return null;
-    }
-    else {
-      return overlappingCritters[0];
-    }
-}
+  if (overlappingCritters.length == 0) {
+    return null;
+  } else {
+    return overlappingCritters[0];
+  }
+};
 
 export {
   cleanupUploadsDir,
@@ -186,5 +225,5 @@ export {
   isOnSameDay,
   projectUTMToLatLon,
   determineExistingAnimal,
-  getCritterbaseMarkingsFromRow
-}
+  getCritterbaseMarkingsFromRow,
+};

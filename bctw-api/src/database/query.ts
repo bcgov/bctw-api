@@ -4,6 +4,7 @@ import { S_BCTW } from '../constants';
 import {
   IConstructQueryParameters,
   QResult,
+  QueryParamsType,
   SearchFilter,
 } from '../types/query';
 import { formatAxiosError } from '../utils/error';
@@ -12,7 +13,7 @@ import { isTest, pgPool } from './pg';
 // helper functions for constructing db queries
 
 //Used to change sql from basic request to a count of records
-const applyCount = (page?: number) => {
+const applyCount = (page?: number): string => {
   return page == 1 || !page ? `COUNT(*) OVER() as row_count, ` : '';
 };
 
@@ -53,12 +54,12 @@ const constructGetQuery = ({
  */
 const constructFunctionQuery = (
   fnName: string,
-  params: any[],
+  params: QueryParamsType[],
   expectsObjAsArray = false,
   schema = S_BCTW,
   returnsTable = false
 ): string => {
-  const newParams: any[] = [];
+  const newParams: QueryParamsType[] = [];
   params.forEach((p) => {
     if (p === undefined || p === null) {
       newParams.push('null');
@@ -66,15 +67,18 @@ const constructFunctionQuery = (
       newParams.push(to_pg_str(p));
     } else if (typeof p === 'number' || typeof p === 'boolean') {
       newParams.push(p);
-    } else if (typeof p.getMonth === 'function') {
+    } else if (p instanceof Date && typeof p.getMonth === 'function') {
       // p is a date object
       newParams.push(to_pg_timestamp(p));
-    } else if (typeof p === 'object' && expectsObjAsArray) {
-      newParams.push(obj_to_pg_array(p));
     } else if (Array.isArray(p)) {
       newParams.push(to_pg_array(p));
     } else if (typeof p === 'object') {
-      newParams.push(to_pg_obj(p));
+      // here, p has to be of type Record<string, unknown>
+      if (expectsObjAsArray) {
+        newParams.push(obj_to_pg_array(p as Record<string, unknown>));
+      } else {
+        newParams.push(to_pg_obj(p as Record<string, unknown>));
+      }
     }
   });
   return `select ${
@@ -83,9 +87,7 @@ const constructFunctionQuery = (
 };
 
 // converts an array to the postgres format
-// ex. ['b','b'] => '{a, b}'
-const to_pg_array = (arr: number[] | string[]): string =>
-  `'{${arr.join(',')}}'`;
+const to_pg_array = (arr: unknown[]): string => `'{${arr.join(',')}}'`;
 
 // uses a psql builtin function to convert a js date object
 const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
@@ -177,7 +179,7 @@ const queryAsync = async (sql: string): Promise<QueryResult> => {
  * note: most put/post requests will pass true for this parameter
  */
 const query = async (
-  sqlOrAxios: string | Promise<AxiosResponse<any>>,
+  sqlOrAxios: string | Promise<AxiosResponse>,
   msgIfErr?: string,
   asTransaction = false
 ): Promise<QResult> => {
@@ -198,20 +200,14 @@ const query = async (
           : (sqlOrAxios as string)
       );
     } else {
-      const axiosReq = sqlOrAxios as Promise<AxiosResponse<any>>;
-      //try {
-        const axiosRes = await axiosReq;
-        result.rows = axiosRes.data;
-      /*}
-      catch(e) {
-        console.log('Failed await: ' + e);
-      }*/
-      
+      const axiosReq = sqlOrAxios as Promise<AxiosResponse>;
+      const axiosRes = await axiosReq;
+      result.rows = axiosRes.data;
     }
   } catch (e) {
     isError = true;
     if (isSQL) {
-      console.log('Errored in SQL path.')
+      console.log('Errored in SQL path.');
       error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
     } else {
       console.log('Errored in non - SQL path.');
@@ -309,10 +305,7 @@ type MergeReturn<A, B> = {
   merged: Array<A & B & Merged> | Array<A & Merged>;
   allMerged: boolean;
 };
-type MQResult = MergeReturn<
-  Pick<QueryResult, 'rows'>,
-  Pick<QueryResult, 'rows'>
-> &
+export type MQResult = MergeReturn<QueryResultRow, QueryResultRow> &
   Pick<QResult, 'error' | 'isError'>;
 
 /**
@@ -403,7 +396,7 @@ const merge = <
  **if both queries have errors, it will first return a errors first.
  *
  */
-const isPromise = (value: any) => {
+const isPromise = (value) => {
   return Boolean(value && typeof value.then === 'function');
 };
 
@@ -426,8 +419,7 @@ const mergeQueries = async <
   }
   //On error of a OR b query return a.result.rows
   const errorReturn = { merged: aArray.result.rows, allMerged: false };
-  // console.log(aArray.error.message);
-  // console.log(bArray.error.message);
+
   if (aArray.isError) {
     return { ...errorReturn, ...aArray };
   }
@@ -444,9 +436,7 @@ const mergeQueries = async <
       `not all results from bArray were merged into aArray using "${mergeKey}"`
     );
   }
-  //Temp fix to handle return type error
-  const mergeCast: any = merged;
-  return { merged: mergeCast, allMerged, error, isError: false };
+  return { merged, allMerged, error, isError: false };
 };
 
 export {

@@ -1,11 +1,7 @@
-import dayjs from 'dayjs';
 import { query } from '../../src/database/query';
 import {
-  existingDateDevice21510,
   idir,
-  lotekPayload,
   request,
-  vectronicPayload,
 } from '../utils/constants';
 
 const newAnimalDevicePayload = {
@@ -212,7 +208,7 @@ describe('POST /import-finalize', () => {
     describe('Add device metadata behind existing metadata records', () => {
       //This device has earliest valid_from of 2021-11-24, latest valid_from of 2022-01-13 (with valid_to NULL)
       it('Should create a new record for the same collar id valid from capture_date to the earliest existing valid_from', async () => {
-        let blob = {
+        const blob = {
           ...deviceWithManyRows,
           capture_date: '2018-01-01',
           retrieval_date: '2018-08-08',
@@ -228,12 +224,12 @@ describe('POST /import-finalize', () => {
     describe('Add device metadata behind existing metadata records, then try to add another record in between new addition and previous oldest record', () => {
       //This device has earliest valid_from of 2021-11-24, latest valid_from of 2022-01-13 (with valid_to NULL)
       it('Should create a new record for the same collar id valid from capture_date to the earliest existing valid_from', async () => {
-        let blob = {
+        const blob = {
           ...deviceWithManyRows,
           capture_date: '2018-01-01',
           retrieval_date: '2018-08-08',
         };
-        let blob2 = {
+        const blob2 = {
           ...deviceWithManyRows,
           capture_date: '2018-12-12',
           retrieval_date: '2019-01-01',
@@ -254,7 +250,7 @@ describe('POST /import-finalize', () => {
     describe('Add device metadata overtop of existing metadata records', () => {
       //This device has earliest valid_from of 2021-11-24, latest valid_from of 2022-01-13 (with valid_to NULL)
       it('Should not create a new record, instead using existing data', async () => {
-        let blob = {
+        const blob = {
           ...deviceWithManyRows,
           capture_date: '2021-11-26',
           retrieval_date: '2022-01-13',
@@ -270,7 +266,7 @@ describe('POST /import-finalize', () => {
     describe('Add device metadata ahead of existing metadata records', () => {
       //This device has earliest valid_from of 2021-11-24, latest valid_from of 2022-01-13 (with valid_to NULL)
       it('Should create a new record for the same collar id valid from capture_date to the earliest existing valid_from', async () => {
-        let blob = {
+        const blob = {
           ...deviceWithManyRows,
           capture_date: '2022-02-13',
           retrieval_date: '2022-05-16',

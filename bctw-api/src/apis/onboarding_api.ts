@@ -2,7 +2,6 @@ import {
   FileAttachment,
   GCNotifyOnboardAdminReq,
   GCNotifyOnboardUserConfirmation,
-  GCNotifyOnboardUserDeclined,
 } from './../types/sms';
 import { Request, Response } from 'express';
 import {

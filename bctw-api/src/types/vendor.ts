@@ -1,5 +1,4 @@
 import { Dayjs } from 'dayjs';
-import { Animal } from './animal';
 
 /**
  * columns fetched from the api_vectronic_credential table
@@ -113,35 +112,6 @@ export type LotekRawTelemetry = {
   CRC;
   DeviceID;
   RecDateTime;
-};
-
-//Add optional
-export type ManualVectronicTelemetry = {
-  idCollar: number;
-  latitude: number;
-  longitude: number;
-  acquisitionTime: Dayjs; //change to date
-  height?: number;
-  //frequency
-  temperature?: number;
-  //satellite
-  //dilution;
-  mainVoltage?: number;
-  backupVoltage?: number;
-};
-
-export type ManualLotekTelemetry = {
-  DeviceID: number;
-  Latitude: number;
-  Longitude: number;
-  RecDateTime: Dayjs;
-  Altitude?: number;
-  //frequency
-  Temperature?: number;
-  //satellite
-  //Dilution
-  MainV?: number;
-  BkUpV?: number;
 };
 
 export type GenericVendorTelemetry = {

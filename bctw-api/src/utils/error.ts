@@ -1,6 +1,4 @@
-import { AxiosError, AxiosResponse } from 'axios';
-import { QResult } from '../types/query';
-import { isError } from 'util';
+import { AxiosError } from 'axios';
 
 /**
  * formats an Axios error to a string

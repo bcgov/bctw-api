@@ -10,10 +10,10 @@ import {
   matchAny,
   MISSING_USERNAME,
 } from './database/requests';
-import { fn_get_user_id, fn_get_user_id_domain } from './apis/user_api';
+import { fn_get_user_id } from './apis/user_api';
 import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
-import { isProd, pgPool } from './database/pg';
+import { pgPool } from './database/pg';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });

@@ -37,7 +37,7 @@ const upsertUser = async function (
   const { user, role }: IUserProps = req.body;
   const sql = constructFunctionQuery(fn_upsert_user, [
     getUserIdentifier(req),
-    user,
+    user as Record<keyof IUserInput, unknown>,
     role,
   ]);
   const { result, error, isError } = await query(sql, '', true);
@@ -188,8 +188,7 @@ const getUserCritterAccess = async function (
   // Functions to get critters by their IDs or get all critters
   const getCrittersByIds = async (critterIds) =>
     query(critterbase.post('/critters', { critter_ids: critterIds }));
-  const getAllCritters = async () =>
-    query(critterbase.get('/critters'));
+  const getAllCritters = async () => query(critterbase.get('/critters'));
 
   // 'none' filter needs to be handled here so that critters outside of bctw.user_animal_assignment table are returned
   // determines which critterbase query to run based on presence of 'none' filter
@@ -244,7 +243,11 @@ const assignCritterToUser = async function (
     const { userId, access } = cp;
     const sql = constructFunctionQuery(
       fn_name,
-      [getUserIdentifier(req), userId, access],
+      [
+        getUserIdentifier(req),
+        userId,
+        access as Record<keyof ICritterAccess, unknown>[],
+      ],
       true
     );
     return query(

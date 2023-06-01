@@ -1,14 +1,10 @@
-import {
-  vectronicRecordExists
-} from '../apis/vendor/vectronic';
-import {
-  doesVendorDeviceExist
-} from '../apis/vendor/vendor_helpers';
+import { vectronicRecordExists } from '../apis/vendor/vectronic';
+import { doesVendorDeviceExist } from '../apis/vendor/vendor_helpers';
 import { S_API } from '../constants';
 import {
   constructFunctionQuery,
   getRowResults,
-  query
+  query,
 } from '../database/query';
 import { IAnimalDeviceMetadata } from '../types/import_types';
 import { GenericVendorTelemetry, ImportVendors } from '../types/vendor';
@@ -17,10 +13,9 @@ import {
   ColumnTypeMapping,
   ErrorsAndWarnings,
   ParsedXLSXCellError,
-  ParsedXLSXRowResult
+  ParsedXLSXRowResult,
 } from './csv';
 import { dateRangesOverlap, determineExistingAnimal } from './import_helpers';
-
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
@@ -30,7 +25,7 @@ const validateGenericRow = async (
 ): Promise<ParsedXLSXCellError> => {
   const errors = {} as ParsedXLSXCellError;
 
-  const { fields: constants} = ErrorMsgs;
+  const { fields: constants } = ErrorMsgs;
 
   for (const key of Object.keys(row)) {
     if (codeFields.includes(key)) {
@@ -40,10 +35,7 @@ const validateGenericRow = async (
         false,
         S_API
       );
-      const { result, error, isError } = await query(
-        sql,
-        'failed to retrieve codes'
-      );
+      const { result } = await query(sql, 'failed to retrieve codes');
       const code_descriptions = getRowResults(result, 'get_code').map(
         (o) => o.description
       );
@@ -56,19 +48,19 @@ const validateGenericRow = async (
     } else if (columnTypes[key] === 'date') {
       if (!(row[key] instanceof Date)) {
         errors[key] = {
-          ...constants.date
+          ...constants.date,
         };
       }
     } else if (columnTypes[key] === 'number') {
       if (typeof row[key] !== 'number') {
         errors[key] = {
-         ...constants.number
+          ...constants.number,
         };
       }
     } else if (columnTypes[key] === 'boolean') {
       if (row[key] !== 'TRUE' && row[key] !== 'FALSE') {
         errors[key] = {
-          ...constants.bool
+          ...constants.bool,
         };
       }
     }
@@ -90,7 +82,7 @@ const validateTelemetryRow = async (
     utm_zone,
   } = row;
   const { telemetry: errorString } = ErrorMsgs;
-  let output: ErrorsAndWarnings = { errors: {}, warnings: [] };
+  const output: ErrorsAndWarnings = { errors: {}, warnings: [] };
 
   const isLotek = device_make === ImportVendors.Lotek;
   const isVectronic = device_make === ImportVendors.Vectronic;
@@ -152,7 +144,7 @@ const validateAnimalDeviceData = async (
   ) {
     ret.errors.missing_data = {
       desc: ErrorMsgs.metadata.missingData,
-      help:  ErrorMsgs.metadata.missingData,
+      help: ErrorMsgs.metadata.missingData,
     };
     return ret;
   }
@@ -160,32 +152,37 @@ const validateAnimalDeviceData = async (
     rowres.row as IAnimalDeviceMetadata,
     user
   );
-  const unqanim = await validateUniqueAnimal(rowres.row as IAnimalDeviceMetadata);
+  const unqanim = await validateUniqueAnimal(
+    rowres.row as IAnimalDeviceMetadata
+  );
   if (unqanim.is_error) {
     ret.errors.identifier = {
       desc: ErrorMsgs.metadata.badMarkings,
-      help: ErrorMsgs.metadata.badMarkings
-    }
-  }
-  else if (unqanim.is_new && unqanim.reason == 'no_overlap') {
+      help: ErrorMsgs.metadata.badMarkings,
+    };
+  } else if (unqanim.is_new && unqanim.reason == 'no_overlap') {
     ret.warnings.push({
       message: importMessages.warningMessages.matchingMarkings.message,
-      help: importMessages.warningMessages.matchingMarkings.help((rowres.row as IAnimalDeviceMetadata).species),
+      help: importMessages.warningMessages.matchingMarkings.help(
+        (rowres.row as IAnimalDeviceMetadata).species
+      ),
     });
   }
 
   const animdev = rowres.row as IAnimalDeviceMetadata;
-  if(animdev.retrieval_date && animdev.capture_date > animdev.retrieval_date) {
+  if (animdev.retrieval_date && animdev.capture_date > animdev.retrieval_date) {
     ret.errors.capture_date = {
       desc: ErrorMsgs.metadata.badRetrievelDate,
       help: ErrorMsgs.metadata.badRetrievelDate,
-    }
-  }
-  else if(animdev.mortality_date && animdev.capture_date > animdev.mortality_date) {
+    };
+  } else if (
+    animdev.mortality_date &&
+    animdev.capture_date > animdev.mortality_date
+  ) {
     ret.errors.capture_date = {
       desc: ErrorMsgs.metadata.badMortalityDate,
       help: ErrorMsgs.metadata.badMortalityDate,
-    }
+    };
   }
 
   return ret;
@@ -195,26 +192,24 @@ const validateAnimalDeviceAssignment = async (
   row: IAnimalDeviceMetadata,
   user: string
 ): Promise<ErrorsAndWarnings> => {
-  let linkData: ErrorsAndWarnings = { errors: {}, warnings: [] };
+  const linkData: ErrorsAndWarnings = { errors: {}, warnings: [] };
   const row_start = row.capture_date;
   const row_end = row.retrieval_date ?? row.mortality_date ?? null;
 
   if (typeof row.device_id == 'number') {
-    let sql = constructFunctionQuery('get_device_assignment_history', [
+    const sql = constructFunctionQuery('get_device_assignment_history', [
       row.device_id,
     ]);
-    let { result, error, isError } = await query(
-      sql
-    );
-  
+    const { result } = await query(sql);
+
     const deviceLinks = getRowResults(result, 'get_device_assignment_history');
     if (
       deviceLinks.some((link) =>
         dateRangesOverlap(
           link.attachment_start,
           link.attachment_end,
-          row_start as unknown as string,
-          row_end as unknown as string
+          (row_start as unknown) as string,
+          (row_end as unknown) as string
         )
       )
     ) {
@@ -224,83 +219,61 @@ const validateAnimalDeviceAssignment = async (
       };
     } else if (deviceLinks.length > 0) {
       linkData.warnings.push({
-        message: importMessages.warningMessages.previousDeployment.message(row.device_id),
+        message: importMessages.warningMessages.previousDeployment.message(
+          row.device_id
+        ),
         help: importMessages.warningMessages.previousDeployment.help,
       });
     }
   }
 
   if (row.critter_id) {
-    let sql = constructFunctionQuery('get_animal_collar_assignment_history', [
+    const sql = constructFunctionQuery('get_animal_collar_assignment_history', [
       user,
       row.critter_id,
     ]);
-    let { result, error, isError } = await query(
-      sql,
-      'failed to retrieve animal assignment'
-    );
+    const { result } = await query(sql, 'failed to retrieve animal assignment');
     const animalLinks = getRowResults(
       result,
       'get_animal_collar_assignment_history'
     );
-    //console.log("Animallinks for " + row.critter_id + " " + JSON.stringify(animalLinks));
     if (
       animalLinks.some((link) =>
         dateRangesOverlap(
           link.attachment_start,
           link.attachment_end,
-          row_start as unknown as string,
-          row_end as unknown as string
+          (row_start as unknown) as string,
+          (row_end as unknown) as string
         )
       )
     ) {
       linkData.warnings.push({
-        message:
-          importMessages.warningMessages.manyDeviceOneAnimal.message,
-        help:
-          importMessages.warningMessages.manyDeviceOneAnimal.help,
+        message: importMessages.warningMessages.manyDeviceOneAnimal.message,
+        help: importMessages.warningMessages.manyDeviceOneAnimal.help,
       });
     }
   }
-  //console.log("Link data " + JSON.stringify(linkData));
   return linkData;
-};
-
-const validateTelemetryRequiredFields = (
-  row: GenericVendorTelemetry
-): boolean => {
-  return (
-    !!row.device_id &&
-    !!row.device_make &&
-    ((!!row.latitude && !!row.longitude) ||
-      (!!row.utm_easting && !!row.utm_northing && !!row.utm_zone))
-  );
 };
 
 const validateAnimalDeviceRequiredFields = (
   row: IAnimalDeviceMetadata
 ): boolean => {
-  return !!row.species && !!row.device_id && !!row.device_make && 
-  !!row.capture_date;
+  return (
+    !!row.species && !!row.device_id && !!row.device_make && !!row.capture_date
+  );
 };
 
-const validateUniqueAnimal = async (row: IAnimalDeviceMetadata): Promise<UniqueAnimalResult> => {
+const validateUniqueAnimal = async (
+  row: IAnimalDeviceMetadata
+): Promise<UniqueAnimalResult> => {
   try {
-    const existing = await determineExistingAnimal(row);
-    return {is_new: true}
-  }
-  catch (e) {
+    await determineExistingAnimal(row);
+    return { is_new: true };
+  } catch (e) {
     console.log(e);
-    return {is_error: true}
+    return { is_error: true };
   }
 };
 
-export {
-  validateTelemetryRow,
-  validateAnimalDeviceAssignment,
-  validateTelemetryRequiredFields,
-  validateAnimalDeviceRequiredFields,
-  validateUniqueAnimal,
-  validateGenericRow,
-  validateAnimalDeviceData,
-};
+export { validateTelemetryRow, validateGenericRow, validateAnimalDeviceData };

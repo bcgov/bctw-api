@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { formatAxiosError } from '../src/utils/error';
+
 // api layer schema
 const S_API = `bctw_dapi_v1`;
 // main schema

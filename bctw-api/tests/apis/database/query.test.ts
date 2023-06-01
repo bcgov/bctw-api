@@ -1,6 +1,10 @@
 import { merge } from '../../../src/database/query';
 const a = [{ id: 1, aData: 1 }];
 const b = [{ id: 1, bData: 2 }];
+const c = [
+  { id: 1, aData: 1 },
+  { id: 1, aData: 2 },
+];
 describe('query', () => {
   describe(merge.name, () => {
     it('should merge successfully on valid data', () => {
@@ -18,7 +22,7 @@ describe('query', () => {
       merged.forEach((m) => expect(m._merged).toBe(false));
     });
     it('merge is empty when property that does not exist', () => {
-      const { merged, allMerged } = merge(a, b, 'bad_id' as any);
+      const { merged, allMerged } = merge(a, b, 'bad_id' as never);
       expect(allMerged).toBe(false);
       expect(merged.length).toBe(0);
     });
@@ -54,6 +58,16 @@ describe('query', () => {
       const { merged: merged3, allMerged: allMerged3 } = merge(a, [], 'id');
       expect(allMerged3).toBe(false);
       expect(merged3.length).toBe(0);
+    });
+    it('supports repeated merging from secondary into primary for non-unique primary ids (LEFT JOIN)', () => {
+      const { merged, allMerged } = merge(c, b, 'id');
+      expect(allMerged).toBe(true);
+      expect(merged.length).toBe(2);
+      merged.forEach((m) => {
+        expect(m._merged).toBe(true);
+        expect(m).toHaveProperty('aData');
+        expect(m).toHaveProperty('bData');
+      });
     });
   });
 });

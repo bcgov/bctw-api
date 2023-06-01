@@ -1,4 +1,6 @@
 import { BCTWBaseType } from './base_types';
+
+// TODO: Remove (bctw.animal table is deprecated)
 export interface IAnimal extends BCTWBaseType {
   //  animal_comment: string;
   animal_id: string;
@@ -34,7 +36,7 @@ export interface IAnimal extends BCTWBaseType {
   mortality_utm_northing: number;
   mortality_utm_zone: number;
   mortality_captivity_status_ind: boolean;
-  collection_unit: string;
+  population_unit: string;
   probable_cause_of_death: string;
   ultimate_cause_of_death: string;
   recapture_ind: boolean;
@@ -53,6 +55,7 @@ export interface IAnimal extends BCTWBaseType {
   wlh_id: string;
 }
 
+// TODO: Remove (bctw.animal table is deprecated)
 export class Animal implements IAnimal {
   //  animal_comment: string;
   critter_id: string;
@@ -72,9 +75,9 @@ export class Animal implements IAnimal {
   animal_colouration: string;
   ear_tag_id: string; // TODO: remove
   ear_tag_left_colour: string;
-  //  ear_tag_left_id: string;
+   ear_tag_left_id: string;
   ear_tag_right_colour: string;
-  //  ear_tag_right_id: string;
+   ear_tag_right_id: string;
   estimated_age: number;
   // juvenile_at_heel: boolean;
   juvenile_at_heel: string; // TODO: remove
@@ -91,7 +94,7 @@ export class Animal implements IAnimal {
   mortality_captivity_status_ind: boolean;
   probable_cause_of_death: string;
   ultimate_cause_of_death: string;
-  collection_unit: string;
+  population_unit: string;
   recapture_ind: boolean;
   region: string;
   release_comment: string;

@@ -10,7 +10,13 @@ import {
 import { getUserIdentifier } from '../database/requests';
 import { IBulkResponse } from '../types/import_types';
 import { HistoricalTelemetryInput } from '../types/point';
-import { FeatureCollection, GeoJSON, GeoJSONProperty } from '../types/map';
+import {
+  FeatureCollection,
+  GeoJSON,
+  GeoJSONPropertyBCTW,
+  GeoJSONPropertyCombined,
+} from '../types/map';
+import { ICritter } from '../types/critter';
 
 /**
  * Request that the backend make an estimate on the amount of telemetry data points a user may request
@@ -37,33 +43,37 @@ const getPingsEstimate = function (req: Request, res: Response): void {
 const getCrittersByIds = async (critterIds) =>
   query(critterbase.post('/critters', { critter_ids: critterIds }));
 
+// Converts a uuid to an integer value
+const uuidToInt = (uuid: string): number => {
+  const noDashes = uuid.replace(/-/g, '');
+  const substring = noDashes.substring(0, 9);
+  return parseInt(substring, 16);
+};
+
+// Converts an integer value to an HSL color
+const intToHSL = (i: number): { h: number; s: number; l: number } => {
+  const hue = (i / 1000) % 360;
+  let saturation = (i % 50) + 50; // Ensuring saturation is between 50% and 100%
+  let lightness = (i % 60) + 20; // Ensuring lightness is between 20% and 80%
+
+  // Avoiding earthy tones for hues in the range of 20-170 by adjusting the saturation and lightness values
+  if (hue >= 20 && hue <= 170) {
+    saturation = (i % 40) + 60; // Ensuring saturation is between 60% and 100%
+    lightness = (i % 50) + 40; // Ensuring lightness is between 40% and 90%
+  }
+
+  return { h: hue, s: saturation, l: lightness };
+};
+
 /**
  * Generates a unique color based on the given uuid string.
  * TODO: It may make more sense to move this into the ui with the other pings set-up
  * @param {string} id - The UUID of the critter.
  * @returns {string} A color in hexadecimal format.
  */
-const uuidToColor = (id: string) => {
-  function uuidToInt(uuid) {
-    const noDashes = uuid.replace(/-/g, '');
-    const substring = noDashes.substring(0, 9);
-    return parseInt(substring, 16);
-  }
-
-  function intToHSL(i: number) {
-    const hue = i % 360;
-    let saturation = (i % 50) + 50; // Ensuring saturation is between 50% and 100%
-    let lightness = (i % 60) + 20; // Ensuring lightness is between 20% and 80%
-
-    // Avoiding earthy tones for hues in the range of 20-170 by adjusting the saturation and lightness values
-    if (hue >= 20 && hue <= 170) {
-      saturation = (i % 40) + 60; // Ensuring saturation is between 60% and 100%
-      lightness = (i % 50) + 40; // Ensuring lightness is between 40% and 90%
-    }
-
-    return { h: hue, s: saturation, l: lightness };
-  }
-
+const uuidToColor = (
+  id: string
+): { fillColor: string; outlineColor: string } => {
   function HSLToRGB(hsl) {
     const { h, s, l } = hsl;
     const scaledS = s / 100;
@@ -111,17 +121,19 @@ const uuidToColor = (id: string) => {
 // Join the additional critter data with the original object
 const mergeGeoProperties = (
   geoData: FeatureCollection,
-  critterData
+  critterData: ICritter[]
 ): FeatureCollection => {
   // Unpack and merge the GeoJSON Properties with critterbase data
   const mergedData = merge(
-    geoData.features.map((feature) => feature.properties),
-    critterData,
+    geoData.features.map(
+      (feature) => feature.properties
+    ) as GeoJSONPropertyBCTW[],
+    critterData as Record<keyof ICritter, unknown>[],
     'critter_id'
-  ).merged as GeoJSONProperty[];
+  ).merged as GeoJSONPropertyCombined[];
 
   // Update the features array with the merged properties and map_colour
-  const joinedFeatures: GeoJSON[] = geoData.features.map((feature, index) => {
+  const joinedFeatures = geoData.features.map((feature, index) => {
     const critterId = feature.properties.critter_id;
     const mergedProperties = mergedData[index];
 
@@ -272,7 +284,10 @@ const upsertPointTelemetry = async function (
   const fn_name = 'add_historical_telemetry';
   const sql = constructFunctionQuery(
     fn_name,
-    [userIdentifier, records],
+    [
+      userIdentifier,
+      records as Record<keyof HistoricalTelemetryInput, unknown>[],
+    ],
     true,
     S_BCTW
   );
@@ -292,4 +307,9 @@ export {
   getDBCritters,
   upsertPointTelemetry,
   getPingsEstimate,
+  uuidToColor,
+  mergeGeoProperties,
+  getGeoJSONCritterIds,
+  uuidToInt,
+  intToHSL,
 };

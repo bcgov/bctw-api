@@ -2,14 +2,10 @@ import { Request, Response } from 'express';
 import { _insertLotekRecords } from '../apis/vendor/lotek';
 import {
   getLowestNegativeVectronicIdPosition,
-  vectronicRecordExists,
   _insertVectronicRecords,
 } from '../apis/vendor/vectronic';
 
-import {
-  doesVendorDeviceExist,
-  genericToVendorTelemetry,
-} from '../apis/vendor/vendor_helpers';
+import { genericToVendorTelemetry } from '../apis/vendor/vendor_helpers';
 import { IBulkResponse } from '../types/import_types';
 import {
   GenericVendorTelemetry,
@@ -38,27 +34,19 @@ const importTelemetry = async (
   const LotekPL = Payloads.Lotek;
   const VectronicPL = Payloads.Vectronic;
 
-  let idPosition = await getLowestNegativeVectronicIdPosition();
+  const idPosition = await getLowestNegativeVectronicIdPosition();
 
   if (!Array.isArray(telemetry)) {
     return res.status(400).send('Must be an array of telemetry points');
   }
   for (let i = 0; i < telemetry.length; i++) {
     const row = telemetry[i];
-    const {
-      device_id,
-      device_make,
-      latitude,
-      longitude,
-      utm_northing,
-      utm_easting,
-      utm_zone,
-    } = row;
+    const { device_id, device_make } = row;
     const isLotek = device_make === ImportVendors.Lotek;
     const isVectronic = device_make === ImportVendors.Vectronic;
     const errorObj = { row: JSON.parse(JSON.stringify(row)), rownum: i };
     const formattedRow = genericToVendorTelemetry(row, idPosition);
-    const { errors, warnings } = await validateTelemetryRow(row);
+    const { errors } = await validateTelemetryRow(row);
     Object.keys(errors).map((key) =>
       bulkRes.errors.push({ ...errorObj, error: errors[key].desc })
     );
@@ -117,12 +105,12 @@ const importTelemetry = async (
     //If no errors add the item to vendor payload ex: {Payload: {Vectronic: {1234: [row]}}}
     if (isLotek) {
       const record = formattedRow as LotekRawTelemetry;
-      let L = LotekPL[device_id];
+      const L = LotekPL[device_id];
       L ? L.push(record) : (LotekPL[device_id] = [record]);
     }
     if (isVectronic) {
       const record = formattedRow as VectronicRawTelemetry;
-      let V = VectronicPL[device_id];
+      const V = VectronicPL[device_id];
       V ? V.push(record) : (VectronicPL[device_id] = [record]);
     }
   }
