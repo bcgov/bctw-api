@@ -229,6 +229,7 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
   const file = req.file;
   if (!file) {
     res.status(500).send('failed: csv file not found');
+    return;
   }
 
   const onFinishedParsing = async (obj: ParsedXLSXSheetResult[]) => {

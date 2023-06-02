@@ -46,13 +46,15 @@ const retrieveCredentials = async (
  * used in this module as JSON objects received from vendor APIs have
  * camelcase keys, and the database tables for raw telemetry have all lowercase column names
  */
-const ToLowerCaseObjectKeys = <T>(rec: T): T => {
-  const ret = {} as T;
+const ToLowerCaseObjectKeys = <T extends { [s: string]: unknown }>(
+  rec: T
+): T => {
+  const ret = {};
   for (const [key, value] of Object.entries(rec)) {
     const lower = key.toLowerCase();
     ret[lower] = value;
   }
-  return ret;
+  return ret as T;
 };
 
 /**
@@ -121,10 +123,8 @@ const fetchVendorTelemetryData = async (
       );
   }
 
-  const apiResults: (
-    | ManualVendorAPIResponse[]
-    | undefined
-  )[] = await Promise.all(promises);
+  const apiResults: (ManualVendorAPIResponse[] | undefined)[] =
+    await Promise.all(promises);
   const ret: ManualVendorAPIResponse[] = [];
   apiResults.forEach((r) => {
     if (r && Array.isArray(r)) {
