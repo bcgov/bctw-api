@@ -33,8 +33,6 @@ export const app = express()
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
-    // const bctw = req.headers;
-    // console.log({ bctw });
     critterbase.interceptors.request.use((config) => {
       config.headers = req.headers;
       return config;
