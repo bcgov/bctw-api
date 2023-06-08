@@ -14,6 +14,7 @@ import { fn_get_user_id } from './apis/user_api';
 import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
+import { critterbase } from './constants';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
@@ -27,11 +28,17 @@ const unauthorizedURLs: Record<string, string> = {
 // setup the express server
 export const app = express()
   .use(helmet())
-  .use(cors())
+  .use(cors({ credentials: true }))
   .use(express.urlencoded({ extended: true }))
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
+    // const bctw = req.headers;
+    // console.log({ bctw });
+    critterbase.interceptors.request.use((config) => {
+      config.headers = req.headers;
+      return config;
+    });
     // determine if user is authorized
     const [domain, identifier] = getUserIdentifierDomain(req);
     if (!domain) {
