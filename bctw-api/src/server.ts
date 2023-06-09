@@ -34,7 +34,9 @@ export const app = express()
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
     critterbase.interceptors.request.use((config) => {
-      config.headers = req.headers;
+      //config.headers['api-key'] = req.headers['api-key'];
+      config.headers['cookie'] = req.headers['cookie'];
+      console.log(config.headers);
       return config;
     });
     // determine if user is authorized
