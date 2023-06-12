@@ -11,17 +11,17 @@ critterbaseRouter
   .route('/*')
   .get(async (req: Request, res: Response) => {
     const { result, error } = await query(critterbase.get(req.url));
-    return handleResponse(res, result, error);
+    return handleResponse(res, result.rows, error);
   })
   .post(async (req: Request, res: Response) => {
     const { result, error } = await query(critterbase.post(req.url, req.body));
-    return handleResponse(res, result, error);
+    return handleResponse(res, result.rows, error);
   })
   .put(async (req: Request, res: Response) => {
     const { result, error } = await query(critterbase.put(req.url, req.body));
-    return handleResponse(res, result, error);
+    return handleResponse(res, result.rows, error);
   })
   .delete(async (req: Request, res: Response) => {
     const { result, error } = await query(critterbase.delete(req.url));
-    return handleResponse(res, result, error);
+    return handleResponse(res, result.rows, error);
   });
