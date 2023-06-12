@@ -11,9 +11,11 @@ critterbaseRouter
   .route('/*')
   .get(async (req: Request, res: Response) => {
     const { result, error } = await query(critterbase.get(req.url));
+    console.log(req.headers);
     return handleResponse(res, result.rows, error);
   })
   .post(async (req: Request, res: Response) => {
+    console.log(req.headers);
     const { result, error } = await query(critterbase.post(req.url, req.body));
     return handleResponse(res, result.rows, error);
   })
