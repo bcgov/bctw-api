@@ -33,12 +33,12 @@ export const app = express()
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
-    critterbase.interceptors.request.use((config) => {
-      //config.headers['api-key'] = req.headers['api-key'];
-      config.headers['cookie'] = req.headers['cookie'];
-      console.log(config.headers);
-      return config;
-    });
+    // critterbase.interceptors.request.use((config) => {
+    //   //config.headers['api-key'] = req.headers['api-key'];
+    //   config.headers['cookie'] = req.headers['cookie'];
+    //   console.log(config.headers);
+    //   return config;
+    // });
     // determine if user is authorized
     const [domain, identifier] = getUserIdentifierDomain(req);
     if (!domain) {
