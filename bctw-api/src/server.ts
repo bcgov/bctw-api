@@ -15,6 +15,7 @@ import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 import { critterbase } from './constants';
+import { critterbaseRouter } from './apis/critterbaseRouter';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
@@ -32,6 +33,7 @@ export const app = express()
   .use(express.urlencoded({ extended: true }))
   .get('/get-template', getTemplateFile)
   .use(express.json())
+  .use('/cb/', critterbaseRouter)
   .all('*', async (req: Request, res: Response, next) => {
     // critterbase.interceptors.request.use((config) => {
     //   //config.headers['api-key'] = req.headers['api-key'];
@@ -128,7 +130,6 @@ export const app = express()
   .get('/get-collars-keyx', api.retrieveCollarKeyXRelation)
   // vendor
   .post('/fetch-telemetry', api.fetchVendorTelemetryData)
-
   // delete
   .delete('/:type', api.deleteType)
   .delete('/:type/:id', api.deleteType)
