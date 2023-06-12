@@ -33,7 +33,6 @@ export const app = express()
   .use(express.urlencoded({ extended: true }))
   .get('/get-template', getTemplateFile)
   .use(express.json())
-  .use('/cb/', critterbaseRouter)
   .all('*', async (req: Request, res: Response, next) => {
     // critterbase.interceptors.request.use((config) => {
     //   //config.headers['api-key'] = req.headers['api-key'];
@@ -66,6 +65,7 @@ export const app = express()
       res.status(401).send('Unauthorized'); // reject
     }
   })
+  .use('/cb/', critterbaseRouter)
   // map
   .get('/get-critters', api.getDBCritters)
   .get('/get-critter-tracks', api.getCritterTracks)
