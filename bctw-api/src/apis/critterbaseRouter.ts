@@ -1,10 +1,12 @@
-import express, { NextFunction, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { critterbase } from '../constants';
 import { query } from '../database/query';
 import { handleResponse } from '../database/requests';
 
 export const critterbaseRouter = express.Router();
-
+/*
+ * Router for direct Critterbase calls
+ */
 critterbaseRouter
   .route('/*')
   .get(async (req: Request, res: Response) => {
