@@ -114,8 +114,7 @@ const getUser = async function (
     'signup', 
     {keycloak_uuid: results.keycloak_guid, system_user_id: results.username, system_name: 'CRITTERBASE'}
   );
-  console.log('data back from signup' + JSON.stringify(signup.data));
-  return res.send({...results, ...signup.data});
+  return res.send({...results, critterbase_user_id: signup.data.user_id});
 };
 
 /**
