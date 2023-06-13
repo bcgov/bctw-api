@@ -43,9 +43,9 @@ const MORTALITY_SMS =
 
 const critterbase = axios.create({
   baseURL: CB_API_URL,
-  headers: {
-    'API-KEY': CB_API_KEY,
-  },
+  // headers: {
+  //   'api-key': CB_API_KEY,
+  // },
 });
 
 // critterbase.interceptors.response.use(

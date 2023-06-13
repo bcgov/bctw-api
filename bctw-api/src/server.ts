@@ -14,8 +14,9 @@ import { fn_get_user_id } from './apis/user_api';
 import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
-import { critterbase } from './constants';
 import { critterbaseRouter } from './apis/critterbaseRouter';
+import { critterbase } from './constants';
+import { AxiosRequestConfig } from 'axios';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
@@ -25,7 +26,18 @@ const unauthorizedURLs: Record<string, string> = {
   status: '/get-onboard-status',
   submit: '/submit-onboarding-request',
 };
-
+const setHeaders = (
+  config: AxiosRequestConfig,
+  req: Request,
+  headers: string[]
+) => {
+  headers.forEach((head) => {
+    if (req.headers?.[head]) {
+      config.headers[head] = req.headers[head];
+    }
+  });
+  return config;
+};
 // setup the express server
 export const app = express()
   .use(helmet())
@@ -34,12 +46,9 @@ export const app = express()
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
-    // critterbase.interceptors.request.use((config) => {
-    //   //config.headers['api-key'] = req.headers['api-key'];
-    //   config.headers['cookie'] = req.headers['cookie'];
-    //   console.log(config.headers);
-    //   return config;
-    // });
+    critterbase.interceptors.request.use((config) =>
+      setHeaders(config, req, ['keycloak-uuid', 'user-id', 'api-key'])
+    );
     // determine if user is authorized
     const [domain, identifier] = getUserIdentifierDomain(req);
     if (!domain) {
