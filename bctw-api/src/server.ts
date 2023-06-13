@@ -46,9 +46,18 @@ export const app = express()
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
-    critterbase.interceptors.request.use((config) =>
-      setHeaders(config, req, ['keycloak-uuid', 'user-id', 'api-key'])
-    );
+    const reqHeaders = req.headers;
+    console.log({ reqHeaders });
+    critterbase.interceptors.request.use((config) => {
+      const _config = setHeaders(config, req, [
+        'keycloak-uuid',
+        'user-id',
+        'api-key',
+      ]);
+      const cbHeaders = _config.headers;
+      console.log({ cbHeaders });
+      return _config;
+    });
     // determine if user is authorized
     const [domain, identifier] = getUserIdentifierDomain(req);
     if (!domain) {
