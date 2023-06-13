@@ -14,6 +14,7 @@ import {
   MISSING_USERNAME,
 } from '../database/requests';
 import { eCritterPermission, IUserInput, eUserRole } from '../types/user';
+import { QueryResultRow } from 'pg';
 
 interface IUserProps {
   user: IUserInput;
@@ -108,8 +109,13 @@ const getUser = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  const results = getRowResults(result, fn_name, true);
-  return res.send(results);
+  const results: QueryResultRow = getRowResults(result, fn_name, true);
+  const signup = await critterbase.post(
+    'signup', 
+    {keycloak_uuid: results.keycloak_guid, system_user_id: results.username, system_name: 'CRITTERBASE'}
+  );
+  console.log('data back from signup' + JSON.stringify(signup.data));
+  return res.send({...results, ...signup.data});
 };
 
 /**

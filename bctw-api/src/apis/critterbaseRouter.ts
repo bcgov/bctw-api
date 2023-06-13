@@ -10,6 +10,7 @@ export const critterbaseRouter = express.Router();
 critterbaseRouter
   .route('/*')
   .get(async (req: Request, res: Response) => {
+    console.log(`Params in GET request: ` + JSON.stringify(req.query));
     const { result, error } = await query(critterbase.get(req.url));
     return handleResponse(res, result.rows, error);
   })

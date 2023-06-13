@@ -207,10 +207,8 @@ const query = async (
   } catch (e) {
     isError = true;
     if (isSQL) {
-      console.log('Errored in SQL path.');
       error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
     } else {
-      console.log('Errored in non - SQL path.');
       error = new Error(formatAxiosError(e as AxiosError));
     }
   }
@@ -432,9 +430,9 @@ const mergeQueries = async <
     mergeKey
   );
   if (!allMerged) {
-    console.log(
+    /*console.log(
       `not all results from bArray were merged into aArray using "${mergeKey}"`
-    );
+    );*/
   }
   return { merged, allMerged, error, isError: false };
 };
