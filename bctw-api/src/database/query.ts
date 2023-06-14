@@ -70,15 +70,12 @@ const constructFunctionQuery = (
     } else if (p instanceof Date && typeof p.getMonth === 'function') {
       // p is a date object
       newParams.push(to_pg_timestamp(p));
+    } else if (typeof p === 'object' && expectsObjAsArray) {
+      newParams.push(obj_to_pg_array(p as Record<string, unknown>));
     } else if (Array.isArray(p)) {
       newParams.push(to_pg_array(p));
     } else if (typeof p === 'object') {
-      // here, p has to be of type Record<string, unknown>
-      if (expectsObjAsArray) {
-        newParams.push(obj_to_pg_array(p as Record<string, unknown>));
-      } else {
-        newParams.push(to_pg_obj(p as Record<string, unknown>));
-      }
+      newParams.push(to_pg_obj(p as Record<string, unknown>));
     }
   });
   return `select ${
