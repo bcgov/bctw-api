@@ -9,9 +9,16 @@ const DISABLE_PERMISSION_EMAIL =
 const BCTW_EMAIL = process.env.BCTW_EMAIL ?? 'bctw@gov.bc.ca';
 const CB_API_URL = process.env.CRITTERBASE_API ?? 'http://localhost:8080/api';
 const CB_API_KEY = process.env.CRITTERBASE_API_KEY ?? 'missing API KEY';
+const CB_DEV_USER_ID =
+  process.env.CRITTERBASE_DEV_USER_ID ?? 'missing dev critterbase user uuid';
+const CB_DEV_KEYCLOAK_UUID =
+  process.env.CRITTERBASE_DEV_KEYCLOAK_UUID ?? 'missing dev keycloak uuid';
 
 const RAW_LOTEK = 'telemetry_api_lotek';
 const RAW_VECTRONIC = 'telemetry_api_vectronic';
+
+const IS_DEV = process.env.NODE_ENV === 'development';
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 const PERMISSION_APPROVED_ID =
   process.env.BCTW_GCNOTIFY_EMAIL_ANIMAL_PERMISSION_APPROVED ??
@@ -41,21 +48,20 @@ const MORTALITY_SMS =
   process.env.BCTW_GCNOTIFY_SMS_MORTALITY_DETECTED ??
   'e0ad95d9-56f3-4ad5-bab9-85c31ddef926';
 
+const CB_PROD_HEADERS = {
+  'api-key': CB_API_KEY,
+};
+
+const CB_DEV_HEADERS = {
+  'user-id': CB_DEV_USER_ID,
+  'keycloak-uuid': CB_DEV_KEYCLOAK_UUID,
+  ...CB_PROD_HEADERS,
+};
+
 const critterbase = axios.create({
   baseURL: CB_API_URL,
-  // headers: {
-  //   'api-key': CB_API_KEY,
-  // },
+  headers: IS_DEV ? CB_DEV_HEADERS : CB_PROD_HEADERS,
 });
-
-// critterbase.interceptors.response.use(
-//   (res) => res,
-//   (err) => {
-//     const formattedErr = formatAxiosError(err);
-//     console.log(formattedErr);
-//     return formattedErr;
-//   }
-// );
 
 export {
   S_API,
@@ -75,4 +81,6 @@ export {
   RAW_VECTRONIC,
   CB_API_URL,
   critterbase,
+  IS_PROD,
+  IS_DEV,
 };

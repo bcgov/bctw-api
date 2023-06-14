@@ -15,7 +15,7 @@ import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 import { critterbaseRouter } from './apis/critterbaseRouter';
-import { critterbase } from './constants';
+import { IS_PROD, critterbase } from './constants';
 import { AxiosRequestConfig } from 'axios';
 
 // the server location for uploaded files
@@ -46,18 +46,13 @@ export const app = express()
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
-    const reqHeaders = req.headers;
-    console.log({ reqHeaders });
-    critterbase.interceptors.request.use((config) => {
-      const _config = setHeaders(config, req, [
-        'keycloak-uuid',
-        'user-id',
-        'api-key',
-      ]);
-      const cbHeaders = _config.headers;
-      console.log({ cbHeaders });
-      return _config;
-    });
+    //If production the headers come from the proxied API requests.
+    if (IS_PROD) {
+      critterbase.interceptors.request.use((config) =>
+        setHeaders(config, req, ['keycloak-uuid', 'user-id', 'api-key'])
+      );
+    }
+
     // determine if user is authorized
     const [domain, identifier] = getUserIdentifierDomain(req);
     if (!domain) {
