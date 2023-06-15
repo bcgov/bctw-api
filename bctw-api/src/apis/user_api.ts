@@ -112,7 +112,7 @@ const getUser = async function (
   const results: QueryResultRow = getRowResults(result, fn_name, true);
   const signup = await critterbase.post(
     'signup', 
-    {keycloak_uuid: results.keycloak_guid, system_user_id: results.id, system_name: 'CRITTERBASE'}
+    {keycloak_uuid: results.keycloak_guid, system_user_id: String(results.id), system_name: 'CRITTERBASE'}
   );
   return res.send({...results, critterbase_user_id: signup.data.user_id});
 };
