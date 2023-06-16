@@ -9,6 +9,7 @@ import { IAnimalDeviceMetadata } from '../types/import_types';
 import {
   cleanupUploadsDir,
   determineExistingAnimal,
+  getCodeHeaderName,
   getCritterbaseMarkingsFromRow,
   isOnSameDay,
   mapXlsxHeader,
@@ -596,7 +597,7 @@ const getTemplateFile = async function (
 
   for (let header_idx = 1; header_idx < headerRow.cellCount; header_idx++) {
     const cell = headerRow.getCell(header_idx);
-    const code_header = mapXlsxHeader(cell.text);
+    const code_header = getCodeHeaderName(cell.text);
     if (code_header_names.includes(code_header)) {
       const sql = constructFunctionQuery(
         'get_code',

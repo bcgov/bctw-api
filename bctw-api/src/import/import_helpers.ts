@@ -64,10 +64,25 @@ const mapXlsxHeader = (header: string): string => {
       return 'implant_device_id';
     case 'Animal Mortality Date':
       return 'mortality_date';
+    case 'Fix Interval Unit':
+      return 'fix_interval_rate';
     default:
       return trimmed.toLowerCase().split(' ').join('_');
   }
 };
+
+//Had to add this function for this one special case where the code needed here does not match the db field OR the custom header name in the template
+//Kind of sucks having all these different layers of logic for handling these header names but here we are. 
+//Note that I did not modify the return value in mapXlsxHeader because it should stay as fix_interval_rate when finally inserting this row into the DB
+const getCodeHeaderName = (raw_header: string) => {
+  const mappedHeader = mapXlsxHeader(raw_header);
+  if(mappedHeader === 'fix_interval_rate') {
+    return 'fix_unit';
+  }
+  else {
+    return mappedHeader;
+  }
+}
 
 /**
  * deletes an uploaded csv file
@@ -226,4 +241,5 @@ export {
   projectUTMToLatLon,
   determineExistingAnimal,
   getCritterbaseMarkingsFromRow,
+  getCodeHeaderName
 };

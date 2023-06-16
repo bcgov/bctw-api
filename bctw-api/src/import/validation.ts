@@ -15,7 +15,7 @@ import {
   ParsedXLSXCellError,
   ParsedXLSXRowResult,
 } from './csv';
-import { dateRangesOverlap, determineExistingAnimal } from './import_helpers';
+import { dateRangesOverlap, determineExistingAnimal, getCodeHeaderName } from './import_helpers';
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
@@ -28,10 +28,11 @@ const validateGenericRow = async (
   const { fields: constants } = ErrorMsgs;
 
   for (const key of Object.keys(row)) {
-    if (codeFields.includes(key)) {
+    const key_as_code_header = getCodeHeaderName(key);
+    if (codeFields.includes(key_as_code_header)) {
       const sql = constructFunctionQuery(
         'get_code',
-        [user, key, 0],
+        [user, key_as_code_header, 0],
         false,
         S_API
       );
