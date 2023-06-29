@@ -10,6 +10,7 @@ import {
 import { QResult } from '../types/query';
 import { IBulkResponse } from '../types/import_types';
 import { getUserIdentifier } from '../database/requests';
+import AdmZip from 'adm-zip';
 const readPromise = promisify(readFile);
 
 const VECT_KEY_UPSERT_FN = `upsert_vectronic_key`;
@@ -94,40 +95,51 @@ const parseVectronicKeyRegistrationXML = async (
   req: Request,
   res: Response
 ): Promise<Response<IBulkResponse>> => {
+  const ZIP = 'application/x-zip-compressed';
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   const files = req.files as Express.Multer.File[];
-  //console.log(files[0]);
   const promises: Promise<QResult>[] = [];
+  const buffers: string[] = [];
 
   if (!files || !files.length) {
     bulkResp.errors.push({
       row: '',
-      error: 'no attached files found',
+      error: 'no keyX files imported',
       rownum: -1,
     });
     return res.send(bulkResp);
   }
+
+  // sift through keyX imports and unzip all zipped entries
+  for (const file of files) {
+    if (file.mimetype === ZIP) {
+      const zip = new AdmZip(file.path);
+      const zipEntries = zip.getEntries();
+      zipEntries.forEach((z) => {
+        buffers.push(z.getData().toString('utf8'));
+      });
+    } else {
+      const regFile = await readPromise(file.path, { encoding: 'utf-8' });
+      buffers.push(regFile);
+    }
+  }
+
   // iterate keyx files, creating a promise for each file
   try {
-    for (let idx = 0; idx < files.length; idx++) {
-      const file = await readPromise(files[idx].path, { encoding: 'utf-8' });
-      // console.log('parseVectronicKeyRegistrationXML xml file read:', file);
+    for (let idx = 0; idx < buffers.length; idx++) {
+      const buffer = buffers[idx];
       const asJson: IKeyXAsJson = await new xml2js.Parser().parseStringPromise(
-        file
+        buffer
       );
-      const {
-        idcollar,
-        comtype,
-        idcom,
-        collarkey,
-        collartype,
-      } = new VectronicKeyxRow(asJson);
+
+      const { idcollar, comtype, idcom, collarkey, collartype } =
+        new VectronicKeyxRow(asJson);
+
       const sql = constructFunctionQuery(
         VECT_KEY_UPSERT_FN,
         [idcollar, comtype, idcom, collarkey, collartype],
         false
       );
-      // console.log(sql);
       promises.push(query(sql, '', true));
     }
   } catch (err) {
