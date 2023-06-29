@@ -13,6 +13,7 @@ import {
   getCritterbaseMarkingsFromRow,
   isOnSameDay,
   mapXlsxHeader,
+  markingInferDuplicate,
   projectUTMToLatLon,
   removeEmptyProps,
 } from './import_helpers';
@@ -25,14 +26,16 @@ import {
   validateAnimalDeviceData,
   validateGenericRow,
   validateTelemetryRow,
+  validateUniqueAnimal,
 } from './validation';
 
 import { unlinkSync } from 'fs';
 import { pgPool } from '../database/pg';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4, validate as uuid_validate } from 'uuid';
 import dayjs from 'dayjs';
 import {
   CritterUpsert,
+  DetailedCritter,
   IBulkCritterbasePayload,
   MarkingUpsert,
 } from '../types/critter';
@@ -204,6 +207,11 @@ const parseXlsx = async (
           const errswrns = await validateAnimalDeviceData(rowObj, user);
           rowObj.errors = { ...rowObj.errors, ...errswrns.errors };
           rowObj.warnings.push(...errswrns.warnings);
+          const possible_critter_ids = await validateUniqueAnimal(
+            rowObj.row as IAnimalDeviceMetadata
+          );
+          (rowObj.row as IAnimalDeviceMetadata).possible_critter_ids = possible_critter_ids;
+          (rowObj.row as IAnimalDeviceMetadata).selected_critter_id = possible_critter_ids?.[0];
         }
         if (sheet.name == telemetrySheetName) {
           const errswrns = await validateTelemetryRow(
@@ -290,13 +298,16 @@ const createNewCaptureFromRow = (
 const createNewMarkingsFromRow = (
   critter_id: string,
   capture_id: string,
+  capture_time: string,
   incomingCritter: IAnimalDeviceMetadata
 ) => {
   const bctw_markings = getCritterbaseMarkingsFromRow(incomingCritter);
   const critterbase_markings: MarkingUpsert[] = [];
   if (bctw_markings.length) {
     for (const m of bctw_markings) {
-      (m.critter_id = critter_id), (m.capture_id = capture_id);
+      m.critter_id = critter_id;
+      m.capture_id = capture_id;
+      m.attached_timestamp = capture_time;
       critterbase_markings.push(m);
     }
   }
@@ -370,7 +381,7 @@ const insertTemplateAnimalIntoCritterbase = async (
   bulk_payload.captures.push(capture);
 
   bulk_payload.markings.push(
-    ...createNewMarkingsFromRow(new_critter_id, capture.capture_id, incomingCritter)
+    ...createNewMarkingsFromRow(new_critter_id, capture.capture_id, capture.capture_timestamp, incomingCritter)
   );
 
   const mortality = createNewMortalityFromRow(new_critter_id, incomingCritter);
@@ -382,7 +393,7 @@ const insertTemplateAnimalIntoCritterbase = async (
 };
 
 const upsertBulkv2 = async (id: string, req: Request) => {
-  const responseArray: unknown[] = [];
+  const responseArray: Record<string, unknown>[] = [];
   const client = await pgPool.connect(); //Using client directly here, since we want this entire procedure to be wrapped in a transaction.
   await client.query('BEGIN');
   try {
@@ -416,7 +427,11 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       const resRows = getRowResults(res, 'get_device_id_for_bulk_import');
       const link_collar_id = resRows[0];
 
-      const existing_critter = await determineExistingAnimal(pair);
+      let existing_critter: DetailedCritter | null = null;
+      if(pair.selected_critter_id && uuid_validate(pair.selected_critter_id)) {
+        const detail = await critterbase.get(`/critters/${pair.selected_critter_id}?format=detailed`);
+        existing_critter = detail.data;
+      }
 
       let link_critter_id;
       if (existing_critter == null) {
@@ -448,7 +463,7 @@ const upsertBulkv2 = async (id: string, req: Request) => {
         link_critter_id = existing_critter.critter_id;
         const existing_captures = existing_critter.capture;
         const existing_mortalities = existing_critter.mortality;
-        //const existing_markings: any[] = existing_critter.marking; <-- Maybe do something more intelligent with the markings at some point.
+        //const existing_markings = existing_critter.marking;
         if (
           existing_captures.every(
             (a) =>
@@ -468,13 +483,7 @@ const upsertBulkv2 = async (id: string, req: Request) => {
             location?.location_id
           );
           bulk_payload.captures.push(capture);
-          bulk_payload.markings.push(
-            ...createNewMarkingsFromRow(
-              existing_critter.critter_id,
-              capture.capture_id,
-              pair
-            )
-          );
+          bulk_payload.markings.push(...createNewMarkingsFromRow(existing_critter.critter_id, capture.capture_id, capture.capture_timestamp, pair));
         }
         if (
           existing_mortalities.every(
@@ -503,7 +512,7 @@ const upsertBulkv2 = async (id: string, req: Request) => {
         `SELECT bctw.link_collar_to_animal('${id}', '${link_collar_id}', '${link_critter_id}', '${data_start}', '${data_start}', ${formattedEnd}, ${formattedEnd})`
       );
       const link_row = getRowResults(link_res, 'link_collar_to_animal')[0];
-      console.log(`link_row was ${JSON.stringify(link_row)}`);
+      
       if (link_row.error) {
         throw Error(
           `Could not link collar id ${link_collar_id} with critter id ${link_critter_id}`
@@ -522,6 +531,13 @@ const upsertBulkv2 = async (id: string, req: Request) => {
     await client.query('ROLLBACK');
     throw Error(JSON.stringify(e));
   }
+
+  /*for(const r of responseArray) {
+    console.log(`CALL purge_animal_device_assignment('${r.assignment_id}');`);
+  }
+  for(const r of responseArray) {
+    console.log(`CALL purge_critter('${r.critter_id}');`);
+  }*/
   return responseArray;
 };
 

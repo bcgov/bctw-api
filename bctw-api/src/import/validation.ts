@@ -153,10 +153,7 @@ const validateAnimalDeviceData = async (
     rowres.row as IAnimalDeviceMetadata,
     user
   );
-  const unqanim = await validateUniqueAnimal(
-    rowres.row as IAnimalDeviceMetadata
-  );
-  if (unqanim.is_error) {
+  /*if (unqanim.is_error) {
     ret.errors.identifier = {
       desc: ErrorMsgs.metadata.badMarkings,
       help: ErrorMsgs.metadata.badMarkings,
@@ -168,7 +165,7 @@ const validateAnimalDeviceData = async (
         (rowres.row as IAnimalDeviceMetadata).species
       ),
     });
-  }
+  }*/
 
   const animdev = rowres.row as IAnimalDeviceMetadata;
   if (animdev.retrieval_date && animdev.capture_date > animdev.retrieval_date) {
@@ -267,14 +264,9 @@ const validateAnimalDeviceRequiredFields = (
 
 const validateUniqueAnimal = async (
   row: IAnimalDeviceMetadata
-): Promise<UniqueAnimalResult> => {
-  try {
-    await determineExistingAnimal(row);
-    return { is_new: true };
-  } catch (e) {
-    console.log(e);
-    return { is_error: true };
-  }
+): Promise<string[]> => {
+    const possible_critter_ids = await determineExistingAnimal(row);
+    return possible_critter_ids;
 };
 
-export { validateTelemetryRow, validateGenericRow, validateAnimalDeviceData };
+export { validateTelemetryRow, validateGenericRow, validateAnimalDeviceData, validateUniqueAnimal };
