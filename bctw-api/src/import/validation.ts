@@ -15,11 +15,12 @@ import {
   ParsedXLSXCellError,
   ParsedXLSXRowResult,
 } from './csv';
-import { dateRangesOverlap, determineExistingAnimal, getCodeHeaderName } from './import_helpers';
+import { dateRangesOverlap, determineExistingAnimal, getCodeHeaderName, getValuesForCodeHeader } from './import_helpers';
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
   codeFields: string[],
+  cbCodeFields: Record<string, string>,
   columnTypes: ColumnTypeMapping,
   user: string
 ): Promise<ParsedXLSXCellError> => {
@@ -29,17 +30,8 @@ const validateGenericRow = async (
 
   for (const key of Object.keys(row)) {
     const key_as_code_header = getCodeHeaderName(key);
-    if (codeFields.includes(key_as_code_header)) {
-      const sql = constructFunctionQuery(
-        'get_code',
-        [user, key_as_code_header, 0],
-        false,
-        S_API
-      );
-      const { result } = await query(sql, 'failed to retrieve codes');
-      const code_descriptions = getRowResults(result, 'get_code').map(
-        (o) => o.description
-      );
+    const code_descriptions = await getValuesForCodeHeader(key_as_code_header, user, codeFields, cbCodeFields);
+    if (code_descriptions.length) {
       if (!code_descriptions.includes(row[key])) {
         errors[key] = {
           ...constants.code,
