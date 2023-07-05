@@ -46,6 +46,10 @@ export const app = express()
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
+    //TODO Make constant IS_TEST
+    if (process.env.NODE_ENV === 'test') {
+      return next();
+    }
     //If production the headers come from the proxied API requests.
     if (IS_PROD) {
       critterbase.interceptors.request.use((config) =>
