@@ -329,7 +329,7 @@ const createNewMortalityFromRow = (
   return null;
 };
 
-const insertTemplateAnimalIntoCritterbase = async (
+const appendNewAnimalToBulkPayload = async (
   incomingCritter: IAnimalDeviceMetadata,
   bulk_payload: IBulkCritterbasePayload
 ) => {
@@ -395,27 +395,115 @@ const insertTemplateAnimalIntoCritterbase = async (
 const upsertBulkv2 = async (id: string, req: Request) => {
   const responseArray: Record<string, unknown>[] = [];
   const client = await pgPool.connect(); //Using client directly here, since we want this entire procedure to be wrapped in a transaction.
-  await client.query('BEGIN');
-  try {
-    let user_id = id;
-    if (req.body.user_id) {
-      const overrideSql = `SELECT bctw.get_user_keycloak(${req.body.user_id})`;
-      const res = await client.query(overrideSql);
-      user_id = getRowResults(res, 'get_user_keycloak')[0];
+ 
+  let user_id = id;
+  if (req.body.user_id) {
+    const overrideSql = `SELECT bctw.get_user_keycloak(${req.body.user_id})`;
+    const res = await client.query(overrideSql);
+    user_id = getRowResults(res, 'get_user_keycloak')[0];
+  }
+
+  const bulk_payload: IBulkCritterbasePayload = {
+    critters: [],
+    collections: [],
+    markings: [],
+    locations: [],
+    captures: [],
+    mortalities: [],
+  };
+
+  const pairs: IAnimalDeviceMetadata[] = req.body.payload;
+  const critter_ids: string[] = [];
+
+  for (const pair of pairs) {
+    let existing_critter: DetailedCritter | null = null;
+    if(pair.selected_critter_id && uuid_validate(pair.selected_critter_id)) {
+      const detail = await critterbase.get(`/critters/${pair.selected_critter_id}?format=detailed`);
+      existing_critter = detail.data;
     }
 
-    const bulk_payload: IBulkCritterbasePayload = {
-      critters: [],
-      collections: [],
-      markings: [],
-      locations: [],
-      captures: [],
-      mortalities: [],
-    };
+    let link_critter_id;
+    if (existing_critter == null) {
+      //Make new critter
+      const new_critter_id = await appendNewAnimalToBulkPayload(
+        pair,
+        bulk_payload
+      );
+      link_critter_id = new_critter_id;
+    } else {
+      const res = await client.query(
+        `SELECT bctw.get_user_animal_permission('${id}', '${existing_critter.critter_id}')`
+      );
+      const curr_permission_level = getRowResults(
+        res,
+        'get_user_animal_permission'
+      )[0];
+      if (
+        !curr_permission_level ||
+        ['observer', 'none', 'editor'].some(
+          (a) => a === curr_permission_level
+        )
+      ) {
+        throw Error(
+          'You do not have permission to manage the critter with critter id ' +
+            link_critter_id
+        );
+      }
+      link_critter_id = existing_critter.critter_id;
+      const existing_captures = existing_critter.capture;
+      const existing_mortalities = existing_critter.mortality;
+      //const existing_markings = existing_critter.marking;
+      if (
+        existing_captures.every(
+          (a) =>
+            !isOnSameDay(
+              a.capture_timestamp,
+              (pair.capture_date as unknown) as string
+            )
+        )
+      ) {
+        const location = createNewLocationFromRow(pair);
+        if (location) {
+          bulk_payload.locations.push(location);
+        }
+        const capture = createNewCaptureFromRow(
+          existing_critter.critter_id,
+          pair,
+          location?.location_id
+        );
+        bulk_payload.captures.push(capture);
+        bulk_payload.markings.push(...createNewMarkingsFromRow(existing_critter.critter_id, capture.capture_id, capture.capture_timestamp, pair));
+      }
+      if (
+        existing_mortalities.every(
+          (a) =>
+            !isOnSameDay(
+              a.mortality_timestamp,
+              (pair.mortality_date as unknown) as string
+            )
+        )
+      ) {
+        const mortality = createNewMortalityFromRow(
+          existing_critter.critter_id,
+          pair
+        );
+        if (mortality) {
+          bulk_payload.mortalities.push(mortality);
+        }
+      }
+    }
+    critter_ids.push(link_critter_id);
+  }
+  
+  if(critter_ids.length !== pairs.length) {
+    throw Error('Failed to create a critter_id for one of these pairs.');
+  }
 
-    const pairs: IAnimalDeviceMetadata[] = req.body.payload;
-
-    for (const pair of pairs) {
+  try {
+    await client.query('BEGIN');
+    for (let i = 0; i < pairs.length; i ++) {
+      const pair = pairs[i];
+      const link_critter_id = critter_ids[i]; 
       const data_start = pair.capture_date;
       const data_end = pair.retrieval_date ?? pair.mortality_date ?? null;
       const formattedEnd = data_end ? "'" + data_end + "'" : null;
@@ -426,83 +514,6 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       const res = await client.query(deviceIdBulkSQL);
       const resRows = getRowResults(res, 'get_device_id_for_bulk_import');
       const link_collar_id = resRows[0];
-
-      let existing_critter: DetailedCritter | null = null;
-      if(pair.selected_critter_id && uuid_validate(pair.selected_critter_id)) {
-        const detail = await critterbase.get(`/critters/${pair.selected_critter_id}?format=detailed`);
-        existing_critter = detail.data;
-      }
-
-      let link_critter_id;
-      if (existing_critter == null) {
-        //Make new critter
-        const new_critter_id = await insertTemplateAnimalIntoCritterbase(
-          pair,
-          bulk_payload
-        );
-        link_critter_id = new_critter_id;
-      } else {
-        const res = await client.query(
-          `SELECT bctw.get_user_animal_permission('${id}', '${existing_critter.critter_id}')`
-        );
-        const curr_permission_level = getRowResults(
-          res,
-          'get_user_animal_permission'
-        )[0];
-        if (
-          !curr_permission_level ||
-          ['observer', 'none', 'editor'].some(
-            (a) => a === curr_permission_level
-          )
-        ) {
-          throw Error(
-            'You do not have permission to manage the critter with critter id ' +
-              link_critter_id
-          );
-        }
-        link_critter_id = existing_critter.critter_id;
-        const existing_captures = existing_critter.capture;
-        const existing_mortalities = existing_critter.mortality;
-        //const existing_markings = existing_critter.marking;
-        if (
-          existing_captures.every(
-            (a) =>
-              !isOnSameDay(
-                a.capture_timestamp,
-                (pair.capture_date as unknown) as string
-              )
-          )
-        ) {
-          const location = createNewLocationFromRow(pair);
-          if (location) {
-            bulk_payload.locations.push(location);
-          }
-          const capture = createNewCaptureFromRow(
-            existing_critter.critter_id,
-            pair,
-            location?.location_id
-          );
-          bulk_payload.captures.push(capture);
-          bulk_payload.markings.push(...createNewMarkingsFromRow(existing_critter.critter_id, capture.capture_id, capture.capture_timestamp, pair));
-        }
-        if (
-          existing_mortalities.every(
-            (a) =>
-              !isOnSameDay(
-                a.mortality_timestamp,
-                (pair.mortality_date as unknown) as string
-              )
-          )
-        ) {
-          const mortality = createNewMortalityFromRow(
-            existing_critter.critter_id,
-            pair
-          );
-          if (mortality) {
-            bulk_payload.mortalities.push(mortality);
-          }
-        }
-      }
 
       await client.query(`INSERT INTO bctw.user_animal_assignment 
         (user_id, critter_id, created_by_user_id, permission_type)
@@ -532,12 +543,12 @@ const upsertBulkv2 = async (id: string, req: Request) => {
     throw Error(JSON.stringify(e));
   }
 
-  /*for(const r of responseArray) {
+  for(const r of responseArray) {
     console.log(`CALL purge_animal_device_assignment('${r.assignment_id}');`);
   }
   for(const r of responseArray) {
     console.log(`CALL purge_critter('${r.critter_id}');`);
-  }*/
+  }
   return responseArray;
 };
 
