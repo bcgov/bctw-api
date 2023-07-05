@@ -5,7 +5,11 @@ import {
   query,
 } from '../database/query';
 import { getUserIdentifier } from '../database/requests';
-import { IAttachDeviceProps, IRemoveDeviceProps, IChangeDataLifeProps } from '../types/attachment';
+import {
+  IAttachDeviceProps,
+  IRemoveDeviceProps,
+  IChangeDataLifeProps,
+} from '../types/attachment';
 
 /**
  * contains API endpoints that handle the animal/device attachment
@@ -25,7 +29,14 @@ const attachDevice = async function (
   res: Response
 ): Promise<Response> {
   const body: IAttachDeviceProps = req.body;
-  const { collar_id, critter_id, attachment_start, data_life_start, attachment_end, data_life_end} = body;
+  const {
+    collar_id,
+    critter_id,
+    attachment_start,
+    data_life_start,
+    attachment_end,
+    data_life_end,
+  } = body;
 
   if (!collar_id || !critter_id) {
     return res.status(500).send('collar_id & animal_id must be supplied');
@@ -33,57 +44,82 @@ const attachDevice = async function (
   if (!attachment_start) {
     return res.status(500).send('must supply attachment start');
   }
-  const sql = constructFunctionQuery(pg_link_collar_fn, [getUserIdentifier(req), collar_id, critter_id, attachment_start, data_life_start, attachment_end, data_life_end]);
+  const sql = constructFunctionQuery(pg_link_collar_fn, [
+    getUserIdentifier(req),
+    collar_id,
+    critter_id,
+    attachment_start,
+    data_life_start,
+    attachment_end,
+    data_life_end,
+  ]);
   const { result, error, isError } = await query(sql, '', true);
 
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, pg_link_collar_fn, true));
-}
+};
 
 /**
- * removes a device from an animal 
+ * removes a device from an animal
  */
 const unattachDevice = async function (
   req: Request,
   res: Response
-) : Promise<Response> {
-
+): Promise<Response> {
   const body: IRemoveDeviceProps = req.body;
-  const { assignment_id, data_life_end, attachment_end} = body;
-  const sql = constructFunctionQuery(pg_unlink_collar_fn, [getUserIdentifier(req), assignment_id, attachment_end, data_life_end]);
-  const { result, error, isError } = await query(sql, 'unable to remove collar', true);
+  const { assignment_id, data_life_end, attachment_end } = body;
+  const sql = constructFunctionQuery(pg_unlink_collar_fn, [
+    getUserIdentifier(req),
+    assignment_id,
+    attachment_end,
+    data_life_end,
+  ]);
+  const { result, error, isError } = await query(
+    sql,
+    'unable to remove collar',
+    true
+  );
 
   if (isError) {
     return res.status(500).send(error.message);
   }
   // console.log(sql);
   return res.send(getRowResults(result, pg_unlink_collar_fn, true));
-}
+};
 
 /**
- * updates a device attachment's data life - the inner bounds of what a user consider's valid data 
+ * updates a device attachment's data life - the inner bounds of what a user consider's valid data
  * the attachment_start / end dates cannot be changed.
  * start of data life must be after the attachment start, and data life end must be before attachment_end.
- * data life end cannot be changed while the device is still attached. 
+ * data life end cannot be changed while the device is still attached.
  * data life start and end can only be modified once by a non-admin user.
  * @returns collar_animal_assignment row
  */
 const updateDataLife = async function (
   req: Request,
   res: Response
-) : Promise<Response> {
+): Promise<Response> {
   const body: IChangeDataLifeProps = req.body;
   const { assignment_id, data_life_start, data_life_end } = body;
-  const sql = constructFunctionQuery(pg_update_data_life_fn, [getUserIdentifier(req), assignment_id, data_life_start, data_life_end]);
-  const { result, error, isError } = await query(sql, 'unable to change data life', true);
+  const sql = constructFunctionQuery(pg_update_data_life_fn, [
+    getUserIdentifier(req),
+    assignment_id,
+    data_life_start,
+    data_life_end,
+  ]);
+  const { result, error, isError } = await query(
+    sql,
+    'unable to change data life',
+    true
+  );
 
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, pg_update_data_life_fn, true));
-}
+};
 
 /**
  * @param req.params.animal_id the critter_id of the history to retrieve
@@ -99,7 +135,10 @@ const getCollarAssignmentHistory = async function (
       .status(500)
       .send('must supply critter_id to retrieve collar history');
   }
-  const sql = constructFunctionQuery(pg_get_attachment_history, [getUserIdentifier(req), critterId]);
+  const sql = constructFunctionQuery(pg_get_attachment_history, [
+    getUserIdentifier(req),
+    critterId,
+  ]);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
