@@ -6,13 +6,13 @@ import proj4 from 'proj4';
 import { critterbase } from '../constants';
 import { query } from '../database/query';
 import {
-  DetailedCritter,
   CritterUpsert,
   MarkingUpsert,
   IMarking,
 } from '../types/critter';
 import { IAnimalDeviceMetadata } from '../types/import_types';
 import { GenericVendorTelemetry } from '../types/vendor';
+import { IAnimal } from '../types/animal';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -192,7 +192,7 @@ const formatTemplateRowForUniqueLookup = (row: IAnimalDeviceMetadata) => {
 
 const determineExistingAnimal = async (
   incomingCritter: IAnimalDeviceMetadata
-): Promise<string[]> => {
+): Promise<Partial<IAnimal>[]> => {
   const critterbase_critters = await query(
     critterbase.post(
       '/critters/unique?format=detailed',
@@ -202,29 +202,7 @@ const determineExistingAnimal = async (
   if (critterbase_critters.isError) {
     throw Error('Something went wrong contacting critterbase.');
   }
-  /*const overlappingCritters: DetailedCritter[] = critterbase_critters.result.rows.filter(
-    (critter) => {
-      const mortality_timestamp = critter.mortality.length
-        ? critter.mortality[0].mortality_timestamp
-        : null;
-      return critter.capture.some((c) =>
-        dateRangesOverlap(
-          c.capture_timestamp,
-          mortality_timestamp,
-          (incomingCritter.capture_date as unknown) as string,
-          (incomingCritter.mortality_date as unknown) as string
-        )
-      );
-    }
-  );
-
-  if (overlappingCritters.length > 1) {
-    throw Error(
-      'Found many valid critters for these markings over the same captured-mortality lifespan. The critter trying to be referenced is therefore ambiguous, aborting. Try again with more markings if possible.'
-    );
-  }*/
-
-  return critterbase_critters.result.rows.map(c => c.critter_id);
+  return critterbase_critters.result.rows.map(c => ({critter_id: c.critter_id, wlh_id: c.wlh_id }));
 };
 
 const markingInferDuplicate = (old_marking: IMarking, new_marking: MarkingUpsert): boolean => {

@@ -8,7 +8,6 @@ import { getUserIdentifier } from '../database/requests';
 import { IAnimalDeviceMetadata } from '../types/import_types';
 import {
   cleanupUploadsDir,
-  determineExistingAnimal,
   getCodeHeaderName,
   getCritterbaseMarkingsFromRow,
   isOnSameDay,
@@ -207,11 +206,11 @@ const parseXlsx = async (
           const errswrns = await validateAnimalDeviceData(rowObj, user);
           rowObj.errors = { ...rowObj.errors, ...errswrns.errors };
           rowObj.warnings.push(...errswrns.warnings);
-          const possible_critter_ids = await validateUniqueAnimal(
+          const possible_critters = await validateUniqueAnimal(
             rowObj.row as IAnimalDeviceMetadata
           );
-          (rowObj.row as IAnimalDeviceMetadata).possible_critter_ids = possible_critter_ids;
-          (rowObj.row as IAnimalDeviceMetadata).selected_critter_id = possible_critter_ids?.[0];
+          (rowObj.row as IAnimalDeviceMetadata).possible_critters = possible_critters;
+          (rowObj.row as IAnimalDeviceMetadata).selected_critter_id = possible_critters?.[0]?.critter_id;
         }
         if (sheet.name == telemetrySheetName) {
           const errswrns = await validateTelemetryRow(
@@ -452,7 +451,8 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       link_critter_id = existing_critter.critter_id;
       const existing_captures = existing_critter.capture;
       const existing_mortalities = existing_critter.mortality;
-      //const existing_markings = existing_critter.marking;
+      const existing_markings = existing_critter.marking;
+
       if (
         existing_captures.every(
           (a) =>
@@ -472,7 +472,16 @@ const upsertBulkv2 = async (id: string, req: Request) => {
           location?.location_id
         );
         bulk_payload.captures.push(capture);
-        bulk_payload.markings.push(...createNewMarkingsFromRow(existing_critter.critter_id, capture.capture_id, capture.capture_timestamp, pair));
+        
+        const recent_markings = existing_markings.filter(a => dayjs(a.attached_timestamp).isSameOrBefore(dayjs(capture.capture_timestamp))).sort((a, b) => (dayjs(a.attached_timestamp).isSameOrBefore(dayjs(b.attached_timestamp)) ? 1 : -1));
+        const new_markings = createNewMarkingsFromRow(existing_critter.critter_id, capture.capture_id, capture.capture_timestamp, pair);
+        for(const m of new_markings) {
+          //Find first occurence of marking at this body location. Because of above sorting, this should be a timestamp closest to the current capture timestamp.
+          const old = recent_markings.find(r => r.body_location === m.body_location);
+          if(!old || !markingInferDuplicate(old, m)) { //If there wasn't a previous marking, or the new marking has different information from the existing one, we can add it
+            bulk_payload.markings.push(m);
+          }
+        }
       }
       if (
         existing_mortalities.every(
@@ -543,12 +552,12 @@ const upsertBulkv2 = async (id: string, req: Request) => {
     throw Error(JSON.stringify(e));
   }
 
-  for(const r of responseArray) {
+  /*for(const r of responseArray) {
     console.log(`CALL purge_animal_device_assignment('${r.assignment_id}');`);
   }
   for(const r of responseArray) {
     console.log(`CALL purge_critter('${r.critter_id}');`);
-  }
+  }*/
   return responseArray;
 };
 

@@ -50,4 +50,4 @@ export interface IBulkResponse {
 
 export { isAnimalAndDevice, isAnimal, isCollar, isHistoricalTelemtry };
 
-export interface IAnimalDeviceMetadata extends IAnimal, ICollar { possible_critter_ids?: string[], selected_critter_id?: string }
+export interface IAnimalDeviceMetadata extends IAnimal, ICollar { possible_critters?: Partial<IAnimal>[], selected_critter_id?: string }
