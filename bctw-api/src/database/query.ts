@@ -187,7 +187,6 @@ const query = async (
   try {
     if (!sqlOrAxios) {
       const err = 'raw SQL string or Axios request must be provided to query';
-      console.log(err);
       throw new Error(err);
     }
     if (isSQL) {
@@ -201,6 +200,7 @@ const query = async (
       const axiosRes = await axiosReq;
       result.rows = axiosRes.data;
     }
+    console.log(result);
   } catch (e) {
     isError = true;
     if (isSQL) {

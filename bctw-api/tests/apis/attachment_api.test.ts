@@ -66,11 +66,49 @@ describe('attachment_api', () => {
         expect(q.mock.calls[0][2]).toBe(true);
         expect(res.text).toBeDefined();
         expect(res.status).toBe(200);
-        console.log(q.mock);
       });
       it('should status 500 and catch error', async () => {
         q.mockResolvedValue({ ...qReturn, isError: true });
         const res = await request.post('/unattach-device').send(payload);
+        expect(res.text).toBe(err);
+        expect(res.status).toBe(500);
+      });
+    });
+    describe('updateDataLife', () => {
+      const payload = {
+        assignment_id: '1',
+        data_life_start: 'today',
+        data_life_end: 'tomorrow',
+      };
+      it('should status 200 and construct sql and pass to query', async () => {
+        q.mockResolvedValue(qReturn);
+        const res = await request.post('/update-data-life').send(payload);
+        expect(q.mock.calls[0][0]).toBeDefined();
+        expect(q.mock.calls[0][1]).toBe('unable to change data life');
+        expect(q.mock.calls[0][2]).toBe(true);
+        expect(res.text).toBeDefined();
+        expect(res.status).toBe(200);
+      });
+      it('should status 500 and return error', async () => {
+        q.mockResolvedValue({ ...qReturn, isError: true });
+        const res = await request.post('/update-data-life').send(payload);
+        expect(res.text).toBe(err);
+        expect(res.status).toBe(500);
+      });
+    });
+    describe('getCollarAssignmentHistory', () => {
+      const critter_id = 'UUID';
+      it('should status 500 and return msg when no critter_id', async () => {
+        q.mockResolvedValue(qReturn);
+        const res = await request.get(`/get-assignment-history/${critter_id}`);
+        expect(q.mock.calls[0][0]).toBeDefined();
+        expect(typeof q.mock.calls[0][0] === 'string');
+        expect(res.text).toBeDefined();
+        expect(res.status).toBe(200);
+      });
+      it('should status 500 and return error', async () => {
+        q.mockResolvedValue({ ...qReturn, isError: true });
+        const res = await request.get(`/get-assignment-history/${critter_id}`);
         expect(res.text).toBe(err);
         expect(res.status).toBe(500);
       });

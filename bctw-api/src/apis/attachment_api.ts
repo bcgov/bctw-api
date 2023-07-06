@@ -85,7 +85,6 @@ const unattachDevice = async function (
   if (isError) {
     return res.status(500).send(error.message);
   }
-  // console.log(sql);
   return res.send(getRowResults(result, pg_unlink_collar_fn, true));
 };
 
@@ -130,11 +129,6 @@ const getCollarAssignmentHistory = async function (
   res: Response
 ): Promise<Response> {
   const critterId = req.params.animal_id as string;
-  if (!critterId) {
-    return res
-      .status(500)
-      .send('must supply critter_id to retrieve collar history');
-  }
   const sql = constructFunctionQuery(pg_get_attachment_history, [
     getUserIdentifier(req),
     critterId,
