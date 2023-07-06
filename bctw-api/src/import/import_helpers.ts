@@ -6,12 +6,13 @@ import proj4 from 'proj4';
 import { S_API, critterbase } from '../constants';
 import { constructFunctionQuery, getRowResults, query } from '../database/query';
 import {
-  DetailedCritter,
   CritterUpsert,
   MarkingUpsert,
+  IMarking,
 } from '../types/critter';
 import { IAnimalDeviceMetadata } from '../types/import_types';
 import { GenericVendorTelemetry } from '../types/vendor';
+import { IAnimal } from '../types/animal';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -74,7 +75,7 @@ const mapXlsxHeader = (header: string): string => {
 //Had to add this function for this one special case where the code needed here does not match the db field OR the custom header name in the template
 //Kind of sucks having all these different layers of logic for handling these header names but here we are. 
 //Note that I did not modify the return value in mapXlsxHeader because it should stay as fix_interval_rate when finally inserting this row into the DB
-const getCodeHeaderName = (raw_header: string) => {
+const getCodeHeaderName = (raw_header: string): string => {
   const mappedHeader = mapXlsxHeader(raw_header);
   if(mappedHeader === 'fix_interval_rate') {
     return 'fix_unit';
@@ -191,7 +192,7 @@ const formatTemplateRowForUniqueLookup = (row: IAnimalDeviceMetadata) => {
 
 const determineExistingAnimal = async (
   incomingCritter: IAnimalDeviceMetadata
-): Promise<DetailedCritter | null> => {
+): Promise<Partial<IAnimal>[]> => {
   const critterbase_critters = await query(
     critterbase.post(
       '/critters/unique?format=detailed',
@@ -201,34 +202,16 @@ const determineExistingAnimal = async (
   if (critterbase_critters.isError) {
     throw Error('Something went wrong contacting critterbase.');
   }
-  const overlappingCritters: DetailedCritter[] = critterbase_critters.result.rows.filter(
-    (critter) => {
-      const mortality_timestamp = critter.mortality.length
-        ? critter.mortality[0].mortality_timestamp
-        : null;
-      return critter.capture.some((c) =>
-        dateRangesOverlap(
-          c.capture_timestamp,
-          mortality_timestamp,
-          (incomingCritter.capture_date as unknown) as string,
-          (incomingCritter.mortality_date as unknown) as string
-        )
-      );
-    }
-  );
-
-  if (overlappingCritters.length > 1) {
-    throw Error(
-      'Found many valid critters for these markings over the same captured-mortality lifespan. The critter trying to be referenced is therefore ambiguous, aborting. Try again with more markings if possible.'
-    );
-  }
-
-  if (overlappingCritters.length == 0) {
-    return null;
-  } else {
-    return overlappingCritters[0];
-  }
+  return critterbase_critters.result.rows.map(c => ({critter_id: c.critter_id, wlh_id: c.wlh_id }));
 };
+
+const markingInferDuplicate = (old_marking: IMarking, new_marking: MarkingUpsert): boolean => {
+  const coreFeaturesSame = (!!new_marking.primary_colour && old_marking.primary_colour === new_marking.primary_colour) ||
+          (!!new_marking.identifier && old_marking.identifier === new_marking.identifier);
+  const locationAndTypeSame = (old_marking.body_location === new_marking.body_location && old_marking.marking_type === new_marking.marking_type);
+
+  return coreFeaturesSame && locationAndTypeSame && dayjs(new_marking.attached_timestamp).isSameOrAfter(old_marking.attached_timestamp);
+}
 
 const getValuesForCodeHeader = async (key: string, idir: string, bctw_code_headers: string[], critterbase_code_headers: Record<string, string>): Promise<string[]> => {
   if(bctw_code_headers.includes(key)) {
@@ -269,5 +252,6 @@ export {
   determineExistingAnimal,
   getCritterbaseMarkingsFromRow,
   getCodeHeaderName,
-  getValuesForCodeHeader
+  getValuesForCodeHeader,
+  markingInferDuplicate
 };

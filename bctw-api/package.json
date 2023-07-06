@@ -8,6 +8,7 @@
     "start": "npx pm2@4.4.0 --no-daemon start build/server.js",
     "build": "rimraf ./build && tsc",
     "test": "jest --setupFiles=dotenv/config --watchAll --detectOpenHandles",
+    "test:coverage": "jest --setupFiles=dotenv/config --watchAll --coverage --detectOpenHandles",
     "lint": "eslint . --ext .ts --no-error-on-unmatched-pattern",
     "kill": "npx kill-port 3000 & pkill -f nodemon",
     "start:dev": "nodemon -r dotenv/config ./src/server.ts",
@@ -22,8 +23,10 @@
   "author": "BC Government",
   "license": "ISC",
   "dependencies": {
+    "@types/adm-zip": "^0.5.0",
     "@types/proj4": "^2.5.2",
     "@types/supertest": "^2.0.12",
+    "adm-zip": "^0.5.10",
     "axios": "^0.21.2",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
