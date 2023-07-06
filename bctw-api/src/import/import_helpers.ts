@@ -3,8 +3,8 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import * as fs from 'fs';
 import proj4 from 'proj4';
-import { critterbase } from '../constants';
-import { query } from '../database/query';
+import { S_API, critterbase } from '../constants';
+import { constructFunctionQuery, getRowResults, query } from '../database/query';
 import {
   CritterUpsert,
   MarkingUpsert,
@@ -213,6 +213,33 @@ const markingInferDuplicate = (old_marking: IMarking, new_marking: MarkingUpsert
   return coreFeaturesSame && locationAndTypeSame && dayjs(new_marking.attached_timestamp).isSameOrAfter(old_marking.attached_timestamp);
 }
 
+const getValuesForCodeHeader = async (key: string, idir: string, bctw_code_headers: string[], critterbase_code_headers: Record<string, string>): Promise<string[]> => {
+  if(bctw_code_headers.includes(key)) {
+    const sql = constructFunctionQuery(
+      'get_code',
+      [idir, key, 0],
+      false,
+      S_API
+    );
+    const { result, isError } = await query(sql, 'failed to retrieve codes');
+
+    if (isError) {
+      throw Error('Request failed while trying to obtain BCTW codes.');
+    }
+
+    return getRowResults(result, 'get_code').map(
+      (o) => o.description
+    );
+  }
+  else if(critterbase_code_headers[key]) {
+    const endpoint = critterbase_code_headers[key];
+    const cbResult = await critterbase.get(endpoint + '?format=asSelect');
+    return cbResult.data.map(a => a.value);
+  }
+
+  return [];
+}
+
 export {
   cleanupUploadsDir,
   mapCsvHeader,
@@ -225,5 +252,6 @@ export {
   determineExistingAnimal,
   getCritterbaseMarkingsFromRow,
   getCodeHeaderName,
+  getValuesForCodeHeader,
   markingInferDuplicate
 };

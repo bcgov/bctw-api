@@ -10,6 +10,7 @@ import {
   cleanupUploadsDir,
   getCodeHeaderName,
   getCritterbaseMarkingsFromRow,
+  getValuesForCodeHeader,
   isOnSameDay,
   mapXlsxHeader,
   markingInferDuplicate,
@@ -84,6 +85,7 @@ const deviceMetadataSheetName = 'Device Metadata';
 const telemetrySheetName = 'Telemetry';
 const validSheetNames = [deviceMetadataSheetName]; //, telemetrySheetName];
 const extraCodeFields = ['species'];
+const critterBaseCodeFields = {ear_tag_left_colour: 'lookups/colours', ear_tag_right_colour: 'lookups/colours'};
 
 const obtainColumnTypes = async (): Promise<ColumnTypeMapping> => {
   const sql =
@@ -183,6 +185,7 @@ const parseXlsx = async (
         const errors = await validateGenericRow(
           crow,
           code_header_names,
+          critterBaseCodeFields,
           columnTypes,
           user
         );
@@ -634,25 +637,11 @@ const getTemplateFile = async function (
   for (let header_idx = 1; header_idx < headerRow.cellCount; header_idx++) {
     const cell = headerRow.getCell(header_idx);
     const code_header = getCodeHeaderName(cell.text);
-    if (code_header_names.includes(code_header)) {
-      const sql = constructFunctionQuery(
-        'get_code',
-        [idir, code_header, 0],
-        false,
-        S_API
-      );
-      const { result, isError } = await query(sql, 'failed to retrieve codes');
 
-      if (isError) {
-        res
-          .status(500)
-          .send('Unable to determine codes from the provided header');
-        return;
-      }
+    const code_descriptions: string[] = await getValuesForCodeHeader(code_header, idir, code_header_names, critterBaseCodeFields);
 
-      const code_descriptions = getRowResults(result, 'get_code').map(
-        (o) => o.description
-      );
+    if (code_descriptions.length) {
+      
       const col = cell.address.replace(/[0-9]/g, '');
 
       const val_col = computeXLSXCol(val_header_idx);
