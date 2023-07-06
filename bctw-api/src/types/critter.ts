@@ -51,7 +51,7 @@ interface ICapture {
   release_location: ILocation;
 }
 
-interface IMarking {
+export interface IMarking {
   marking_id: string;
   capture_id: string;
   mortality_id: string | null;
@@ -145,7 +145,10 @@ export type MarkingUpsert = {
   marking_type_id?: string | null;
   marking_material_id?: string | null;
   primary_colour?: string | null;
+  body_location?: string | null;
   identifier?: string | null;
+  attached_timestamp?: string;
+  marking_type?: string;
 };
 
 type CollectionUpsert = {

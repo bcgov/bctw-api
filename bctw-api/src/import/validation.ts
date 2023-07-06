@@ -6,6 +6,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
+import { IAnimal } from '../types/animal';
 import { IAnimalDeviceMetadata } from '../types/import_types';
 import { GenericVendorTelemetry, ImportVendors } from '../types/vendor';
 import { ErrorMsgs, importMessages } from '../utils/strings';
@@ -129,12 +130,6 @@ const validateTelemetryRow = async (
   return output;
 };
 
-interface UniqueAnimalResult {
-  is_new?: boolean;
-  reason?: string;
-  is_error?: boolean;
-}
-
 const validateAnimalDeviceData = async (
   rowres: ParsedXLSXRowResult,
   user: string
@@ -153,22 +148,6 @@ const validateAnimalDeviceData = async (
     rowres.row as IAnimalDeviceMetadata,
     user
   );
-  const unqanim = await validateUniqueAnimal(
-    rowres.row as IAnimalDeviceMetadata
-  );
-  if (unqanim.is_error) {
-    ret.errors.identifier = {
-      desc: ErrorMsgs.metadata.badMarkings,
-      help: ErrorMsgs.metadata.badMarkings,
-    };
-  } else if (unqanim.is_new && unqanim.reason == 'no_overlap') {
-    ret.warnings.push({
-      message: importMessages.warningMessages.matchingMarkings.message,
-      help: importMessages.warningMessages.matchingMarkings.help(
-        (rowres.row as IAnimalDeviceMetadata).species
-      ),
-    });
-  }
 
   const animdev = rowres.row as IAnimalDeviceMetadata;
   if (animdev.retrieval_date && animdev.capture_date > animdev.retrieval_date) {
@@ -267,14 +246,9 @@ const validateAnimalDeviceRequiredFields = (
 
 const validateUniqueAnimal = async (
   row: IAnimalDeviceMetadata
-): Promise<UniqueAnimalResult> => {
-  try {
-    await determineExistingAnimal(row);
-    return { is_new: true };
-  } catch (e) {
-    console.log(e);
-    return { is_error: true };
-  }
+): Promise<Partial<IAnimal>[]> => {
+    const possible_critters = await determineExistingAnimal(row);
+    return possible_critters;
 };
 
-export { validateTelemetryRow, validateGenericRow, validateAnimalDeviceData };
+export { validateTelemetryRow, validateGenericRow, validateAnimalDeviceData, validateUniqueAnimal };
