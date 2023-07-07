@@ -14,7 +14,10 @@ import {
   getUserIdentifier,
   handleQueryError,
 } from '../database/requests';
-import { createBulkResponse } from '../import/bulk_handlers';
+import {
+  createBulkResponse,
+  getStatusFromBulkRes,
+} from '../import/bulk_handlers';
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
 import { cac_v } from './animal_api';
@@ -41,9 +44,10 @@ const upsertCollar = async function (
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
+    const rowResults = getRowResults(result, fn_upsert_collar);
     createBulkResponse(bulkResp, getRowResults(result, fn_upsert_collar)[0]);
   }
-  return res.send(bulkResp);
+  return res.status(getStatusFromBulkRes(bulkResp)).send(bulkResp);
 };
 
 /**
@@ -76,7 +80,7 @@ const getUnattachedDeviceSQL = function (
   collar_id?: string
 ): string {
   const base = `
-    SELECT 
+    SELECT
     ${applyCount(page)}
       ${
         getAllProps
@@ -84,11 +88,11 @@ const getUnattachedDeviceSQL = function (
           : 'c.collar_id, c.device_id, c.frequency, c.device_make, c.device_status, c.device_type, c.device_model, c.activation_status_ind,'
       }
       ${fn_get_collar_permission}('${username}', c.collar_id) AS "permission_type"
-    FROM ${S_API}.collar_v c 
+    FROM ${S_API}.collar_v c
     WHERE c.collar_id not in (
       SELECT collar_id FROM ${cac_v})
     AND (
-      c.owned_by_user_id = ${S_BCTW}.get_user_id('${username}') 
+      c.owned_by_user_id = ${S_BCTW}.get_user_id('${username}')
       OR ${S_BCTW}.is_typeof_admin(${S_BCTW}.get_user_role('${username}'))
     )
     ${collar_id ? ` AND c.collar_id = '${collar_id}'` : ''}`;
@@ -143,7 +147,7 @@ const getAttachedDeviceSQL = function (
   const alias = 'attached';
   const base = `
   WITH ${alias} AS (
-    SELECT 
+    SELECT
       ca.assignment_id,
       ca.attachment_start, ca.attachment_end, ca.data_life_start, ca.data_life_end, ca.last_fetch_date,
       ${
@@ -252,11 +256,11 @@ const getCollarsAndDeviceIds = async function (
   const page = (req.query?.page || 0) as number;
   const base = `SELECT ${applyCount(
     page
-  )}* FROM (SELECT collar_id, device_id, frequency, device_make, device_status, 
-    device_type, device_model, activation_status_ind FROM ${S_API}.collar_v 
-    UNION SELECT crypto.gen_random_uuid() as collar_id, deviceid AS device_id, NULL::float AS frequency, 
-    vendor::varchar AS device_make, NULL::varchar AS device_status, 
-    NULL::varchar AS device_type, 'Unassigned Collar'::varchar AS device_model, 
+  )}* FROM (SELECT collar_id, device_id, frequency, device_make, device_status,
+    device_type, device_model, activation_status_ind FROM ${S_API}.collar_v
+    UNION SELECT crypto.gen_random_uuid() as collar_id, deviceid AS device_id, NULL::float AS frequency,
+    vendor::varchar AS device_make, NULL::varchar AS device_status,
+    NULL::varchar AS device_type, 'Unassigned Collar'::varchar AS device_model,
     NULL::boolean AS activation_status_ind FROM ${S_BCTW}.unassigned_telemetry_v) as s`;
   const filter = getFilterFromRequest(req);
   const sql = constructGetQuery({

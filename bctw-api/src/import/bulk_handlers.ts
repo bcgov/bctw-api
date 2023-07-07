@@ -7,10 +7,18 @@ import {
 import { IAnimal } from '../types/animal';
 import { ICollar } from '../types/collar';
 import { IBulkResponse, IImportError } from '../types/import_types';
+const getStatusFromBulkRes = (br: IBulkResponse) => {
+  // 200 - success / 207 - partial success / 400 - failure
+  if (br.results.length) {
+    return br.errors.length ? 207 : 200;
+  }
+  return 400;
+};
 
 const doResultsHaveErrors = (
   row: QueryResultRow | QueryResultRow[]
 ): boolean => {
+  console.log(row);
   const fnHasError = (r: QueryResultRow) => Object.keys(r).includes('error');
   if (Array.isArray(row)) {
     return !!row?.find(fnHasError);
@@ -57,4 +65,4 @@ const upsertBulk = async function (
   return bulkResp;
 };
 
-export { createBulkResponse, upsertBulk };
+export { getStatusFromBulkRes, createBulkResponse, upsertBulk };

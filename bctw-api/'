@@ -10,20 +10,16 @@ const qr = queryReturn();
 describe('collar_api', () => {
   describe('ENDPOINTS', () => {
     describe('upsertCollar', () => {
-      it('status 400 with 1 error 0 results', async () => {
+      it('status 200 with error but provide errors array', async () => {
         mockQuery.mockResolvedValue({ ...qr, isError: true });
         const res = await request.post('/upsert-collar');
         expect(typeof mockQuery.mock.calls[0][0] === 'string');
         expect(res.body.errors.length).toBeGreaterThan(0);
+        console.log(res.body);
+        console.log(res.status);
+        //Should this actually respond with 200? If any errors exist?
         expect(res.status).toBe(400);
       });
-      //it('status 207 with 1 error 1 results', async () => {
-      //  mockQuery.mockResolvedValue({ ...qr, isError: false });
-      //  const res = await request.post('/upsert-collar');
-      //  expect(typeof mockQuery.mock.calls[0][0] === 'string');
-      //  expect(res.body.errors.length).toBeGreaterThan(0);
-      //  expect(res.status).toBe(400);
-      //});
       //it('status 200 with error but provide errors array', async () => {
       //  mockQuery.mockResolvedValue({ ...qr, isError: false });
       //  const res = await request

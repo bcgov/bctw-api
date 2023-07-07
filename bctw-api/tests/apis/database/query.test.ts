@@ -1,4 +1,13 @@
-import { merge } from '../../../src/database/query';
+import {
+  applyCount,
+  constructGetQuery,
+  merge,
+  obj_to_pg_array,
+  to_pg_array,
+  to_pg_obj,
+  to_pg_str,
+  to_pg_timestamp,
+} from '../../../src/database/query';
 const a = [{ id: 1, aData: 1 }];
 const b = [{ id: 1, bData: 2 }];
 const c = [
@@ -6,6 +15,67 @@ const c = [
   { id: 1, aData: 2 },
 ];
 describe('query', () => {
+  describe(applyCount.name, () => {
+    it('should apply COUNT(*) if page < 2', () => {
+      expect(applyCount(1)).toBeTruthy();
+      expect(applyCount()).toBeTruthy();
+      expect(applyCount(2)).not.toBeTruthy();
+    });
+  });
+  describe(constructGetQuery.name, () => {
+    const base = 'BASE';
+    const q = { base: 'BASE' };
+    it('should apply filter to query', () => {
+      const query = constructGetQuery({ base, filter: 'blah' });
+      expect(query).toBe(q.base + 'blah');
+    });
+    it('should apply group', () => {
+      const query = constructGetQuery({ base, group: ['blah'] });
+      expect(query).toBe(q.base + 'group by blah ');
+    });
+    it('should apply order by if order included', () => {
+      const query = constructGetQuery({
+        base,
+        order: [{ field: 'blah', order: 'desc' }],
+      });
+      expect(query).toBe(q.base + `order by blah desc `);
+    });
+    it('should apply order by if order included', () => {
+      const query = constructGetQuery({
+        base,
+        page: 1,
+      });
+      expect(query).toBe(q.base + `limit 100 offset 0;`);
+    });
+  });
+  describe(to_pg_array.name, () => {
+    it('should format array to pg array format', () => {
+      expect(to_pg_array([1, 2])).toBe("'{1,2}'");
+    });
+  });
+  describe(to_pg_timestamp.name, () => {
+    it('should format aray to pg timestamp format', () => {
+      expect(to_pg_timestamp(new Date())).toBe(
+        `to_timestamp(${new Date()} / 1000)`
+      );
+    });
+  });
+  describe(obj_to_pg_array.name, () => {
+    it('should format obj to pg array format', () => {
+      expect(obj_to_pg_array({ a: 1, b: 2 })).toBe(`'[{"a":1,"b":2}]'`);
+    });
+  });
+  describe(to_pg_str.name, () => {
+    it('should format to pg string', () => {
+      expect(to_pg_str('test')).toBe(`'test'`);
+      expect(to_pg_str()).toBe(`''`);
+    });
+  });
+  describe(to_pg_obj.name, () => {
+    it('should format to pg object', () => {
+      expect(to_pg_obj({ a: 1 })).toBe(`'{"a":1}'`);
+    });
+  });
   describe(merge.name, () => {
     it('should merge successfully on valid data', () => {
       const { merged, allMerged } = merge(a, b, 'id');
