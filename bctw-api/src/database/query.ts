@@ -84,22 +84,25 @@ const constructFunctionQuery = (
 };
 
 // converts an array to the postgres format
-const to_pg_array = (arr: unknown[]): string => `'{${arr.join(',')}}'`;
+export const to_pg_array = (arr: unknown[]): string => `'{${arr.join(',')}}'`;
 
 // uses a psql builtin function to convert a js date object
-const to_pg_timestamp = (date: Date): string => `to_timestamp(${date} / 1000)`;
+export const to_pg_timestamp = (date: Date): string =>
+  `to_timestamp(${date} / 1000)`;
 
 // stringifies a single object into a psql-friendly array of objects
-const obj_to_pg_array = (objOrArray: Record<string, unknown>): string => {
+export const obj_to_pg_array = (
+  objOrArray: Record<string, unknown>
+): string => {
   const asArr = Array.isArray(objOrArray) ? objOrArray : [objOrArray];
   return `'${JSON.stringify(asArr)}'`;
 };
 
 // returns the str surrounded by single quotes
-const to_pg_str = (str: string): string => (str ? `'${str}'` : "''");
+export const to_pg_str = (str?: string): string => (str ? `'${str}'` : "''");
 
 // returns object in psql format '{}'
-const to_pg_obj = (obj: Record<string, unknown>): string => {
+export const to_pg_obj = (obj: Record<string, unknown>): string => {
   return `'${JSON.stringify(obj)}'`;
 };
 
@@ -200,7 +203,6 @@ const query = async (
       const axiosRes = await axiosReq;
       result.rows = axiosRes.data;
     }
-    console.log(result);
   } catch (e) {
     isError = true;
     if (isSQL) {
@@ -271,7 +273,6 @@ const appendFilter = (
     }
     sql += `${limiter} LOWER(${alias}${column}::varchar) LIKE '%${searchTerm}%' `;
   }
-  // console.log(keys, sql)
   return sql;
 };
 
@@ -343,7 +344,6 @@ const merge = <
     b = [b];
   }
   if (!b.length || !a.length) {
-    console.log('issue merging a or b is empty');
     return abortReturn;
   }
 
