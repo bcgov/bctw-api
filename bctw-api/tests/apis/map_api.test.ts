@@ -5,7 +5,11 @@ import {
   uuidToInt,
   intToHSL,
 } from '../../src/apis/map_api';
-import { FeatureCollection } from '../../src/types/map';
+import { ICollectionUnit, ICritter } from '../../src/types/critter';
+import {
+  FeatureCollection,
+  GeoJSONPropertyCombined,
+} from '../../src/types/map';
 import { v4 as uuidv4 } from 'uuid';
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
@@ -38,10 +42,22 @@ const geoData = {
   ],
 } as FeatureCollection;
 
-const critterData = [
+const mockCollectionUnit: ICollectionUnit = {
+  category_name: 'DummyCategory',
+  unit_name: 'DummyUnit',
+  collection_unit_id: 'DummyCollectionUnitId',
+  collection_category_id: 'DummyCollectionCategoryId',
+};
+
+const critterData: ICritter[] = [
   {
     critter_id: '1',
+    wlh_id: '1',
     animal_id: 'DummyAnimalId',
+    sex: 'M',
+    taxon: 'DummyTaxon',
+    collection_units: [mockCollectionUnit],
+    mortality_timestamp: null,
   },
 ];
 
@@ -130,9 +146,10 @@ describe('map_api', () => {
     it('correctly combines data from geoData and critterData', () => {
       const combinedData = mergeGeoProperties(geoData, critterData);
 
-      expect(combinedData.features[0].properties.animal_id).toEqual(
-        'DummyAnimalId'
-      );
+      expect(
+        (combinedData.features[0].properties as GeoJSONPropertyCombined)
+          .animal_id
+      ).toEqual('DummyAnimalId');
       expect(combinedData.features.length).toEqual(2);
     });
   });

@@ -1,6 +1,6 @@
 // CritterBase response types:
 
-interface ICollectionUnit {
+export interface ICollectionUnit {
   category_name: string;
   unit_name: string;
   collection_unit_id: string;
