@@ -17,6 +17,7 @@ import { pgPool } from './database/pg';
 import { critterbaseRouter } from './apis/critterbaseRouter';
 import { IS_PROD, critterbase } from './constants';
 import { AxiosRequestConfig } from 'axios';
+import { jwtCheck } from './utils/jwtAuth';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
@@ -43,6 +44,7 @@ export const app = express()
   .use(helmet())
   .use(cors({ credentials: true }))
   .use(express.urlencoded({ extended: true }))
+  .use(jwtCheck)
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .all('*', async (req: Request, res: Response, next) => {
