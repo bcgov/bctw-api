@@ -61,6 +61,8 @@ export const app = express()
 
     // determine if user is authorized
     const [domain, identifier] = getUserIdentifierDomain(req);
+    console.log('domain: ', domain)
+    console.log('identifier: ', identifier)
     if (!domain) {
       res.status(500).send('must specify domain type');
     }

@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import jwksClient, { CertSigningKey, JwksClient, RsaSigningKey } from 'jwks-rsa';
+import jwksClient, {
+  JwksClient,
+} from 'jwks-rsa';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -12,23 +14,34 @@ const client: JwksClient = jwksClient({
   cacheMaxAge: 86400000,
 });
 
-const getKey = (header: jwt.JwtHeader, callback: jwt.SigningKeyCallback): void => {
-    if (!header.kid) {
-      callback(new Error('Invalid token. No key ID.'));
-      return;
-    }
-  
-    client.getSigningKey(header.kid, (err, key) => {
-      const signingKey = key?.getPublicKey();//key?.publicKey || key?.rsaPublicKey;
-      callback(null, signingKey);
-    });
-  };  
+const getKey = (
+  header: jwt.JwtHeader,
+  callback: jwt.SigningKeyCallback
+): void => {
+  if (!header.kid) {
+    callback(new Error('Invalid token. No key ID.'));
+    return;
+  }
 
-export const jwtCheck = (req: Request, res: Response, next: NextFunction): void => {
+  client.getSigningKey(header.kid, (err, key) => {
+    const signingKey = key?.getPublicKey(); //key?.publicKey || key?.rsaPublicKey;
+    callback(null, signingKey);
+  });
+};
+
+export const jwtCheck = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
   const bearerToken = req.headers.authorization;
 
   if (!bearerToken || !bearerToken.startsWith('Bearer ')) {
-    res.status(401).send('Invalid token. Token must be provided in Authorization header as "Bearer <token>".');
+    res
+      .status(401)
+      .send(
+        'Invalid token. Token must be provided in Authorization header as "Bearer <token>".'
+      );
     return;
   }
 
@@ -37,15 +50,18 @@ export const jwtCheck = (req: Request, res: Response, next: NextFunction): void 
   jwt.verify(token, getKey, (err, decoded) => {
     if (err) {
       res.status(401).send('Invalid token. Verification failed.');
-    } else if (decoded) {
+    } else if (decoded && typeof decoded === 'object') {
       console.log('decoded', decoded);
-      if (typeof decoded === 'object' && 'idir_user_guid' in decoded) {
-        req.params.idir = decoded.idir_user_guid;
-        next();
-      } else {
-        res.status(401).send('Invalid token. No idir_user_guid found.');
-      }
+      const domain = decoded.idir_user_guid ? 'idir' : 'bceid';
+      const isIdir = domain === 'idir';
+      const keycloak_guid = isIdir
+        ? decoded.idir_user_guid
+        : decoded.bceid_business_guid;
+      const username = isIdir
+        ? decoded.idir_username.toLowerCase()
+        : decoded.bceid_username.toLowerCase();
+      req.query[domain] = keycloak_guid;
+      next();
     }
   });
-  
 };
