@@ -195,6 +195,11 @@ const getFiles = async (
   return res;
 };
 
+/**
+ * sign-up function for a new user that doesn't skips onboarding
+ * TODO
+ */
+
 export {
   getOnboardingRequests,
   getUserOnboardStatus,

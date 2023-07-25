@@ -15,9 +15,7 @@ import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 import { critterbaseRouter } from './apis/critterbaseRouter';
-import { IS_PROD, critterbase } from './constants';
-import { AxiosRequestConfig } from 'axios';
-import { jwtCheck } from './utils/jwtAuth';
+import { authenticateRequest, forwardToken } from './authentication/auth';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
@@ -27,42 +25,19 @@ const unauthorizedURLs: Record<string, string> = {
   status: '/get-onboard-status',
   submit: '/submit-onboarding-request',
 };
-const setHeaders = (
-  config: AxiosRequestConfig,
-  req: Request,
-  headers: string[]
-) => {
-  headers.forEach((head) => {
-    if (req.headers?.[head]) {
-      config.headers[head] = req.headers[head];
-    }
-  });
-  return config;
-};
 // setup the express server
 export const app = express()
   .use(helmet())
   .use(cors({ credentials: true }))
   .use(express.urlencoded({ extended: true }))
-  .use(jwtCheck)
   .get('/get-template', getTemplateFile)
   .use(express.json())
+  .use(authenticateRequest)
+  .use(forwardToken)
   .all('*', async (req: Request, res: Response, next) => {
-    //TODO Make constant IS_TEST
-    if (process.env.NODE_ENV === 'test') {
-      return next();
-    }
-    //If production the headers come from the proxied API requests.
-    if (IS_PROD) {
-      critterbase.interceptors.request.use((config) =>
-        setHeaders(config, req, ['keycloak-uuid', 'user-id', 'api-key'])
-      );
-    }
-
+    // TODO: handle new user auth and registration
     // determine if user is authorized
     const [domain, identifier] = getUserIdentifierDomain(req);
-    console.log('domain: ', domain)
-    console.log('identifier: ', identifier)
     if (!domain) {
       res.status(500).send('must specify domain type');
     }
@@ -83,6 +58,7 @@ export const app = express()
     ) {
       next(); // also pass through for new onboarding requests
     } else {
+      //TODO: Register user
       res.status(401).send('Unauthorized'); // reject
     }
   })
