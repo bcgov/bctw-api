@@ -73,6 +73,12 @@ export const authenticateRequest = (
         ? decoded.idir_user_guid
         : decoded.bceid_business_guid;
       req.query[domain] = keycloak_guid;
+
+      // Check if there are any roles associated with the token
+      //   const roles = decoded.realm_access ? decoded.realm_access.roles : [];
+      //   console.log(`Roles associated with the token: ${roles}`);
+      console.log(decoded);
+
       next();
     }
   });
