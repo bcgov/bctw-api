@@ -3,6 +3,7 @@ import { pgPool } from '../database/pg';
 import { getRowResults } from '../database/query';
 import { ICollar } from '../types/collar';
 import { getUserIdentifier } from '../database/requests';
+import { apiError } from '../utils/error';
 
 // TODO: There is probably a better / more descriptive naming convention than this
 
@@ -15,7 +16,7 @@ interface ISafeImport extends ICollar {
 /**
  * Provides a mechanism for importing and linking telemetry devices and critters to a user.
  * Aims to avoid collisions on any existing critters or devices by checking existing records.
- * 
+ *
  * @param {ISafeImport} data
  * @param {string} user
  */
@@ -32,7 +33,8 @@ const safeImportDb = async (data: ISafeImport, user: string) => {
       'get_critter_user_assignment_status'
     );
     if (!critterCheckResult) {
-      throw Error(
+      // 403 error
+      throw apiError.forbidden(
         'You do not have permission to manage the critter with critter id ' +
           data.critter_id
       );
@@ -46,7 +48,8 @@ const safeImportDb = async (data: ISafeImport, user: string) => {
 
     // Check if collar exists and is already assigned to a critter, insert into database if not
     if (!data.device_id) {
-        throw Error('Missing device_id field');
+      // 400 error
+      throw apiError.requiredProperty('device_id');
     }
     const collarSql = `SELECT bctw.get_device_id_for_bulk_import('${user}', '${JSON.stringify(
       data
@@ -63,8 +66,9 @@ const safeImportDb = async (data: ISafeImport, user: string) => {
       'link_collar_to_animal'
     )[0];
     if (linkCritterResult.error) {
-      throw Error(
-        `Could not link collar id ${collar_id} with critter id ${data.critter_id}`
+      // 403 error
+      throw apiError.forbidden(
+        `You do not have permission to manage ${collar_id} with critter id ${data.critter_id}`
       );
     }
     // Commit transaction
@@ -72,7 +76,7 @@ const safeImportDb = async (data: ISafeImport, user: string) => {
   } catch (e) {
     console.log(e);
     await client.query('ROLLBACK');
-    throw Error(JSON.stringify(e));
+    throw e;
   }
 };
 
@@ -83,10 +87,14 @@ export const safeImport = async (
   const user = getUserIdentifier(req);
   const data = req.body;
   try {
-    if (!user) throw Error('User not found');
+    if (!user) throw apiError.notFound('User not found');
     const response = await safeImportDb(data, user);
     res.status(200).send(response);
   } catch (e) {
-    res.status(500).send({ error: e});
+    if (e instanceof apiError) {
+      res.status(e.status).json({ error: e.message, errorType: e.errorType });
+    } else {
+      res.status(500).json({ error: (e as Error).message });
+    }
   }
 };
