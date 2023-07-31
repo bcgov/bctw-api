@@ -21,6 +21,7 @@ import {
 import { IBulkResponse } from '../types/import_types';
 import { SearchFilter } from '../types/query';
 import { cac_v } from './animal_api';
+import { getVendors } from './vendor/vendor_helpers';
 
 const fn_upsert_collar = 'upsert_collar';
 const fn_get_collar_history = 'get_collar_history';
@@ -304,6 +305,25 @@ const getCollarChangeHistory = async function (
   return res.send(getRowResults(result, fn_get_collar_history));
 };
 
+/**
+ * Retrieves a list of valid collar manufacturers.
+ *
+ * @param {Request} req
+ * @param {Response} res
+ * @return {*}  {Promise<Response>}
+ */
+const getCollarVendors = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const vendors = await getVendors();
+  if (!vendors) {
+    return res.status(500).send('failed to retrieve collar vendors');
+  } else {
+    return res.status(200).send(vendors);
+  }
+};
+
 export {
   upsertCollar,
   deleteCollar,
@@ -314,4 +334,5 @@ export {
   getAvailableCollars,
   getCollarChangeHistory,
   fn_get_collar_history,
+  getCollarVendors,
 };

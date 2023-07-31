@@ -28,6 +28,7 @@ import {
   getCollar,
   getCollarChangeHistory,
   getCollarsAndDeviceIds,
+  getCollarVendors,
   upsertCollar,
 } from './apis/collar_api';
 import {
@@ -165,6 +166,7 @@ export {
   getCodeHeaders,
   getCollarAssignmentHistory,
   getCollarChangeHistory,
+  getCollarVendors,
   getCritterTracks,
   getDBCritters,
   getAttachedHistoric,

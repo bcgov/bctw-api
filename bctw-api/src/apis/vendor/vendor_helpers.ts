@@ -9,6 +9,7 @@ import {
   ManualVendorAPIResponse,
   ManualVendorInput,
   VectronicRawTelemetry,
+  VendorType,
 } from '../../types/vendor';
 import { RAW_LOTEK, RAW_VECTRONIC } from '../../constants';
 
@@ -123,8 +124,10 @@ const fetchVendorTelemetryData = async (
       );
   }
 
-  const apiResults: (ManualVendorAPIResponse[] | undefined)[] =
-    await Promise.all(promises);
+  const apiResults: (
+    | ManualVendorAPIResponse[]
+    | undefined
+  )[] = await Promise.all(promises);
   const ret: ManualVendorAPIResponse[] = [];
   apiResults.forEach((r) => {
     if (r && Array.isArray(r)) {
@@ -207,10 +210,35 @@ const genericToVendorTelemetry = (
   }
 };
 
+const getVendors = async (): Promise<VendorType[]> => {
+  const code_header = 'device_make';
+  const sql = `
+    SELECT
+	    code_description
+    FROM
+	    bctw.code
+    WHERE
+	    code_header_id = (
+	    SELECT
+		    code_header_id
+	    FROM
+		    bctw.code_header
+	    WHERE
+		    code_header_name = '${code_header}'
+    )`;
+  const { result, error } = await query(sql);
+  if (error) {
+    return [];
+  } else {
+    return result.rows.map((row) => row.code_description);
+  }
+};
+
 export {
   fetchVendorTelemetryData,
   retrieveCredentials,
   ToLowerCaseObjectKeys,
   genericToVendorTelemetry,
   doesVendorDeviceExist,
+  getVendors
 };

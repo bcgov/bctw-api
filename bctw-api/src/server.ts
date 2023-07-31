@@ -80,6 +80,7 @@ export const app = express()
   .get('/get-available-collars', api.getAvailableCollars)
   .get('/get-assignment-history/:animal_id', api.getCollarAssignmentHistory)
   .get('/get-collar-history/:collar_id', api.getCollarChangeHistory)
+  .get('/get-collar-vendors', api.getCollarVendors)
   .post('/upsert-collar', api.upsertCollar)
   // animal/device attachment
   .post('/attach-device', api.attachDevice)
