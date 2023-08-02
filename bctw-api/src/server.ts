@@ -16,7 +16,7 @@ import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 import { critterbaseRouter } from './apis/critterbaseRouter';
 import { authenticateRequest, forwardToken } from './authentication/auth';
-import { safeImport } from './import/safe_import';
+import { deployDevice } from './apis/deployment_api';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
@@ -120,7 +120,7 @@ export const app = express()
   .post('/export-all', api.getAllExportData)
   .post('/import-xlsx', upload.single('validated-file'), importXlsx)
   .post('/import-finalize', finalizeImport)
-  .post('/import-safe', safeImport)
+  .post('/deploy-device', deployDevice)
   .post(
     '/import-xml',
     upload.array('xml'),

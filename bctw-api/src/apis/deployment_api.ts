@@ -5,9 +5,7 @@ import { ICollar } from '../types/collar';
 import { getUserIdentifier } from '../database/requests';
 import { apiError } from '../utils/error';
 
-// TODO: There is probably a better / more descriptive naming convention than this
-
-interface ISafeImport extends ICollar {
+interface IDeployDevice extends ICollar {
   critter_id: string;
   data_start: Date;
   data_end: Date;
@@ -17,10 +15,10 @@ interface ISafeImport extends ICollar {
  * Provides a mechanism for importing and linking telemetry devices and critters to a user.
  * Aims to avoid collisions on any existing critters or devices by checking existing records.
  *
- * @param {ISafeImport} data
+ * @param {IDeployDevice} data
  * @param {string} user
  */
-const safeImportDb = async (data: ISafeImport, user: string) => {
+const deployDeviceDb = async (data: IDeployDevice, user: string) => {
   const client = await pgPool.connect(); //Using client directly here, since we want this entire procedure to be wrapped in a transaction.
 
   try {
@@ -80,7 +78,7 @@ const safeImportDb = async (data: ISafeImport, user: string) => {
   }
 };
 
-export const safeImport = async (
+export const deployDevice = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -88,7 +86,7 @@ export const safeImport = async (
   const data = req.body;
   try {
     if (!user) throw apiError.notFound('User not found');
-    const response = await safeImportDb(data, user);
+    const response = await deployDeviceDb(data, user);
     res.status(200).send(response);
   } catch (e) {
     if (e instanceof apiError) {
