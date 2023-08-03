@@ -46,6 +46,9 @@ const MORTALITY_SMS =
   process.env.BCTW_GCNOTIFY_SMS_MORTALITY_DETECTED ??
   'e0ad95d9-56f3-4ad5-bab9-85c31ddef926';
 
+const FULL_ACCESS_AUD = process.env.FULL_ACCESS_AUD ?? '';
+const PARTIAL_ACCESS_AUD = process.env.PARTIAL_ACCESS_AUD ?? '';
+
 const critterbase = axios.create({
   baseURL: CB_API_URL,
   headers: { authorization: null },
@@ -73,4 +76,6 @@ export {
   IS_DEV,
   KEYCLOAK_HOST,
   KEYCLOAK_REALM,
+  FULL_ACCESS_AUD,
+  PARTIAL_ACCESS_AUD,
 };

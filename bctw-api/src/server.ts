@@ -15,8 +15,9 @@ import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 import { critterbaseRouter } from './apis/critterbaseRouter';
-import { authenticateRequest, forwardToken } from './authentication/auth';
+import { authenticateRequest, forwardToken } from './auth/authentication';
 import { deployDevice } from './apis/deployment_api';
+import { authorizeRequest } from './auth/authorization';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
@@ -26,6 +27,7 @@ const unauthorizedURLs: Record<string, string> = {
   status: '/get-onboard-status',
   submit: '/submit-onboarding-request',
 };
+
 // setup the express server
 export const app = express()
   .use(helmet())
@@ -34,6 +36,7 @@ export const app = express()
   .get('/get-template', getTemplateFile)
   .use(express.json())
   .use(authenticateRequest)
+  .use(authorizeRequest)
   .use(forwardToken)
   .all('*', async (req: Request, res: Response, next) => {
     // TODO: handle new user auth and registration

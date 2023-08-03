@@ -1,7 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import jwksClient, { JwksClient } from 'jwks-rsa';
-import { KEYCLOAK_HOST, KEYCLOAK_REALM, critterbase } from '../constants';
+import {
+  FULL_ACCESS_AUD,
+  KEYCLOAK_HOST,
+  KEYCLOAK_REALM,
+  PARTIAL_ACCESS_AUD,
+  critterbase,
+} from '../constants';
+import { UserRequest } from '../types/userRequest';
 
 const KEYCLOAK_ISSUER = `${KEYCLOAK_HOST}/realms/${KEYCLOAK_REALM}`;
 const KEYCLOAK_URL = `${KEYCLOAK_ISSUER}/protocol/openid-connect/certs`;
@@ -60,7 +67,7 @@ export const authenticateRequest = (
     return;
   }
 
-  // Verify token and extract domain from it
+  // Verify token a  nd extract domain from it
   const rawToken = bearerToken.split(' ')[1];
   jwt.verify(rawToken, getKey, { issuer: KEYCLOAK_ISSUER }, (err, decoded) => {
     if (err) {
@@ -69,14 +76,37 @@ export const authenticateRequest = (
       // Extract domain from decoded token and add it to query
       const domain = decoded.idir_user_guid ? 'idir' : 'bceid';
       const isIdir = domain === 'idir';
-      const keycloak_guid = isIdir
+      const keycloakId = isIdir
         ? decoded.idir_user_guid
         : decoded.bceid_business_guid;
-      req.query[domain] = keycloak_guid;
+      const { email, given_name, family_name } = decoded;
+      const username = (isIdir
+        ? (decoded.idir_username as string).toLowerCase()
+        : given_name[0] + family_name
+      ).toLowerCase();
 
-      // Check if there are any roles associated with the token
-      //   const roles = decoded.realm_access ? decoded.realm_access.roles : [];
-      //   console.log(`Roles associated with the token: ${roles}`);
+      const origin =
+        decoded.aud === FULL_ACCESS_AUD
+          ? 'BCTW'
+          : decoded.aud === PARTIAL_ACCESS_AUD
+          ? 'SIMS'
+          : null;
+
+      if (!origin) {
+        res.status(401).send('Invalid token. Invalid audience.');
+        return;
+      }
+
+      (req as UserRequest).user = {
+        origin,
+        domain,
+        keycloakId,
+        email,
+        username,
+        givenName: given_name,
+        familyName: family_name,
+      };
+
       console.log(decoded);
 
       next();
@@ -86,6 +116,7 @@ export const authenticateRequest = (
 
 /**
  * Middleware to forward the token to outgoing Critterbase API requests
+ *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @param {NextFunction} next - Express next function

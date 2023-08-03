@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { QResult, SearchFilter } from '../types/query';
+import { UserRequest } from '../types/userRequest';
 
 // helpers for processing express Request objects
 
@@ -47,14 +48,13 @@ const getUserIdentifier = (req: Request): string | undefined => {
 const getUserIdentifierDomain = (
   req: Request
 ): [string, string | undefined] => {
-  const { query } = req;
-  const { bceid, idir } = query;
-  if (bceid) {
-    return ['bceid', String(bceid)];
-  } else if (idir) {
-    return ['idir', String(idir)];
+  if (!(req as UserRequest).user) {
+    return ['IDIR', undefined];
   }
-  return ['idir', undefined];
+  return [
+    (req as UserRequest).user.domain,
+    (req as UserRequest).user.keycloakId,
+  ];
 };
 
 /**
