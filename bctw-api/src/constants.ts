@@ -9,7 +9,8 @@ const DISABLE_PERMISSION_EMAIL =
 const BCTW_EMAIL = process.env.BCTW_EMAIL ?? 'bctw@gov.bc.ca';
 const CB_API_URL = process.env.CRITTERBASE_API ?? 'http://localhost:8080/api';
 
-const KEYCLOAK_HOST = process.env.KEYCLOAK_HOST ?? 'https://dev.loginproxy.gov.bc.ca/auth';
+const KEYCLOAK_HOST =
+  process.env.KEYCLOAK_HOST ?? 'https://dev.loginproxy.gov.bc.ca/auth';
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM ?? 'standard';
 
 const RAW_LOTEK = 'telemetry_api_lotek';
@@ -46,8 +47,9 @@ const MORTALITY_SMS =
   process.env.BCTW_GCNOTIFY_SMS_MORTALITY_DETECTED ??
   'e0ad95d9-56f3-4ad5-bab9-85c31ddef926';
 
-const FULL_ACCESS_AUD = process.env.FULL_ACCESS_AUD ?? '';
-const PARTIAL_ACCESS_AUD = process.env.PARTIAL_ACCESS_AUD ?? '';
+const BCTW_AUD = process.env.BCTW_AUD ?? '';
+const SIMS_AUD = process.env.SIMS_AUD ?? '';
+const SIMS_SERVICE_AUD = process.env.SERVICE_AUD ?? '';
 
 const critterbase = axios.create({
   baseURL: CB_API_URL,
@@ -76,6 +78,7 @@ export {
   IS_DEV,
   KEYCLOAK_HOST,
   KEYCLOAK_REALM,
-  FULL_ACCESS_AUD,
-  PARTIAL_ACCESS_AUD,
+  BCTW_AUD,
+  SIMS_AUD,
+  SIMS_SERVICE_AUD,
 };

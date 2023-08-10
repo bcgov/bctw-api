@@ -2,10 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import jwksClient, { JwksClient } from 'jwks-rsa';
 import {
-  FULL_ACCESS_AUD,
+  BCTW_AUD,
   KEYCLOAK_HOST,
   KEYCLOAK_REALM,
-  PARTIAL_ACCESS_AUD,
+  SIMS_AUD,
+  SIMS_SERVICE_AUD,
   critterbase,
 } from '../constants';
 import { UserRequest } from '../types/userRequest';
@@ -67,7 +68,7 @@ export const authenticateRequest = (
     return;
   }
 
-  // Verify token a  nd extract domain from it
+  // Verify token and extract domain from it
   const rawToken = bearerToken.split(' ')[1];
   jwt.verify(rawToken, getKey, { issuer: KEYCLOAK_ISSUER }, (err, decoded) => {
     if (err) {
@@ -86,10 +87,12 @@ export const authenticateRequest = (
       ).toLowerCase();
 
       const origin =
-        decoded.aud === FULL_ACCESS_AUD
+        decoded.aud === BCTW_AUD
           ? 'BCTW'
-          : decoded.aud === PARTIAL_ACCESS_AUD
+          : decoded.aud === SIMS_AUD
           ? 'SIMS'
+          : decoded.aud === SIMS_SERVICE_AUD
+          ? 'SIMS_SERVICE'
           : null;
 
       if (!origin) {
