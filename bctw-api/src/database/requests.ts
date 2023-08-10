@@ -36,9 +36,7 @@ const getFilterFromRequest = (
  * @returns the identifier as a string if it exists, or undefined -> keycloak GUUID
  */
 const getUserIdentifier = (req: Request): string | undefined => {
-  const id = req.query.idir ?? req.query.bceid;
-  // if(user) return user.idir ?? user.bceid;
-  return String(id) ?? undefined;
+  return String((req as UserRequest).user.keycloakId) ?? undefined;
 };
 
 /**
