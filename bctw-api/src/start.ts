@@ -11,7 +11,7 @@ import {
   getAnimalHistory,
   getAnimals,
   upsertAnimal,
-  getAttachedHistoric
+  getAttachedHistoric,
 } from './apis/animal_api';
 import {
   addCode,
@@ -71,10 +71,10 @@ import {
   getUserOnboardStatus,
   submitOnboardingRequest,
   handleOnboardingRequest,
+  signup,
 } from './apis/onboarding_api';
 import { fetchVendorTelemetryData } from './apis/vendor/vendor_helpers';
 import { importTelemetry } from './import/import_telemetry';
-import { signup } from './auth/authorization';
 
 /** contains a few special handlers, but otherwise this file simply re-export other endpoints */
 

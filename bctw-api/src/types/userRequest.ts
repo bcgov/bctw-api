@@ -4,7 +4,7 @@ export type Audience = 'BCTW' | 'SIMS' | 'SIMS_SERVICE';
 
 export interface UserRequest extends Request {
   user: {
-    origin: Audience
+    origin: Audience;
     domain: 'idir' | 'bceid';
     keycloakId: string;
     email: string;

@@ -3,7 +3,7 @@ import {
   GCNotifyOnboardAdminReq,
   GCNotifyOnboardUserConfirmation,
 } from './../types/sms';
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import {
   BCTW_EMAIL,
   CONFIRMATION_TO_USER_ID,
@@ -22,8 +22,14 @@ import {
   getUserIdentifier,
   getUserIdentifierDomain,
 } from '../database/requests';
-import { IHandleOnboardRequestInput } from '../types/user';
+import {
+  IHandleOnboardRequestInput,
+  IUserInput,
+  eUserRole,
+} from '../types/user';
 import { sendGCEmail } from '../utils/gcNotify';
+import { UserRequest } from '../types/userRequest';
+import { getRegistrationStatus } from '../auth/authorization';
 
 /**
  * unauthorized endpoint that handles new user onboard requests
@@ -195,10 +201,49 @@ const getFiles = async (
   return res;
 };
 
-/**
- * sign-up function for a new user that doesn't skips onboarding
- * TODO
- */
+const signupUser = async (req: UserRequest): Promise<void> => {
+  const { keycloakId, domain, email, givenName, familyName } = req.user;
+  const user = {
+    [domain]: keycloakId,
+    email,
+    firstname: givenName,
+    lastname: familyName,
+  } as Record<keyof IUserInput, unknown>;
+  const sql = constructFunctionQuery('upsert-user', [
+    'system',
+    user,
+    eUserRole.user,
+  ]);
+  const { result, error, isError } = await query(sql, '', true);
+  if (isError) {
+    throw new Error(error.message);
+  }
+};
+
+const signup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    await signupUser(req as UserRequest);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send((error as Error).message);
+    return;
+  }
+
+  // Confirm successful registration
+  const registered = await getRegistrationStatus(
+    (req as UserRequest).user.keycloakId
+  );
+  if (!registered) {
+    res.status(500).send('Failed to register user');
+    return;
+  }
+  (req as UserRequest).user.registered = registered;
+  next();
+};
 
 export {
   getOnboardingRequests,
@@ -206,4 +251,5 @@ export {
   handleOnboardingRequest,
   submitOnboardingRequest,
   getFiles,
+  signup,
 };
