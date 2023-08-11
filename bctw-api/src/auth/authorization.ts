@@ -6,7 +6,7 @@ import {
   query,
 } from '../database/query';
 import { UserRequest } from '../types/userRequest';
-import { ROUTE_AUDIENCES } from './authHelpers';
+import { ROUTE_AUDIENCES } from '../routes';
 
 export const getRegistrationStatus = async (
   keycloakId: string
@@ -30,7 +30,7 @@ export const authorizeRequest = async (
   (req as UserRequest).user.registered = registered;
 
   // Check if route is restricted to a specific audience
-  const allowedAudiences = ROUTE_AUDIENCES[`${req.method}:${req.path}`];
+  const allowedAudiences = ROUTE_AUDIENCES[`req.path`];
 
   // Check if audience is allowed for the route, note that BCTW and SIMS users must also be registered
   if (allowedAudiences && allowedAudiences.length > 0) {
