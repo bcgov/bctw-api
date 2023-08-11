@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { QResult, SearchFilter } from '../types/query';
+import { UserRequest } from '../types/userRequest';
 
 // helpers for processing express Request objects
 
@@ -35,9 +36,7 @@ const getFilterFromRequest = (
  * @returns the identifier as a string if it exists, or undefined -> keycloak GUUID
  */
 const getUserIdentifier = (req: Request): string | undefined => {
-  const id = req.query.idir ?? req.query.bceid;
-  // if(user) return user.idir ?? user.bceid;
-  return String(id) ?? undefined;
+  return String((req as UserRequest).user.keycloakId) ?? undefined;
 };
 
 /**
@@ -47,14 +46,13 @@ const getUserIdentifier = (req: Request): string | undefined => {
 const getUserIdentifierDomain = (
   req: Request
 ): [string, string | undefined] => {
-  const { query } = req;
-  const { bceid, idir } = query;
-  if (bceid) {
-    return ['bceid', String(bceid)];
-  } else if (idir) {
-    return ['idir', String(idir)];
+  if (!(req as UserRequest).user) {
+    return ['IDIR', undefined];
   }
-  return ['idir', undefined];
+  return [
+    (req as UserRequest).user.domain,
+    (req as UserRequest).user.keycloakId,
+  ];
 };
 
 /**

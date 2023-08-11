@@ -22,7 +22,6 @@ const getUserTelemetryAlerts = async function (
   }
 
   const getBctwRes = getRowResults(bctwQuery.result, fn_name);
-
   const critterQuery = await query(
     critterbase.post('/critters', {
       critter_ids: getBctwRes?.map((row) => row.critter_id)

@@ -8,11 +8,10 @@ const DISABLE_PERMISSION_EMAIL =
   process.env.DISABLE_PERMISSION_EMAILS === 'true';
 const BCTW_EMAIL = process.env.BCTW_EMAIL ?? 'bctw@gov.bc.ca';
 const CB_API_URL = process.env.CRITTERBASE_API ?? 'http://localhost:8080/api';
-const CB_API_KEY = process.env.CRITTERBASE_API_KEY ?? 'missing API KEY';
-const CB_DEV_USER_ID =
-  process.env.CRITTERBASE_DEV_USER_ID ?? 'missing dev critterbase user uuid';
-const CB_DEV_KEYCLOAK_UUID =
-  process.env.CRITTERBASE_DEV_KEYCLOAK_UUID ?? 'missing dev keycloak uuid';
+
+const KEYCLOAK_HOST =
+  process.env.KEYCLOAK_HOST ?? 'https://dev.loginproxy.gov.bc.ca/auth';
+const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM ?? 'standard';
 
 const RAW_LOTEK = 'telemetry_api_lotek';
 const RAW_VECTRONIC = 'telemetry_api_vectronic';
@@ -48,19 +47,13 @@ const MORTALITY_SMS =
   process.env.BCTW_GCNOTIFY_SMS_MORTALITY_DETECTED ??
   'e0ad95d9-56f3-4ad5-bab9-85c31ddef926';
 
-const CB_PROD_HEADERS = {
-  'api-key': CB_API_KEY,
-};
-
-const CB_DEV_HEADERS = {
-  'user-id': CB_DEV_USER_ID,
-  'keycloak-uuid': CB_DEV_KEYCLOAK_UUID,
-  ...CB_PROD_HEADERS,
-};
+const BCTW_AUD = process.env.BCTW_AUD ?? '';
+const SIMS_AUD = process.env.SIMS_AUD ?? '';
+const SIMS_SERVICE_AUD = process.env.SERVICE_AUD ?? '';
 
 const critterbase = axios.create({
   baseURL: CB_API_URL,
-  headers: IS_DEV ? CB_DEV_HEADERS : CB_PROD_HEADERS,
+  headers: { authorization: null },
 });
 
 export {
@@ -83,4 +76,9 @@ export {
   critterbase,
   IS_PROD,
   IS_DEV,
+  KEYCLOAK_HOST,
+  KEYCLOAK_REALM,
+  BCTW_AUD,
+  SIMS_AUD,
+  SIMS_SERVICE_AUD,
 };

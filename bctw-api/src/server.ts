@@ -1,160 +1,107 @@
 import cors from 'cors';
 import http from 'http';
 import helmet from 'helmet';
-import express, { Request, Response } from 'express';
+import express from 'express';
 import multer from 'multer';
 import * as api from './start';
 import { finalizeImport, importXlsx, getTemplateFile } from './import/csv';
-import {
-  getUserIdentifierDomain,
-  matchAny,
-  MISSING_USERNAME,
-} from './database/requests';
-import { fn_get_user_id } from './apis/user_api';
-import { constructFunctionQuery, getRowResults, query } from './database/query';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 import { critterbaseRouter } from './apis/critterbaseRouter';
-import { IS_PROD, critterbase } from './constants';
-import { AxiosRequestConfig } from 'axios';
+import { authenticateRequest, forwardToken } from './auth/authentication';
+import { deployDevice } from './apis/deployment_api';
+import { authorizeRequest } from './auth/authorization';
+import { ROUTES } from './routes';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
 
-// only these urls can pass through unauthorized
-const unauthorizedURLs: Record<string, string> = {
-  status: '/get-onboard-status',
-  submit: '/submit-onboarding-request',
-};
-const setHeaders = (
-  config: AxiosRequestConfig,
-  req: Request,
-  headers: string[]
-) => {
-  headers.forEach((head) => {
-    if (req.headers?.[head]) {
-      config.headers[head] = req.headers[head];
-    }
-  });
-  return config;
-};
 // setup the express server
 export const app = express()
   .use(helmet())
   .use(cors({ credentials: true }))
   .use(express.urlencoded({ extended: true }))
-  .get('/get-template', getTemplateFile)
+  .get(ROUTES.getTemplate, getTemplateFile)
   .use(express.json())
-  .all('*', async (req: Request, res: Response, next) => {
-    //TODO Make constant IS_TEST
-    if (process.env.NODE_ENV === 'test') {
-      return next();
-    }
-    //If production the headers come from the proxied API requests.
-    if (IS_PROD) {
-      critterbase.interceptors.request.use((config) =>
-        setHeaders(config, req, ['keycloak-uuid', 'user-id', 'api-key'])
-      );
-    }
-
-    // determine if user is authorized
-    const [domain, identifier] = getUserIdentifierDomain(req);
-    if (!domain) {
-      res.status(500).send('must specify domain type');
-    }
-    if (!identifier) {
-      res.status(500).send(MISSING_USERNAME); // reject
-    }
-    const sql = constructFunctionQuery(fn_get_user_id, [identifier]);
-    // fetch the domain/username user ID
-    const { result } = await query(sql);
-    // valid users will have an integer user id
-    const registered =
-      typeof getRowResults(result, fn_get_user_id, true) === 'number';
-    if (registered) {
-      next(); // pass through
-    } else if (
-      !registered &&
-      matchAny(req.url, Object.values(unauthorizedURLs))
-    ) {
-      next(); // also pass through for new onboarding requests
-    } else {
-      res.status(401).send('Unauthorized'); // reject
-    }
-  })
-  .use('/cb/', critterbaseRouter)
+  .use(authenticateRequest)
+  .use(authorizeRequest)
+  .use(forwardToken)
+  .use(ROUTES.critterbase, critterbaseRouter)
   // map
-  .get('/get-critters', api.getDBCritters)
-  .get('/get-critter-tracks', api.getCritterTracks)
-  .get('/get-pings-estimate', api.getPingsEstimate)
+  .get(ROUTES.getCritters, api.getDBCritters)
+  .get(ROUTES.getCritterTracks, api.getCritterTracks)
+  .get(ROUTES.getPingsEstimate, api.getPingsEstimate)
   // animals
-  .get('/get-animals', api.getAnimals)
-  .get('/get-attached-historic', api.getAttachedHistoric)
-  .get('/get-animal-history/:animal_id', api.getAnimalHistory)
-  .post('/upsert-animal', api.upsertAnimal)
+  .get(ROUTES.getAnimals, api.getAnimals)
+  .get(ROUTES.getAttachedHistoric, api.getAttachedHistoric)
+  .get(ROUTES.getAnimalHistory, api.getAnimalHistory)
+  .post(ROUTES.upsertAnimal, api.upsertAnimal)
   // devices
-  .get('/get-all-collars', api.getAllCollars)
-  .get('/get-collars-and-deviceids', api.getCollarsAndDeviceIds)
-  .get('/get-assigned-collars', api.getAssignedCollars)
-  .get('/get-available-collars', api.getAvailableCollars)
-  .get('/get-assignment-history/:animal_id', api.getCollarAssignmentHistory)
-  .get('/get-collar-history/:collar_id', api.getCollarChangeHistory)
-  .post('/upsert-collar', api.upsertCollar)
+  .get(ROUTES.getAllCollars, api.getAllCollars)
+  .get(ROUTES.getCollarsAndDeviceIds, api.getCollarsAndDeviceIds)
+  .get(ROUTES.getAssignedCollars, api.getAssignedCollars)
+  .get(ROUTES.getAvailableCollars, api.getAvailableCollars)
+  .get(ROUTES.getCollarAssignmentHistory, api.getCollarAssignmentHistory)
+  .get(ROUTES.getCollarChangeHistory, api.getCollarChangeHistory)
+  .get(ROUTES.getCollarVendors, api.getCollarVendors)
+  .post(ROUTES.upsertCollar, api.upsertCollar)
   // animal/device attachment
-  .post('/attach-device', api.attachDevice)
-  .post('/unattach-device', api.unattachDevice)
-  .post('/update-data-life', api.updateDataLife)
+  .post(ROUTES.attachDevice, api.attachDevice)
+  .post(ROUTES.unattachDevice, api.unattachDevice)
+  .post(ROUTES.updateDataLife, api.updateDataLife)
   // permissions
-  .get('/permission-request', api.getPermissionRequests)
-  .get('/permission-history', api.getGrantedPermissionHistory)
-  .post('/submit-permission-request', api.submitPermissionRequest)
-  .post('/execute-permission-request', api.approveOrDenyPermissionRequest)
+  .get(ROUTES.getPermissionRequests, api.getPermissionRequests)
+  .get(ROUTES.getGrantedPermissionHistory, api.getGrantedPermissionHistory)
+  .post(ROUTES.submitPermissionRequest, api.submitPermissionRequest)
+  .post(ROUTES.getPermissionRequests, api.approveOrDenyPermissionRequest)
   // users
-  .get('/get-user', api.getUser)
-  .get('/get-users', api.getUsers)
-  .get('/get-user-role', api.getUserRole)
-  .post('/add-user', api.upsertUser)
+  .post(ROUTES.signup, api.signup)
+  .get(ROUTES.getUser, api.getUser)
+  .get(ROUTES.getUsers, api.getUsers)
+  .get(ROUTES.getUserRole, api.getUserRole)
+  .post(ROUTES.upsertUser, api.upsertUser)
   // onboarding
-  .get(unauthorizedURLs.status, api.getUserOnboardStatus)
-  .get('/onboarding-requests', api.getOnboardingRequests)
-  .post(unauthorizedURLs.submit, api.submitOnboardingRequest)
-  .post('/handle-onboarding-request', api.handleOnboardingRequest)
+  .get(ROUTES.getUserOnboardStatus, api.getUserOnboardStatus)
+  .get(ROUTES.getOnboardingRequests, api.getOnboardingRequests)
+  .post(ROUTES.submitOnboardingRequest, api.submitOnboardingRequest)
+  .post(ROUTES.handleOnboardingRequest, api.handleOnboardingRequest)
   // user access
-  .get('/get-critter-access/:user', api.getUserCritterAccess)
-  .post('/assign-critter-to-user', api.assignCritterToUser)
+  .get(ROUTES.getUserCritterAccess, api.getUserCritterAccess)
+  .post(ROUTES.assignCritterToUser, api.assignCritterToUser)
   // udf
-  .post('/add-udf', api.upsertUDF)
-  .get('/get-udf', api.getUDF)
+  .post(ROUTES.upsertUDF, api.upsertUDF)
+  .get(ROUTES.getUDF, api.getUDF)
   // alerts
-  .get('/get-user-alerts', api.getUserTelemetryAlerts)
-  .get('/test-alert-notif', api.testAlertNotification)
-  .post('/update-user-alert', api.updateUserTelemetryAlert)
+  .get(ROUTES.getUserTelemetryAlerts, api.getUserTelemetryAlerts)
+  .get(ROUTES.testAlertNotification, api.testAlertNotification)
+  .post(ROUTES.updateUserTelemetryAlert, api.updateUserTelemetryAlert)
   // codes
-  .get('/get-code', api.getCode)
-  .get('/get-code-headers', api.getCodeHeaders)
-  .get('/get-code-long-desc', api.getCodeLongDesc)
+  .get(ROUTES.getCode, api.getCode)
+  .get(ROUTES.getCodeHeaders, api.getCodeHeaders)
+  .get(ROUTES.getCodeLongDesc, api.getCodeLongDesc)
   // export/import
-  .post('/export', api.getExportData)
-  .post('/export-all', api.getAllExportData)
-  .post('/import-xlsx', upload.single('validated-file'), importXlsx)
-  .post('/import-finalize', finalizeImport)
+  .post(ROUTES.getExportData, api.getExportData)
+  .post(ROUTES.getAllExportData, api.getAllExportData)
+  .post(ROUTES.importXlsx, upload.single('validated-file'), importXlsx)
+  .post(ROUTES.importFinalize, finalizeImport)
+  .post(ROUTES.deployDevice, deployDevice)
   .post(
-    '/import-xml',
+    ROUTES.importXML,
     upload.array('xml'),
     api.parseVectronicKeyRegistrationXML
   )
-  .post('/import-telemetry', api.importTelemetry)
-  .get('/get-collars-keyx', api.retrieveCollarKeyXRelation)
+  .post(ROUTES.importTelemetry, api.importTelemetry)
+  .get(ROUTES.getCollarKeyX, api.retrieveCollarKeyXRelation)
   // vendor
-  .post('/fetch-telemetry', api.fetchVendorTelemetryData)
+  .post(ROUTES.fetchTelemetry, api.fetchVendorTelemetryData)
   // delete
-  .delete('/:type', api.deleteType)
-  .delete('/:type/:id', api.deleteType)
+  .delete(ROUTES.deleteType, api.deleteType)
+  .delete(ROUTES.deleteTypeId, api.deleteType)
   // generic getter
-  .get('/:type/:id', api.getType)
+  .get(ROUTES.getType, api.getType)
   // Health check
-  .get('/health', (_, res) => res.send('Im healthy!'))
-  .get('*', api.notFound);
+  .get(ROUTES.health, (_, res) => res.send(`I'm healthy!`))
+  .get(ROUTES.notFound, api.notFound);
 
 // run the server.
 // Nodemon was giving issues with port 3000, add new one to env to solve problem.
