@@ -1,6 +1,6 @@
 import { Request } from 'express';
 
-export type Audience = 'BCTW' | 'SIMS' | 'SIMS_SERVICE';
+export type Audience = 'BCTW' | 'SIMS' | 'SIMS_SERVICE' | 'ANY';
 
 export interface UserRequest extends Request {
   user: {

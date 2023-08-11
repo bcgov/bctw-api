@@ -1,4 +1,4 @@
-import { Audience } from "./types/userRequest";
+import { Audience } from './types/userRequest';
 
 const ROUTES = {
   // templates
@@ -83,63 +83,14 @@ type IRouteKey = keyof typeof ROUTES;
 type IRoute = typeof ROUTES[IRouteKey];
 
 const ROUTE_AUDIENCES: { [key in IRouteKey]?: Audience[] } = {
-    [ROUTES.getTemplate]: [],
-    [ROUTES.critterbase]: ['BCTW'],
-    [ROUTES.getCritters]: ['BCTW'],
-    [ROUTES.getCritterTracks]: ['BCTW'],
-    [ROUTES.getPingsEstimate]: ['BCTW'],
-    [ROUTES.getAnimals]: ['BCTW'],
-    [ROUTES.getAttachedHistoric]: ['BCTW'],
-    [ROUTES.getAnimalHistory]: ['BCTW'],
-    [ROUTES.upsertAnimal]: ['BCTW'],
-    [ROUTES.getAllCollars]: ['BCTW'],
-    [ROUTES.getCollarsAndDeviceIds]: ['BCTW'],
-    [ROUTES.getAssignedCollars]: ['BCTW'],
-    [ROUTES.getAvailableCollars]: ['BCTW'],
-    [ROUTES.getCollarAssignmentHistory]: ['BCTW'],
-    [ROUTES.getCollarChangeHistory]: ['BCTW'],
-    [ROUTES.getCollarVendors]: ['BCTW', 'SIMS'],
-    [ROUTES.upsertCollar]: ['BCTW'],
-    [ROUTES.attachDevice]: ['BCTW'],
-    [ROUTES.unattachDevice]: ['BCTW'],
-    [ROUTES.updateDataLife]: ['BCTW'],
-    [ROUTES.getPermissionRequests]: ['BCTW'],
-    [ROUTES.getGrantedPermissionHistory]: ['BCTW'],
-    [ROUTES.submitPermissionRequest]: ['BCTW'],
-    [ROUTES.approveOrDenyPermissionRequest]: ['BCTW'],
-    [ROUTES.getUser]: ['BCTW'],
-    [ROUTES.getUsers]: ['BCTW'],
-    [ROUTES.getUserRole]: ['BCTW'],
-    [ROUTES.signup]: ['SIMS_SERVICE'], // Only the SIMS service can signup users directly.
-    [ROUTES.upsertUser]: ['BCTW'],
-    [ROUTES.getUserOnboardStatus]: [], // Open to all common-realm users.
-    [ROUTES.getOnboardingRequests]: ['BCTW'],
-    [ROUTES.submitOnboardingRequest]: [],
-    [ROUTES.handleOnboardingRequest]: ['BCTW'],
-    [ROUTES.getUserCritterAccess]: ['BCTW'],
-    [ROUTES.assignCritterToUser]: ['BCTW'],
-    [ROUTES.upsertUDF]: ['BCTW'],
-    [ROUTES.getUDF]: ['BCTW'],
-    [ROUTES.getUserTelemetryAlerts]: ['BCTW'],
-    [ROUTES.testAlertNotification]: ['BCTW'],
-    [ROUTES.updateUserTelemetryAlert]: ['BCTW'],
-    [ROUTES.getCode]: ['BCTW'],
-    [ROUTES.getCodeHeaders]: ['BCTW'],
-    [ROUTES.getCodeLongDesc]: ['BCTW'],
-    [ROUTES.getExportData]: ['BCTW'],
-    [ROUTES.getAllExportData]: ['BCTW'],
-    [ROUTES.importXlsx]: ['BCTW'],
-    [ROUTES.importFinalize]: ['BCTW'],
-    [ROUTES.deployDevice]: ['SIMS'], // Only SIMS users may do this.
-    [ROUTES.importXML]: ['BCTW'],
-    [ROUTES.importTelemetry]: ['BCTW'],
-    [ROUTES.getCollarKeyX]: ['BCTW'],
-    [ROUTES.fetchTelemetry]: ['BCTW'],
-    [ROUTES.deleteType]: ['BCTW'],
-    [ROUTES.deleteTypeId]: ['BCTW'],
-    [ROUTES.getType]: ['BCTW'],
-    [ROUTES.health]: [],
-    [ROUTES.notFound]: [],
-  };
+  [ROUTES.getTemplate]: ['ANY'],
+  [ROUTES.getCollarVendors]: ['SIMS'],
+  [ROUTES.signup]: ['SIMS_SERVICE'], // Only the SIMS service can signup users directly.
+  [ROUTES.getUserOnboardStatus]: ['ANY'], // Open to all common-realm users.
+  [ROUTES.submitOnboardingRequest]: ['ANY'],
+  [ROUTES.deployDevice]: ['SIMS'], // Only SIMS users may do this.
+  [ROUTES.health]: ['ANY'],
+  [ROUTES.notFound]: ['ANY'],
+};
 
 export { ROUTES, IRouteKey, IRoute, ROUTE_AUDIENCES };
