@@ -1,6 +1,5 @@
 import { vectronicRecordExists } from '../apis/vendor/vectronic';
 import { doesVendorDeviceExist } from '../apis/vendor/vendor_helpers';
-import { S_API } from '../constants';
 import {
   constructFunctionQuery,
   getRowResults,

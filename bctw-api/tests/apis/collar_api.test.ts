@@ -1,4 +1,3 @@
-import { deleteCollar } from '../../src/apis/collar_api';
 import { request } from '../utils/constants';
 import { mockQuery, queryReturn } from './test_helpers';
 

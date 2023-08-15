@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import {
-  constructFunctionQuery,
   getRowResults,
   query,
 } from '../database/query';
@@ -20,7 +19,7 @@ import {
 import { Workbook } from 'exceljs';
 import { ExtendedWorksheet } from '../types/xlsx_types';
 import { getFiles } from '../apis/onboarding_api';
-import { S_API, critterbase } from '../constants';
+import { critterbase } from '../constants';
 import { GenericVendorTelemetry } from '../types/vendor';
 import {
   validateAnimalDeviceData,

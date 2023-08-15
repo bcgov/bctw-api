@@ -45,7 +45,6 @@ const upsertCollar = async function (
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
-    const rowResults = getRowResults(result, fn_upsert_collar);
     createBulkResponse(bulkResp, getRowResults(result, fn_upsert_collar)[0]);
   }
   return res.status(getStatusFromBulkRes(bulkResp)).send(bulkResp);

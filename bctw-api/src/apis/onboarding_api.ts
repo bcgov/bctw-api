@@ -214,7 +214,7 @@ const signupUser = async (req: UserRequest): Promise<void> => {
     user,
     eUserRole.user,
   ]);
-  const { result, error, isError } = await query(sql, '', true);
+  const { error, isError } = await query(sql, '', true);
   if (isError) {
     throw new Error(error.message);
   }
