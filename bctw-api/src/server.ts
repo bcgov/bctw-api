@@ -8,7 +8,7 @@ import { finalizeImport, importXlsx, getTemplateFile } from './import/csv';
 import listenForTelemetryAlerts from './database/notify';
 import { pgPool } from './database/pg';
 import { critterbaseRouter } from './apis/critterbaseRouter';
-import { authenticateRequest, forwardToken } from './auth/authentication';
+import { authenticateRequest, forwardUser } from './auth/authentication';
 import { deployDevice } from './apis/deployment_api';
 import { authorizeRequest } from './auth/authorization';
 import { ROUTES } from './routes';
@@ -25,7 +25,7 @@ export const app = express()
   .use(express.json())
   .use(authenticateRequest)
   .use(authorizeRequest)
-  .use(forwardToken)
+  .use(forwardUser)
   .use(ROUTES.critterbase, critterbaseRouter)
   // map
   .get(ROUTES.getCritters, api.getDBCritters)

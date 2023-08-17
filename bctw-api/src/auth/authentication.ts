@@ -10,6 +10,7 @@ import {
   critterbase,
 } from '../constants';
 import { UserRequest } from '../types/userRequest';
+import { getKeycloakToken } from './keycloak';
 
 const KEYCLOAK_ISSUER = `${KEYCLOAK_HOST}/realms/${KEYCLOAK_REALM}`;
 const KEYCLOAK_URL = `${KEYCLOAK_ISSUER}/protocol/openid-connect/certs`;
@@ -118,22 +119,26 @@ export const authenticateRequest = (
 };
 
 /**
- * Middleware to forward the token to outgoing Critterbase API requests
+ * Middleware to forward the user's details to outgoing Critterbase API requests
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @param {NextFunction} next - Express next function
  */
-export const forwardToken = (
+export const forwardUser = async (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
-  const token = req.headers.authorization;
-  // reset request interceptors so that old token is not used
+): Promise<void> => {
+  const user = (req as UserRequest).user;
+  // reset request interceptors so that old user is not used
   (critterbase.interceptors.request as any).handlers = [];
-  critterbase.interceptors.request.use((config) => {
-    config.headers.Authorization = token ?? '';
+  critterbase.interceptors.request.use(async (config) => {
+    config.headers.user = JSON.stringify({
+      keycloakId: user.keycloakId,
+      username: user.username,
+    });
+    config.headers.authorization = `Bearer ${await getKeycloakToken()}`;
     return config;
   });
   next();
