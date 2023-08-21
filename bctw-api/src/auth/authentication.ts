@@ -75,18 +75,6 @@ export const authenticateRequest = (
     if (err) {
       res.status(401).send('Invalid token. Verification failed.');
     } else if (decoded && typeof decoded === 'object') {
-      // Extract domain from decoded token and add it to query
-      const domain = decoded.idir_user_guid ? 'idir' : 'bceid';
-      const isIdir = domain === 'idir';
-      const keycloakId = isIdir
-        ? decoded.idir_user_guid
-        : decoded.bceid_business_guid;
-      const { email, given_name, family_name } = decoded;
-      const username = (isIdir
-        ? (decoded.idir_username as string).toLowerCase()
-        : given_name[0] + family_name
-      ).toLowerCase();
-
       const origin =
         decoded.aud === BCTW_AUD
           ? 'BCTW'
@@ -101,10 +89,22 @@ export const authenticateRequest = (
         return;
       }
 
+      const domain = decoded.bceid_business_guid ? 'bceid' : 'idir';
+      const keycloak_guid =
+        decoded.idir_user_guid ??
+        decoded.bceid_business_guid ??
+        decoded.preferred_username;
+      const { email, given_name, family_name } = decoded;
+      const username = (
+        (decoded.idir_username as string) ??
+        decoded.preferred_username ??
+        given_name[0] + family_name
+      ).toLowerCase();
+
       (req as UserRequest).user = {
         origin,
         domain,
-        keycloakId,
+        keycloak_guid,
         email,
         username,
         givenName: given_name,
@@ -135,7 +135,7 @@ export const forwardUser = async (
   (critterbase.interceptors.request as any).handlers = [];
   critterbase.interceptors.request.use(async (config) => {
     config.headers.user = JSON.stringify({
-      keycloakId: user.keycloakId,
+      keycloak_guid: user.keycloak_guid,
       username: user.username,
     });
     config.headers.authorization = `Bearer ${await getKeycloakToken()}`;

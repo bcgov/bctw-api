@@ -9,9 +9,9 @@ import { UserRequest } from '../types/userRequest';
 import { ROUTE_AUDIENCES } from '../routes';
 
 export const getRegistrationStatus = async (
-  keycloakId: string
+  keycloak_guid: string
 ): Promise<boolean> => {
-  const sql = constructFunctionQuery(fn_get_user_id, [keycloakId]);
+  const sql = constructFunctionQuery(fn_get_user_id, [keycloak_guid]);
   const { result } = await query(sql);
   const isRegistered =
     typeof getRowResults(result, fn_get_user_id, true) === 'number';
@@ -25,9 +25,9 @@ export const authorizeRequest = async (
   next: NextFunction
 ): Promise<void> => {
   const user = (req as UserRequest).user;
-  const { origin, keycloakId } = user;
+  const { origin, keycloak_guid } = user;
 
-  user.registered = await getRegistrationStatus(keycloakId);
+  user.registered = await getRegistrationStatus(keycloak_guid);
 
   // Registered BCTW users can access all routes
   if (user.registered && origin === 'BCTW') {
