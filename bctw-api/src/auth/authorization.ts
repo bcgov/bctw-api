@@ -37,6 +37,7 @@ export const authorizeRequest = async (
   // A Route with no defined allowed audiences can only accept registered BCTW users
   const allowedAudiences = ROUTE_AUDIENCES[req.path];
   if (!allowedAudiences || allowedAudiences.length === 0) {
+    console.log(' A Route with no defined allowed audiences can only accept registered BCTW users')
     res.status(403).send('Forbidden');
     return;
   }
@@ -51,6 +52,7 @@ export const authorizeRequest = async (
     !allowedAudiences.includes(origin) ||
     (!user.registered && (origin === 'BCTW' || origin === 'SIMS'))
   ) {
+    console.log("If the user's origin isn't included, or the user is from BCTW or SIMS and isn't registered, return a forbidden error")
     res.status(403).send('Forbidden');
     return;
   }

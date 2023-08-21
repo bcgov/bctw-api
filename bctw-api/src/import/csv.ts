@@ -532,7 +532,7 @@ const upsertBulkv2 = async (id: string, req: Request) => {
         VALUES (bctw.get_user_id('${user_id}'), '${link_critter_id}', bctw.get_user_id('${id}'), 'manager')`);
 
       const link_res = await client.query(
-        `SELECT bctw.link_collar_to_animal('${id}', '${link_collar_id}', '${link_critter_id}', '${data_start}', '${data_start}', ${formattedEnd}, ${formattedEnd})`
+        `SELECT bctw.link_collar_to_animal('${id}', '${link_collar_id}', '${link_critter_id}', '${data_start}', '${data_start}', ${formattedEnd})`
       );
       const link_row = getRowResults(link_res, 'link_collar_to_animal')[0];
       

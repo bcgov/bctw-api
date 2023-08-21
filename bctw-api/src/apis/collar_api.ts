@@ -166,6 +166,8 @@ const getAttachedDeviceSQL = function (
   WHERE permission_type IS NOT NULL
   ${collar_id ? ` AND ${alias}.collar_id = '${collar_id}'` : ''}`;
 
+  console.log(base);
+
   const sql = constructGetQuery({
     base,
     order: [
