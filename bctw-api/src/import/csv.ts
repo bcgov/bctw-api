@@ -529,7 +529,11 @@ const upsertBulkv2 = async (id: string, req: Request) => {
 
       await client.query(`INSERT INTO bctw.user_animal_assignment 
         (user_id, critter_id, created_by_user_id, permission_type)
-        VALUES (bctw.get_user_id('${user_id}'), '${link_critter_id}', bctw.get_user_id('${id}'), 'manager')`);
+        SELECT bctw.get_user_id('${user_id}'), '${link_critter_id}', bctw.get_user_id('${id}'), 'manager'
+        WHERE NOT EXISTS 
+          (SELECT 1 FROM bctw.user_animal_assignment 
+            WHERE user_id = bctw.get_user_id('${id}') 
+            AND critter_id = '${link_critter_id}' AND valid_to IS NULL)`);
 
       const link_res = await client.query(
         `SELECT bctw.link_collar_to_animal('${id}', '${link_collar_id}', '${link_critter_id}', '${data_start}', '${data_start}', ${formattedEnd})`
