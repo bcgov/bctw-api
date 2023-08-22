@@ -58,7 +58,7 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
     )[0];
 
     // Try to link collar to critter
-    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.data_start}', '${data.data_start}', '${data.data_end}', '${data.data_end}')`;
+    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.data_start}', '${data.data_start}', '${data.data_end}')`;
     const linkCritterResult = getRowResults(
       await client.query(linkCritterSql),
       'link_collar_to_animal'
@@ -71,6 +71,7 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
     }
     // Commit transaction
     await client.query('COMMIT');
+    return linkCritterResult;
   } catch (e) {
     console.log(e);
     await client.query('ROLLBACK');
