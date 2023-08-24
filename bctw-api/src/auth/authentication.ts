@@ -5,7 +5,6 @@ import {
   BCTW_AUD,
   KEYCLOAK_HOST,
   KEYCLOAK_REALM,
-  SIMS_AUD,
   SIMS_SERVICE_AUD,
   critterbase,
 } from '../constants';
@@ -78,8 +77,6 @@ export const authenticateRequest = (
       const origin =
         decoded.aud === BCTW_AUD
           ? 'BCTW'
-          : decoded.aud === SIMS_AUD
-          ? 'SIMS'
           : decoded.aud === SIMS_SERVICE_AUD
           ? 'SIMS_SERVICE'
           : null;

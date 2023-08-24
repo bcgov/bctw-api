@@ -48,7 +48,6 @@ const MORTALITY_SMS =
   'e0ad95d9-56f3-4ad5-bab9-85c31ddef926';
 
 const BCTW_AUD = process.env.BCTW_AUD ?? '';
-const SIMS_AUD = process.env.SIMS_AUD ?? '';
 const SIMS_SERVICE_AUD = process.env.SERVICE_AUD ?? '';
 
 const critterbase = axios.create({
@@ -79,6 +78,5 @@ export {
   KEYCLOAK_HOST,
   KEYCLOAK_REALM,
   BCTW_AUD,
-  SIMS_AUD,
   SIMS_SERVICE_AUD,
 };

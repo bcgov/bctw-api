@@ -46,14 +46,15 @@ export const authorizeRequest = async (
     return next();
   }
 
-  // If the user's origin isn't included, or the user is from BCTW or SIMS and isn't registered, return a forbidden error
+  // If the user's origin isn't included, or the user is from BCTW and isn't registered, return a forbidden error
   if (
     !allowedAudiences.includes(origin) ||
-    (!user.registered && (origin === 'BCTW' || origin === 'SIMS'))
+    (!user.registered && origin === 'BCTW')
   ) {
     res.status(403).send('Forbidden');
     return;
   }
 
+  // Otherwise, the user is authorized
   next();
 };
