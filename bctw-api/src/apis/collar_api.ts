@@ -317,11 +317,14 @@ const getCollarVendors = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  const deprecatedVendors = ['Followit', 'Televilt', 'Telonics'];
   const vendors = await getVendors();
   if (!vendors) {
     return res.status(500).send('failed to retrieve collar vendors');
   } else {
-    return res.status(200).send(vendors);
+    return res
+      .status(200)
+      .send(vendors.filter((vendor) => !deprecatedVendors.includes(vendor)));
   }
 };
 
