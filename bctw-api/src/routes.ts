@@ -27,6 +27,8 @@ const ROUTES = {
   attachDevice: '/attach-device',
   unattachDevice: '/unattach-device',
   updateDataLife: '/update-data-life',
+  getDeployments: '/get-deployments',
+  updateDeployment: '/update-deployment',
   // permissions
   getPermissionRequests: '/permission-request',
   getGrantedPermissionHistory: '/permission-history',
@@ -91,6 +93,8 @@ const ROUTE_AUDIENCES: { [key in IRouteKey]?: Audience[] } = {
   [ROUTES.deployDevice]: ['SIMS_SERVICE'], // Only SIMS service may do this.
   [ROUTES.health]: ['ANY'],
   [ROUTES.notFound]: ['ANY'],
+  [ROUTES.getDeployments]: ['ANY'],
+  [ROUTES.updateDeployment]: ['ANY']
 };
 
 export { ROUTES, IRouteKey, IRoute, ROUTE_AUDIENCES };

@@ -49,6 +49,8 @@ export const app = express()
   .post(ROUTES.attachDevice, api.attachDevice)
   .post(ROUTES.unattachDevice, api.unattachDevice)
   .post(ROUTES.updateDataLife, api.updateDataLife)
+  .get(ROUTES.getDeployments, api.getDeployments)
+  .patch(ROUTES.updateDeployment, api.updateDeploymentTimespan)
   // permissions
   .get(ROUTES.getPermissionRequests, api.getPermissionRequests)
   .get(ROUTES.getGrantedPermissionHistory, api.getGrantedPermissionHistory)

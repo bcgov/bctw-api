@@ -118,7 +118,7 @@ const _getUnattachedSQL = (
     WITH ${alias} AS (
       SELECT caa.critter_id, ${fn_get_user_animal_permission}('${username}', caa.critter_id) AS "permission_type"
       FROM ${S_API}.collar_animal_assignment_v caa
-      WHERE NOT is_valid(now(), caa.valid_from, caa.valid_to) 
+      WHERE NOT is_valid(now(), caa.attachment_start, caa.attachment_end) 
       AND NOT (caa.critter_id IN ( 
         SELECT currently_attached_collars_v.critter_id
         FROM bctw_dapi_v1.currently_attached_collars_v))
