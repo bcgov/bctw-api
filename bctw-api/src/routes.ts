@@ -84,7 +84,7 @@ type IRoute = typeof ROUTES[IRouteKey];
 
 const ROUTE_AUDIENCES: { [key in IRouteKey]?: Audience[] } = {
   [ROUTES.getTemplate]: ['ANY'],
-  [ROUTES.getCollarVendors]: ['SIMS'],
+  [ROUTES.getCollarVendors]: ['SIMS_SERVICE'],
   [ROUTES.signup]: ['SIMS_SERVICE'], // Only the SIMS service can signup users directly.
   [ROUTES.getUserOnboardStatus]: ['ANY'], // Open to all common-realm users.
   [ROUTES.submitOnboardingRequest]: ['ANY'],
