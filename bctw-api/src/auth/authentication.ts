@@ -5,11 +5,11 @@ import {
   BCTW_AUD,
   KEYCLOAK_HOST,
   KEYCLOAK_REALM,
-  SIMS_AUD,
   SIMS_SERVICE_AUD,
   critterbase,
 } from '../constants';
 import { UserRequest } from '../types/userRequest';
+import { getKeycloakToken } from './keycloak';
 
 const KEYCLOAK_ISSUER = `${KEYCLOAK_HOST}/realms/${KEYCLOAK_REALM}`;
 const KEYCLOAK_URL = `${KEYCLOAK_ISSUER}/protocol/openid-connect/certs`;
@@ -74,23 +74,9 @@ export const authenticateRequest = (
     if (err) {
       res.status(401).send('Invalid token. Verification failed.');
     } else if (decoded && typeof decoded === 'object') {
-      // Extract domain from decoded token and add it to query
-      const domain = decoded.idir_user_guid ? 'idir' : 'bceid';
-      const isIdir = domain === 'idir';
-      const keycloakId = isIdir
-        ? decoded.idir_user_guid
-        : decoded.bceid_business_guid;
-      const { email, given_name, family_name } = decoded;
-      const username = (isIdir
-        ? (decoded.idir_username as string).toLowerCase()
-        : given_name[0] + family_name
-      ).toLowerCase();
-
       const origin =
         decoded.aud === BCTW_AUD
           ? 'BCTW'
-          : decoded.aud === SIMS_AUD
-          ? 'SIMS'
           : decoded.aud === SIMS_SERVICE_AUD
           ? 'SIMS_SERVICE'
           : null;
@@ -100,10 +86,22 @@ export const authenticateRequest = (
         return;
       }
 
+      const domain = decoded.bceid_business_guid ? 'bceid' : 'idir';
+      const keycloak_guid =
+        decoded.idir_user_guid ??
+        decoded.bceid_business_guid ??
+        decoded.preferred_username;
+      const { email, given_name, family_name } = decoded;
+      const username = (
+        (decoded.idir_username as string) ??
+        decoded.preferred_username ??
+        given_name[0] + family_name
+      ).toLowerCase();
+
       (req as UserRequest).user = {
         origin,
         domain,
-        keycloakId,
+        keycloak_guid,
         email,
         username,
         givenName: given_name,
@@ -118,22 +116,26 @@ export const authenticateRequest = (
 };
 
 /**
- * Middleware to forward the token to outgoing Critterbase API requests
+ * Middleware to forward the user's details to outgoing Critterbase API requests
  *
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  * @param {NextFunction} next - Express next function
  */
-export const forwardToken = (
+export const forwardUser = async (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
-  const token = req.headers.authorization;
-  // reset request interceptors so that old token is not used
+): Promise<void> => {
+  const user = (req as UserRequest).user;
+  // reset request interceptors so that old user is not used
   (critterbase.interceptors.request as any).handlers = [];
-  critterbase.interceptors.request.use((config) => {
-    config.headers.Authorization = token ?? '';
+  critterbase.interceptors.request.use(async (config) => {
+    config.headers.user = JSON.stringify({
+      keycloak_guid: user.keycloak_guid,
+      username: user.username,
+    });
+    config.headers.authorization = `Bearer ${await getKeycloakToken()}`;
     return config;
   });
   next();

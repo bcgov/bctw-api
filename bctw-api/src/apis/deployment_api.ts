@@ -24,19 +24,20 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
   try {
     await client.query('BEGIN');
 
-    // Check if critter exists and is already assigned to someone
-    const critterCheckSql = `SELECT * FROM bctw_dapi_v1.get_critter_user_assignment_status('${user}', '${data.critter_id}')`;
-    const critterCheckResult = getRowResults(
-      await client.query(critterCheckSql),
-      'get_critter_user_assignment_status'
-    );
-    if (!critterCheckResult) {
-      // 403 error
-      throw apiError.forbidden(
-        'You do not have permission to manage the critter with critter id ' +
-          data.critter_id
-      );
-    }
+    // ! Removing this check and giving SIMS more authority
+    // // Check if critter exists and is already assigned to someone
+    // const critterCheckSql = `SELECT * FROM bctw_dapi_v1.get_critter_user_assignment_status('${user}', '${data.critter_id}')`;
+    // const critterCheckResult = getRowResults(
+    //   await client.query(critterCheckSql),
+    //   'get_critter_user_assignment_status'
+    // );
+    // if (!critterCheckResult) {
+    //   // 403 error
+    //   throw apiError.forbidden(
+    //     'You do not have permission to manage the critter with critter id ' +
+    //       data.critter_id
+    //   );
+    // }
 
     // Assign critter to user
     const assignCritterSql = `INSERT INTO bctw.user_animal_assignment 
@@ -58,7 +59,7 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
     )[0];
 
     // Try to link collar to critter
-    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.data_start}', '${data.data_start}', '${data.data_end}', '${data.data_end}')`;
+    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.data_start}', '${data.data_start}', '${data.data_end}')`;
     const linkCritterResult = getRowResults(
       await client.query(linkCritterSql),
       'link_collar_to_animal'
@@ -71,6 +72,7 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
     }
     // Commit transaction
     await client.query('COMMIT');
+    return linkCritterResult;
   } catch (e) {
     console.log(e);
     await client.query('ROLLBACK');

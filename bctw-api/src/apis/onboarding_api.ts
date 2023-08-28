@@ -202,9 +202,9 @@ const getFiles = async (
 };
 
 const signupUser = async (req: UserRequest): Promise<void> => {
-  const { keycloakId, domain, email, givenName, familyName } = req.user;
+  const { keycloak_guid, domain, email, givenName, familyName } = req.user;
   const user = {
-    [domain]: keycloakId,
+    [domain]: keycloak_guid,
     email,
     firstname: givenName,
     lastname: familyName,
@@ -214,7 +214,7 @@ const signupUser = async (req: UserRequest): Promise<void> => {
     user,
     eUserRole.user,
   ]);
-  const { result, error, isError } = await query(sql, '', true);
+  const { error, isError } = await query(sql, '', true);
   if (isError) {
     throw new Error(error.message);
   }
@@ -235,7 +235,7 @@ const signup = async (
 
   // Confirm successful registration
   const registered = await getRegistrationStatus(
-    (req as UserRequest).user.keycloakId
+    (req as UserRequest).user.keycloak_guid
   );
   if (!registered) {
     res.status(500).send('Failed to register user');

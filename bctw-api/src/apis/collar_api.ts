@@ -45,7 +45,6 @@ const upsertCollar = async function (
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
   } else {
-    const rowResults = getRowResults(result, fn_upsert_collar);
     createBulkResponse(bulkResp, getRowResults(result, fn_upsert_collar)[0]);
   }
   return res.status(getStatusFromBulkRes(bulkResp)).send(bulkResp);
@@ -318,11 +317,14 @@ const getCollarVendors = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  const deprecatedVendors = ['Followit', 'Televilt', 'Telonics'];
   const vendors = await getVendors();
   if (!vendors) {
     return res.status(500).send('failed to retrieve collar vendors');
   } else {
-    return res.status(200).send(vendors);
+    return res
+      .status(200)
+      .send(vendors.filter((vendor) => !deprecatedVendors.includes(vendor)));
   }
 };
 

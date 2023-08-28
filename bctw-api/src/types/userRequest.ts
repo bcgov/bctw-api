@@ -6,7 +6,7 @@ export interface UserRequest extends Request {
   user: {
     origin: Audience;
     domain: 'idir' | 'bceid';
-    keycloakId: string;
+    keycloak_guid: string;
     email: string;
     givenName: string;
     familyName: string;
