@@ -20,8 +20,8 @@ critterbaseRouter
     const { result, error } = await query(critterbase.post(req.url, req.body));
     return handleResponse(res, result.rows, error);
   })
-  .put(async (req: Request, res: Response) => {
-    const { result, error } = await query(critterbase.put(req.url, req.body));
+  .patch(async (req: Request, res: Response) => {
+    const { result, error } = await query(critterbase.patch(req.url, req.body));
     return handleResponse(res, result.rows, error);
   })
   .delete(async (req: Request, res: Response) => {
