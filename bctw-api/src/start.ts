@@ -65,6 +65,8 @@ import {
   getCollarAssignmentHistory,
   unattachDevice,
   updateDataLife,
+  updateDeploymentTimespan,
+  getDeployments
 } from './apis/attachment_api';
 import {
   getOnboardingRequests,
@@ -199,4 +201,6 @@ export {
   submitOnboardingRequest,
   fetchVendorTelemetryData,
   importTelemetry,
+  updateDeploymentTimespan,
+  getDeployments
 };
