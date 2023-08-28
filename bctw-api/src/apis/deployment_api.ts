@@ -7,8 +7,8 @@ import { apiError } from '../utils/error';
 
 interface IDeployDevice extends ICollar {
   critter_id: string;
-  data_start: Date;
-  data_end: Date;
+  attachment_start: Date;
+  attachment_end: Date;
 }
 
 /**
@@ -52,14 +52,14 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
     }
     const collarSql = `SELECT bctw.get_device_id_for_bulk_import('${user}', '${JSON.stringify(
       data
-    )}', '${data.data_start}', '${data.data_end}')`;
+    )}', '${data.attachment_start}', '${data.attachment_end}')`;
     const collar_id = getRowResults(
       await client.query(collarSql),
       'get_device_id_for_bulk_import'
     )[0];
 
     // Try to link collar to critter
-    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.data_start}', '${data.data_start}', '${data.data_end}')`;
+    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.attachment_start}', '${data.attachment_start}', '${data.attachment_end}')`;
     const linkCritterResult = getRowResults(
       await client.query(linkCritterSql),
       'link_collar_to_animal'
