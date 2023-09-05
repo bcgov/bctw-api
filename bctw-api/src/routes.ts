@@ -28,6 +28,7 @@ const ROUTES = {
   unattachDevice: '/unattach-device',
   updateDataLife: '/update-data-life',
   getDeployments: '/get-deployments',
+  getDeploymentsByCritterId: '/get-deployments-by-critter-id',
   updateDeployment: '/update-deployment',
   // permissions
   getPermissionRequests: '/permission-request',
@@ -94,7 +95,9 @@ const ROUTE_AUDIENCES: { [key in IRouteKey]?: Audience[] } = {
   [ROUTES.health]: ['ANY'],
   [ROUTES.notFound]: ['ANY'],
   [ROUTES.getDeployments]: ['ANY'],
-  [ROUTES.updateDeployment]: ['ANY']
+  [ROUTES.getDeploymentsByCritterId]: ['ANY'],
+  [ROUTES.updateDeployment]: ['ANY'],
+  [ROUTES.getCode]: ['SIMS_SERVICE']
 };
 
 export { ROUTES, IRouteKey, IRoute, ROUTE_AUDIENCES };
