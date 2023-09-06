@@ -107,9 +107,7 @@ export const authenticateRequest = (
         givenName: given_name,
         familyName: family_name,
       };
-
-      console.log(decoded);
-
+      
       next();
     }
   });

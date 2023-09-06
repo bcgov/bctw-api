@@ -11,7 +11,10 @@ import {
   IChangeDataLifeProps,
   IChangeDeploymentProps,
 } from '../types/attachment';
-import { collectQueryParamArray, formatJsArrayToPgArray } from '../utils/formatting';
+import {
+  collectQueryParamArray,
+  formatJsArrayToPgArray,
+} from '../utils/formatting';
 
 /**
  * contains API endpoints that handle the animal/device attachment
@@ -74,7 +77,7 @@ const unattachDevice = async function (
   const sql = constructFunctionQuery(pg_unlink_collar_fn, [
     getUserIdentifier(req),
     assignment_id,
-    attachment_end
+    attachment_end,
   ]);
   const { result, error, isError } = await query(
     sql,
@@ -125,13 +128,21 @@ const getDeployments = async function (
   res: Response
 ): Promise<Response> {
   const deployment_ids = req.query?.deployment_ids;
-  if(!deployment_ids) {
+  if (!deployment_ids) {
     return res.status(500).send('Could not parse deployment IDs');
   }
   const deployment_array: string[] = collectQueryParamArray(deployment_ids);
   const formatted_ids = formatJsArrayToPgArray(deployment_array);
-  const sql = `SELECT * FROM bctw.collar_animal_assignment caa WHERE caa.deployment_id = ANY (${formatted_ids}::uuid[])`;
-  console.log('SQL '  + sql)
+  const sql = `
+    WITH unq AS (
+        SELECT DISTINCT collar_id, device_id 
+        FROM collar
+    )
+    SELECT * FROM bctw.collar_animal_assignment caa
+    LEFT JOIN unq ON caa.collar_id = unq.collar_id
+    WHERE caa.deployment_id = ANY (${formatted_ids}::uuid[])
+  `;
+  console.log('SQL ' + sql);
   const { result, error, isError } = await query(
     sql,
     'unable to retrieve deployment_ids',
@@ -142,19 +153,28 @@ const getDeployments = async function (
     return res.status(500).send(error.message);
   }
   return res.send(result.rows);
-}
+};
 
 const getDeploymentsByCritterId = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const critter_ids = req.query?.critter_ids;
-  if(!critter_ids) {
+  if (!critter_ids) {
     return res.status(500).send('Could not parse deployment IDs');
   }
   const critter_array: string[] = collectQueryParamArray(critter_ids);
   const formatted_ids = formatJsArrayToPgArray(critter_array);
-  const sql = `SELECT * FROM bctw.collar_animal_assignment caa WHERE caa.critter_id = ANY (${formatted_ids}::uuid[])`;
+  const sql = `
+    WITH unq AS (
+        SELECT DISTINCT collar_id, device_id 
+        FROM collar
+    )
+    SELECT caa.*, unq.device_id 
+    FROM bctw.collar_animal_assignment caa 
+    LEFT JOIN unq ON caa.collar_id = unq.collar_id
+    WHERE caa.critter_id = ANY (${formatted_ids}::uuid[])
+  `;
   const { result, error, isError } = await query(
     sql,
     'unable to retrieve deployment_ids',
@@ -165,29 +185,31 @@ const getDeploymentsByCritterId = async function (
     return res.status(500).send(error.message);
   }
   return res.send(result.rows);
-}
+};
 
-const updateDeploymentTimespan = async function(
+const updateDeploymentTimespan = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
   const body: IChangeDeploymentProps = req.body;
   const { deployment_id, attachment_start, attachment_end } = body;
-  if(!deployment_id || !attachment_start) {
-    return res.status(500).send('Must provide at least deployment_id and attachment_start.');
+  if (!deployment_id || !attachment_start) {
+    return res
+      .status(500)
+      .send('Must provide at least deployment_id and attachment_start.');
   }
   const sql = constructFunctionQuery(pg_update_deployment, [
     getUserIdentifier(req),
     deployment_id,
-    attachment_start, 
-    attachment_end
+    attachment_start,
+    attachment_end,
   ]);
   const { result, error, isError } = await query(sql);
   if (isError) {
     return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, pg_update_deployment));
-}
+};
 
 /**
  * @param req.params.animal_id the critter_id of the history to retrieve
@@ -217,5 +239,5 @@ export {
   updateDataLife,
   updateDeploymentTimespan,
   getDeployments,
-  getDeploymentsByCritterId
+  getDeploymentsByCritterId,
 };
