@@ -121,51 +121,60 @@ const getAllExportData = async function (
   const critters = await query(
     critterbase.post('/critters/filter', filterBody)
   );
-  if (critters.result.rows.length > 0 && critters.result.rows.length < 40) {
-    req.body.bctw_queries.push({
-      key: 'critter_id',
-      operator: 'Equals',
-      term: critters.result.rows.map((c) => c.critter_id),
-    });
+  
+  const unitCategorySet = new Set<string>();
+  critters.result.rows.forEach(a => a.collection_units?.forEach(b => unitCategorySet.add(b.category_name)));
+  const chunkSize = 20;
+  const allTelemetry: Omit<(IDeviceTelemetry & ICritter), 'collection_units'>[] = [];
+  for (let i = 0; i < critters.result.rows.length; i += chunkSize) {
+      const chunk = critters.result.rows.slice(i, i + chunkSize);
+      const chunkedBctwQuery = [ ...req.body.bctw_queries, {
+        key: 'critter_id',
+        operator: 'Equals',
+        term: chunk.map((c) => c.critter_id),
+      }];
+      const stringedQuery = JSON.stringify(chunkedBctwQuery);
+
+      const exportsql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${stringedQuery}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `;
+      console.log(exportsql);
+      const bctwExportQuery = await query(
+        exportsql,
+        'failed to retrieve telemetry'
+      );
+    
+      let json1: IDeviceTelemetry[];
+      if (Object.values(filterBody).some((a) => a !== undefined)) {
+        const filteredIds = critters.result.rows.map((c) => c.critter_id);
+        json1 = bctwExportQuery.result.rows.filter((r) =>
+          filteredIds.includes(r.critter_id)
+        );
+      } else {
+        json1 = bctwExportQuery.result.rows;
+      }
+    
+      const json2: ICritter[] = critters.result.rows;
+      for(const crit of json2) {
+        unitCategorySet.forEach(a => crit[a] = null);
+        crit.collection_units.forEach(a => crit[a.category_name] = a.unit_name)
+      }
+    
+      const merged = json1.map((x) =>
+        Object.assign(
+          x,
+          json2.find((y) => y.critter_id == x.critter_id)
+        )
+      );
+
+      const strippedMerged = merged.map(({ collection_units, ...rest }) => rest);
+      allTelemetry.push(...strippedMerged);
+      console.log(
+        `Working through this many critter rows: ${chunk.length}`
+      );
+      console.log(
+        `Working through this many bctw rows: ${bctwExportQuery.result.rows.length}`
+      );
   }
-
-  const queries = JSON.stringify(req.body.bctw_queries);
-
-  const exportsql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${queries}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `;
-  console.log(exportsql);
-  const bctwExportQuery = await query(
-    exportsql,
-    'failed to retrieve telemetry'
-  );
-
-  let json1: IDeviceTelemetry[];
-  if (Object.values(filterBody).some((a) => a !== undefined)) {
-    const filteredIds = critters.result.rows.map((c) => c.critter_id);
-    json1 = bctwExportQuery.result.rows.filter((r) =>
-      filteredIds.includes(r.critter_id)
-    );
-  } else {
-    json1 = bctwExportQuery.result.rows;
-  }
-
-  const json2: ICritter[] = critters.result.rows;
-
-  const merged = json1.map((x) =>
-    Object.assign(
-      x,
-      json2.find((y) => y.critter_id == x.critter_id)
-    )
-  );
-
-  const strippedMerged = merged.map(({ collection_units, ...rest }) => rest);
-
-  console.log(
-    `Determined this many critter rows: ${critters.result.rows.length}`
-  );
-  console.log(
-    `Determined this many bctw rows: ${bctwExportQuery.result.rows.length}`
-  );
-  return res.send(strippedMerged);
+  return res.send(allTelemetry);
 };
 
 export { getExportData, getAllExportData };
