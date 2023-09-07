@@ -89,14 +89,43 @@ const getExportData = async function (
   }
 };
 
+const getAllExportData = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const telemetry = await getAllExportDataInternal(req);
+    return res.status(200).send(telemetry);
+  }
+  catch(e) {
+    console.log(`Safely handled exception on Export: ${JSON.stringify((e as Error).message)}`);
+    console.log(`${JSON.stringify((e as Error).stack)}`)
+    return res.status(500).send((e as Error).message);
+  }
+}
+
+const formatGetCrittersFromDeviceQuery = (queries: {key: string, operator: string, term: string[]}[]) => {
+  const clauses: string[] = [];
+  if(!queries || queries.length < 1) {
+    throw new Error(`No valid filters present in this export request.`)
+  }
+  for(const q of queries) {
+    clauses.push(`${q.operator === 'Equals' ? '' : 'NOT'} ${q.key} = ANY( ARRAY[ ` + q.term.map((o) => `${Number(o)}`).join(', ') + `] )`)
+  }
+  const sql = `
+    SELECT DISTINCT critter_id FROM 
+    collar_animal_assignment caa 
+    JOIN collar c ON caa.collar_id = c.collar_id
+     AND caa.valid_to IS NULL and c.valid_to IS NULL 
+     WHERE ${clauses.join(` AND `)}`;
+  console.log(sql);
+  return sql;
+}
+
 /*
  * Called by the new standalone export page.
  * Allows user to export based on specific column parameters and geographic regions contained in polygon data.
  */
-const getAllExportData = async function (
-  req: Request,
-  res: Response
-): Promise<Response> {
+const getAllExportDataInternal = async function (
+  req: Request
+) {
   const idir = getUserIdentifier(req);
 
   const start = req.body.range.start;
@@ -107,9 +136,6 @@ const getAllExportData = async function (
   const attachedOnly = req.body.attachedOnly;
 
   if (!idir) throw Error('No IDIR');
-  // Functions to get critters by their IDs or get all critters.
-
-  console.log(JSON.stringify(req.body.collection_unit));
 
   const filterBody = {
     critter_ids: req.body.critter_id,
@@ -118,15 +144,30 @@ const getAllExportData = async function (
     taxon_name_commons: req.body.taxon,
     collection_units: req.body.collection_units,
   };
+
+  //If we are here and the filterBody is empty, then we are only filtering on BCTW data (device_ids, frequencies)
+  //So if we want to have critter data associated to that range of telemetry, we need to determine the critter_ids from the collars
+  //and filter those critter_ids in critterbase.
+  if(Object.values(filterBody).every(a => !a)) {
+    const crittersFromDevicesSql = formatGetCrittersFromDeviceQuery(req.body.bctw_queries);
+    const crittersFromDeviceResult = await query(crittersFromDevicesSql, `Query to retrieve critters from device details failed.`);
+    filterBody.critter_ids = { body: [...crittersFromDeviceResult.result.rows.map(a => a.critter_id)], negate: false };
+  }
+
   const critters = await query(
     critterbase.post('/critters/filter', filterBody)
   );
   
   const unitCategorySet = new Set<string>();
-  critters.result.rows.forEach(a => a.collection_units?.forEach(b => unitCategorySet.add(b.category_name)));
+  critters.result.rows?.forEach(a => a.collection_units?.forEach(b => unitCategorySet.add(b.category_name)));
+  //Necessary to gather collection categories here to ensure every row has correct length of keys later.
+  //Otherwise the CSV will appear misaligned when it's downloaded by the client.
+
   const chunkSize = 20;
   const allTelemetry: Omit<(IDeviceTelemetry & ICritter), 'collection_units'>[] = [];
-  for (let i = 0; i < critters.result.rows.length; i += chunkSize) {
+  const exportStatements: string[] = [];
+  if(critters.result.rows && critters.result.rows.length > 0) {
+    for (let i = 0; i < critters.result.rows.length; i += chunkSize) {
       const chunk = critters.result.rows.slice(i, i + chunkSize);
       const chunkedBctwQuery = [ ...req.body.bctw_queries, {
         key: 'critter_id',
@@ -135,28 +176,27 @@ const getAllExportData = async function (
       }];
       const stringedQuery = JSON.stringify(chunkedBctwQuery);
 
-      const exportsql = `SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${stringedQuery}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `;
-      console.log(exportsql);
+      exportStatements.push(`SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${stringedQuery}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `);
+      } 
+  }
+  else {
+      const stringedQuery = JSON.stringify(req.body.bctw_queries);
+      exportStatements.push(`SELECT * FROM bctw.export_telemetry_with_params('${idir}', '${stringedQuery}', '${start}', '${end}', ${polygons}, ${lastTelemetryOnly}, ${attachedOnly}); `)
+  }
+
+  for (const sqlStatement of exportStatements) {
+      console.log(sqlStatement);
       const bctwExportQuery = await query(
-        exportsql,
+        sqlStatement,
         'failed to retrieve telemetry'
       );
     
-      let json1: IDeviceTelemetry[];
-      if (Object.values(filterBody).some((a) => a !== undefined)) {
-        const filteredIds = critters.result.rows.map((c) => c.critter_id);
-        json1 = bctwExportQuery.result.rows.filter((r) =>
-          filteredIds.includes(r.critter_id)
-        );
-      } else {
-        json1 = bctwExportQuery.result.rows;
-      }
-    
-      const json2: ICritter[] = critters.result.rows;
+      const json1: IDeviceTelemetry[] = bctwExportQuery.result.rows;
+      const json2: ICritter[] = critters.result.rows ?? [];
       for(const crit of json2) {
         unitCategorySet.forEach(a => crit[a] = null);
         crit.collection_units.forEach(a => crit[a.category_name] = a.unit_name)
-      }
+      } //Here is where we ensure all objects have same amount of keys.
     
       const merged = json1.map((x) =>
         Object.assign(
@@ -167,14 +207,8 @@ const getAllExportData = async function (
 
       const strippedMerged = merged.map(({ collection_units, ...rest }) => rest);
       allTelemetry.push(...strippedMerged);
-      console.log(
-        `Working through this many critter rows: ${chunk.length}`
-      );
-      console.log(
-        `Working through this many bctw rows: ${bctwExportQuery.result.rows.length}`
-      );
   }
-  return res.send(allTelemetry);
+  return allTelemetry;
 };
 
 export { getExportData, getAllExportData };
