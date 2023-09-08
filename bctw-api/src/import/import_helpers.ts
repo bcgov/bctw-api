@@ -205,7 +205,7 @@ const determineExistingAnimal = async (
   return critterbase_critters.result.rows.map(c => ({critter_id: c.critter_id, wlh_id: c.wlh_id }));
 };
 
-const markingInferDuplicate = (old_marking: IMarking, new_marking: MarkingUpsert): boolean => {
+const markingInferDuplicate = (old_marking: IMarking | MarkingUpsert, new_marking: MarkingUpsert): boolean => {
   const coreFeaturesSame = (!!new_marking.primary_colour && old_marking.primary_colour === new_marking.primary_colour) ||
           (!!new_marking.identifier && old_marking.identifier === new_marking.identifier);
   const locationAndTypeSame = (old_marking.body_location === new_marking.body_location && old_marking.marking_type === new_marking.marking_type);

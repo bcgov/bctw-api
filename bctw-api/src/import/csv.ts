@@ -28,7 +28,7 @@ import {
   validateUniqueAnimal,
 } from './validation';
 
-import { unlinkSync } from 'fs';
+import { link, unlinkSync } from 'fs';
 import { pgPool } from '../database/pg';
 import { v4 as uuidv4, validate as uuid_validate } from 'uuid';
 import dayjs from 'dayjs';
@@ -121,7 +121,6 @@ const parseXlsx = async (
 ) => {
   const sheetResults: ParsedXLSXSheetResult[] = [];
 
-  try {
     const workbook = new Workbook();
     await workbook.xlsx.readFile(file.path);
 
@@ -149,9 +148,8 @@ const parseXlsx = async (
 
       requiredHeaders.slice(1).forEach((value, idx) => {
         if (headers[idx] != value) {
-          console.log(`Recieved bad header: ${headers[idx]} != ${value}`);
           throw new Error(
-            'Headers from this file do not match template headers.'
+            `Header mismatch: ${headers[idx]} != ${value}. Please download the latest template, or correct this header manually in your sheet.`
           );
         }
       });
@@ -212,7 +210,7 @@ const parseXlsx = async (
             rowObj.row as IAnimalDeviceMetadata
           );
           (rowObj.row as IAnimalDeviceMetadata).possible_critters = possible_critters;
-          (rowObj.row as IAnimalDeviceMetadata).selected_critter_id = possible_critters?.[0]?.critter_id;
+          (rowObj.row as IAnimalDeviceMetadata).selected_critter_id = undefined;
         }
         if (sheet.name == telemetrySheetName) {
           const errswrns = await validateTelemetryRow(
@@ -227,9 +225,6 @@ const parseXlsx = async (
       }
       sheetResults.push({ headers: headers, rows: verifiedRowObj });
     }
-  } catch (err) {
-    console.log(err);
-  }
 
   callback(sheetResults);
 };
@@ -252,7 +247,14 @@ const importXlsx = async function (req: Request, res: Response): Promise<void> {
     }
   };
 
-  await parseXlsx(file, id, onFinishedParsing);
+  try {
+    await parseXlsx(file, id, onFinishedParsing);
+  }
+  catch(error) {
+    console.log(error);
+    res.status(500).send((error as Error).message);
+  }
+  
 };
 
 const createNewLocationFromRow = (incomingCritter: IAnimalDeviceMetadata) => {
@@ -334,7 +336,11 @@ const appendNewAnimalToBulkPayload = async (
   incomingCritter: IAnimalDeviceMetadata,
   bulk_payload: IBulkCritterbasePayload
 ) => {
-  const new_critter_id: string = uuidv4();
+  let new_critter_id: string = uuidv4();
+  const existing_critter_from_payload = bulk_payload.critters.find(a => a.wlh_id == incomingCritter.wlh_id);
+  if(existing_critter_from_payload && existing_critter_from_payload.critter_id) {
+    new_critter_id = existing_critter_from_payload.critter_id;
+  }
 
   const critterBody: CritterUpsert = {
     critter_id: new_critter_id,
@@ -344,7 +350,9 @@ const appendNewAnimalToBulkPayload = async (
     taxon_name_common: incomingCritter.species,
   };
 
-  bulk_payload.critters.push(critterBody);
+  if(!existing_critter_from_payload) {
+    bulk_payload.critters.push(critterBody);
+  }
 
   if (incomingCritter.population_unit) {
     //Somewhat redundant to be making this request multiple times during import. May be something to optimize out later.
@@ -365,29 +373,9 @@ const appendNewAnimalToBulkPayload = async (
       collection_unit_id: population_unit.collection_unit_id,
       critter_id: new_critter_id,
     };
-    bulk_payload.collections.push(collection_body);
-  }
-
-  const location = createNewLocationFromRow(incomingCritter);
-
-  if (location) {
-    bulk_payload.locations.push(location);
-  }
-
-  const capture = createNewCaptureFromRow(
-    new_critter_id,
-    incomingCritter,
-    location?.location_id
-  );
-  bulk_payload.captures.push(capture);
-
-  bulk_payload.markings.push(
-    ...createNewMarkingsFromRow(new_critter_id, capture.capture_id, capture.capture_timestamp, incomingCritter)
-  );
-
-  const mortality = createNewMortalityFromRow(new_critter_id, incomingCritter);
-  if (mortality) {
-    bulk_payload.mortalities.push(mortality);
+    if(!bulk_payload.collections.find(a => a.critter_id === new_critter_id && a.collection_unit_id === collection_body.collection_unit_id)) {
+      bulk_payload.collections.push(collection_body);
+    }
   }
 
   return new_critter_id;
@@ -417,23 +405,25 @@ const upsertBulkv2 = async (id: string, req: Request) => {
   const critter_ids: string[] = [];
 
   for (const pair of pairs) {
-    let existing_critter: DetailedCritter | null = null;
+    let existing_critter_in_cb: DetailedCritter | null = null;
     if(pair.selected_critter_id && uuid_validate(pair.selected_critter_id)) {
       const detail = await critterbase.get(`/critters/${pair.selected_critter_id}?format=detailed`);
-      existing_critter = detail.data;
+      existing_critter_in_cb = detail.data;
     }
 
     let link_critter_id;
-    if (existing_critter == null) {
-      //Make new critter
+    if (existing_critter_in_cb == null) {
+      //Need to check if we already spawned a new critter for this WLH ID in the payload. Otherwise we will create a duplicate critter.
       const new_critter_id = await appendNewAnimalToBulkPayload(
         pair,
         bulk_payload
       );
       link_critter_id = new_critter_id;
-    } else {
+    } 
+    else {
+      link_critter_id = existing_critter_in_cb.critter_id;
       const res = await client.query(
-        `SELECT bctw.get_user_animal_permission('${id}', '${existing_critter.critter_id}')`
+        `SELECT bctw.get_user_animal_permission('${id}', '${existing_critter_in_cb.critter_id}')`
       );
       const curr_permission_level = getRowResults(
         res,
@@ -445,64 +435,65 @@ const upsertBulkv2 = async (id: string, req: Request) => {
           (a) => a === curr_permission_level
         )
       ) {
-        throw Error(
+        throw new Error(
           'You do not have permission to manage the critter with critter id ' +
             link_critter_id
         );
       }
-      link_critter_id = existing_critter.critter_id;
-      const existing_captures = existing_critter.capture;
-      const existing_mortalities = existing_critter.mortality;
-      const existing_markings = existing_critter.marking;
+    }
+    
+    const existing_captures = [...(existing_critter_in_cb?.capture ?? []), ...bulk_payload.captures.filter(a => a.critter_id === link_critter_id) ];
+    const existing_mortalities = [ ...(existing_critter_in_cb?.mortality ?? []), ...bulk_payload.mortalities.filter(a => a.critter_id === link_critter_id) ];
+    const existing_markings = [ ...(existing_critter_in_cb?.marking ?? []), ...bulk_payload.markings.filter(a => a.critter_id === link_critter_id) ];
 
-      if (
-        existing_captures.every(
-          (a) =>
-            !isOnSameDay(
-              a.capture_timestamp,
-              (pair.capture_date as unknown) as string
-            )
-        )
-      ) {
-        const location = createNewLocationFromRow(pair);
-        if (location) {
-          bulk_payload.locations.push(location);
-        }
-        const capture = createNewCaptureFromRow(
-          existing_critter.critter_id,
-          pair,
-          location?.location_id
-        );
-        bulk_payload.captures.push(capture);
-        
-        const recent_markings = existing_markings.filter(a => dayjs(a.attached_timestamp).isSameOrBefore(dayjs(capture.capture_timestamp))).sort((a, b) => (dayjs(a.attached_timestamp).isSameOrBefore(dayjs(b.attached_timestamp)) ? 1 : -1));
-        const new_markings = createNewMarkingsFromRow(existing_critter.critter_id, capture.capture_id, capture.capture_timestamp, pair);
-        for(const m of new_markings) {
-          //Find first occurence of marking at this body location. Because of above sorting, this should be a timestamp closest to the current capture timestamp.
-          const old = recent_markings.find(r => r.body_location === m.body_location);
-          if(!old || !markingInferDuplicate(old, m)) { //If there wasn't a previous marking, or the new marking has different information from the existing one, we can add it
-            bulk_payload.markings.push(m);
-          }
-        }
+    if (
+      existing_captures.every(
+        (a) =>
+          !isOnSameDay(
+            a.capture_timestamp,
+            (pair.capture_date as unknown) as string
+          )
+      )
+    ) {
+      const location = createNewLocationFromRow(pair);
+      if (location) {
+        bulk_payload.locations.push(location);
       }
-      if (
-        existing_mortalities.every(
-          (a) =>
-            !isOnSameDay(
-              a.mortality_timestamp,
-              (pair.mortality_date as unknown) as string
-            )
-        )
-      ) {
-        const mortality = createNewMortalityFromRow(
-          existing_critter.critter_id,
-          pair
-        );
-        if (mortality) {
-          bulk_payload.mortalities.push(mortality);
+      const capture = createNewCaptureFromRow(
+        link_critter_id,
+        pair,
+        location?.location_id
+      );
+      bulk_payload.captures.push(capture);
+      
+      const recent_markings = existing_markings.filter(a => dayjs(a.attached_timestamp).isSameOrBefore(dayjs(capture.capture_timestamp))).sort((a, b) => (dayjs(a.attached_timestamp).isSameOrBefore(dayjs(b.attached_timestamp)) ? 1 : -1));
+      const new_markings = createNewMarkingsFromRow(link_critter_id, capture.capture_id, capture.capture_timestamp, pair);
+      for(const m of new_markings) {
+        //Find first occurence of marking at this body location. Because of above sorting, this should be a timestamp closest to the current capture timestamp.
+        const old = recent_markings.find(r => r.body_location === m.body_location);
+        if(!old || !markingInferDuplicate(old, m)) { //If there wasn't a previous marking, or the new marking has different information from the existing one, we can add it
+          bulk_payload.markings.push(m);
         }
       }
     }
+    if (
+      existing_mortalities.every(
+        (a) =>
+          !isOnSameDay(
+            a.mortality_timestamp,
+            (pair.mortality_date as unknown) as string
+          )
+      )
+    ) {
+      const mortality = createNewMortalityFromRow(
+        link_critter_id,
+        pair
+      );
+      if (mortality) {
+        bulk_payload.mortalities.push(mortality);
+      }
+    }
+
     critter_ids.push(link_critter_id);
   }
   
@@ -540,22 +531,22 @@ const upsertBulkv2 = async (id: string, req: Request) => {
       const link_row = getRowResults(link_res, 'link_collar_to_animal')[0];
       
       if (link_row.error) {
-        throw Error(
-          `Could not link collar id ${link_collar_id} with critter id ${link_critter_id}`
+        throw new Error(
+          `It is not possible to link Critter ID: ${link_critter_id}, WLH ID: ${pair.wlh_id} to Collar ID: ${link_collar_id}, Device ID: ${pair.device_id}.
+          This likely occured because the capture starting on ${pair.capture_date} for this Critter overlaps with another row in the sheet.`
         );
       }
       responseArray.push(link_row);
     }
     const bulk_result = await query(critterbase.post('/bulk', bulk_payload)); //await critterBaseRequest('POST', 'bulk', bulk_payload);
     if (!bulk_result || bulk_result.isError) {
-      throw Error('Something went wrong when inserting rows into critterbase.');
+      throw new Error('BCTW processes succeeded, but inserting into Critterbase failed.');
     }
 
     await client.query('COMMIT');
   } catch (e) {
-    console.log(e);
     await client.query('ROLLBACK');
-    throw Error(JSON.stringify(e));
+    throw e;
   }
 
   /*for(const r of responseArray) {
@@ -576,7 +567,8 @@ const finalizeImport = async function (
     const response = await upsertBulkv2(id, req);
     res.status(200).send(response);
   } catch (e) {
-    res.status(500).send(e);
+    console.log(JSON.stringify((e as Error).message, null, 2));
+    res.status(500).send((e as Error).message);
   }
 };
 
