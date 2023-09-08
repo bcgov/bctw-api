@@ -131,7 +131,13 @@ const getDeployments = async function (
   if (!deployment_ids) {
     return res.status(500).send('Could not parse deployment IDs');
   }
-  const deployment_array: string[] = collectQueryParamArray(deployment_ids);
+  let deployment_array: string[];
+  try {
+    deployment_array = collectQueryParamArray(deployment_ids);
+  }
+  catch (e) {
+    return res.status(500).send((e as Error).message);
+  }
   const formatted_ids = formatJsArrayToPgArray(deployment_array);
   const sql = `
     WITH unq AS (
@@ -163,7 +169,13 @@ const getDeploymentsByCritterId = async function (
   if (!critter_ids) {
     return res.status(500).send('Could not parse deployment IDs');
   }
-  const critter_array: string[] = collectQueryParamArray(critter_ids);
+  let critter_array: string[]
+  try {
+    critter_array = collectQueryParamArray(critter_ids);
+  }
+  catch (e) {
+    return res.status(500).send((e as Error).message);
+  }
   const formatted_ids = formatJsArrayToPgArray(critter_array);
   const sql = `
     WITH unq AS (

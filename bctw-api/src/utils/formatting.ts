@@ -6,13 +6,16 @@ export const formatJsArrayToPgArray = (value: string[]): string => {
     return `ARRAY[${value.map(a => `'${a}'`).join(', ')}]`;
 }
 
-export const collectQueryParamArray = (value: any): string[] => {
+export const collectQueryParamArray = (value: unknown): string[] => {
     const retArr: string[] = [];
     if(typeof value === 'string') {
-        retArr.push(String(value));
+        retArr.push(...(String(value).split(',')));
     }
-      else {
+    else if (Array.isArray(retArr)) {
         retArr.push(...(value as string[]));
+    }
+    else {
+        throw new Error('Unable to parse query search params.');
     }
     return retArr;
 }
