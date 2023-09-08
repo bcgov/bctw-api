@@ -66,7 +66,8 @@ import {
   unattachDevice,
   updateDataLife,
   updateDeploymentTimespan,
-  getDeployments
+  getDeployments,
+  getDeploymentsByCritterId
 } from './apis/attachment_api';
 import {
   getOnboardingRequests,
@@ -202,5 +203,6 @@ export {
   fetchVendorTelemetryData,
   importTelemetry,
   updateDeploymentTimespan,
-  getDeployments
+  getDeployments,
+  getDeploymentsByCritterId
 };

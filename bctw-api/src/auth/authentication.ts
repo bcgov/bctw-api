@@ -67,14 +67,14 @@ export const authenticateRequest = (
       );
     return;
   }
-
+  
   // Verify token and extract domain from it
   const rawToken = bearerToken.split(' ')[1];
   jwt.verify(rawToken, getKey, { issuer: KEYCLOAK_ISSUER }, (err, decoded) => {
     if (err) {
       res.status(401).send('Invalid token. Verification failed.');
     } else if (decoded && typeof decoded === 'object') {
-      const origin =
+      /*const origin =
         decoded.aud === BCTW_AUD
           ? 'BCTW'
           : decoded.aud === SIMS_SERVICE_AUD
@@ -84,7 +84,7 @@ export const authenticateRequest = (
       if (!origin) {
         res.status(401).send('Invalid token. Invalid audience.');
         return;
-      }
+      }*/
 
       const domain = decoded.bceid_business_guid ? 'bceid' : 'idir';
       const keycloak_guid =
@@ -99,7 +99,7 @@ export const authenticateRequest = (
       ).toLowerCase();
 
       (req as UserRequest).user = {
-        origin,
+        origin: 'BCTW',
         domain,
         keycloak_guid,
         email,
@@ -107,9 +107,7 @@ export const authenticateRequest = (
         givenName: given_name,
         familyName: family_name,
       };
-
-      console.log(decoded);
-
+      
       next();
     }
   });

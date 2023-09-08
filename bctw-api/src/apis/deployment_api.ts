@@ -4,8 +4,10 @@ import { getRowResults } from '../database/query';
 import { ICollar } from '../types/collar';
 import { getUserIdentifier } from '../database/requests';
 import { apiError } from '../utils/error';
+import { formatNullableSqlValue } from '../utils/formatting';
 
 interface IDeployDevice extends ICollar {
+  deployment_id: string;
   critter_id: string;
   attachment_start: Date;
   attachment_end: Date;
@@ -52,14 +54,14 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
     }
     const collarSql = `SELECT bctw.get_device_id_for_bulk_import('${user}', '${JSON.stringify(
       data
-    )}', '${data.attachment_start}', '${data.attachment_end}')`;
+    )}', '${data.attachment_start}', ${formatNullableSqlValue(data.attachment_end)})`;
     const collar_id = getRowResults(
       await client.query(collarSql),
       'get_device_id_for_bulk_import'
     )[0];
-
+    console.log('Obtained collar_id ' + collar_id);
     // Try to link collar to critter
-    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.attachment_start}', '${data.attachment_start}', '${data.attachment_end}')`;
+    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.attachment_start}', '${data.attachment_start}', ${formatNullableSqlValue(data.attachment_end)}, ${formatNullableSqlValue(data.deployment_id)} )`;
     const linkCritterResult = getRowResults(
       await client.query(linkCritterSql),
       'link_collar_to_animal'
@@ -72,7 +74,8 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
     }
     // Commit transaction
     await client.query('COMMIT');
-    return linkCritterResult;
+    console.log('Will return this ' + linkCritterResult.deployment_id);
+    return linkCritterResult.deployment_id;
   } catch (e) {
     console.log(e);
     await client.query('ROLLBACK');
