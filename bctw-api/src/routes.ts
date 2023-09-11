@@ -21,6 +21,7 @@ const ROUTES = {
   getAvailableCollars: '/get-available-collars',
   getCollarAssignmentHistory: '/get-assignment-history/:animal_id',
   getCollarChangeHistory: '/get-collar-history/:collar_id',
+  getCollarChangeHistoryByDeviceId: '/get-collar-history-by-device/:device_id',
   getCollarVendors: '/get-collar-vendors',
   upsertCollar: '/upsert-collar',
   // animal/device attachment
@@ -29,6 +30,7 @@ const ROUTES = {
   updateDataLife: '/update-data-life',
   getDeployments: '/get-deployments',
   getDeploymentsByCritterId: '/get-deployments-by-critter-id',
+  getDeploymentsByDeviceId: '/get-deployments-by-device-id',
   updateDeployment: '/update-deployment',
   // permissions
   getPermissionRequests: '/permission-request',
@@ -97,7 +99,8 @@ const ROUTE_AUDIENCES: { [key in IRouteKey]?: Audience[] } = {
   [ROUTES.getDeployments]: ['ANY'],
   [ROUTES.getDeploymentsByCritterId]: ['ANY'],
   [ROUTES.updateDeployment]: ['ANY'],
-  [ROUTES.getCode]: ['SIMS_SERVICE']
+  [ROUTES.getCode]: ['SIMS_SERVICE'],
+  [ROUTES.getCollarChangeHistoryByDeviceId]: ['SIMS_SERVICE']
 };
 
 export { ROUTES, IRouteKey, IRoute, ROUTE_AUDIENCES };

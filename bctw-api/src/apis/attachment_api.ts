@@ -161,6 +161,30 @@ const getDeployments = async function (
   return res.send(result.rows);
 };
 
+const getDeploymentsByDeviceId = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const device_id = req.query?.device_id;
+  if(!device_id) { 
+    return res.status(500).send('Could not parse device id');
+  } 
+  const sql = `SELECT caa.* FROM bctw.collar_animal_assignment caa WHERE caa.collar_id IN (
+    SELECT DISTINCT collar_id 
+    FROM collar WHERE device_id = ${Number(device_id)}
+  )`;
+  const { result, error, isError } = await query(
+    sql,
+    'unable to retrieve deployment_ids',
+    true
+  );
+
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows);
+}
+
 const getDeploymentsByCritterId = async function (
   req: Request,
   res: Response
@@ -252,4 +276,5 @@ export {
   updateDeploymentTimespan,
   getDeployments,
   getDeploymentsByCritterId,
+  getDeploymentsByDeviceId
 };
