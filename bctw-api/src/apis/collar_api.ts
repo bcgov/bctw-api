@@ -279,6 +279,41 @@ const getCollarsAndDeviceIds = async function (
   //return res.send(sql);
 };
 
+const getCollarChangeHistoryByDeviceID = async function (
+  req: Request, 
+  res: Response
+): Promise<Response> {
+  let collar_id;
+  const device_id = Number(req.params.device_id);
+  if(Number.isInteger(device_id)) {
+    const device_sql = `SELECT collar_id FROM collar WHERE device_id = ${Number(device_id)} LIMIT 1`;
+    const { result, error, isError } = await query(device_sql, `could not determine collar_id from device_id`);
+    if( isError ) {
+      return res.status(500).send(error.message);
+    }
+    if(result.rows.length == 0) {
+      return res.status(200).send([]);
+    }
+    else {
+      collar_id = result.rows[0].collar_id;
+    }
+  }
+  const sql = constructFunctionQuery(
+    fn_get_collar_history,
+    [getUserIdentifier(req), collar_id],
+    false,
+    S_API
+  );
+  const { result, error, isError } = await query(
+    sql,
+    'failed to retrieve collar history'
+  );
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(getRowResults(result, fn_get_collar_history));
+}
+
 /**
  * retrieves a history of changes made to a collar
  */
@@ -286,9 +321,10 @@ const getCollarChangeHistory = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
+
   const collar_id = req.params?.collar_id;
   if (!collar_id) {
-    return res.status(500).send(`collar_id must be supplied`);
+    return res.status(500).send(`collar_id or device_id must be supplied`);
   }
   const sql = constructFunctionQuery(
     fn_get_collar_history,
@@ -339,4 +375,5 @@ export {
   getCollarChangeHistory,
   fn_get_collar_history,
   getCollarVendors,
+  getCollarChangeHistoryByDeviceID
 };

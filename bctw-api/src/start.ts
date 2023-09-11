@@ -27,6 +27,7 @@ import {
   getAvailableCollars,
   getCollar,
   getCollarChangeHistory,
+  getCollarChangeHistoryByDeviceID,
   getCollarsAndDeviceIds,
   getCollarVendors,
   upsertCollar,
@@ -67,7 +68,8 @@ import {
   updateDataLife,
   updateDeploymentTimespan,
   getDeployments,
-  getDeploymentsByCritterId
+  getDeploymentsByCritterId,
+  getDeploymentsByDeviceId
 } from './apis/attachment_api';
 import {
   getOnboardingRequests,
@@ -170,6 +172,7 @@ export {
   getCodeHeaders,
   getCollarAssignmentHistory,
   getCollarChangeHistory,
+  getCollarChangeHistoryByDeviceID,
   getCollarVendors,
   getCritterTracks,
   getDBCritters,
@@ -204,5 +207,6 @@ export {
   importTelemetry,
   updateDeploymentTimespan,
   getDeployments,
-  getDeploymentsByCritterId
+  getDeploymentsByCritterId,
+  getDeploymentsByDeviceId
 };
