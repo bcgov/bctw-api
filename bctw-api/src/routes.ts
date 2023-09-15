@@ -21,7 +21,7 @@ const ROUTES = {
   getAvailableCollars: '/get-available-collars',
   getCollarAssignmentHistory: '/get-assignment-history/:animal_id',
   getCollarChangeHistory: '/get-collar-history/:collar_id',
-  getCollarChangeHistoryByDeviceId: '/get-collar-history-by-device/:device_id',
+  getCollarChangeHistoryByDeviceId: '/get-collar-history-by-device',
   getCollarVendors: '/get-collar-vendors',
   upsertCollar: '/upsert-collar',
   // animal/device attachment
