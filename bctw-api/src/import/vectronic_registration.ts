@@ -95,7 +95,11 @@ const parseVectronicKeyRegistrationXML = async (
   req: Request,
   res: Response
 ): Promise<Response<IBulkResponse>> => {
-  const ZIP = 'application/x-zip-compressed';
+  const ZIP = [
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/zip-compressed',
+  ];
   const bulkResp: IBulkResponse = { errors: [], results: [] };
   const files = req.files as Express.Multer.File[];
   const promises: Promise<QResult>[] = [];
@@ -112,7 +116,7 @@ const parseVectronicKeyRegistrationXML = async (
 
   // sift through keyX imports and unzip all zipped entries
   for (const file of files) {
-    if (file.mimetype === ZIP) {
+    if (ZIP.includes(file.mimetype)) {
       const zip = new AdmZip(file.path);
       const zipEntries = zip.getEntries();
       zipEntries.forEach((z) => {
@@ -132,8 +136,13 @@ const parseVectronicKeyRegistrationXML = async (
         buffer
       );
 
-      const { idcollar, comtype, idcom, collarkey, collartype } =
-        new VectronicKeyxRow(asJson);
+      const {
+        idcollar,
+        comtype,
+        idcom,
+        collarkey,
+        collartype,
+      } = new VectronicKeyxRow(asJson);
 
       const sql = constructFunctionQuery(
         VECT_KEY_UPSERT_FN,
