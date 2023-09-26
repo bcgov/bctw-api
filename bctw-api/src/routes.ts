@@ -87,18 +87,24 @@ type IRouteKey = keyof typeof ROUTES;
 
 type IRoute = typeof ROUTES[IRouteKey];
 
+/**
+ * Controls access to routes based on the audience of the request
+ * By default, BCTW audience has access to all routes
+ * ANY - Open to all common-realm users
+ * SIMS_SERVICE - Open to all request from SIMS service
+ */
 const ROUTE_AUDIENCES: { [key in IRouteKey]?: Audience[] } = {
   [ROUTES.getTemplate]: ['ANY'],
   [ROUTES.getCollarVendors]: ['SIMS_SERVICE'],
-  [ROUTES.signup]: ['SIMS_SERVICE'], // Only the SIMS service can signup users directly.
-  [ROUTES.getUserOnboardStatus]: ['ANY'], // Open to all common-realm users.
+  [ROUTES.signup]: ['SIMS_SERVICE'],
+  [ROUTES.getUserOnboardStatus]: ['ANY'],
   [ROUTES.submitOnboardingRequest]: ['ANY'],
-  [ROUTES.deployDevice]: ['SIMS_SERVICE'], // Only SIMS service may do this.
+  [ROUTES.deployDevice]: ['SIMS_SERVICE'],
   [ROUTES.health]: ['ANY'],
   [ROUTES.notFound]: ['ANY'],
-  [ROUTES.getDeployments]: ['ANY'],
-  [ROUTES.getDeploymentsByCritterId]: ['ANY'],
-  [ROUTES.updateDeployment]: ['ANY'],
+  [ROUTES.getDeployments]: ['SIMS_SERVICE'],
+  [ROUTES.getDeploymentsByCritterId]: ['SIMS_SERVICE'],
+  [ROUTES.updateDeployment]: ['SIMS_SERVICE'],
   [ROUTES.getCode]: ['SIMS_SERVICE'],
   [ROUTES.getCollarChangeHistoryByDeviceId]: ['SIMS_SERVICE'],
   [ROUTES.importXML]: ['SIMS_SERVICE']
