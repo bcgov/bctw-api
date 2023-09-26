@@ -100,14 +100,16 @@ const ROUTE_AUDIENCES: { [key in IRouteKey]?: Audience[] } = {
   [ROUTES.getUserOnboardStatus]: ['ANY'],
   [ROUTES.submitOnboardingRequest]: ['ANY'],
   [ROUTES.deployDevice]: ['SIMS_SERVICE'],
+  [ROUTES.upsertCollar]: ['SIMS_SERVICE'],
   [ROUTES.health]: ['ANY'],
   [ROUTES.notFound]: ['ANY'],
   [ROUTES.getDeployments]: ['SIMS_SERVICE'],
   [ROUTES.getDeploymentsByCritterId]: ['SIMS_SERVICE'],
+  [ROUTES.getDeploymentsByDeviceId]: ['SIMS_SERVICE'],
   [ROUTES.updateDeployment]: ['SIMS_SERVICE'],
   [ROUTES.getCode]: ['SIMS_SERVICE'],
   [ROUTES.getCollarChangeHistoryByDeviceId]: ['SIMS_SERVICE'],
-  [ROUTES.importXML]: ['SIMS_SERVICE']
+  [ROUTES.importXML]: ['SIMS_SERVICE'],
 };
 
 export { ROUTES, IRouteKey, IRoute, ROUTE_AUDIENCES };
