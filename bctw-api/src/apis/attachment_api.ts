@@ -172,7 +172,7 @@ const getDeploymentsByDeviceId = async function (
   const sql = `SELECT caa.* FROM bctw.collar_animal_assignment caa WHERE caa.collar_id IN (
     SELECT DISTINCT collar_id 
     FROM collar WHERE device_id = ${Number(device_id)}
-  )`;
+  ) AND caa.valid_to IS NULL`;
   const { result, error, isError } = await query(
     sql,
     'unable to retrieve deployment_ids',
@@ -202,14 +202,21 @@ const getDeploymentsByCritterId = async function (
   }
   const formatted_ids = formatJsArrayToPgArray(critter_array);
   const sql = `
-    WITH unq AS (
-        SELECT DISTINCT collar_id, device_id 
-        FROM collar
-    )
-    SELECT caa.*, unq.device_id 
+    SELECT 
+      unq.device_id, 
+      unq.device_make, 
+      unq.device_model, 
+      unq.frequency, 
+      unq.frequency_unit, 
+      caa.assignment_id,
+      caa.collar_id,
+      caa.critter_id,
+      caa.attachment_start,
+      caa.attachment_end,
+      caa.deployment_id
     FROM bctw.collar_animal_assignment caa 
-    LEFT JOIN unq ON caa.collar_id = unq.collar_id
-    WHERE caa.critter_id = ANY (${formatted_ids}::uuid[])
+    LEFT JOIN collar_v unq ON caa.collar_id = unq.collar_id AND unq.valid_to IS NULL
+    WHERE caa.critter_id = ANY (${formatted_ids}::uuid[]) AND caa.valid_to IS NULL
   `;
   const { result, error, isError } = await query(
     sql,
