@@ -145,7 +145,7 @@ export const app = express()
     api.parseVectronicKeyRegistrationXML
   )
   .post(ROUTES.importTelemetry, authorize(), api.importTelemetry)
-  .get(ROUTES.getCollarKeyX, authorize(), api.retrieveCollarKeyXRelation)
+  .get(ROUTES.getCollarKeyX, authorize('SIMS_SERVICE'), api.retrieveCollarKeyXRelation)
   // vendor
   .post(ROUTES.fetchTelemetry, authorize(), api.fetchVendorTelemetryData)
   // delete
