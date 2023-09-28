@@ -5,8 +5,7 @@ import {
   getRowResults,
   query,
 } from '../database/query';
-import { UserRequest } from '../types/userRequest';
-import { ROUTE_AUDIENCES } from '../routes';
+import { Audience, UserRequest } from '../types/userRequest';
 
 export const getRegistrationStatus = async (
   keycloak_guid: string
@@ -19,7 +18,15 @@ export const getRegistrationStatus = async (
   return isRegistered;
 };
 
-export const authorizeRequest = async (
+/**
+ * Controls access to routes based on the user's origin and registration status.
+ * By default, BCTW audience has access to all routes
+ * ANY - Open to all common-realm users
+ * SIMS_SERVICE - Open to all request from SIMS service
+ *
+ * @param {...Audience[]} allowedAudiences
+ */
+export const authorize = (...allowedAudiences: Audience[]) => async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -34,25 +41,16 @@ export const authorizeRequest = async (
     return next();
   }
 
-  // A Route with no defined allowed audiences can only accept registered BCTW users
-  const allowedAudiences = ROUTE_AUDIENCES[req.path];
-  if (!allowedAudiences || allowedAudiences.length === 0) {
-    console.log(' A Route with no defined allowed audiences can only accept registered BCTW users')
-    res.status(403).send('Forbidden');
-    return;
-  }
-
   // If the route is allowed for any audience
   if (allowedAudiences.includes('ANY')) {
     return next();
   }
 
-  // If the user's origin isn't included, or the user is from BCTW and isn't registered, return a forbidden error
+  // If the user's origin doesn't have access, or the user is from BCTW and isn't registered, return a forbidden error
   if (
     !allowedAudiences.includes(origin) ||
     (!user.registered && origin === 'BCTW')
   ) {
-    console.log("If the user's origin isn't included, or the user is from BCTW or SIMS and isn't registered, return a forbidden error")
     res.status(403).send('Forbidden');
     return;
   }
