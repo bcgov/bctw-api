@@ -73,6 +73,11 @@ export const app = express()
     authorize('SIMS_SERVICE'),
     api.updateDeploymentTimespan
   )
+  .delete(
+    ROUTES.deleteDeployment,
+    authorize('SIMS_SERVICE'),
+    api.deleteDeployment
+  )
   // permissions
   .get(ROUTES.getPermissionRequests, authorize(), api.getPermissionRequests)
   .get(
