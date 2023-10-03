@@ -54,6 +54,7 @@ export const app = express()
   .get(ROUTES.getDeploymentsByCritterId, api.getDeploymentsByCritterId)
   .get(ROUTES.getDeploymentsByDeviceId, api.getDeploymentsByDeviceId)
   .patch(ROUTES.updateDeployment, api.updateDeploymentTimespan)
+  .delete(ROUTES.deleteDeployment, api.deleteDeployment)
   // permissions
   .get(ROUTES.getPermissionRequests, api.getPermissionRequests)
   .get(ROUTES.getGrantedPermissionHistory, api.getGrantedPermissionHistory)

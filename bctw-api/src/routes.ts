@@ -32,6 +32,7 @@ const ROUTES = {
   getDeploymentsByCritterId: '/get-deployments-by-critter-id',
   getDeploymentsByDeviceId: '/get-deployments-by-device-id',
   updateDeployment: '/update-deployment',
+  deleteDeployment: '/delete-deployment/:deployment_id',
   // permissions
   getPermissionRequests: '/permission-request',
   getGrantedPermissionHistory: '/permission-history',

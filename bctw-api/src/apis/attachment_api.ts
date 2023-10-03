@@ -254,6 +254,32 @@ const updateDeploymentTimespan = async function (
   return res.send(getRowResults(result, pg_update_deployment));
 };
 
+const deleteDeployment = async function (
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const user = getUserIdentifier(req);
+  const deployment_id = req.params.deployment_id;
+  if (!deployment_id) {
+    return res.status(500).send('Must provide deployment id.');
+  }
+  const sql = `
+  UPDATE collar_animal_assignment caa
+  SET valid_to = now() 
+  WHERE deployment_id = '${deployment_id}' AND valid_to IS NULL
+  AND EXISTS
+    (SELECT critter_id 
+      FROM user_animal_assignment uaa 
+      WHERE uaa.critter_id = caa.critter_id 
+      AND bctw.get_user_id('${user}') = uaa.user_id)
+  RETURNING *;`; //This "EXISTS" check may be redundant considering the services accounts just become the owner of all these critters now.
+  const { result, error, isError } = await query(sql);
+  if (isError) {
+    return res.status(500).send(error.message);
+  }
+  return res.send(result.rows);
+}
+
 /**
  * @param req.params.animal_id the critter_id of the history to retrieve
  * @returns the device attachment history
@@ -283,5 +309,6 @@ export {
   updateDeploymentTimespan,
   getDeployments,
   getDeploymentsByCritterId,
-  getDeploymentsByDeviceId
+  getDeploymentsByDeviceId,
+  deleteDeployment
 };

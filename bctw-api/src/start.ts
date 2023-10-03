@@ -67,6 +67,7 @@ import {
   unattachDevice,
   updateDataLife,
   updateDeploymentTimespan,
+  deleteDeployment,
   getDeployments,
   getDeploymentsByCritterId,
   getDeploymentsByDeviceId
@@ -208,5 +209,6 @@ export {
   updateDeploymentTimespan,
   getDeployments,
   getDeploymentsByCritterId,
-  getDeploymentsByDeviceId
+  getDeploymentsByDeviceId,
+  deleteDeployment
 };
