@@ -10,8 +10,8 @@ import { pgPool } from './database/pg';
 import { critterbaseRouter } from './apis/critterbaseRouter';
 import { authenticateRequest, forwardUser } from './auth/authentication';
 import { deployDevice } from './apis/deployment_api';
-import { authorizeRequest } from './auth/authorization';
 import { ROUTES } from './routes';
+import { authorize } from './auth/authorization';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
@@ -24,90 +24,143 @@ export const app = express()
   .get(ROUTES.getTemplate, getTemplateFile)
   .use(express.json())
   .use(authenticateRequest)
-  .use(authorizeRequest)
   .use(forwardUser)
-  .use(ROUTES.critterbase, critterbaseRouter)
+  .use(ROUTES.critterbase, authorize(), critterbaseRouter)
   // map
-  .get(ROUTES.getCritters, api.getDBCritters)
-  .get(ROUTES.getCritterTracks, api.getCritterTracks)
-  .get(ROUTES.getPingsEstimate, api.getPingsEstimate)
+  .get(ROUTES.getCritters, authorize(), api.getDBCritters)
+  .get(ROUTES.getCritterTracks, authorize(), api.getCritterTracks)
+  .get(ROUTES.getPingsEstimate, authorize(), api.getPingsEstimate)
   // animals
-  .get(ROUTES.getAnimals, api.getAnimals)
-  .get(ROUTES.getAttachedHistoric, api.getAttachedHistoric)
-  .get(ROUTES.getAnimalHistory, api.getAnimalHistory)
-  .post(ROUTES.upsertAnimal, api.upsertAnimal)
+  .get(ROUTES.getAnimals, authorize(), api.getAnimals)
+  .get(ROUTES.getAttachedHistoric, authorize(), api.getAttachedHistoric)
+  .get(ROUTES.getAnimalHistory, authorize(), api.getAnimalHistory)
+  .post(ROUTES.upsertAnimal, authorize(), api.upsertAnimal)
   // devices
-  .get(ROUTES.getAllCollars, api.getAllCollars)
-  .get(ROUTES.getCollarsAndDeviceIds, api.getCollarsAndDeviceIds)
-  .get(ROUTES.getAssignedCollars, api.getAssignedCollars)
-  .get(ROUTES.getAvailableCollars, api.getAvailableCollars)
-  .get(ROUTES.getCollarAssignmentHistory, api.getCollarAssignmentHistory)
-  .get(ROUTES.getCollarChangeHistory, api.getCollarChangeHistory)
-  .get(ROUTES.getCollarChangeHistoryByDeviceId, api.getCollarChangeHistoryByDeviceID)
-  .get(ROUTES.getCollarVendors, api.getCollarVendors)
-  .post(ROUTES.upsertCollar, api.upsertCollar)
+  .get(ROUTES.getAllCollars, authorize(), api.getAllCollars)
+  .get(ROUTES.getCollarsAndDeviceIds, authorize(), api.getCollarsAndDeviceIds)
+  .get(ROUTES.getAssignedCollars, authorize(), api.getAssignedCollars)
+  .get(ROUTES.getAvailableCollars, authorize(), api.getAvailableCollars)
+  .get(
+    ROUTES.getCollarAssignmentHistory,
+    authorize(),
+    api.getCollarAssignmentHistory
+  )
+  .get(ROUTES.getCollarChangeHistory, authorize(), api.getCollarChangeHistory)
+  .get(
+    ROUTES.getCollarChangeHistoryByDeviceId,
+    authorize('SIMS_SERVICE'),
+    api.getCollarChangeHistoryByDeviceID
+  )
+  .get(ROUTES.getCollarVendors, authorize('SIMS_SERVICE'), api.getCollarVendors)
+  .post(ROUTES.upsertCollar, authorize('SIMS_SERVICE'), api.upsertCollar)
   // animal/device attachment
-  .post(ROUTES.attachDevice, api.attachDevice)
-  .post(ROUTES.unattachDevice, api.unattachDevice)
-  .post(ROUTES.updateDataLife, api.updateDataLife)
-  .get(ROUTES.getDeployments, api.getDeployments)
-  .get(ROUTES.getDeploymentsByCritterId, api.getDeploymentsByCritterId)
-  .get(ROUTES.getDeploymentsByDeviceId, api.getDeploymentsByDeviceId)
-  .patch(ROUTES.updateDeployment, api.updateDeploymentTimespan)
-  .delete(ROUTES.deleteDeployment, api.deleteDeployment)
+  .post(ROUTES.attachDevice, authorize(), api.attachDevice)
+  .post(ROUTES.unattachDevice, authorize(), api.unattachDevice)
+  .post(ROUTES.updateDataLife, authorize(), api.updateDataLife)
+  .get(ROUTES.getDeployments, authorize('SIMS_SERVICE'), api.getDeployments)
+  .get(
+    ROUTES.getDeploymentsByCritterId,
+    authorize('SIMS_SERVICE'),
+    api.getDeploymentsByCritterId
+  )
+  .get(
+    ROUTES.getDeploymentsByDeviceId,
+    authorize('SIMS_SERVICE'),
+    api.getDeploymentsByDeviceId
+  )
+  .patch(
+    ROUTES.updateDeployment,
+    authorize('SIMS_SERVICE'),
+    api.updateDeploymentTimespan
+  )
+  .delete(
+    ROUTES.deleteDeployment,
+    authorize('SIMS_SERVICE'),
+    api.deleteDeployment
+  )
   // permissions
-  .get(ROUTES.getPermissionRequests, api.getPermissionRequests)
-  .get(ROUTES.getGrantedPermissionHistory, api.getGrantedPermissionHistory)
-  .post(ROUTES.submitPermissionRequest, api.submitPermissionRequest)
-  .post(ROUTES.getPermissionRequests, api.approveOrDenyPermissionRequest)
+  .get(ROUTES.getPermissionRequests, authorize(), api.getPermissionRequests)
+  .get(
+    ROUTES.getGrantedPermissionHistory,
+    authorize(),
+    api.getGrantedPermissionHistory
+  )
+  .post(
+    ROUTES.submitPermissionRequest,
+    authorize(),
+    api.submitPermissionRequest
+  )
+  .post(
+    ROUTES.getPermissionRequests,
+    authorize(),
+    api.approveOrDenyPermissionRequest
+  )
   // users
-  .post(ROUTES.signup, api.signup)
-  .get(ROUTES.getUser, api.getUser)
-  .get(ROUTES.getUsers, api.getUsers)
-  .get(ROUTES.getUserRole, api.getUserRole)
-  .post(ROUTES.upsertUser, api.upsertUser)
+  .post(ROUTES.signup, authorize('SIMS_SERVICE'), api.signup)
+  .get(ROUTES.getUser, authorize(), api.getUser)
+  .get(ROUTES.getUsers, authorize(), api.getUsers)
+  .get(ROUTES.getUserRole, authorize(), api.getUserRole)
+  .post(ROUTES.upsertUser, authorize(), api.upsertUser)
   // onboarding
-  .get(ROUTES.getUserOnboardStatus, api.getUserOnboardStatus)
-  .get(ROUTES.getOnboardingRequests, api.getOnboardingRequests)
-  .post(ROUTES.submitOnboardingRequest, api.submitOnboardingRequest)
-  .post(ROUTES.handleOnboardingRequest, api.handleOnboardingRequest)
+  .get(ROUTES.getUserOnboardStatus, authorize('ANY'), api.getUserOnboardStatus)
+  .get(ROUTES.getOnboardingRequests, authorize(), api.getOnboardingRequests)
+  .post(
+    ROUTES.submitOnboardingRequest,
+    authorize('ANY'),
+    api.submitOnboardingRequest
+  )
+  .post(
+    ROUTES.handleOnboardingRequest,
+    authorize(),
+    api.handleOnboardingRequest
+  )
   // user access
-  .get(ROUTES.getUserCritterAccess, api.getUserCritterAccess)
-  .post(ROUTES.assignCritterToUser, api.assignCritterToUser)
+  .get(ROUTES.getUserCritterAccess, authorize(), api.getUserCritterAccess)
+  .post(ROUTES.assignCritterToUser, authorize(), api.assignCritterToUser)
   // udf
-  .post(ROUTES.upsertUDF, api.upsertUDF)
-  .get(ROUTES.getUDF, api.getUDF)
+  .post(ROUTES.upsertUDF, authorize(), api.upsertUDF)
+  .get(ROUTES.getUDF, authorize(), api.getUDF)
   // alerts
-  .get(ROUTES.getUserTelemetryAlerts, api.getUserTelemetryAlerts)
-  .get(ROUTES.testAlertNotification, api.testAlertNotification)
-  .post(ROUTES.updateUserTelemetryAlert, api.updateUserTelemetryAlert)
+  .get(ROUTES.getUserTelemetryAlerts, authorize(), api.getUserTelemetryAlerts)
+  .get(ROUTES.testAlertNotification, authorize(), api.testAlertNotification)
+  .post(
+    ROUTES.updateUserTelemetryAlert,
+    authorize(),
+    api.updateUserTelemetryAlert
+  )
   // codes
-  .get(ROUTES.getCode, api.getCode)
-  .get(ROUTES.getCodeHeaders, api.getCodeHeaders)
-  .get(ROUTES.getCodeLongDesc, api.getCodeLongDesc)
+  .get(ROUTES.getCode, authorize('SIMS_SERVICE'), api.getCode)
+  .get(ROUTES.getCodeHeaders, authorize(), api.getCodeHeaders)
+  .get(ROUTES.getCodeLongDesc, authorize(), api.getCodeLongDesc)
   // export/import
-  .post(ROUTES.getExportData, api.getExportData)
-  .post(ROUTES.getAllExportData, api.getAllExportData)
-  .post(ROUTES.importXlsx, upload.single('validated-file'), importXlsx)
-  .post(ROUTES.importFinalize, finalizeImport)
-  .post(ROUTES.deployDevice, deployDevice)
+  .post(ROUTES.getExportData, authorize(), api.getExportData)
+  .post(ROUTES.getAllExportData, authorize(), api.getAllExportData)
+  .post(
+    ROUTES.importXlsx,
+    authorize(),
+    upload.single('validated-file'),
+    importXlsx
+  )
+  .post(ROUTES.importFinalize, authorize(), finalizeImport)
+  .post(ROUTES.deployDevice, authorize('SIMS_SERVICE'), deployDevice)
   .post(
     ROUTES.importXML,
+    authorize('SIMS_SERVICE'),
     upload.array('xml'),
     api.parseVectronicKeyRegistrationXML
   )
-  .post(ROUTES.importTelemetry, api.importTelemetry)
-  .get(ROUTES.getCollarKeyX, api.retrieveCollarKeyXRelation)
+  .post(ROUTES.importTelemetry, authorize(), api.importTelemetry)
+  .get(ROUTES.getCollarKeyX, authorize('SIMS_SERVICE'), api.retrieveCollarKeyXRelation)
   // vendor
-  .post(ROUTES.fetchTelemetry, api.fetchVendorTelemetryData)
+  .post(ROUTES.fetchTelemetry, authorize(), api.fetchVendorTelemetryData)
   // delete
-  .delete(ROUTES.deleteType, api.deleteType)
-  .delete(ROUTES.deleteTypeId, api.deleteType)
+  .delete(ROUTES.deleteType, authorize(), api.deleteType)
+  .delete(ROUTES.deleteTypeId, authorize(), api.deleteType)
   // generic getter
-  .get(ROUTES.getType, api.getType)
+  .get(ROUTES.getType, authorize(), api.getType)
   // Health check
-  .get(ROUTES.health, (_, res) => res.send(`I'm healthy!`))
-  .get(ROUTES.notFound, api.notFound);
+  .get(ROUTES.health, authorize('ANY'), (_, res) => res.send(`I'm healthy!`))
+  .get(ROUTES.notFound, authorize('ANY'), api.notFound);
 
 // run the server.
 // Nodemon was giving issues with port 3000, add new one to env to solve problem.

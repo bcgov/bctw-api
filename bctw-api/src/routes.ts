@@ -1,5 +1,3 @@
-import { Audience } from './types/userRequest';
-
 const ROUTES = {
   // templates
   getTemplate: '/get-template',
@@ -88,21 +86,4 @@ type IRouteKey = keyof typeof ROUTES;
 
 type IRoute = typeof ROUTES[IRouteKey];
 
-const ROUTE_AUDIENCES: { [key in IRouteKey]?: Audience[] } = {
-  [ROUTES.getTemplate]: ['ANY'],
-  [ROUTES.getCollarVendors]: ['SIMS_SERVICE'],
-  [ROUTES.signup]: ['SIMS_SERVICE'], // Only the SIMS service can signup users directly.
-  [ROUTES.getUserOnboardStatus]: ['ANY'], // Open to all common-realm users.
-  [ROUTES.submitOnboardingRequest]: ['ANY'],
-  [ROUTES.deployDevice]: ['SIMS_SERVICE'], // Only SIMS service may do this.
-  [ROUTES.health]: ['ANY'],
-  [ROUTES.notFound]: ['ANY'],
-  [ROUTES.getDeployments]: ['ANY'],
-  [ROUTES.getDeploymentsByCritterId]: ['ANY'],
-  [ROUTES.updateDeployment]: ['ANY'],
-  [ROUTES.getCode]: ['SIMS_SERVICE'],
-  [ROUTES.getCollarChangeHistoryByDeviceId]: ['SIMS_SERVICE'],
-  [ROUTES.importXML]: ['SIMS_SERVICE']
-};
-
-export { ROUTES, IRouteKey, IRoute, ROUTE_AUDIENCES };
+export { ROUTES, IRouteKey, IRoute };
