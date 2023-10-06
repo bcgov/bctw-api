@@ -63,6 +63,8 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
     console.log(e);
     await client.query('ROLLBACK');
     throw e;
+  } finally {
+    await client.release();
   }
 };
 

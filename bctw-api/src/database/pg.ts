@@ -32,6 +32,7 @@ const pgPool = new pg.Pool({
 
 pgPool.on('error', (err: Error, client: PoolClient): void => {
   console.log(`postgresql error: ${err}`);
+  client.release();
 });
 pgPool.on('acquire', (client: PoolClient): void => {
   //console.log(`postgresql client acquired`);

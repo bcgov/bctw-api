@@ -547,14 +547,9 @@ const upsertBulkv2 = async (id: string, req: Request) => {
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;
+  } finally {
+    await client.release();
   }
-
-  /*for(const r of responseArray) {
-    console.log(`CALL purge_animal_device_assignment('${r.assignment_id}');`);
-  }
-  for(const r of responseArray) {
-    console.log(`CALL purge_critter('${r.critter_id}');`);
-  }*/
   return responseArray;
 };
 
