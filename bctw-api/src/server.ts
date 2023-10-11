@@ -27,8 +27,8 @@ export const app = express()
   .use(forwardUser)
   .use(ROUTES.critterbase, authorize(), critterbaseRouter)
   // map
-  .get(ROUTES.getCritters, authorize(), api.getDBCritters)
-  .get(ROUTES.getCritterTracks, authorize(), api.getCritterTracks)
+  .get(ROUTES.getCritters, authorize('SIMS_SERVICE'), api.getDBCritters)
+  .get(ROUTES.getCritterTracks, authorize('SIMS_SERVICE'), api.getCritterTracks)
   .get(ROUTES.getPingsEstimate, authorize(), api.getPingsEstimate)
   // animals
   .get(ROUTES.getAnimals, authorize(), api.getAnimals)
