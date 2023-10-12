@@ -228,7 +228,8 @@ const getCritterTracks = async (
       jsonb_build_object (
         'type', 'Feature',
         'properties', json_build_object(
-          'critter_id', critter_id
+          'critter_id', critter_id,
+          'deployment_id', deployment_id
         ),
         'geometry', st_asGeoJSON(st_makeLine(geom ORDER BY date_recorded ASC))::jsonb
       ) AS "geojson"
@@ -238,6 +239,7 @@ const getCritterTracks = async (
       critter_id IS NOT NULL AND
       st_asText(geom) <> 'POINT(0 0)'
     GROUP BY
+      deployment_id,
       critter_id;
   `;
 
