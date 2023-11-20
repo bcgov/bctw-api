@@ -33,6 +33,10 @@ import {
   upsertCollar,
 } from './apis/collar_api';
 import {
+  createManualTelemetry,
+  deleteManualTelemetry,
+} from './apis/manual_telemetry_api';
+import {
   getCritterTracks,
   getDBCritters,
   getPingsEstimate,
@@ -70,7 +74,7 @@ import {
   deleteDeployment,
   getDeployments,
   getDeploymentsByCritterId,
-  getDeploymentsByDeviceId
+  getDeploymentsByDeviceId,
 } from './apis/attachment_api';
 import {
   getOnboardingRequests,
@@ -210,5 +214,8 @@ export {
   getDeployments,
   getDeploymentsByCritterId,
   getDeploymentsByDeviceId,
-  deleteDeployment
+  deleteDeployment,
+  // manual telemetry
+  deleteManualTelemetry,
+  createManualTelemetry,
 };

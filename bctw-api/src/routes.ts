@@ -31,6 +31,9 @@ const ROUTES = {
   getDeploymentsByDeviceId: '/get-deployments-by-device-id',
   updateDeployment: '/update-deployment',
   deleteDeployment: '/delete-deployment/:deployment_id',
+  // manual telemetry
+  deleteManualTelemetry: '/delete-manual-telemetry',
+  createManualTelemetry: '/create-manual-telemetry',
   // permissions
   getPermissionRequests: '/permission-request',
   getGrantedPermissionHistory: '/permission-history',
@@ -84,6 +87,6 @@ const ROUTES = {
 
 type IRouteKey = keyof typeof ROUTES;
 
-type IRoute = typeof ROUTES[IRouteKey];
+type IRoute = (typeof ROUTES)[IRouteKey];
 
 export { ROUTES, IRouteKey, IRoute };
