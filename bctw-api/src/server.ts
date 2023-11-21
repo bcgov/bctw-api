@@ -58,6 +58,7 @@ export const app = express()
   //Note this is a post endpoint that accepts array of ids to delete
   .post(ROUTES.deleteManualTelemetry, auth('SIMS_SERVICE'), api.deleteManualTelemetry)
   .post(ROUTES.createManualTelemetry, auth('SIMS_SERVICE'), api.createManualTelemetry)
+  .get(ROUTES.getManualTelemetry, auth('SIMS_SERVICE'), api.getManualTelemetry)
   // permissions
   .get(ROUTES.getPermissionRequests, auth(), api.getPermissionRequests)
   .get(ROUTES.getGrantedPermissionHistory, auth(), api.getGrantedPermissionHistory)

@@ -35,6 +35,7 @@ import {
 import {
   createManualTelemetry,
   deleteManualTelemetry,
+  getManualTelemetry,
 } from './apis/manual_telemetry_api';
 import {
   getCritterTracks,
@@ -218,4 +219,5 @@ export {
   // manual telemetry
   deleteManualTelemetry,
   createManualTelemetry,
+  getManualTelemetry,
 };

@@ -1,4 +1,6 @@
 import { S_BCTW } from '../constants';
+import { query } from '../database/query';
+import { QResult } from '../types/query';
 
 export const MANUAL_TELEMETRY = `${S_BCTW}.telemetry_manual`;
 
@@ -53,10 +55,10 @@ export const validateManualTelemetry = (
   }
 };
 
-export const createManualTelemetrySql = (
+export const postManualTelemetry = async (
   telemetry: PostManualTelemtry[],
   keycloak_guid: string
-): string => {
+): Promise<QResult> => {
   const values = telemetry
     .map(
       (row) => `(
@@ -69,9 +71,12 @@ export const createManualTelemetrySql = (
     .join(', ');
 
   const sql = `
-    INSERT INTO ${MANUAL_TELEMETRY} (deployment_id, latitude, longitude, date, created_by_user_id)
+    INSERT INTO ${MANUAL_TELEMETRY}
+    (deployment_id, latitude, longitude, date, created_by_user_id)
     VALUES ${values}
     RETURNING *`;
 
-  return sql;
+  const data = await query(sql);
+
+  return data;
 };
