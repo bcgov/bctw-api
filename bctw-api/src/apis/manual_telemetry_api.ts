@@ -46,7 +46,7 @@ const createManualTelemetry = async (
   );
 
   if (isError) {
-    return res.status(500).json({ errors: error.message });
+    return res.status(500).send(error.message);
   }
 
   return res.status(201).json(result.rows);
@@ -56,8 +56,8 @@ const deleteManualTelemetry = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const telemetry_manual_ids = req.body as string[];
-  const err = validateManualTelemetryIds(telemetry_manual_ids);
+  const payload = req.body as { telemetry_manual_ids: string[] };
+  const err = validateManualTelemetryIds(payload.telemetry_manual_ids);
 
   if (err) {
     return res.status(400).send(err);
@@ -66,16 +66,16 @@ const deleteManualTelemetry = async (
   const { result, error, isError } = await query(
     `DELETE FROM ${MANUAL_TELEMETRY}
     WHERE telemetry_manual_id = ANY(${to_pg_array(
-      telemetry_manual_ids
+      payload.telemetry_manual_ids
     )}) RETURNING *`
   );
 
   if (isError) {
-    return res.status(500).json({ errors: error.message });
+    return res.status(500).send(error.message);
   }
 
   if (!result.rows.length) {
-    return res.status(400).json({ errors: 'no records deleted' });
+    return res.status(400).send('no records deleted');
   }
 
   return res.status(200).json(result.rows);
