@@ -205,8 +205,10 @@ const query = async (
     }
   } catch (e) {
     isError = true;
+    //console.log(e);
     if (isSQL) {
-      error = new Error(`${!msgIfErr || msgIfErr == '' ? e : msgIfErr}`);
+      const err = msgIfErr == '' || !msgIfErr ? `${e}` : msgIfErr;
+      error = new Error(err);
     } else {
       error = new Error(formatAxiosError(e as AxiosError));
     }
