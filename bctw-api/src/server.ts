@@ -55,10 +55,10 @@ export const app = express()
   .patch(ROUTES.updateDeployment, auth('SIMS_SERVICE'), api.updateDeploymentTimespan)
   .delete(ROUTES.deleteDeployment, auth('SIMS_SERVICE'), api.deleteDeployment)
   // Manual telemetry
-  //Note this is a post endpoint that accepts array of ids to delete
   .post(ROUTES.deleteManualTelemetry, auth('SIMS_SERVICE'), api.deleteManualTelemetry)
-  .post(ROUTES.createManualTelemetry, auth('SIMS_SERVICE'), api.createManualTelemetry)
-  .get(ROUTES.getManualTelemetry, auth('SIMS_SERVICE'), api.getManualTelemetry)
+  .post(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.createManualTelemetry)
+  .get(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.getManualTelemetry)
+  .patch(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.updateManualTelemetry)
   // permissions
   .get(ROUTES.getPermissionRequests, auth(), api.getPermissionRequests)
   .get(ROUTES.getGrantedPermissionHistory, auth(), api.getGrantedPermissionHistory)
