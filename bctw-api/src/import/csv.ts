@@ -25,7 +25,7 @@ import {
   validateUniqueAnimal,
 } from './validation';
 
-import { unlinkSync } from 'fs';
+import { link, unlinkSync } from 'fs';
 import { pgPool } from '../database/pg';
 import { v4 as uuidv4, validate as uuid_validate } from 'uuid';
 import dayjs from 'dayjs';
@@ -594,7 +594,7 @@ const upsertBulkv2 = async (id: string, req: Request) => {
     await client.query('ROLLBACK');
     throw e;
   } finally {
-    client.release();
+    await client.release();
   }
   return responseArray;
 };
@@ -637,7 +637,7 @@ const getTemplateFile = async function (
   const b64string = file_result.rows[0].contents_base64;
 
   const workbook = new Workbook();
-  const buff = Buffer.from(b64string, 'base64');
+  const buff = await Buffer.from(b64string, 'base64');
   await workbook.xlsx.load(buff);
 
   // ExtendedWorksheet provides access to bulk dataValidations
