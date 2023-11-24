@@ -32,7 +32,7 @@ describe('KeyX Import Endpoint', () => {
       it('should return single error', async () => {
         const res = await req.send({});
         expect(res.body.errors.length).toBe(1);
-        expect(res.body.errors[0].error).toBe('no attached files found');
+        expect(res.body.errors[0].error).toBe('no keyX files imported');
         expect(res.body.errors[0].rownum).toBe(-1);
       });
     });

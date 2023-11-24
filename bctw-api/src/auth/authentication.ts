@@ -8,6 +8,7 @@ import {
   SIMS_SERVICE_AUD,
   critterbase,
 } from '../constants';
+import { isTest } from '../database/pg';
 import { UserRequest } from '../types/userRequest';
 import { getKeycloakToken } from './keycloak';
 
@@ -58,6 +59,9 @@ export const authenticateRequest = (
   res: Response,
   next: NextFunction
 ): void => {
+  if (isTest) {
+    return next();
+  }
   const bearerToken = req.headers.authorization;
   if (!bearerToken || !bearerToken.startsWith('Bearer ')) {
     res

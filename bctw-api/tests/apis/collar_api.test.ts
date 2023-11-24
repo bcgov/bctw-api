@@ -1,5 +1,10 @@
+import * as db from '../../src/database/query';
 import { request } from '../utils/constants';
 import { mockQuery, queryReturn } from './test_helpers';
+import * as dbRequests from '../../src/database/requests';
+
+jest.spyOn(dbRequests, 'getUserIdentifier').mockReturnValue('TEST');
+jest.spyOn(db, 'query').mockImplementation();
 
 const mockRes: any = {};
 mockRes.send = jest.fn().mockReturnValue(mockRes);

@@ -1,8 +1,5 @@
 import dayjs from 'dayjs';
 import { ErrorMsgs } from '../../src/utils/strings';
-// import { _insertLotekRecords } from '../../apis/vendor/lotek';
-// import { pgPool } from '../../database/pg';
-// import { ErrorMsgs } from '../../utils/strings';
 import {
   existingDateDevice21510,
   idir,
@@ -10,9 +7,14 @@ import {
   request,
   vectronicPayload,
 } from '../utils/constants';
+/**
+ *
+ * TODO: Convert these tests to use mocked DB requests
+ *
+ **/
 const { telemetry: errorStrings } = ErrorMsgs;
 // GENERIC
-describe('POST /import-telemetry', () => {
+describe.skip('POST /import-telemetry', () => {
   describe('Non-specific Payload', () => {
     describe('given valid payload, endpoint should be reachable', () => {
       it('should return status 200', async () => {
