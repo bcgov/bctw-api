@@ -34,6 +34,7 @@ const ROUTES = {
   // manual telemetry
   deleteManualTelemetry: '/manual-telemetry/delete',
   manualTelemetry: '/manual-telemetry',
+  deploymentsManualTelemetry: '/manual-telemetry/deployments',
   // permissions
   getPermissionRequests: '/permission-request',
   getGrantedPermissionHistory: '/permission-history',

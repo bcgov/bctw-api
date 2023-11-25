@@ -36,6 +36,7 @@ import {
   createManualTelemetry,
   deleteManualTelemetry,
   getManualTelemetry,
+  getManualTelemetryByDeploymentIds,
   updateManualTelemetry,
 } from './apis/manual_telemetry_api';
 import {
@@ -222,4 +223,5 @@ export {
   createManualTelemetry,
   getManualTelemetry,
   updateManualTelemetry,
+  getManualTelemetryByDeploymentIds,
 };
