@@ -127,7 +127,6 @@ describe('manual telemetry service', () => {
         const telemetry = await mockService.getManualTelemetry();
         expect(telemetry).toBe(mockTelemetry);
       });
-
       it('should throw apiError with status 500 if query has error', async () => {
         mockQuery.mockResolvedValue({ ...mockQueryReturn, isError: true });
         try {
@@ -135,7 +134,117 @@ describe('manual telemetry service', () => {
         } catch (err) {
           expect(err).toBeDefined();
           expect(err).toBeInstanceOf(apiError);
+          if (err instanceof apiError) {
+            expect(err.status).toBe(500);
+          }
         }
+      });
+    });
+
+    describe('createManualTelemetry', () => {
+      it('should return created telemetry if no error', async () => {
+        mockQuery.mockResolvedValue(mockQueryReturn);
+        const telemetry = await mockService.createManualTelemetry(
+          mockTelemetry
+        );
+        expect(mockQuery.mock.calls[0][0]).toBeDefined();
+        expect(typeof mockQuery.mock.calls[0][0] === 'string');
+        expect(telemetry).toBe(mockTelemetry);
+      });
+
+      it('should throw apiError with status 500 if query has error', async () => {
+        mockQuery.mockResolvedValue({ ...mockQueryReturn, isError: true });
+        try {
+          await mockService.createManualTelemetry(mockTelemetry);
+        } catch (err) {
+          expect(err).toBeDefined();
+          expect(err).toBeInstanceOf(apiError);
+          if (err instanceof apiError) {
+            expect(err.status).toBe(500);
+          }
+        }
+      });
+      it('should respond with [] if no records updated', async () => {
+        mockQuery.mockResolvedValue({
+          ...mockQueryReturn,
+          result: { rows: [] },
+        });
+        const telemetry = await mockService.createManualTelemetry(
+          mockTelemetry
+        );
+        expect(telemetry).toStrictEqual([]);
+      });
+    });
+
+    describe('updateManualTelemetry', () => {
+      it('should return updated telemetry if no error', async () => {
+        mockQuery.mockResolvedValue(mockQueryReturn);
+        const telemetry = await mockService.updateManualTelemetry(
+          mockTelemetry
+        );
+        expect(mockQuery.mock.calls[0][0]).toBeDefined();
+        expect(typeof mockQuery.mock.calls[0][0] === 'string');
+        expect(telemetry).toBe(mockTelemetry);
+      });
+
+      it('should throw apiError with status 500 if query has error', async () => {
+        mockQuery.mockResolvedValue({ ...mockQueryReturn, isError: true });
+        try {
+          await mockService.updateManualTelemetry(mockTelemetry);
+        } catch (err) {
+          expect(err).toBeDefined();
+          expect(err).toBeInstanceOf(apiError);
+          if (err instanceof apiError) {
+            expect(err.status).toBe(500);
+          }
+        }
+      });
+      it('should respond with [] if no records updated', async () => {
+        mockQuery.mockResolvedValue({
+          ...mockQueryReturn,
+          result: { rows: [] },
+        });
+        const telemetry = await mockService.updateManualTelemetry(
+          mockTelemetry
+        );
+        expect(telemetry).toStrictEqual([]);
+      });
+    });
+
+    describe('getManualTelemetryByDeploymentIds', () => {
+      it('should return telemetry if no error', async () => {
+        mockQuery.mockResolvedValue(mockQueryReturn);
+        const telemetry = await mockService.getManualTelemetryByDeploymentIds([
+          'a',
+          'b',
+        ]);
+        expect(mockQuery.mock.calls[0][0]).toBeDefined();
+        expect(typeof mockQuery.mock.calls[0][0] === 'string');
+        expect(telemetry).toBe(mockTelemetry);
+      });
+
+      it('should throw apiError with status 500 if query has error', async () => {
+        mockQuery.mockResolvedValue({ ...mockQueryReturn, isError: true });
+        try {
+          await mockService.getManualTelemetryByDeploymentIds(['a', 'b']);
+        } catch (err) {
+          expect(err).toBeDefined();
+          expect(err).toBeInstanceOf(apiError);
+          if (err instanceof apiError) {
+            expect(err.status).toBe(500);
+          }
+        }
+      });
+      it('should respond with [] if no records updated', async () => {
+        mockQuery.mockResolvedValue({
+          ...mockQueryReturn,
+          result: { rows: [] },
+        });
+        const telemetry = await mockService.getManualTelemetryByDeploymentIds([
+          'a',
+          'b',
+        ]);
+        expect(telemetry).toStrictEqual([]);
       });
     });
   });

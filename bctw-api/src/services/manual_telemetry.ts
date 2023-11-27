@@ -14,9 +14,21 @@ export interface IManualTelemetry {
 
 export type PostManualTelemtry = Omit<IManualTelemetry, 'telemetry_manual_id'>;
 
+/**
+ * ManualTelemetryService - provides methods for creating/updating/deleting
+ * manual telemetry records
+ **/
 export class ManualTelemetryService {
   keycloak_guid: string;
 
+  /**
+   * constructor for ManualTelemetryService
+   * @param {string} keycloak_guid
+   * Note: should always have the keycloak_guid at API level
+   * throws error for offchance endpoint was setup incorrectly
+   * used for finding the user / system user for audit columns
+   * @throws {apiError} error message
+   **/
   constructor(keycloak_guid?: string) {
     if (!keycloak_guid) {
       throw new apiError('keycloak guid was not passed through to service');
@@ -82,6 +94,11 @@ export class ManualTelemetryService {
     });
   }
 
+  /**
+   * gets all manual valid manual telemetry
+   * @throws {apiError} error message
+   * @returns {Promise<IManualTelemetry>} retrieved telemetry
+   **/
   async getManualTelemetry(): Promise<IManualTelemetry[]> {
     const { result, error, isError } = await query(
       `SELECT * FROM ${MANUAL_TELEMETRY} WHERE ${S_BCTW}.is_valid(valid_to)`
@@ -92,6 +109,12 @@ export class ManualTelemetryService {
     return result.rows;
   }
 
+  /**
+   * create manual telemetry records
+   * @param {PostManualTelemtry[]} telemetry
+   * @throws {apiError} error message
+   * @returns {Promise<IManualTelemetry>} created telemetry
+   **/
   async createManualTelemetry(
     telemetry: PostManualTelemtry[]
   ): Promise<IManualTelemetry[]> {
@@ -116,10 +139,6 @@ export class ManualTelemetryService {
 
     const data = await query(sql);
 
-    if (!data.result.rows.length) {
-      throw new apiError('no rows created');
-    }
-
     if (data.isError) {
       throw new apiError(data.error.message, 500);
     }
@@ -127,6 +146,12 @@ export class ManualTelemetryService {
     return data.result.rows;
   }
 
+  /**
+   * update manual telemetry records
+   * @param {Partial<IManualTelemetry>[]} telemetry
+   * @throws {apiError} error message
+   * @returns {Promise<IManualTelemetry>} updated telemetry
+   **/
   async updateManualTelemetry(
     telemetry: Partial<IManualTelemetry>[]
   ): Promise<IManualTelemetry[]> {
@@ -154,10 +179,6 @@ export class ManualTelemetryService {
 `;
     const data = await query(sql);
 
-    if (!data.result.rows.length) {
-      throw new apiError('no rows updated');
-    }
-
     if (data.isError) {
       throw new apiError(data.error.message, 500);
     }
@@ -165,6 +186,12 @@ export class ManualTelemetryService {
     return data.result.rows;
   }
 
+  /**
+   * delete manual telemetry records
+   * @param {string[]} telemetry_manual_ids - uuids
+   * @throws {apiError} error message
+   * @returns {Promise<IManualTelemetry>} updated telemetry
+   **/
   async deleteManualTelemetry(
     telemetry_manual_ids: string[]
   ): Promise<IManualTelemetry[]> {
@@ -180,10 +207,6 @@ export class ManualTelemetryService {
 
     const data = await query(sql);
 
-    if (!data.result.rows.length) {
-      throw new apiError('no rows updated');
-    }
-
     if (data.isError) {
       throw new apiError(data.error.message, 500);
     }
@@ -191,6 +214,12 @@ export class ManualTelemetryService {
     return data.result.rows;
   }
 
+  /**
+   * get manual telemetry records by deployment_ids
+   * @param {string[]} deployment_ids - uuids
+   * @throws {apiError} error message
+   * @returns {Promise<IManualTelemetry>} updated telemetry
+   **/
   async getManualTelemetryByDeploymentIds(
     deployment_ids: string[]
   ): Promise<IManualTelemetry[]> {
@@ -202,10 +231,6 @@ export class ManualTelemetryService {
     )})`;
 
     const data = await query(sql);
-
-    if (!data.result.rows.length) {
-      throw new apiError('no telemetry found for provided deployment_ids');
-    }
 
     if (data.isError) {
       throw new apiError(data.error.message, 500);

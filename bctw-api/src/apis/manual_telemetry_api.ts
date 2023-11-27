@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { getUserIdentifier, handleApiError } from '../database/requests';
-import { ManualTelemetryService } from '../services/manual_telemetry.service';
+import { ManualTelemetryService } from '../services/manual_telemetry';
 
 const getManualTelemetry = async (
   req: Request,
