@@ -84,11 +84,11 @@ const handleQueryError = async (
  * a response handler for apiErrors
  */
 
-const handleApiError = async (err: unknown, res: Response) => {
+const handleApiError = async (err: any, res: Response) => {
   if (err instanceof apiError) {
-    return res.status(err.status).send(err.message);
+    return res.status(err.status).json({ error: err.message });
   }
-  return res.status(500).send(`unknown error occurred: ${err}`);
+  return res.status(500).json({ error: `${err?.message ?? err}` });
 };
 
 /**
