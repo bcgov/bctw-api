@@ -44,7 +44,6 @@ export class ManualTelemetryService {
    * @throws {apiError} error message
    **/
   _validateUuidArray(uuids: unknown[]): void {
-    console.log(uuids);
     if (!uuids || uuids.length === 0) {
       throw new apiError('no uuids provided');
     }
@@ -88,7 +87,6 @@ export class ManualTelemetryService {
    * @throws {apiError} error message
    **/
   _validateManualTelemetryPatch(telemetry: Partial<IManualTelemetry>[]): void {
-    console.log(telemetry);
     telemetry.forEach((row) => {
       if (!row?.telemetry_manual_id) {
         throw new apiError(`each item must have a 'telemetry_manual_id`);
