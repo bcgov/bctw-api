@@ -3,13 +3,14 @@ import { query, to_pg_array } from '../database/query';
 import { apiError } from '../utils/error';
 
 export const MANUAL_TELEMETRY = `${S_BCTW}.telemetry_manual`;
+export const TELEMETRY = `${S_BCTW}.telemetry`;
 
 export interface IManualTelemetry {
   telemetry_manual_id: string;
   deployment_id: string;
   latitude: number;
   longitude: number;
-  date: Date;
+  acquisition_date: Date;
 }
 
 export type PostManualTelemtry = Omit<IManualTelemetry, 'telemetry_manual_id'>;
@@ -43,6 +44,7 @@ export class ManualTelemetryService {
    * @throws {apiError} error message
    **/
   _validateUuidArray(uuids: unknown[]): void {
+    console.log(uuids);
     if (!uuids || uuids.length === 0) {
       throw new apiError('no uuids provided');
     }
@@ -72,8 +74,10 @@ export class ManualTelemetryService {
           'latitude and longitude are required for each telemetry record'
         );
       }
-      if (!manual?.date) {
-        throw new apiError('date is required for each telemetry record');
+      if (!manual?.acquisition_date) {
+        throw new apiError(
+          'acquisition_date is required for each telemetry record'
+        );
       }
     });
   }
@@ -84,6 +88,7 @@ export class ManualTelemetryService {
    * @throws {apiError} error message
    **/
   _validateManualTelemetryPatch(telemetry: Partial<IManualTelemetry>[]): void {
+    console.log(telemetry);
     telemetry.forEach((row) => {
       if (!row?.telemetry_manual_id) {
         throw new apiError(`each item must have a 'telemetry_manual_id`);
@@ -126,14 +131,14 @@ export class ManualTelemetryService {
       '${row.deployment_id}',
       ${row.latitude},
       ${row.longitude},
-      '${row.date}',
+      '${row.acquisition_date}',
       ${S_BCTW}.get_user_id('${this.keycloak_guid}'))`
       )
       .join(', ');
 
     const sql = `
     INSERT INTO ${MANUAL_TELEMETRY}
-    (deployment_id, latitude, longitude, date, created_by_user_id)
+    (deployment_id, latitude, longitude, acquisition_date, created_by_user_id)
     VALUES ${values}
     RETURNING *`;
 
@@ -162,17 +167,17 @@ export class ManualTelemetryService {
     '${row.telemetry_manual_id}',
     ${row?.latitude ?? null},
     ${row?.longitude ?? null},
-    ${row?.date ? `'${row.date}'` : null})`
+    ${row?.acquisition_date ? `'${row.acquisition_date}'` : null})`
     );
     const sql = `
     UPDATE ${MANUAL_TELEMETRY} as m SET
       latitude = COALESCE(m.latitude, m2.latitude::float8),
       longitude = COALESCE(m.longitude, m2.longitude::float8),
-      date = COALESCE(m.date, m2.date::timestamptz),
+      acquisition_date = COALESCE(m.acquisition_date, m2.acquisition_date::timestamptz),
       updated_by_user_id = ${S_BCTW}.get_user_id('${this.keycloak_guid}')
     FROM (VALUES
       ${values}
-    ) as m2(telemetry_manual_id, latitude, longitude, date)
+    ) as m2(telemetry_manual_id, latitude, longitude, acquisition_date)
     WHERE m2.telemetry_manual_id::uuid = m.telemetry_manual_id::uuid
     AND ${S_BCTW}.is_valid(m.valid_to)
     RETURNING *
@@ -229,6 +234,38 @@ export class ManualTelemetryService {
     SELECT * FROM ${MANUAL_TELEMETRY} WHERE deployment_id = ANY(${to_pg_array(
       deployment_ids
     )})`;
+
+    const data = await query(sql);
+
+    if (data.isError) {
+      throw new apiError(data.error.message, 500);
+    }
+
+    return data.result.rows;
+  }
+
+  /**
+   * retrieves VENDOR telemetry by deployment_ids
+   * Note: placing this here as its used in conjunction with manual telemetry
+   * fetches data from the telemetry materialized view which refreshes nightly
+   * data in this view should only be updated by the cronjobs / manual telemetry fetch actions
+   * @param {string[]} deployment_ids - uuids to retrieve telemetry for
+   * @throws {apiError} error message
+   * @returns {Promise<IManualTelemetry[]>}
+   */
+  async getVendorTelemetryByDeploymentIds(
+    deployment_ids: string[]
+  ): Promise<IManualTelemetry[]> {
+    this._validateUuidArray(deployment_ids);
+
+    const sql = `
+    SELECT t.telemetry_id, caa.deployment_id, t.collar_transaction_id, t.critter_id,
+    t.deviceid, t.latitude, t.longitude, t.elevation, t.vendor, t.acquisition_date
+    FROM ${TELEMETRY} t
+    INNER JOIN collar_animal_assignment caa
+    ON t.critter_id = caa.critter_id
+    AND is_valid(caa.valid_to)
+    WHERE caa.deployment_id = ANY(${to_pg_array(deployment_ids)})`;
 
     const data = await query(sql);
 

@@ -60,6 +60,7 @@ export const app = express()
   .post(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.createManualTelemetry)
   .get(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.getManualTelemetry)
   .patch(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.updateManualTelemetry)
+  .post(ROUTES.deploymentsVendorTelemetry, auth('SIMS_SERVICE'), api.getVendorTelemetryByDeploymentIds)
   // permissions
   .get(ROUTES.getPermissionRequests, auth(), api.getPermissionRequests)
   .get(ROUTES.getGrantedPermissionHistory, auth(), api.getGrantedPermissionHistory)

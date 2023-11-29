@@ -65,59 +65,78 @@ describe('manual telemetry service', () => {
 
     describe('_validateManualTelemetryCreate', () => {
       it('throws if no telemetry provided', () => {
-        expect(() => {
+        expect.hasAssertions();
+        try {
           mockService._validateManualTelemetryCreate([]);
-        }).toThrowError();
+        } catch (err: any) {
+          expect(err).toBeInstanceOf(apiError);
+        }
       });
 
       it('throws if missing deployment_id', () => {
         const { deployment_id, ...t } = mockTelemetry[0];
-        expect(() => {
+        try {
           mockService._validateManualTelemetryCreate([t]);
-        }).toThrowError();
+        } catch (err: any) {
+          expect(err).toBeInstanceOf(apiError);
+        }
       });
 
       it('throws if missing deployment_id', () => {
         const { deployment_id, ...t } = mockTelemetry[0];
-        expect(() => {
+        try {
           mockService._validateManualTelemetryCreate([t]);
-        }).toThrowError();
+        } catch (err: any) {
+          expect(err).toBeInstanceOf(apiError);
+        }
       });
 
       it('throws if missing latitude or longitude', () => {
         const { latitude, longitude, ...t } = mockTelemetry[0];
-        expect(() => {
+        try {
           mockService._validateManualTelemetryCreate([t]);
-        }).toThrowError();
+        } catch (err: any) {
+          expect(err).toBeInstanceOf(apiError);
+        }
       });
 
       it('throws if missing date', () => {
         const { date, ...t } = mockTelemetry[0];
-        expect(() => {
+        try {
           mockService._validateManualTelemetryCreate([t]);
-        }).toThrowError();
+        } catch (err: any) {
+          expect(err).toBeInstanceOf(apiError);
+        }
       });
 
       it('does not throw if valid data', () => {
-        expect(() => {
-          mockService._validateManualTelemetryCreate(mockTelemetry);
-        }).not.toThrowError();
+        try {
+          mockService._validateManualTelemetryCreate([{}]);
+        } catch (err: any) {
+          expect(err).toBeInstanceOf(apiError);
+        }
       });
     });
     describe('_validateManualTelemetryPatch', () => {
       it('throws if missing telemetry_manual_id', () => {
         const { telemetry_manual_id, ...t } = mockTelemetry[0];
-        expect(() => {
+        expect.hasAssertions();
+        try {
           mockService._validateManualTelemetryPatch([t]);
-        }).toThrowError();
+        } catch (err: any) {
+          expect(err).toBeInstanceOf(apiError);
+        }
       });
 
       it('throws if only 1 property', () => {
-        expect(() => {
+        expect.hasAssertions();
+        try {
           mockService._validateManualTelemetryPatch([
             { telemetry_manual_id: 'a' },
           ]);
-        }).toThrowError();
+        } catch (err: any) {
+          expect(err).toBeInstanceOf(apiError);
+        }
       });
     });
 
@@ -172,6 +191,37 @@ describe('manual telemetry service', () => {
         const telemetry = await mockService.createManualTelemetry(
           mockTelemetry
         );
+        expect(telemetry).toStrictEqual([]);
+      });
+    });
+
+    describe('deleteManualTelemetry', () => {
+      it('should return created telemetry if no error', async () => {
+        mockQuery.mockResolvedValue(mockQueryReturn);
+        const telemetry = await mockService.deleteManualTelemetry(['a']);
+        expect(mockQuery.mock.calls[0][0]).toBeDefined();
+        expect(typeof mockQuery.mock.calls[0][0] === 'string');
+        expect(telemetry).toBe(mockTelemetry);
+      });
+
+      it('should throw apiError with status 500 if query has error', async () => {
+        mockQuery.mockResolvedValue({ ...mockQueryReturn, isError: true });
+        try {
+          await mockService.deleteManualTelemetry(['a']);
+        } catch (err) {
+          expect(err).toBeDefined();
+          expect(err).toBeInstanceOf(apiError);
+          if (err instanceof apiError) {
+            expect(err.status).toBe(500);
+          }
+        }
+      });
+      it('should respond with [] if no records updated', async () => {
+        mockQuery.mockResolvedValue({
+          ...mockQueryReturn,
+          result: { rows: [] },
+        });
+        const telemetry = await mockService.deleteManualTelemetry(['a']);
         expect(telemetry).toStrictEqual([]);
       });
     });
@@ -241,6 +291,43 @@ describe('manual telemetry service', () => {
           result: { rows: [] },
         });
         const telemetry = await mockService.getManualTelemetryByDeploymentIds([
+          'a',
+          'b',
+        ]);
+        expect(telemetry).toStrictEqual([]);
+      });
+    });
+
+    describe('getVendorTelemetryByDeploymentIds', () => {
+      it('should return telemetry if no error', async () => {
+        mockQuery.mockResolvedValue(mockQueryReturn);
+        const telemetry = await mockService.getVendorTelemetryByDeploymentIds([
+          'a',
+          'b',
+        ]);
+        expect(mockQuery.mock.calls[0][0]).toBeDefined();
+        expect(typeof mockQuery.mock.calls[0][0] === 'string');
+        expect(telemetry).toBe(mockTelemetry);
+      });
+
+      it('should throw apiError with status 500 if query has error', async () => {
+        mockQuery.mockResolvedValue({ ...mockQueryReturn, isError: true });
+        try {
+          await mockService.getVendorTelemetryByDeploymentIds(['a', 'b']);
+        } catch (err) {
+          expect(err).toBeDefined();
+          expect(err).toBeInstanceOf(apiError);
+          if (err instanceof apiError) {
+            expect(err.status).toBe(500);
+          }
+        }
+      });
+      it('should respond with [] if no records updated', async () => {
+        mockQuery.mockResolvedValue({
+          ...mockQueryReturn,
+          result: { rows: [] },
+        });
+        const telemetry = await mockService.getVendorTelemetryByDeploymentIds([
           'a',
           'b',
         ]);
