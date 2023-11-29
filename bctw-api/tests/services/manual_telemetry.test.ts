@@ -12,7 +12,7 @@ const mockTelemetry: IManualTelemetry[] = [
     deployment_id: 'b',
     latitude: 1,
     longitude: 2,
-    date: new Date(),
+    acquisition_date: new Date(),
   },
 ];
 
@@ -101,7 +101,7 @@ describe('manual telemetry service', () => {
       });
 
       it('throws if missing date', () => {
-        const { date, ...t } = mockTelemetry[0];
+        const { acquisition_date, ...t } = mockTelemetry[0];
         try {
           mockService._validateManualTelemetryCreate([t]);
         } catch (err: any) {
