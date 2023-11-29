@@ -56,9 +56,11 @@ export const app = express()
   .delete(ROUTES.deleteDeployment, auth('SIMS_SERVICE'), api.deleteDeployment)
   // Manual telemetry
   .post(ROUTES.deleteManualTelemetry, auth('SIMS_SERVICE'), api.deleteManualTelemetry)
+  .post(ROUTES.deploymentsManualTelemetry, auth('SIMS_SERVICE'), api.getManualTelemetryByDeploymentIds)
   .post(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.createManualTelemetry)
   .get(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.getManualTelemetry)
   .patch(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.updateManualTelemetry)
+  .post(ROUTES.deploymentsVendorTelemetry, auth('SIMS_SERVICE'), api.getVendorTelemetryByDeploymentIds)
   // permissions
   .get(ROUTES.getPermissionRequests, auth(), api.getPermissionRequests)
   .get(ROUTES.getGrantedPermissionHistory, auth(), api.getGrantedPermissionHistory)

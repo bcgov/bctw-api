@@ -1,8 +1,10 @@
 import * as db from '../../src/database/query';
+import * as dbRequests from '../../src/database/requests';
 import { QResult } from '../../src/types/query';
 import { request } from '../utils/constants';
 
 const q = jest.spyOn(db, 'query').mockImplementation();
+jest.spyOn(dbRequests, 'getUserIdentifier').mockReturnValue('TEST');
 const err = 'TEST ERROR';
 const qReturn: QResult = {
   result: {

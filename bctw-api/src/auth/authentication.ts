@@ -7,7 +7,9 @@ import {
   KEYCLOAK_REALM,
   SIMS_SERVICE_AUD,
   critterbase,
+  IS_DEV,
 } from '../constants';
+import { isTest } from '../database/pg';
 import { UserRequest } from '../types/userRequest';
 import { getKeycloakToken } from './keycloak';
 
@@ -58,6 +60,9 @@ export const authenticateRequest = (
   res: Response,
   next: NextFunction
 ): void => {
+  if (isTest) {
+    return next();
+  }
   const bearerToken = req.headers.authorization;
   if (!bearerToken || !bearerToken.startsWith('Bearer ')) {
     res
@@ -75,7 +80,7 @@ export const authenticateRequest = (
       res.status(401).send('Invalid token. Verification failed.');
     } else if (decoded && typeof decoded === 'object') {
       const origin =
-        decoded.aud === BCTW_AUD
+        decoded.aud === BCTW_AUD || IS_DEV
           ? 'BCTW'
           : decoded.aud === SIMS_SERVICE_AUD
           ? 'SIMS_SERVICE'

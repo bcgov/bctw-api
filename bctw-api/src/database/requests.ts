@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { QResult, SearchFilter } from '../types/query';
 import { UserRequest } from '../types/userRequest';
+import { apiError } from '../utils/error';
 
 // helpers for processing express Request objects
 
@@ -80,6 +81,17 @@ const handleQueryError = async (
 };
 
 /**
+ * a response handler for apiErrors
+ */
+
+const handleApiError = async (err: any, res: Response) => {
+  if (err instanceof apiError) {
+    return res.status(err.status).json({ error: err.message });
+  }
+  return res.status(500).json({ error: `${err?.message ?? err}` });
+};
+
+/**
  * determines if a request @param url matches one of @param potentialMatches
  * @returns boolean
  */
@@ -100,4 +112,5 @@ export {
   handleQueryError,
   handleResponse,
   matchAny,
+  handleApiError,
 };

@@ -1,9 +1,10 @@
 import { query } from '../../src/database/query';
-import {
-  idir,
-  request,
-} from '../utils/constants';
-
+import { idir, request } from '../utils/constants';
+/**
+ *
+ * TODO: Convert these tests to use mocked DB requests
+ *
+ **/
 const newAnimalDevicePayload = {
   wlh_id: '99-999',
   animal_id: 1,
@@ -91,7 +92,7 @@ const animalGenericMarkings = {
   retrieval_date: '2018-08-01',
 };
 
-describe('POST /import-finalize', () => {
+describe.skip('POST /import-finalize', () => {
   //jest.setTimeout(30000);
   describe('Most common cases', () => {
     describe('Given brand new markings, brand new device id', () => {

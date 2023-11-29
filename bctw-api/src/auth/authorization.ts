@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { fn_get_user_id } from '../apis/user_api';
+import { isTest } from '../database/pg';
 import {
   constructFunctionQuery,
   getRowResults,
@@ -26,35 +27,36 @@ export const getRegistrationStatus = async (
  *
  * @param {...Audience[]} allowedAudiences
  */
-export const authorize = (...allowedAudiences: Audience[]) => async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const user = (req as UserRequest).user;
-  const { origin, keycloak_guid } = user;
+export const authorize =
+  (...allowedAudiences: Audience[]) =>
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    if (isTest) {
+      return next();
+    }
+    const user = (req as UserRequest).user;
+    const { origin, keycloak_guid } = user;
 
-  user.registered = await getRegistrationStatus(keycloak_guid);
+    user.registered = await getRegistrationStatus(keycloak_guid);
 
-  // Registered BCTW users can access all routes
-  if (user.registered && origin === 'BCTW') {
-    return next();
-  }
+    // Registered BCTW users can access all routes
+    if (user.registered && origin === 'BCTW') {
+      return next();
+    }
 
-  // If the route is allowed for any audience
-  if (allowedAudiences.includes('ANY')) {
-    return next();
-  }
+    // If the route is allowed for any audience
+    if (allowedAudiences.includes('ANY')) {
+      return next();
+    }
 
-  // If the user's origin doesn't have access, or the user is from BCTW and isn't registered, return a forbidden error
-  if (
-    !allowedAudiences.includes(origin) ||
-    (!user.registered && origin === 'BCTW')
-  ) {
-    res.status(403).send('Forbidden');
-    return;
-  }
+    // If the user's origin doesn't have access, or the user is from BCTW and isn't registered, return a forbidden error
+    if (
+      !allowedAudiences.includes(origin) ||
+      (!user.registered && origin === 'BCTW')
+    ) {
+      res.status(403).send('Forbidden');
+      return;
+    }
 
-  // Otherwise, the user is authorized
-  next();
-};
+    // Otherwise, the user is authorized
+    next();
+  };
