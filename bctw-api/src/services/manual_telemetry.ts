@@ -229,9 +229,9 @@ export class ManualTelemetryService {
     this._validateUuidArray(deployment_ids);
 
     const sql = `
-    SELECT * FROM ${MANUAL_TELEMETRY} WHERE deployment_id = ANY(${to_pg_array(
-      deployment_ids
-    )})`;
+    SELECT * FROM ${MANUAL_TELEMETRY}
+    WHERE deployment_id = ANY(${to_pg_array(deployment_ids)})
+    AND ${S_BCTW}.is_valid(valid_to)`;
 
     const data = await query(sql);
 
