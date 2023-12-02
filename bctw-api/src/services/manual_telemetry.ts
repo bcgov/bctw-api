@@ -1,5 +1,5 @@
 import { S_BCTW } from '../constants';
-import { query, to_pg_array } from '../database/query';
+import { query, to_pg_array, to_pg_timestamp } from '../database/query';
 import { apiError } from '../utils/error';
 
 export const MANUAL_TELEMETRY = `${S_BCTW}.telemetry_manual`;
@@ -10,7 +10,7 @@ export interface IManualTelemetry {
   deployment_id: string;
   latitude: number;
   longitude: number;
-  acquisition_date: Date;
+  acquisition_date: Date | string;
 }
 
 export type PostManualTelemtry = Omit<IManualTelemetry, 'telemetry_manual_id'>;
@@ -160,26 +160,27 @@ export class ManualTelemetryService {
   ): Promise<IManualTelemetry[]> {
     this._validateManualTelemetryPatch(telemetry);
 
-    const values = telemetry.map(
-      (row) => `(
-    '${row.telemetry_manual_id}',
-    ${row?.latitude ?? null},
-    ${row?.longitude ?? null},
-    ${row?.acquisition_date ? `'${row.acquisition_date}'` : null})`
-    );
+    const values = telemetry.map((row) => {
+      return `(
+        '${row.telemetry_manual_id}',
+        ${row?.latitude ?? null},
+        ${row?.longitude ?? null},
+        ${row?.acquisition_date ?? null}
+        )`;
+    });
     const sql = `
-    UPDATE ${MANUAL_TELEMETRY} as m SET
-      latitude = COALESCE(m.latitude, m2.latitude::float8),
-      longitude = COALESCE(m.longitude, m2.longitude::float8),
-      acquisition_date = COALESCE(m.acquisition_date, m2.acquisition_date::timestamptz),
-      updated_by_user_id = ${S_BCTW}.get_user_id('${this.keycloak_guid}')
-    FROM (VALUES
-      ${values}
-    ) as m2(telemetry_manual_id, latitude, longitude, acquisition_date)
-    WHERE m2.telemetry_manual_id::uuid = m.telemetry_manual_id::uuid
-    AND ${S_BCTW}.is_valid(m.valid_to)
-    RETURNING *
-`;
+        UPDATE ${MANUAL_TELEMETRY} as m SET
+          latitude = COALESCE(m2.latitude::float8, m.latitude::float8),
+          longitude = COALESCE(m2.longitude::float8, m.longitude::float8),
+          acquisition_date = COALESCE(m2.acquisition_date::timestamptz, m.acquisition_date::timestamptz),
+          updated_by_user_id = ${S_BCTW}.get_user_id('${this.keycloak_guid}'),
+          updated_at = now()
+        FROM (VALUES ${values}) as m2(telemetry_manual_id, latitude, longitude, acquisition_date)
+        WHERE m.telemetry_manual_id::uuid = m2.telemetry_manual_id::uuid
+        AND ${S_BCTW}.is_valid(m.valid_to)
+        RETURNING *
+    `;
+
     const data = await query(sql);
 
     if (data.isError) {
