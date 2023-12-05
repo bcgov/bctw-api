@@ -165,7 +165,7 @@ export class ManualTelemetryService {
         '${row.telemetry_manual_id}',
         ${row?.latitude ?? null},
         ${row?.longitude ?? null},
-        ${row?.acquisition_date ?? null}
+        '${row?.acquisition_date ?? null}'
         )`;
     });
     const sql = `
