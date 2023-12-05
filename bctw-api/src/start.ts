@@ -38,6 +38,7 @@ import {
   getManualTelemetry,
   getManualTelemetryByDeploymentIds,
   getVendorTelemetryByDeploymentIds,
+  getAllTelemetryByDeploymentIds,
   updateManualTelemetry,
 } from './apis/manual_telemetry_api';
 import {
@@ -226,4 +227,5 @@ export {
   updateManualTelemetry,
   getManualTelemetryByDeploymentIds,
   getVendorTelemetryByDeploymentIds,
+  getAllTelemetryByDeploymentIds,
 };

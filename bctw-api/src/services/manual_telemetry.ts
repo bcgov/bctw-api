@@ -13,6 +13,13 @@ export interface IManualTelemetry {
   acquisition_date: Date | string;
 }
 
+export interface IManualAndVendorTelemetry extends IManualTelemetry {
+  id: string;
+  telemetry_id: string | null;
+  telemetry_manaual_id: string | null;
+  telemetry_type: 'manual' | 'vendor';
+}
+
 export type PostManualTelemtry = Omit<IManualTelemetry, 'telemetry_manual_id'>;
 
 /**
@@ -265,6 +272,48 @@ export class ManualTelemetryService {
     ON t.critter_id = caa.critter_id
     AND is_valid(caa.valid_to)
     WHERE caa.deployment_id = ANY(${to_pg_array(deployment_ids)})`;
+
+    const data = await query(sql);
+
+    if (data.isError) {
+      throw new apiError(data.error.message, 500);
+    }
+
+    return data.result.rows;
+  }
+
+  /**
+   * Retrieves both manual and vendor telemetry by deployment ids
+   *
+   * @async
+   * @param {string[]} deployment_ids - deployments
+   * @throws {apiError} - error message
+   * @returns {Promise<IManualTelemetry[]>}
+   */
+  async getAllTelemetryByDeploymentIds(
+    deployment_ids: string[]
+  ): Promise<IManualTelemetry[]> {
+    this._validateUuidArray(deployment_ids);
+
+    const sql = `
+    SELECT * FROM (
+      SELECT m.telemetry_manual_id::text as id, m.deployment_id, m.telemetry_manual_id,
+      NULL::int as telemetry_id, m.latitude, m.longitude, m.acquisition_date, 'MANUAL' as telemetry_type
+      FROM ${MANUAL_TELEMETRY} as m
+      WHERE deployment_id = ANY(${to_pg_array(deployment_ids)})
+      AND ${S_BCTW}.is_valid(valid_to)
+
+      UNION
+
+      SELECT t.telemetry_id::text as id, caa.deployment_id, NULL::uuid as telemetry_manual_id,
+      t.telemetry_id::int, t.latitude, t.longitude, t.acquisition_date, t.vendor as telemetry_type
+      FROM ${TELEMETRY} t
+      INNER JOIN collar_animal_assignment caa
+      ON t.critter_id = caa.critter_id
+      AND is_valid(caa.valid_to)
+      WHERE caa.deployment_id = ANY(${to_pg_array(deployment_ids)})) as query
+
+    ORDER BY telemetry_type='MANUAL' DESC`;
 
     const data = await query(sql);
 

@@ -16,6 +16,20 @@ const getManualTelemetry = async (
   }
 };
 
+const getAllTelemetryByDeploymentIds = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const keycloak_guid = getUserIdentifier(req);
+  try {
+    const service = new ManualTelemetryService(keycloak_guid);
+    const telemetry = await service.getAllTelemetryByDeploymentIds(req.body);
+    return res.status(200).json(telemetry);
+  } catch (err) {
+    return handleApiError(err, res);
+  }
+};
+
 const getManualTelemetryByDeploymentIds = async (
   req: Request,
   res: Response
@@ -93,4 +107,5 @@ export {
   getManualTelemetry,
   getManualTelemetryByDeploymentIds,
   getVendorTelemetryByDeploymentIds,
+  getAllTelemetryByDeploymentIds,
 };

@@ -36,6 +36,7 @@ const ROUTES = {
   manualTelemetry: '/manual-telemetry',
   deploymentsManualTelemetry: '/manual-telemetry/deployments',
   deploymentsVendorTelemetry: '/vendor-telemetry/deployments',
+  deploymentsManualVendorTelemetry: '/all-telemetry/deployments',
   // permissions
   getPermissionRequests: '/permission-request',
   getGrantedPermissionHistory: '/permission-history',
