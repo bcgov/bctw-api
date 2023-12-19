@@ -1,3 +1,12 @@
+# !! Updated Instructions 12/19/23: [Installation Instructions](https://github.com/bcgov/bctw-ui/blob/main/README.md) !!
+
+## Development application now launhced from BCTW-UI directory
+- See bctw-ui README.md
+
+---
+
+# !! Deprecated Setup Instructions !!
+
 # Windows Environment Setup
 
 ### Prerequisites

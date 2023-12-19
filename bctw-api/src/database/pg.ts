@@ -7,17 +7,21 @@ const isTest = process.env.NODE_ENV === 'test';
 //Removed isProd check
 const pgPort = +(process.env.POSTGRES_SERVER_PORT ?? 5432) as number;
 //const pgPort = +(isProd ? process.env.POSTGRES_SERVER_PORT ?? 5432 : 5432) as number;
-const pgHost = (isProd
-  ? process.env.POSTGRES_SERVER_HOST
-  : 'localhost') as string;
+const pgHost = (
+  isProd
+    ? process.env.POSTGRES_SERVER_HOST
+    : process.env.POSTGRES_SERVER_HOST ?? 'localhost'
+) as string;
 // always commit if in production
 const ROLLBACK = process.env.ROLLBACK === 'true' && !isProd;
 
 if (!isTest) {
-  console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log('database port', pgPort);
-  console.log('database host', pgHost);
-  console.log('rolling back persisting changes', ROLLBACK);
+  console.table({
+    ENVIRONMENT: `${process.env.NODE_ENV}`,
+    'DATABASE HOST': pgHost,
+    'DATABASE PORT': pgPort,
+    ROLLBACK,
+  });
 }
 
 // Set up the database pool

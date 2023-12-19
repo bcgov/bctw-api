@@ -6,6 +6,8 @@
 test.xlsx
 node_modules
 build
+.npm
+.pm2
 oc
 docker-compose.yml
 .devcontainer
