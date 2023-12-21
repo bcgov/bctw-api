@@ -670,7 +670,10 @@ const getTemplateFile = async function (
   const code_header_names = result.rows.map((o) => o['code_header_name']);
   code_header_names.push(...extraCodeFields);
 
-  const idir = req.query.idir as string;
+  const idir = getUserIdentifier(req);
+  if (!idir) {
+    throw new Error('id not found in req.user');
+  }
 
   for (let header_idx = 1; header_idx < headerRow.cellCount; header_idx++) {
     const cell = headerRow.getCell(header_idx);
@@ -726,13 +729,13 @@ const getTemplateFile = async function (
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
-  workbook.xlsx
-    .writeFile('src/import/bctw_data_import_template.xlsx')
-    .then(() => {
-      res.download('src/import/bctw_data_import_template.xlsx', () => {
-        unlinkSync('src/import/bctw_data_import_template.xlsx');
-      });
+  const fileName = 'src/import/bctw_data_import_template.xlsx';
+
+  workbook.xlsx.writeFile(fileName).then(() => {
+    res.download(fileName, () => {
+      unlinkSync(fileName);
     });
+  });
 };
 
 export { importXlsx, finalizeImport, getTemplateFile };

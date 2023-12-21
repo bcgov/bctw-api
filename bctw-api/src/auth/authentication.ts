@@ -87,7 +87,6 @@ export const authenticateRequest = (
           : null;
 
       if (!origin) {
-        console.log(decoded.aud);
         res.status(401).send('Invalid token. Invalid audience.');
         return;
       }
