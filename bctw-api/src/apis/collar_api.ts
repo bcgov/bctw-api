@@ -165,8 +165,6 @@ const getAttachedDeviceSQL = function (
   WHERE permission_type IS NOT NULL
   ${collar_id ? ` AND ${alias}.collar_id = '${collar_id}'` : ''}`;
 
-  console.log(base);
-
   const sql = constructGetQuery({
     base,
     order: [
@@ -280,21 +278,25 @@ const getCollarsAndDeviceIds = async function (
 };
 
 const getCollarChangeHistoryByDeviceID = async function (
-  req: Request, 
+  req: Request,
   res: Response
 ): Promise<Response> {
   let collar_id;
   const device_id = Number(req.params.device_id);
-  if(Number.isInteger(device_id)) {
-    const device_sql = `SELECT collar_id FROM collar WHERE device_id = ${Number(device_id)} LIMIT 1`;
-    const { result, error, isError } = await query(device_sql, `could not determine collar_id from device_id`);
-    if( isError ) {
+  if (Number.isInteger(device_id)) {
+    const device_sql = `SELECT collar_id FROM collar WHERE device_id = ${Number(
+      device_id
+    )} LIMIT 1`;
+    const { result, error, isError } = await query(
+      device_sql,
+      `could not determine collar_id from device_id`
+    );
+    if (isError) {
       return res.status(500).send(error.message);
     }
-    if(result.rows.length == 0) {
+    if (result.rows.length == 0) {
       return res.status(200).send([]);
-    }
-    else {
+    } else {
       collar_id = result.rows[0].collar_id;
     }
   }
@@ -312,7 +314,7 @@ const getCollarChangeHistoryByDeviceID = async function (
     return res.status(500).send(error.message);
   }
   return res.send(getRowResults(result, fn_get_collar_history));
-}
+};
 
 /**
  * retrieves a history of changes made to a collar
@@ -321,7 +323,6 @@ const getCollarChangeHistory = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-
   const collar_id = req.params?.collar_id;
   if (!collar_id) {
     return res.status(500).send(`collar_id or device_id must be supplied`);
@@ -375,5 +376,5 @@ export {
   getCollarChangeHistory,
   fn_get_collar_history,
   getCollarVendors,
-  getCollarChangeHistoryByDeviceID
+  getCollarChangeHistoryByDeviceID,
 };

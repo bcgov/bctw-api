@@ -12,11 +12,9 @@ critterbaseRouter
   .get(async (req: Request, res: Response) => {
     console.log(`Params in GET request: ` + JSON.stringify(req.query));
     const { result, error } = await query(critterbase.get(req.url));
-    // console.log(req.headers);
     return handleResponse(res, result.rows, error);
   })
   .post(async (req: Request, res: Response) => {
-    // console.log(req.headers);
     const { result, error } = await query(critterbase.post(req.url, req.body));
     return handleResponse(res, result.rows, error);
   })

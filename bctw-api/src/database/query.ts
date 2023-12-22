@@ -418,21 +418,19 @@ const mergeQueries = async <
   const errorReturn = { merged: aArray.result.rows, allMerged: false };
 
   if (aArray.isError) {
+    console.log('error');
     return { ...errorReturn, ...aArray };
   }
   if (bArray.isError) {
+    console.log('error2');
     return { ...errorReturn, ...bArray };
   }
+  //aArray.result.rows.find((a) => a.device_id === 87135);
   const { merged, allMerged } = merge(
     aArray.result.rows,
     bArray.result.rows,
     mergeKey
   );
-  if (!allMerged) {
-    /*console.log(
-      `not all results from bArray were merged into aArray using "${mergeKey}"`
-    );*/
-  }
   return { merged, allMerged, error, isError: false };
 };
 

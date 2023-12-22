@@ -45,7 +45,6 @@ const upsertAnimal = async function (
   const { result, error, isError } = await query(sql, '', true);
   if (isError) {
     bulkResp.errors.push({ row: '', error: error.message, rownum: 0 });
-    console.log(sql);
   } else {
     createBulkResponse(bulkResp, getRowResults(result, fn_upsert_animal));
   }
@@ -118,8 +117,8 @@ const _getUnattachedSQL = (
     WITH ${alias} AS (
       SELECT caa.critter_id, ${fn_get_user_animal_permission}('${username}', caa.critter_id) AS "permission_type"
       FROM ${S_API}.collar_animal_assignment_v caa
-      WHERE NOT is_valid(now(), caa.attachment_start, caa.attachment_end) 
-      AND NOT (caa.critter_id IN ( 
+      WHERE NOT is_valid(now(), caa.attachment_start, caa.attachment_end)
+      AND NOT (caa.critter_id IN (
         SELECT currently_attached_collars_v.critter_id
         FROM bctw_dapi_v1.currently_attached_collars_v))
     ) SELECT ${applyCount(page)}* FROM ${alias}
@@ -141,7 +140,7 @@ const getAnimalsInternal = async (
   type: eCritterFetchType,
   search: SearchFilter | undefined
 ): Promise<MQResult> => {
-  let sql;
+  let sql = '';
   if (type === eCritterFetchType.unassigned) {
     sql = _getUnattachedSQL(username, page, search);
   } else if (type === eCritterFetchType.assigned) {
@@ -154,7 +153,7 @@ const getAnimalsInternal = async (
       critter_ids: bctwQuery.result.rows?.map((row) => row.critter_id),
     })
   );
-  //const { merged, allMerged, error, isError } =
+
   return await mergeQueries(bctwQuery, critterQuery, 'critter_id');
 };
 
@@ -171,7 +170,6 @@ const getAnimals = async function (
   const page = (req.query.page || 0) as number;
   const type = req.query.critterType as eCritterFetchType;
   const search = getFilterFromRequest(req);
-
   const { merged, error } = await getAnimalsInternal(
     username,
     page,
@@ -220,20 +218,20 @@ const getAttachedHistoric = async function (
     SELECT c.*, bctw.get_user_animal_permission('${username}', c.critter_id) AS "permission_type"
     FROM collar_animal_assignment c
       ),
-    a AS (SELECT COUNT(*) OVER() as row_count, *, 
-      get_closest_collar_record(attached.collar_id, attached.attachment_start) AS collar_transaction_id FROM 
+    a AS (SELECT COUNT(*) OVER() as row_count, *,
+      get_closest_collar_record(attached.collar_id, attached.attachment_start) AS collar_transaction_id FROM
       attached)
-    SELECT 
+    SELECT
     a.collar_id,
-    a.critter_id, 
+    a.critter_id,
     device_id,
     frequency,
     frequency_unit,
     attachment_start,
     attachment_end,
     permission_type
-    FROM a 
-    JOIN collar c ON a.collar_transaction_id = c.collar_transaction_id 
+    FROM a
+    JOIN collar c ON a.collar_transaction_id = c.collar_transaction_id
     WHERE permission_type IS NOT NULL`;
   const bctwQuery = await query(sql);
   const critterQuery = await query(
