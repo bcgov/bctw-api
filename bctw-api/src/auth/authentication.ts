@@ -63,7 +63,9 @@ export const authenticateRequest = (
   if (isTest) {
     return next();
   }
+
   const bearerToken = req.headers.authorization;
+
   if (!bearerToken || !bearerToken.startsWith('Bearer ')) {
     res
       .status(401)
@@ -75,6 +77,7 @@ export const authenticateRequest = (
 
   // Verify token and extract domain from it
   const rawToken = bearerToken.split(' ')[1];
+
   jwt.verify(rawToken, getKey, { issuer: KEYCLOAK_ISSUER }, (err, decoded) => {
     if (err) {
       res.status(401).send('Invalid token. Verification failed.');
@@ -91,26 +94,14 @@ export const authenticateRequest = (
         return;
       }
 
-      const domain = decoded.bceid_business_guid ? 'bceid' : 'idir';
-      const keycloak_guid =
-        decoded.idir_user_guid ??
-        decoded.bceid_business_guid ??
-        decoded.preferred_username;
-      const { email, given_name, family_name } = decoded;
-      const username = (
-        (decoded.idir_username as string) ??
-        decoded.preferred_username ??
-        given_name[0] + family_name
-      ).toLowerCase();
-
       (req as UserRequest).user = {
         origin,
-        domain,
-        keycloak_guid,
-        email,
-        username,
-        givenName: given_name,
-        familyName: family_name,
+        domain: decoded.bceid_user_guid ? 'bceid' : 'idir',
+        keycloak_guid: decoded.idir_user_guid ?? decoded.bceid_user_guid,
+        username: decoded.idir_username ?? decoded.preferred_username,
+        email: decoded.email,
+        givenName: decoded.given_name,
+        familyName: decoded.family_name,
       };
 
       next();
