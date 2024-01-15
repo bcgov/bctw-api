@@ -7,10 +7,9 @@ import {
   KEYCLOAK_REALM,
   SIMS_SERVICE_AUD,
   critterbase,
-  IS_DEV,
 } from '../constants';
 import { isTest } from '../database/pg';
-import { UserRequest } from '../types/userRequest';
+import { Audience, UserRequest } from '../types/userRequest';
 import { getKeycloakToken } from './keycloak';
 
 const KEYCLOAK_ISSUER = `${KEYCLOAK_HOST}/realms/${KEYCLOAK_REALM}`;
@@ -49,6 +48,90 @@ const getKey = (
 };
 
 /**
+ * Callback for jwt.verify to handle errors
+ *
+ * @param {jwt.VerifyErrors | null} err - JWT error
+ * @param {any} _decoded
+ * @throws {Error} - Thrown error
+ */
+const tokenErrorHandler = (err: jwt.VerifyErrors | null, _decoded: any) => {
+  if (err) {
+    throw new Error(
+      `Invalid token. JWT token verification step failed. ${err.message}`
+    );
+  }
+};
+
+/**
+ * Decodes the user from the token. Should be called after verify step.
+ *
+ * @param {string | jwt.JwtPayload | null} decoded - JWT decoded payload.
+ * @throws {Error} - Thrown error.
+ * @returns {UserRequest['user']} - User object.
+ */
+const decodeTokenUser = (
+  decoded: string | jwt.JwtPayload | null
+): UserRequest['user'] => {
+  if (!decoded || typeof decoded === 'string') {
+    throw new Error('Invalid token. Expecting decoded token to be an object.');
+  }
+  let origin: Audience | null = null;
+
+  if (decoded.aud === SIMS_SERVICE_AUD) {
+    origin = 'SIMS_SERVICE';
+  }
+
+  if (decoded.aud === BCTW_AUD) {
+    origin = 'BCTW';
+  }
+
+  if (!origin) {
+    throw new Error(
+      `Invalid token. BCTW does not support requests from this token audience.`
+    );
+  }
+
+  return {
+    origin,
+    domain: decoded.bceid_user_guid ? 'bceid' : 'idir',
+    keycloak_guid: decoded.idir_user_guid ?? decoded.bceid_user_guid,
+    username: decoded.idir_username ?? decoded.preferred_username,
+    email: decoded.email,
+    givenName: decoded.given_name,
+    familyName: decoded.family_name,
+  };
+};
+
+/**
+ * Verifies the Jwt token and decodes the user details.
+ *
+ * @param {string} [bearerToken] - Token provided in authorization header.
+ * @throws {Error} - Thrown error.
+ * @returns {UserRequest['user']} - User object.
+ */
+const verifyTokenAndDecodeUser = (
+  bearerToken?: string
+): UserRequest['user'] => {
+  // Verify bearer token included in request
+  if (!bearerToken || !bearerToken.startsWith('Bearer ')) {
+    throw new Error(
+      'Invalid token. Token must be provided in Authorization header as "Bearer <token>".'
+    );
+  }
+
+  // Extract raw token
+  const rawToken = bearerToken.split(' ')[1];
+
+  jwt.verify(rawToken, getKey, { issuer: KEYCLOAK_ISSUER }, tokenErrorHandler);
+
+  const decoded = jwt.decode(rawToken);
+
+  const user = decodeTokenUser(decoded);
+
+  return user;
+};
+
+/**
  * Middleware to authenticate requests by validating the authorization bearer token (JWT).
  *
  * @param {Request} req - Express request object
@@ -66,47 +149,16 @@ export const authenticateRequest = (
 
   const bearerToken = req.headers.authorization;
 
-  if (!bearerToken || !bearerToken.startsWith('Bearer ')) {
-    res
-      .status(401)
-      .send(
-        'Invalid token. Token must be provided in Authorization header as "Bearer <token>".'
-      );
+  try {
+    const user = verifyTokenAndDecodeUser(bearerToken);
+
+    (req as UserRequest).user = user;
+
+    next();
+  } catch (err: any) {
+    res.status(401).send(err.message);
     return;
   }
-
-  // Verify token and extract domain from it
-  const rawToken = bearerToken.split(' ')[1];
-
-  jwt.verify(rawToken, getKey, { issuer: KEYCLOAK_ISSUER }, (err, decoded) => {
-    if (err) {
-      res.status(401).send('Invalid token. Verification failed.');
-    } else if (decoded && typeof decoded === 'object') {
-      const origin =
-        decoded.aud === BCTW_AUD || IS_DEV
-          ? 'BCTW'
-          : decoded.aud === SIMS_SERVICE_AUD
-          ? 'SIMS_SERVICE'
-          : null;
-
-      if (!origin) {
-        res.status(401).send('Invalid token. Invalid audience.');
-        return;
-      }
-
-      (req as UserRequest).user = {
-        origin,
-        domain: decoded.bceid_user_guid ? 'bceid' : 'idir',
-        keycloak_guid: decoded.idir_user_guid ?? decoded.bceid_user_guid,
-        username: decoded.idir_username ?? decoded.preferred_username,
-        email: decoded.email,
-        givenName: decoded.given_name,
-        familyName: decoded.family_name,
-      };
-
-      next();
-    }
-  });
 };
 
 /**

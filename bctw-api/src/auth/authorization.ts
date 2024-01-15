@@ -33,27 +33,38 @@ export const authorize =
     if (isTest) {
       return next();
     }
+
     const user = (req as UserRequest).user;
     const { origin, keycloak_guid } = user;
 
     user.registered = await getRegistrationStatus(keycloak_guid);
 
     // Registered BCTW users can access all routes
-    if (user.registered && origin === 'BCTW') {
+    const registeredBctwUserRoute = user.registered && origin === 'BCTW';
+
+    // Route is allowed for any audience
+    const openRoute = allowedAudiences.includes('ANY');
+
+    // If the user's origin doesn't have access, or the user is from BCTW and isn't registered
+    const badOrigin = !allowedAudiences.includes(origin);
+
+    const userNotRegistered = !user.registered && origin === 'BCTW';
+
+    if (registeredBctwUserRoute) {
       return next();
     }
 
-    // If the route is allowed for any audience
-    if (allowedAudiences.includes('ANY')) {
+    if (openRoute) {
       return next();
     }
 
-    // If the user's origin doesn't have access, or the user is from BCTW and isn't registered, return a forbidden error
-    if (
-      !allowedAudiences.includes(origin) ||
-      (!user.registered && origin === 'BCTW')
-    ) {
-      res.status(403).send('Forbidden');
+    if (badOrigin) {
+      res.status(403).send(`Forbidden origin: '${origin}'`);
+      return;
+    }
+
+    if (userNotRegistered) {
+      res.status(403).send(`Forbidden user not registered: '${user.username}'`);
       return;
     }
 
