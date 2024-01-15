@@ -3,6 +3,7 @@
 *.zip
 *.tgz
 ~*
+.config
 test.xlsx
 node_modules
 build
