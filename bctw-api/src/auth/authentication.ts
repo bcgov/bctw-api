@@ -94,7 +94,10 @@ const decodeTokenUser = (
   return {
     origin,
     domain: decoded.bceid_user_guid ? 'bceid' : 'idir',
-    keycloak_guid: decoded.idir_user_guid ?? decoded.bceid_user_guid,
+    keycloak_guid:
+      decoded.idir_user_guid ??
+      decoded.bceid_user_guid ??
+      decoded.preferred_username,
     username: decoded.idir_username ?? decoded.preferred_username,
     email: decoded.email,
     givenName: decoded.given_name,
