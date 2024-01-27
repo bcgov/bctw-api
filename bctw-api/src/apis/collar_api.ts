@@ -283,13 +283,18 @@ const getCollarChangeHistoryByDeviceID = async function (
 ): Promise<Response> {
   let collar_id;
   const device_id = Number(req.params.device_id);
-  if (Number.isInteger(device_id)) {
-    const device_sql = `SELECT collar_id FROM collar WHERE device_id = ${Number(
-      device_id
-    )} LIMIT 1`;
+  const device_make = String(req.query.make);
+  if (Number.isInteger(device_id) && device_make) {
+    const device_sql = `
+      SELECT collar_id
+      FROM collar
+      WHERE device_id = ${device_id}
+      AND device_make = bctw.get_code_id('device_make','${device_make}')
+      LIMIT 1`;
+
     const { result, error, isError } = await query(
       device_sql,
-      `could not determine collar_id from device_id`
+      `could not determine collar_id from device_id and device_make`
     );
     if (isError) {
       return res.status(500).send(error.message);
@@ -300,6 +305,7 @@ const getCollarChangeHistoryByDeviceID = async function (
       collar_id = result.rows[0].collar_id;
     }
   }
+
   const sql = constructFunctionQuery(
     fn_get_collar_history,
     [getUserIdentifier(req), collar_id],

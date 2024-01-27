@@ -134,21 +134,19 @@ const getDeployments = async function (
   let deployment_array: string[];
   try {
     deployment_array = collectQueryParamArray(deployment_ids);
-  }
-  catch (e) {
+  } catch (e) {
     return res.status(500).send((e as Error).message);
   }
   const formatted_ids = formatJsArrayToPgArray(deployment_array);
   const sql = `
     WITH unq AS (
-        SELECT DISTINCT collar_id, device_id 
+        SELECT DISTINCT collar_id, device_id, device_make
         FROM collar
     )
     SELECT * FROM bctw.collar_animal_assignment caa
     LEFT JOIN unq ON caa.collar_id = unq.collar_id
     WHERE caa.deployment_id = ANY (${formatted_ids}::uuid[])
   `;
-  console.log('SQL ' + sql);
   const { result, error, isError } = await query(
     sql,
     'unable to retrieve deployment_ids',
@@ -165,14 +163,23 @@ const getDeploymentsByDeviceId = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const device_id = req.query?.device_id;
-  if(!device_id) { 
-    return res.status(500).send('Could not parse device id');
-  } 
-  const sql = `SELECT caa.* FROM bctw.collar_animal_assignment caa WHERE caa.collar_id IN (
-    SELECT DISTINCT collar_id 
-    FROM collar WHERE device_id = ${Number(device_id)}
-  ) AND caa.valid_to IS NULL`;
+  const device_id = Number(req.query?.device_id);
+  const device_make = String(req.query.make);
+
+  if (!device_id || !device_make) {
+    return res.status(500).send('Could not parse device id or device make');
+  }
+
+  const sql = `
+    SELECT caa.*
+    FROM bctw.collar_animal_assignment caa
+    WHERE caa.collar_id IN (
+      SELECT DISTINCT collar_id
+      FROM collar
+      WHERE device_id = ${Number(device_id)}
+      AND device_make = bctw.get_code_id('device_make', '${device_make}'))
+    AND caa.valid_to IS NULL`;
+
   const { result, error, isError } = await query(
     sql,
     'unable to retrieve deployment_ids',
@@ -183,7 +190,7 @@ const getDeploymentsByDeviceId = async function (
     return res.status(500).send(error.message);
   }
   return res.send(result.rows);
-}
+};
 
 const getDeploymentsByCritterId = async function (
   req: Request,
@@ -193,28 +200,27 @@ const getDeploymentsByCritterId = async function (
   if (!critter_ids) {
     return res.status(500).send('Could not parse deployment IDs');
   }
-  let critter_array: string[]
+  let critter_array: string[];
   try {
     critter_array = collectQueryParamArray(critter_ids);
-  }
-  catch (e) {
+  } catch (e) {
     return res.status(500).send((e as Error).message);
   }
   const formatted_ids = formatJsArrayToPgArray(critter_array);
   const sql = `
-    SELECT 
-      unq.device_id, 
-      unq.device_make, 
-      unq.device_model, 
-      unq.frequency, 
-      unq.frequency_unit, 
+    SELECT
+      unq.device_id,
+      unq.device_make,
+      unq.device_model,
+      unq.frequency,
+      unq.frequency_unit,
       caa.assignment_id,
       caa.collar_id,
       caa.critter_id,
       caa.attachment_start,
       caa.attachment_end,
       caa.deployment_id
-    FROM bctw.collar_animal_assignment caa 
+    FROM bctw.collar_animal_assignment caa
     LEFT JOIN collar_v unq ON caa.collar_id = unq.collar_id AND unq.valid_to IS NULL
     WHERE caa.critter_id = ANY (${formatted_ids}::uuid[]) AND caa.valid_to IS NULL
   `;
@@ -265,12 +271,12 @@ const deleteDeployment = async function (
   }
   const sql = `
   UPDATE collar_animal_assignment caa
-  SET valid_to = now() 
+  SET valid_to = now()
   WHERE deployment_id = '${deployment_id}' AND valid_to IS NULL
   AND EXISTS
-    (SELECT critter_id 
-      FROM user_animal_assignment uaa 
-      WHERE uaa.critter_id = caa.critter_id 
+    (SELECT critter_id
+      FROM user_animal_assignment uaa
+      WHERE uaa.critter_id = caa.critter_id
       AND bctw.get_user_id('${user}') = uaa.user_id)
   RETURNING *;`; //This "EXISTS" check may be redundant considering the services accounts just become the owner of all these critters now.
   const { result, error, isError } = await query(sql);
@@ -278,7 +284,7 @@ const deleteDeployment = async function (
     return res.status(500).send(error.message);
   }
   return res.send(result.rows);
-}
+};
 
 /**
  * @param req.params.animal_id the critter_id of the history to retrieve
@@ -310,5 +316,5 @@ export {
   getDeployments,
   getDeploymentsByCritterId,
   getDeploymentsByDeviceId,
-  deleteDeployment
+  deleteDeployment,
 };

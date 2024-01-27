@@ -37,7 +37,12 @@ export const authorize =
     const user = (req as UserRequest).user;
     const { origin, keycloak_guid } = user;
 
-    user.registered = await getRegistrationStatus(keycloak_guid);
+    try {
+      user.registered = await getRegistrationStatus(keycloak_guid);
+    } catch (err) {
+      console.log(err);
+      res.status(404).send(`Error occurred while getting registration status`);
+    }
 
     // Registered BCTW users can access all routes
     const registeredBctwUserRoute = user.registered && origin === 'BCTW';

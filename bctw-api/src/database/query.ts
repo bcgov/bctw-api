@@ -139,7 +139,7 @@ const getRowResults = (
 
 //
 const _getQueryResult = (data: QueryResult, fn: string) => {
-  const ret = data.rows.map((row: QueryResultRow) => row[fn]);
+  const ret = data?.rows?.map((row: QueryResultRow) => row[fn]);
   if (!ret.some((v) => Array.isArray(v))) {
     return ret;
   }

@@ -26,9 +26,11 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
   try {
     await client.query('BEGIN');
     // Assign critter to user
-    const assignCritterSql = `INSERT INTO bctw.user_animal_assignment 
-  (user_id, critter_id, created_by_user_id, permission_type)
-  VALUES (bctw.get_user_id('${user}'), '${data.critter_id}', bctw.get_user_id('${user}'), 'manager')`;
+    const assignCritterSql = `
+      INSERT INTO bctw.user_animal_assignment
+      (user_id, critter_id, created_by_user_id, permission_type)
+      VALUES (bctw.get_user_id('${user}'), '${data.critter_id}', bctw.get_user_id('${user}'), 'manager')`;
+
     await client.query(assignCritterSql);
 
     // Check if collar exists and is already assigned to a critter, insert into database if not
@@ -36,26 +38,37 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
       // 400 error
       throw apiError.requiredProperty('device_id');
     }
+
     const collarSql = `SELECT bctw.get_device_id_for_bulk_import('${user}', '${JSON.stringify(
       data
-    )}', '${data.attachment_start}', ${formatNullableSqlValue(data.attachment_end)})`;
+    )}', '${data.attachment_start}', ${formatNullableSqlValue(
+      data.attachment_end
+    )})`;
+
     const collar_id = getRowResults(
       await client.query(collarSql),
       'get_device_id_for_bulk_import'
     )[0];
-    console.log('Obtained collar_id ' + collar_id);
+
     // Try to link collar to critter
-    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${data.critter_id}', '${data.attachment_start}', '${data.attachment_start}', ${formatNullableSqlValue(data.attachment_end)}, ${formatNullableSqlValue(data.deployment_id)} )`;
+    const linkCritterSql = `SELECT bctw.link_collar_to_animal('${user}', '${collar_id}', '${
+      data.critter_id
+    }', '${data.attachment_start}', '${
+      data.attachment_start
+    }', ${formatNullableSqlValue(
+      data.attachment_end
+    )}, ${formatNullableSqlValue(data.deployment_id)} )`;
+
     const linkCritterResult = getRowResults(
       await client.query(linkCritterSql),
       'link_collar_to_animal'
     )[0];
+
     if (linkCritterResult.error) {
       // 403 error
-      throw apiError.forbidden(
-        `You do not have permission to manage ${collar_id} with critter id ${data.critter_id}`
-      );
+      throw apiError.forbidden(linkCritterResult.error);
     }
+
     // Commit transaction
     await client.query('COMMIT');
     return linkCritterResult.deployment_id;
