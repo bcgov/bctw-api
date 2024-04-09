@@ -132,8 +132,8 @@ export type CritterUpsert = {
   critter_id?: string;
   wlh_id?: string | null;
   animal_id?: string | null;
+  itis_tsn: number;
   sex: string;
-  taxon_name_common: string;
 };
 
 export type MarkingUpsert = {
@@ -177,10 +177,11 @@ type IMortalityUpsert = {
 };
 
 export interface IBulkCritterbasePayload {
-    critters: CritterUpsert[];
-    markings: MarkingUpsert[];
-    collections: CollectionUpsert[];
-    locations: LocationUpsert[];
-    captures: CaptureUpsert[];
-    mortalities: IMortalityUpsert[];
-  }
+  critters: CritterUpsert[];
+  markings: MarkingUpsert[];
+  collections: CollectionUpsert[];
+  locations: LocationUpsert[];
+  captures: CaptureUpsert[];
+  mortalities: IMortalityUpsert[];
+}
+

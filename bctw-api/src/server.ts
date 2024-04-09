@@ -1,7 +1,7 @@
 import cors from 'cors';
 import http from 'http';
 import helmet from 'helmet';
-import express from 'express';
+import express, { Request, Response } from 'express';
 import multer from 'multer';
 import * as api from './start';
 import { finalizeImport, importXlsx, getTemplateFile } from './import/csv';
@@ -12,9 +12,13 @@ import { authenticateRequest, forwardUser } from './auth/authentication';
 import { deployDevice } from './apis/deployment_api';
 import { ROUTES } from './routes';
 import {authorize as auth} from './auth/authorization';
+import { handleResponse } from './database/requests';
+import { query } from './database/query';
+import { critterbase } from './constants';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
+
 
 // setup the express server
 export const app = express()
@@ -24,7 +28,7 @@ export const app = express()
   .use(express.json())
   .use(authenticateRequest)
   .use(forwardUser)
-  .use(ROUTES.critterbase, auth(), critterbaseRouter)
+  .use(ROUTES.critterbase, critterbaseRouter)
   .get(ROUTES.getTemplate, auth(), getTemplateFile)
   // map
   .get(ROUTES.getCritters, auth('SIMS_SERVICE'), api.getDBCritters)

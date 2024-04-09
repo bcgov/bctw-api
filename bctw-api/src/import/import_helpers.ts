@@ -150,9 +150,9 @@ const getCritterbaseCritterFromRow = (
   row: IAnimalDeviceMetadata
 ): Partial<CritterUpsert> => {
   return {
-    wlh_id: row.wlh_id,
-    animal_id: row.animal_id,
-    sex: row.sex,
+    wlh_id: String(row.wlh_id),
+    animal_id: String(row.animal_id),
+    itis_tsn: Number(row.itis_tsn),
   };
 };
 
@@ -194,7 +194,7 @@ const determineExistingAnimal = async (
 ): Promise<Partial<IAnimal>[]> => {
   const critterbase_critters = await query(
     critterbase.post(
-      '/critters/unique?format=detailed',
+      '/critters/unique',
       formatTemplateRowForUniqueLookup(incomingCritter)
     )
   );

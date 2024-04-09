@@ -15,7 +15,12 @@ import {
   ParsedXLSXCellError,
   ParsedXLSXRowResult,
 } from './csv';
-import { dateRangesOverlap, determineExistingAnimal, getCodeHeaderName, getValuesForCodeHeader } from './import_helpers';
+import {
+  dateRangesOverlap,
+  determineExistingAnimal,
+  getCodeHeaderName,
+  getValuesForCodeHeader,
+} from './import_helpers';
 
 const validateGenericRow = async (
   row: IAnimalDeviceMetadata | GenericVendorTelemetry,
@@ -30,7 +35,12 @@ const validateGenericRow = async (
 
   for (const key of Object.keys(row)) {
     const key_as_code_header = getCodeHeaderName(key);
-    const code_descriptions = await getValuesForCodeHeader(key_as_code_header, user, codeFields, cbCodeFields);
+    const code_descriptions = await getValuesForCodeHeader(
+      key_as_code_header,
+      user,
+      codeFields,
+      cbCodeFields
+    );
     if (code_descriptions.length) {
       if (!code_descriptions.includes(row[key])) {
         errors[key] = {
@@ -179,8 +189,8 @@ const validateAnimalDeviceAssignment = async (
         dateRangesOverlap(
           link.attachment_start,
           link.attachment_end,
-          (row_start as unknown) as string,
-          (row_end as unknown) as string
+          row_start as unknown as string,
+          row_end as unknown as string
         )
       )
     ) {
@@ -213,8 +223,8 @@ const validateAnimalDeviceAssignment = async (
         dateRangesOverlap(
           link.attachment_start,
           link.attachment_end,
-          (row_start as unknown) as string,
-          (row_end as unknown) as string
+          row_start as unknown as string,
+          row_end as unknown as string
         )
       )
     ) {
@@ -231,15 +241,24 @@ const validateAnimalDeviceRequiredFields = (
   row: IAnimalDeviceMetadata
 ): boolean => {
   return (
-    !!row.species && !!row.device_id && !!row.device_make && !!row.capture_date
+    !!row.itis_tsn &&
+    !!row.sex &&
+    !!row.device_id &&
+    !!row.device_make &&
+    !!row.capture_date
   );
 };
 
 const validateUniqueAnimal = async (
   row: IAnimalDeviceMetadata
 ): Promise<Partial<IAnimal>[]> => {
-    const possible_critters = await determineExistingAnimal(row);
-    return possible_critters;
+  const possible_critters = await determineExistingAnimal(row);
+  return possible_critters;
 };
 
-export { validateTelemetryRow, validateGenericRow, validateAnimalDeviceData, validateUniqueAnimal };
+export {
+  validateTelemetryRow,
+  validateGenericRow,
+  validateAnimalDeviceData,
+  validateUniqueAnimal,
+};

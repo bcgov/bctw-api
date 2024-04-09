@@ -48,7 +48,8 @@ export interface IAnimal extends BCTWBaseType {
   release_utm_easting: number;
   release_utm_northing: number;
   release_utm_zone: number;
-  species: string;
+  //species: string;
+  itis_tsn: number;
   sex: string;
   translocation_ind: boolean;
   user_comment: string; // TODO: remove
@@ -75,9 +76,9 @@ export class Animal implements IAnimal {
   animal_colouration: string;
   ear_tag_id: string; // TODO: remove
   ear_tag_left_colour: string;
-   ear_tag_left_id: string;
+  ear_tag_left_id: string;
   ear_tag_right_colour: string;
-   ear_tag_right_id: string;
+  ear_tag_right_id: string;
   estimated_age: number;
   // juvenile_at_heel: boolean;
   juvenile_at_heel: string; // TODO: remove
@@ -104,8 +105,9 @@ export class Animal implements IAnimal {
   release_utm_northing: number;
   release_utm_zone: number;
   release_date: Date;
+  itis_tsn: number;
   sex: string;
-  species: string;
+  //species: string;
   translocation_ind: boolean;
   wlh_id: string;
   user_comment: string; // TODO: remove

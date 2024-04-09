@@ -149,7 +149,7 @@ const getAnimalsInternal = async (
 
   const bctwQuery = await query(sql);
   const critterQuery = await query(
-    critterbase.post('/critters', {
+    critterbase.post('/critters?format=detailed', {
       critter_ids: bctwQuery.result.rows?.map((row) => row.critter_id),
     })
   );
