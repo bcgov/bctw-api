@@ -632,7 +632,6 @@ const getTemplateFile = async function (
     file_sql,
     'failed to retrieve headers'
   );
-  console.log(file_result);
 
   const b64string = file_result.rows[0].contents_base64;
 

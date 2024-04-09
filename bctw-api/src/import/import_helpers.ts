@@ -152,6 +152,7 @@ const getCritterbaseCritterFromRow = (
   return {
     wlh_id: String(row.wlh_id),
     animal_id: String(row.animal_id),
+    sex: String(row.sex),
     itis_tsn: Number(row.itis_tsn),
   };
 };
