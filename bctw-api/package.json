@@ -10,6 +10,7 @@
     "test": "jest --setupFiles=dotenv/config --watchAll --detectOpenHandles",
     "test:coverage": "jest --setupFiles=dotenv/config --watchAll --coverage --detectOpenHandles",
     "lint": "eslint . --ext .ts --no-error-on-unmatched-pattern",
+    "lint:fix": "eslint . --fix --ignore-pattern 'node_modules' --ext .ts",
     "kill": "npx kill-port 3000 & pkill -f nodemon",
     "start:dev": "nodemon -r dotenv/config ./src/server.ts",
     "start:reload": "./node_modules/.bin/nodemon -r dotenv/config src/server.ts --exec ts-node",

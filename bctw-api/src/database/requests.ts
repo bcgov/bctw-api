@@ -84,7 +84,10 @@ const handleQueryError = async (
  * a response handler for apiErrors
  */
 
-const handleApiError = async (err: any, res: Response) => {
+const handleApiError = async (
+  err: apiError | Error,
+  res: Response
+): Promise<Response> => {
   if (err instanceof apiError) {
     return res.status(err.status).json({ error: err.message });
   }

@@ -1,7 +1,7 @@
 import cors from 'cors';
 import http from 'http';
 import helmet from 'helmet';
-import express, { Request, Response } from 'express';
+import express from 'express';
 import multer from 'multer';
 import * as api from './start';
 import { finalizeImport, importXlsx, getTemplateFile } from './import/csv';
@@ -12,9 +12,6 @@ import { authenticateRequest, forwardUser } from './auth/authentication';
 import { deployDevice } from './apis/deployment_api';
 import { ROUTES } from './routes';
 import {authorize as auth} from './auth/authorization';
-import { handleResponse } from './database/requests';
-import { query } from './database/query';
-import { critterbase } from './constants';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });

@@ -25,7 +25,7 @@ import {
   validateUniqueAnimal,
 } from './validation';
 
-import { link, unlinkSync } from 'fs';
+import { unlinkSync } from 'fs';
 import { pgPool } from '../database/pg';
 import { v4 as uuidv4, validate as uuid_validate } from 'uuid';
 import dayjs from 'dayjs';
