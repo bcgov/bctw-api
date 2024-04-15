@@ -582,7 +582,6 @@ const upsertBulkv2 = async (id: string, req: Request) => {
     }
     const bulk_result = await query(critterbase.post('/bulk', bulk_payload)); //await critterBaseRequest('POST', 'bulk', bulk_payload);
     if (!bulk_result || bulk_result.isError) {
-      console.log(bulk_result.error, bulk_payload);
       throw new Error(
         'BCTW processes succeeded, but inserting into Critterbase failed.'
       );

@@ -107,7 +107,6 @@ export class Animal implements IAnimal {
   release_date: Date;
   itis_tsn: number;
   sex: string;
-  //species: string;
   translocation_ind: boolean;
   wlh_id: string;
   user_comment: string; // TODO: remove
