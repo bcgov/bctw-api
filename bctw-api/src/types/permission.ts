@@ -1,11 +1,12 @@
-import { Animal } from "./animal";
-import { eCritterPermission } from "./user";
+import { Animal } from './animal';
+import { eCritterPermission } from './user';
 
 /**
- * 
+ *
  */
 export interface ICritterPermissionRequest
-  extends Pick<Animal, 'critter_id' | 'wlh_id' | 'animal_id' | 'species'> {
+  extends Pick<Animal, 'critter_id' | 'wlh_id' | 'animal_id'> {
+  species: string;
   critter_id: string;
   permission_type: eCritterPermission;
 }
@@ -36,3 +37,4 @@ export interface IPermissionRequestInput {
   critter_permissions_list: ICritterPermissionRequest[];
   request_comment: string;
 }
+

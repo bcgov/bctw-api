@@ -1,5 +1,12 @@
 import { Request, Response } from 'express';
-import { BCTW_EMAIL, DISABLE_PERMISSION_EMAIL, PERMISSION_APPROVED_ID, PERMISSION_DENIED_ID, PERMISSION_REQ_ID, S_API } from '../constants';
+import {
+  BCTW_EMAIL,
+  DISABLE_PERMISSION_EMAIL,
+  PERMISSION_APPROVED_ID,
+  PERMISSION_DENIED_ID,
+  PERMISSION_REQ_ID,
+  S_API,
+} from '../constants';
 import {
   constructFunctionQuery,
   constructGetQuery,
@@ -7,7 +14,10 @@ import {
   query,
 } from '../database/query';
 import { getUserIdentifier, handleResponse } from '../database/requests';
-import { IPermissionRequest, IPermissionRequestInput } from '../types/permission';
+import {
+  IPermissionRequest,
+  IPermissionRequestInput,
+} from '../types/permission';
 import { sendGCEmail } from '../utils/gcNotify';
 
 const fn_submit_perm_request = 'submit_permission_request';
@@ -30,7 +40,8 @@ const submitPermissionRequest = async function (
   req: Request,
   res: Response
 ): Promise<Response> {
-  const { user_email_list, critter_permissions_list, request_comment } = req.body as IPermissionRequestInput;
+  const { user_email_list, critter_permissions_list, request_comment } =
+    req.body as IPermissionRequestInput;
   const sql = constructFunctionQuery(fn_submit_perm_request, [
     getUserIdentifier(req),
     user_email_list,
@@ -40,10 +51,13 @@ const submitPermissionRequest = async function (
   const { result, error } = await query(sql, '', true);
   if (!error && !DISABLE_PERMISSION_EMAIL) {
     // send email notification to the admin via CHES
-    const rows = getRowResults(result, fn_submit_perm_request) as IPermissionRequest[];
-    if(rows.length){
+    const rows = getRowResults(
+      result,
+      fn_submit_perm_request
+    ) as IPermissionRequest[];
+    if (rows.length) {
       let critterStr = '';
-      rows.forEach( c => {
+      rows.forEach((c) => {
         critterStr += `{
         animal_id: ${c.animal_id ?? ''}
         critter_id: ${c.critter_id ?? ''}
@@ -51,18 +65,27 @@ const submitPermissionRequest = async function (
         wlh_id: ${c.wlh_id ?? ''}
         },
         `;
-      })
-      const {requested_by_name, requested_date, requested_by, 
-        requested_by_email, requested_for_email} = rows[0];
-      sendGCEmail(BCTW_EMAIL, {
+      });
+      const {
         requested_by_name,
         requested_date,
         requested_by,
         requested_by_email,
-        requested_for: requested_for_email,
-        critters: critterStr,
-        request_comment: request_comment ?? '',
-      }, PERMISSION_REQ_ID)
+        requested_for_email,
+      } = rows[0];
+      sendGCEmail(
+        BCTW_EMAIL,
+        {
+          requested_by_name,
+          requested_date,
+          requested_by,
+          requested_by_email,
+          requested_for: requested_for_email,
+          critters: critterStr,
+          request_comment: request_comment ?? '',
+        },
+        PERMISSION_REQ_ID
+      );
     }
   }
   const data =
@@ -103,7 +126,7 @@ const approveOrDenyPermissionRequest = async function (
   const request_blob: IExecuteRequest[] = req.body;
   const sql = constructFunctionQuery(fn_execute_perm_request, [
     userIdentifier,
-    JSON.stringify(request_blob)
+    JSON.stringify(request_blob),
   ]);
   const { result, error, isError } = await query(sql, '', true);
   const rows = !isError
@@ -112,35 +135,41 @@ const approveOrDenyPermissionRequest = async function (
 
   const requestResults = rows as IPermissionRequest[];
 
-  requestResults.forEach(result => {
-    const { requested_by_name, requested_date, requested_for_email, 
-      permission_type, wlh_id, animal_id, species, requested_by_email, was_denied_reason, was_granted} = result;
-    const body = {
-      requested_by_name, 
-      requested_date, 
-      requested_for_email, 
+  requestResults.forEach((result) => {
+    const {
+      requested_by_name,
+      requested_date,
+      requested_for_email,
       permission_type,
-      wlh_id, 
+      wlh_id,
       animal_id,
-      species,
-      was_denied_reason
-    }
+      requested_by_email,
+      was_denied_reason,
+      was_granted,
+    } = result;
+    const body = {
+      requested_by_name,
+      requested_date,
+      requested_for_email,
+      permission_type,
+      wlh_id,
+      animal_id,
+      was_denied_reason,
+    };
     // send an email notification if the request was denied to the manager
-    
+
     if (!isError && !DISABLE_PERMISSION_EMAIL) {
-      if(!was_granted){
-        sendGCEmail(requested_for_email, body, PERMISSION_DENIED_ID)
-      }else{
-        const {was_denied_reason, ...newBody} = body;
+      if (!was_granted) {
+        sendGCEmail(requested_for_email, body, PERMISSION_DENIED_ID);
+      } else {
+        const { was_denied_reason, ...newBody } = body;
         //send approval email to requestee
         sendGCEmail(requested_for_email, newBody, PERMISSION_APPROVED_ID);
         //send approval email to the requestor
         sendGCEmail(requested_by_email, newBody, PERMISSION_APPROVED_ID);
       }
-      
     }
-  })
-  
+  });
 
   return handleResponse(res, rows, error);
 };
@@ -157,14 +186,14 @@ const getGrantedPermissionHistory = async function (
 ): Promise<Response> {
   const page = (req.query?.page || 1) as number;
   const sql = constructGetQuery({
-    base: `select * from ${S_API}.permission_requests_v where requested_by = '${getUserIdentifier(req)}'`,
+    base: `select * from ${S_API}.permission_requests_v where requested_by = '${getUserIdentifier(
+      req
+    )}'`,
     page,
   });
   const { result, error } = await query(sql);
   return handleResponse(res, result?.rows, error);
 };
-
-
 
 export {
   approveOrDenyPermissionRequest,
@@ -172,4 +201,3 @@ export {
   getPermissionRequests,
   submitPermissionRequest,
 };
-

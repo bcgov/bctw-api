@@ -1,6 +1,12 @@
 import { Animal } from './animal';
 import { Collar } from './collar';
-import { eUserRole, IOnboardEmailDetails, IOnboardInput, IUserInput, User } from './user';
+import {
+  eUserRole,
+  IOnboardEmailDetails,
+  IOnboardInput,
+  IUserInput,
+  User,
+} from './user';
 
 /**
  * response returned from gc notify after a successful post
@@ -24,9 +30,10 @@ type GCNotifyResponse = {
  * the json emitted from postgres when a new alert
  * is added to the the telemetry_sensor_alert table
  */
-type PGMortalityAlertEvent = Pick<Animal, 'animal_id' | 'wlh_id' | 'species'> &
+type PGMortalityAlertEvent = Pick<Animal, 'animal_id' | 'wlh_id'> &
   Pick<Collar, 'device_id' | 'frequency'> &
   Pick<User, 'phone' | 'email' | 'firstname'> & {
+    species: string;
     date_time: string;
     user_id: number;
     latitude: number;
@@ -38,12 +45,17 @@ type PGMortalityAlertEvent = Pick<Animal, 'animal_id' | 'wlh_id' | 'species'> &
  * note: all fields are manadatory or server will respond with 400 (bad request)
  */
 type GCMortalityTemplateSMS = Omit<
-  PGMortalityAlertEvent, 'phone' | 'user_id' | 'email' | 'firstname'>;
+  PGMortalityAlertEvent,
+  'phone' | 'user_id' | 'email' | 'firstname'
+>;
 
 /**
  * gcNotify email personalisation field type
  */
-type GCMortalityTemplateEmail = Omit<PGMortalityAlertEvent, 'email' | 'phone' | 'user_id'> & {
+type GCMortalityTemplateEmail = Omit<
+  PGMortalityAlertEvent,
+  'email' | 'phone' | 'user_id'
+> & {
   link: string; // a url to BCTW instance
 };
 
@@ -58,12 +70,15 @@ type GCNotifyEmailPayload<T> = {
   email_reply_to_id: string;
 };
 
-type GCNotifySMSPayload<T> = Omit<GCNotifyEmailPayload<T>, 'email_address' | 'email_reply_to_id'> & {
+type GCNotifySMSPayload<T> = Omit<
+  GCNotifyEmailPayload<T>,
+  'email_address' | 'email_reply_to_id'
+> & {
   phone_number: string;
 };
 /* Onboarding type for GCNotify user requests. BCTW admin receives email*/
-type GCNotifyOnboardAdminReq = Omit<IOnboardInput, 'role_type'>
-& IOnboardEmailDetails;
+type GCNotifyOnboardAdminReq = Omit<IOnboardInput, 'role_type'> &
+  IOnboardEmailDetails;
 
 /* User onboarding GCNotify confirmation type. User receives email*/
 type GCNotifyOnboardUserConfirmation = Pick<IUserInput, 'firstname'> & {
@@ -71,18 +86,20 @@ type GCNotifyOnboardUserConfirmation = Pick<IUserInput, 'firstname'> & {
   request_date: string;
   file_attachment_1?: FileAttachment;
   file_attachment_2?: FileAttachment;
-}
+};
 
-type GCNotifyOnboardUserApproved = 
-Pick<GCNotifyOnboardUserConfirmation, 'firstname' | 'request_type'>
+type GCNotifyOnboardUserApproved = Pick<
+  GCNotifyOnboardUserConfirmation,
+  'firstname' | 'request_type'
+>;
 
-type GCNotifyOnboardUserDeclined = Pick<IUserInput, 'firstname'>
+type GCNotifyOnboardUserDeclined = Pick<IUserInput, 'firstname'>;
 
 type FileAttachment = {
   file: string; //base64 encoded string
   filename: string; //original filename with extension
   sending_method: 'attach';
-}
+};
 
 export type {
   GCNotifyResponse,
