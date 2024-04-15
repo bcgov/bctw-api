@@ -16,6 +16,7 @@ import {authorize as auth} from './auth/authorization';
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
 
+
 // setup the express server
 export const app = express()
   .use(helmet())
@@ -24,7 +25,7 @@ export const app = express()
   .use(express.json())
   .use(authenticateRequest)
   .use(forwardUser)
-  .use(ROUTES.critterbase, auth(), critterbaseRouter)
+  .use(ROUTES.critterbase, critterbaseRouter)
   .get(ROUTES.getTemplate, auth(), getTemplateFile)
   // map
   .get(ROUTES.getCritters, auth('SIMS_SERVICE'), api.getDBCritters)

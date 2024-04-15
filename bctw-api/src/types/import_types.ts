@@ -24,7 +24,7 @@ const isAnimalAndDevice = (row: Record<string, unknown>): boolean => {
 // a csv row must contain all properties to be considered a point
 // todo: historical telemetry for vhf collars may not have a device ID, but may have a frequency?
 const isHistoricalTelemtry = <T>(row: T): boolean => {
-  const r = (row as unknown) as HistoricalTelemetryInput;
+  const r = row as unknown as HistoricalTelemetryInput;
   if (
     r.date_recorded &&
     r.device_vendor &&
@@ -50,4 +50,7 @@ export interface IBulkResponse {
 
 export { isAnimalAndDevice, isAnimal, isCollar, isHistoricalTelemtry };
 
-export interface IAnimalDeviceMetadata extends IAnimal, ICollar { possible_critters?: Partial<IAnimal>[], selected_critter_id?: string }
+export interface IAnimalDeviceMetadata extends IAnimal, ICollar {
+  possible_critters?: Partial<IAnimal>[];
+  selected_critter_id?: string;
+}

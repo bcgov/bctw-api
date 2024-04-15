@@ -25,7 +25,7 @@ import {
   validateUniqueAnimal,
 } from './validation';
 
-import { link, unlinkSync } from 'fs';
+import { unlinkSync } from 'fs';
 import { pgPool } from '../database/pg';
 import { v4 as uuidv4, validate as uuid_validate } from 'uuid';
 import dayjs from 'dayjs';
@@ -127,7 +127,7 @@ const parseXlsx = async (
   const header_sql = 'SELECT code_header_name FROM code_header;';
   const { result } = await query(header_sql, 'failed to retrieve headers');
 
-  const files = await getFiles(['import_template'], false);
+  const files = await getFiles(['import_template_v2'], false);
   const templateBook = new Workbook();
   await templateBook.xlsx.load(Buffer.from(files[0].file, 'binary'));
 
@@ -358,7 +358,7 @@ const appendNewAnimalToBulkPayload = async (
     wlh_id: incomingCritter.wlh_id,
     animal_id: incomingCritter.animal_id,
     sex: incomingCritter.sex,
-    taxon_name_common: incomingCritter.species,
+    itis_tsn: incomingCritter.itis_tsn,
   };
 
   if (!existing_critter_from_payload) {
@@ -368,9 +368,7 @@ const appendNewAnimalToBulkPayload = async (
   if (incomingCritter.population_unit) {
     //Somewhat redundant to be making this request multiple times during import. May be something to optimize out later.
     const population_units = await query(
-      critterbase.get(
-        `xref/collection-units/?category_name=Population Unit&taxon_name_common=${incomingCritter.species}`
-      )
+      critterbase.get(`xref/collection-units/?category_name=Population Unit`)
     ); //await critterBaseRequest('GET', `collection-units/category/?category_name=Population Unit&taxon_name_common=${incomingCritter.species}`);
     if (!population_units) {
       throw Error(
@@ -425,7 +423,7 @@ const upsertBulkv2 = async (id: string, req: Request) => {
     let existing_critter_in_cb: DetailedCritter | null = null;
     if (pair.selected_critter_id && uuid_validate(pair.selected_critter_id)) {
       const detail = await critterbase.get(
-        `/critters/${pair.selected_critter_id}?format=detailed`
+        `/critters/${pair.selected_critter_id}`
       );
       existing_critter_in_cb = detail.data;
     }
@@ -628,7 +626,7 @@ const getTemplateFile = async function (
   req: Request,
   res: Response
 ): Promise<void> {
-  const file_sql = `select file_key, file_name, file_type, contents_base64 from file where file_key = 'import_template'`;
+  const file_sql = `select file_key, file_name, file_type, contents_base64 from file where file_key = 'import_template_v2'`;
   const { result: file_result } = await query(
     file_sql,
     'failed to retrieve headers'

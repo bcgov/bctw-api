@@ -1,5 +1,5 @@
 import { S_BCTW } from '../constants';
-import { query, to_pg_array, to_pg_timestamp } from '../database/query';
+import { query, to_pg_array } from '../database/query';
 import { apiError } from '../utils/error';
 
 export const MANUAL_TELEMETRY = `${S_BCTW}.telemetry_manual`;
