@@ -48,7 +48,7 @@ const iterateCollars = function (collar, callback) {
   const key = collar.collarkey;
   const id = collar.idcollar;
   const weekAgo = moment().subtract(7, "d").format("YYYY-MM-DDTHH:mm:ss");
-  const url = `${apiUrl}/${id}/gps?collarkey=${key}&afterScts=${weekAgo}`;
+  const url = `${apiUrl}/${id}/gps?collarkey=${key}`;
 
   // console.log(`Fetching data for ${id}`);
 

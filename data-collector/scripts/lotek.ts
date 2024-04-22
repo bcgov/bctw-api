@@ -81,7 +81,7 @@ const insertAPICollarData = async function (collar: ICollar) {
  */
 const iterateCollars = async function (collar: ICollar) {
   const weekAgo = dayjs().subtract(7, "d").format("YYYY-MM-DDTHH:mm:ss");
-  const url = `${lotekUrl}/gps?deviceId=${collar.nDeviceID}&dtStart=${weekAgo}`;
+  const url = `${lotekUrl}/gps?deviceId=${collar.nDeviceID}`;
 
   // Send request to the API
   const { body, error } = await needle("get", url, tokenConfig);
