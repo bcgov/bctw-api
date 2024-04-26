@@ -90,6 +90,7 @@ import {
 } from './apis/onboarding_api';
 import { fetchVendorTelemetryData } from './apis/vendor/vendor_helpers';
 import { importTelemetry } from './import/import_telemetry';
+import { TelemetryController } from './controllers/telemetry-controller';
 
 /** contains a few special handlers, but otherwise this file simply re-export other endpoints */
 
@@ -160,7 +161,14 @@ const deleteType = async function (
   }
 };
 
+/**
+ * BCTW Contollers
+ *
+ */
+const telemetryController = TelemetryController.init();
+
 export {
+  telemetryController,
   addCode,
   addCodeHeader,
   getCodeLongDesc,
