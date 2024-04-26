@@ -47,7 +47,8 @@
     "proj4": "^2.9.0",
     "sql-template-strings": "^2.2.2",
     "uuid": "^9.0.0",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.4.23",
+    "zod": "^3.23.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.7",

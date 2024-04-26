@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
-import { getUserIdentifier, handleApiError } from '../database/requests';
 import { Controller } from './base-controller';
 import { TelemetryService } from '../services/telemetry-service';
-import { UserRequest } from '../types/userRequest';
-import { apiError } from '../utils/error';
+import {
+  CreateManualTelemetrySchema,
+  IdsSchema,
+  UpdateManualTelemetrySchema,
+} from '../types/telemetry';
+import { z } from 'zod';
 
 /**
  * Includes endpoints for mutating and retrieving both 'Manual' and 'Vendor' telemetry.
@@ -11,21 +14,19 @@ import { apiError } from '../utils/error';
  * Manual: Telemetry entered or created by users.
  * Vendor: Telemetry retrieved by cronjobs ie: Vectronic / Lotek / ATS.
  *
+ * Note: Endpoint methods are intentionally using ES6 arrow functions which automatically binding 'this'.
+ * @example
+ * // non arrow method
+ * express().get('/endpoint', controller.method.bind(class))
+ * // arrow method
+ * express().get('/endpoint', controller.method)
+ *
+ *
  * @class TelemetryContoller
  * @implements Contoller
  */
-export class TelemetryController implements Controller {
+export class TelemetryController extends Controller {
   service: TelemetryService;
-
-  /**
-   * Instantiates BCTW TelemetryContoller
-   *
-   * @constructor
-   * @param {TelemetryService} service
-   */
-  constructor(service: TelemetryService) {
-    this.service = service;
-  }
 
   /**
    * Instantiates an instance of TelemetryContoller and injects dependencies.
@@ -39,23 +40,6 @@ export class TelemetryController implements Controller {
   }
 
   /**
-   * Get user keycloak guid from request.
-   *
-   * @throws {apiError.syntaxIssue} Missing keycloak guid.
-   * @param {Request} req
-   * @returns {string} Keycloak guid.
-   */
-  getUserIdentifier(req: Request): string {
-    const keycloak_guid = (req as UserRequest).user.keycloak_guid;
-
-    if (!keycloak_guid) {
-      throw apiError.syntaxIssue(`Request must contain a user keycloak guid`);
-    }
-
-    return keycloak_guid;
-  }
-
-  /**
    * Endpoint to retrieve both 'Manual' and 'Vendor' telemetry by deployment_ids.
    *
    * @async
@@ -63,18 +47,22 @@ export class TelemetryController implements Controller {
    * @param {Response} res
    * @returns {Promise<Response>}
    */
-  async getAllTelemetryByDeploymentIds(
+  getAllTelemetryByDeploymentIds = async (
     req: Request,
     res: Response
-  ): Promise<Response> {
+  ): Promise<Response> => {
     try {
-      const service = TelemetryService.init();
-      const telemetry = await service.getAllTelemetryByDeploymentIds(req.body);
+      const deployment_ids = IdsSchema.parse(req.body);
+
+      const telemetry = await this.service.getAllTelemetryByDeploymentIds(
+        deployment_ids
+      );
+
       return res.status(200).json(telemetry);
     } catch (err) {
-      return handleApiError(err, res);
+      return this.handleApiError(err, res);
     }
-  }
+  };
 
   /**
    * Endpoint to retrieve 'Manual' telemetry by deployment_ids.
@@ -84,20 +72,22 @@ export class TelemetryController implements Controller {
    * @param {Response} res
    * @returns {Promise<Response>}
    */
-  async getManualTelemetryByDeploymentIds(
+  getManualTelemetryByDeploymentIds = async (
     req: Request,
     res: Response
-  ): Promise<Response> {
+  ): Promise<Response> => {
     try {
-      const service = TelemetryService.init();
-      const telemetry = await service.getManualTelemetryByDeploymentIds(
-        req.body
+      const deployment_ids = IdsSchema.parse(req.body);
+
+      const telemetry = await this.service.getManualTelemetryByDeploymentIds(
+        deployment_ids
       );
+
       return res.status(200).json(telemetry);
     } catch (err) {
-      return handleApiError(err, res);
+      return this.handleApiError(err, res);
     }
-  }
+  };
 
   /**
    * Endpoint to retrieve 'Vendor' telemetry by deployment_ids.
@@ -107,20 +97,22 @@ export class TelemetryController implements Controller {
    * @param {Response} res
    * @returns {Promise<Response>}
    */
-  async getVendorTelemetryByDeploymentIds(
+  getVendorTelemetryByDeploymentIds = async (
     req: Request,
     res: Response
-  ): Promise<Response> {
+  ): Promise<Response> => {
     try {
-      const service = TelemetryService.init();
-      const telemetry = await service.getVendorTelemetryByDeploymentIds(
-        req.body
+      const deployment_ids = IdsSchema.parse(req.body);
+
+      const telemetry = await this.service.getVendorTelemetryByDeploymentIds(
+        deployment_ids
       );
+
       return res.status(200).json(telemetry);
     } catch (err) {
-      return handleApiError(err, res);
+      return this.handleApiError(err, res);
     }
-  }
+  };
 
   /**
    * Endpoint to create 'Manual' telemetry.
@@ -130,19 +122,24 @@ export class TelemetryController implements Controller {
    * @param {Response} res
    * @returns {Promise<Response>}
    */
-  async createManualTelemetry(req: Request, res: Response): Promise<Response> {
-    const keycloak_guid = this.getUserIdentifier(req);
+  createManualTelemetry = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
     try {
-      const service = TelemetryService.init();
-      const createdTelemetry = await service.createManualTelemetry(
-        req.body,
+      const keycloak_guid = this.getUserIdentifier(req);
+      const telemetry = z.array(CreateManualTelemetrySchema).parse(req.body);
+
+      const createdTelemetry = await this.service.createManualTelemetry(
+        telemetry,
         keycloak_guid
       );
+
       return res.status(201).json(createdTelemetry);
     } catch (err) {
-      return handleApiError(err, res);
+      return this.handleApiError(err, res);
     }
-  }
+  };
 
   /**
    * Endpoint to delete 'Manual' telemetry.
@@ -152,19 +149,24 @@ export class TelemetryController implements Controller {
    * @param {Response} res
    * @returns {Promise<Response>}
    */
-  async deleteManualTelemetry(req: Request, res: Response): Promise<Response> {
-    const keycloak_guid = this.getUserIdentifier(req);
+  deleteManualTelemetry = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
     try {
-      const service = TelemetryService.init();
-      const deletedTelemetry = await service.deleteManualTelemetry(
-        req.body,
+      const keycloak_guid = this.getUserIdentifier(req);
+      const telemetry_ids = IdsSchema.parse(req.body);
+
+      const deletedTelemetry = await this.service.deleteManualTelemetry(
+        telemetry_ids,
         keycloak_guid
       );
+
       return res.status(200).json(deletedTelemetry);
     } catch (err) {
-      return handleApiError(err, res);
+      return this.handleApiError(err, res);
     }
-  }
+  };
 
   /**
    * Endpoint to update 'Manual' telemetry.
@@ -174,17 +176,22 @@ export class TelemetryController implements Controller {
    * @param {Response} res
    * @returns {Promise<Response>}
    */
-  async updateManualTelemetry(req: Request, res: Response): Promise<Response> {
-    const keycloak_guid = this.getUserIdentifier(req);
+  updateManualTelemetry = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
     try {
-      const service = TelemetryService.init();
-      const updatedTelemetry = await service.updateManualTelemetry(
-        req.body,
+      const keycloak_guid = this.getUserIdentifier(req);
+      const telemetry = z.array(UpdateManualTelemetrySchema).parse(req.body);
+
+      const updatedTelemetry = await this.service.updateManualTelemetry(
+        telemetry,
         keycloak_guid
       );
+
       return res.status(201).json(updatedTelemetry);
     } catch (err) {
-      return handleApiError(err, res);
+      return this.handleApiError(err, res);
     }
-  }
+  };
 }

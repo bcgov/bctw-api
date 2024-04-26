@@ -161,10 +161,7 @@ const deleteType = async function (
   }
 };
 
-/**
- * BCTW Contollers
- *
- */
+// Controllers
 const telemetryController = TelemetryController.init();
 
 export {

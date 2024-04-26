@@ -1,7 +1,11 @@
 import SQL from 'sql-template-strings';
-import { IManualTelemetry } from '../services/manual_telemetry';
 import { Repository } from './base-repository';
-import { PostManualTelemtry } from '../types/telemetry';
+import {
+  CreateManualTelemetry,
+  ManualTelemetry,
+  Telemetry,
+  VendorTelemetry,
+} from '../types/telemetry';
 
 /**
  * Includes database methods for mutating and retrieving both 'Manual' and 'Vendor' telemetry.
@@ -13,10 +17,18 @@ import { PostManualTelemtry } from '../types/telemetry';
  * @implements Repository
  */
 export class TelemetryRepository extends Repository {
+  /**
+   * Update 'Manual' telemetry records.
+   *
+   * @meberof TelemetryService
+   * @param {Partial<ManualTelemetry>[]} Telemetry.
+   * @param {userGuid} userGuid - Keycloak user guid.
+   * @returns {Promise<ManualTelemetry>} Updated telemetry.
+   */
   async updateManualTelemetry(
-    telemetry: Partial<IManualTelemetry>[],
+    telemetry: Partial<ManualTelemetry>[],
     userGuid: string
-  ): Promise<IManualTelemetry[]> {
+  ): Promise<ManualTelemetry[]> {
     const sql = SQL`
       UPDATE bctw.telemetry_manaul as m SET
         latitude = COALESCE(m2.latitude::float8, m.latitude::float8),
@@ -38,14 +50,23 @@ export class TelemetryRepository extends Repository {
       RETURNING *
     `;
 
-    const data = await this.query<IManualTelemetry>(sql);
+    const data = await this.query<ManualTelemetry>(sql);
 
     return data.rows;
   }
+
+  /**
+   * Create 'Manual' telemetry records.
+   *
+   * @meberof TelemetryService
+   * @param {CreateManualTelemetry[]} Telemetry.
+   * @param {userGuid} userGuid - Keycloak user guid.
+   * @returns {Promise<ManualTelemetry[]>} Created telemetry.
+   */
   async createManualTelemetry(
-    telemetry: PostManualTelemtry[],
+    telemetry: CreateManualTelemetry[],
     userGuid: string
-  ): Promise<IManualTelemetry[]> {
+  ): Promise<ManualTelemetry[]> {
     const sql = SQL`
     INSERT INTO bctw.telemetry_manaual
     (deployment_id, latitude, longitude, acquisition_date, created_by_user_id)
@@ -62,23 +83,24 @@ export class TelemetryRepository extends Repository {
     RETURNING *
     `;
 
-    const res = await this.query<IManualTelemetry>(sql);
+    const res = await this.query<ManualTelemetry>(sql);
 
     return res.rows;
   }
+
   /**
    * Delete 'Manual' telemetry records by primary identifier.
    *
    * @meberof TelemetryService
    * @param {string[]} manualTelemetryIds - uuids.
    * @param {string} userGuid - Keycloak user guid.
-   * @returns {Promise<IManualTelemetry>} Updated telemetry.
+   * @returns {Promise<ManualTelemetry>} Updated telemetry.
    */
   async deleteManualTelemetry(
     manualTelemetryIds: string[],
     userGuid: string
-  ): Promise<IManualTelemetry[]> {
-    const res = await this.query<IManualTelemetry>(SQL`
+  ): Promise<ManualTelemetry[]> {
+    const res = await this.query<ManualTelemetry>(SQL`
       UPDATE bctw.telemetry_manual
       SET valid_to = now(), updated_by_user_id = bctw.get_user_id('${userGuid}')
       WHERE telemetry_manual_id = ANY(${manualTelemetryIds})
@@ -94,12 +116,12 @@ export class TelemetryRepository extends Repository {
    *
    * @meberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
-   * @returns {Promise<IManualTelemetry>}
+   * @returns {Promise<ManualTelemetry>}
    */
   async getManualTelemetryByDeploymentIds(
     deploymentIds: string[]
-  ): Promise<IManualTelemetry[]> {
-    const res = await this.query<IManualTelemetry>(SQL`
+  ): Promise<ManualTelemetry[]> {
+    const res = await this.query<ManualTelemetry>(SQL`
       SELECT *
       FROM bctw.telemetry_manual
       WHERE deployment_id = ANY(${deploymentIds})
@@ -109,11 +131,17 @@ export class TelemetryRepository extends Repository {
     return res.rows;
   }
 
-  // TODO: update type
+  /**
+   * Retrieves 'Vendor' telemetry by deployment ids.
+   *
+   * @async
+   * @param {string[]} deploymentIds - uuids.
+   * @returns {Promise<VendorTelemetry[]>}
+   */
   async getVendorTelemetryByDeploymentIds(
     deploymentIds: string[]
-  ): Promise<IManualTelemetry[]> {
-    const res = await this.query<IManualTelemetry>(SQL`
+  ): Promise<VendorTelemetry[]> {
+    const res = await this.query<VendorTelemetry>(SQL`
       SELECT
         t.telemetry_id,
         caa.deployment_id,
@@ -137,17 +165,17 @@ export class TelemetryRepository extends Repository {
 
   /**
    * Retrieves both 'Manual' and 'Vendor' telemetry by deployment ids.
-   * Normalizes payload to be the same as the IManualTelemetry response.
+   * Normalizes payload to be the same as the ManualTelemetry response.
    * This removes some extra fields vendor telemetry normally has.
    *
    * @meberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
-   * @returns {Promise<IManualTelemetry[]>}
+   * @returns {Promise<Telemetry[]>}
    */
   async getAllTelemetryByDeploymentIds(
     deploymentIds: string[]
-  ): Promise<IManualTelemetry[]> {
-    const res = await this.query<IManualTelemetry>(SQL`
+  ): Promise<Telemetry[]> {
+    const res = await this.query<Telemetry>(SQL`
       SELECT * FROM (
         SELECT m.telemetry_manual_id::text as id, m.deployment_id, m.telemetry_manual_id,
         NULL::int as telemetry_id, m.latitude, m.longitude, m.acquisition_date, 'MANUAL' as telemetry_type

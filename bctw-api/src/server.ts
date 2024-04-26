@@ -27,6 +27,15 @@ export const app = express()
   .use(forwardUser)
   .use(ROUTES.critterbase, critterbaseRouter)
   .get(ROUTES.getTemplate, auth(), getTemplateFile)
+
+  // telemetry
+  .post(ROUTES.deleteManualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.deleteManualTelemetry)
+  .post(ROUTES.deploymentsManualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getManualTelemetryByDeploymentIds)
+  .post(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.createManualTelemetry)
+  .patch(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.updateManualTelemetry)
+  .post(ROUTES.deploymentsVendorTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getVendorTelemetryByDeploymentIds)
+  .post(ROUTES.deploymentsManualVendorTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getAllTelemetryByDeploymentIds)
+
   // map
   .get(ROUTES.getCritters, auth('SIMS_SERVICE'), api.getDBCritters)
   .get(ROUTES.getCritterTracks, auth('SIMS_SERVICE'), api.getCritterTracks)
@@ -55,13 +64,6 @@ export const app = express()
   .get(ROUTES.getDeploymentsByDeviceId, auth('SIMS_SERVICE'), api.getDeploymentsByDeviceId)
   .patch(ROUTES.updateDeployment, auth('SIMS_SERVICE'), api.updateDeploymentTimespan)
   .delete(ROUTES.deleteDeployment, auth('SIMS_SERVICE'), api.deleteDeployment)
-  // Manual telemetry
-  .post(ROUTES.deleteManualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.deleteManualTelemetry)
-  .post(ROUTES.deploymentsManualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getManualTelemetryByDeploymentIds)
-  .post(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.createManualTelemetry)
-  .patch(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.updateManualTelemetry)
-  .post(ROUTES.deploymentsVendorTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getVendorTelemetryByDeploymentIds)
-  .post(ROUTES.deploymentsManualVendorTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getAllTelemetryByDeploymentIds)
   // permissions
   .get(ROUTES.getPermissionRequests, auth(), api.getPermissionRequests)
   .get(ROUTES.getGrantedPermissionHistory, auth(), api.getGrantedPermissionHistory)

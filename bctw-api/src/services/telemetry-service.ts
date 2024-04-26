@@ -1,6 +1,11 @@
 import { pgPool } from '../database/pg';
 import { TelemetryRepository } from '../repositories/telemetry-repository';
-import { IManualTelemetry, PostManualTelemtry } from '../types/telemetry';
+import {
+  CreateManualTelemetry,
+  ManualTelemetry,
+  Telemetry,
+  VendorTelemetry,
+} from '../types/telemetry';
 import { Service } from './base-service';
 
 /**
@@ -12,18 +17,8 @@ import { Service } from './base-service';
  * @class TelemetryService
  * @implements Service
  */
-export class TelemetryService implements Service {
+export class TelemetryService extends Service {
   repository: TelemetryRepository;
-
-  /**
-   * Instantiates BCTW TelemetryService.
-   *
-   * @constructor
-   * @param {TelemetryRepository} repository
-   */
-  constructor(repository: TelemetryRepository) {
-    this.repository = repository;
-  }
 
   /**
    * Instantiates an instance of TelemetryService and injects dependencies.
@@ -40,14 +35,14 @@ export class TelemetryService implements Service {
    * Create 'Manual' telemetry records.
    *
    * @meberof TelemetryService
-   * @param {PostManualTelemtry[]} Telemetry.
+   * @param {CreateManualTelemetry[]} Telemetry.
    * @param {userGuid} userGuid - Keycloak user guid.
-   * @returns {Promise<IManualTelemetry>} Created telemetry.
+   * @returns {Promise<ManualTelemetry[]>} Created telemetry.
    */
   async createManualTelemetry(
-    telemetry: PostManualTelemtry[],
+    telemetry: CreateManualTelemetry[],
     userGuid: string
-  ): Promise<IManualTelemetry[]> {
+  ): Promise<ManualTelemetry[]> {
     return this.repository.createManualTelemetry(telemetry, userGuid);
   }
 
@@ -55,14 +50,14 @@ export class TelemetryService implements Service {
    * Update 'Manual' telemetry records.
    *
    * @meberof TelemetryService
-   * @param {Partial<IManualTelemetry>[]} Telemetry.
+   * @param {Partial<ManualTelemetry>[]} Telemetry.
    * @param {userGuid} userGuid - Keycloak user guid.
-   * @returns {Promise<IManualTelemetry>} Updated telemetry.
+   * @returns {Promise<ManualTelemetry>} Updated telemetry.
    */
   async updateManualTelemetry(
-    telemetry: Partial<IManualTelemetry>[],
+    telemetry: Partial<ManualTelemetry>[],
     userGuid: string
-  ): Promise<IManualTelemetry[]> {
+  ): Promise<ManualTelemetry[]> {
     return this.repository.updateManualTelemetry(telemetry, userGuid);
   }
 
@@ -72,12 +67,12 @@ export class TelemetryService implements Service {
    * @meberof TelemetryService
    * @param {string[]} manualTelemetryIds - uuids.
    * @param {string} userGuid - Keycloak user guid.
-   * @returns {Promise<IManualTelemetry>} Updated telemetry.
+   * @returns {Promise<ManualTelemetry[]>} Updated telemetry.
    */
   async deleteManualTelemetry(
     manualTelemetryIds: string[],
     userGuid: string
-  ): Promise<IManualTelemetry[]> {
+  ): Promise<ManualTelemetry[]> {
     return this.repository.deleteManualTelemetry(manualTelemetryIds, userGuid);
   }
 
@@ -86,17 +81,15 @@ export class TelemetryService implements Service {
    *
    * @meberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
-   * @returns {Promise<IManualTelemetry>}
+   * @returns {Promise<ManualTelemetry>}
    */
   async getManualTelemetryByDeploymentIds(
     deploymentIds: string[]
-  ): Promise<IManualTelemetry[]> {
+  ): Promise<ManualTelemetry[]> {
     return this.repository.getManualTelemetryByDeploymentIds(deploymentIds);
   }
 
   /**
-   * TODO: update return type
-   *
    * Retrieves 'Vendor' telemetry by deployment_ids.
    *
    * Note: Fetches data from the telemetry materialized view which refreshes nightly
@@ -104,26 +97,26 @@ export class TelemetryService implements Service {
    *
    * @meberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
-   * @returns {Promise<IManualTelemetry[]>}
+   * @returns {Promise<ManualTelemetry[]>}
    */
   async getVendorTelemetryByDeploymentIds(
     deploymentIds: string[]
-  ): Promise<IManualTelemetry[]> {
+  ): Promise<VendorTelemetry[]> {
     return this.repository.getVendorTelemetryByDeploymentIds(deploymentIds);
   }
 
   /**
    * Retrieves both 'Manual' and 'Vendor' telemetry by deployment_ids.
-   * Normalizes payload to be the same as the IManualTelemetry response.
+   * Normalizes payload to be the same as the ManualTelemetry response.
    * This removes some extra fields vendor telemetry normally has.
    *
    * @meberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
-   * @returns {Promise<IManualTelemetry[]>}
+   * @returns {Promise<ManualTelemetry[]>}
    */
   async getAllTelemetryByDeploymentIds(
     deploymentIds: string[]
-  ): Promise<IManualTelemetry[]> {
+  ): Promise<Telemetry[]> {
     return this.repository.getAllTelemetryByDeploymentIds(deploymentIds);
   }
 }

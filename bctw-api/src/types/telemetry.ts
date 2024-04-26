@@ -1,16 +1,57 @@
-export interface IManualTelemetry {
-  telemetry_manual_id: string;
-  deployment_id: string;
-  latitude: number;
-  longitude: number;
-  acquisition_date: Date | string;
-}
+import { z } from 'zod';
 
-export interface IManualAndVendorTelemetry extends IManualTelemetry {
-  id: string;
-  telemetry_id: string | null;
-  telemetry_manaual_id: string | null;
-  telemetry_type: 'manual' | 'vendor';
-}
+// Manual and Vendor telemetry combined
+export const TelemetrySchema = z.object({
+  id: z.string(),
+  telemetry_id: z.string().nullable(),
+  telemetry_manual_id: z.string().uuid(),
+  deployment_id: z.string().uuid(),
+  latitude: z.number(),
+  longitude: z.number(),
+  acquisition_date: z.coerce.date(),
+  telemetry_type: z.enum(['MANUAL', 'VENDOR']),
+});
 
-export type PostManualTelemtry = Omit<IManualTelemetry, 'telemetry_manual_id'>;
+// Manual telemetry
+export const ManualTelemetrySchema = z.object({
+  telemetry_manual_id: z.string().uuid(),
+  deployment_id: z.string().uuid(),
+  latitude: z.number(),
+  longitude: z.number(),
+  acquisition_date: z.coerce.date(),
+});
+
+// Vendor telemetry - Cronjob retrieved telemetry records
+export const VendorTelemetrySchema = z.object({
+  telemetry_id: z.string().nullable(),
+  deployment_id: z.string().uuid(),
+  collar_transaction_id: z.string().uuid(),
+  critter_id: z.string().uuid(),
+  deviceid: z.number(),
+  latitude: z.number(),
+  longitude: z.number(),
+  elevation: z.number().nullable(),
+  vendor: z.string(), // Potentially use an enum if all the vendors are known
+  acquisition_date: z.coerce.date(),
+});
+
+// Create manual telemetry payload
+export const CreateManualTelemetrySchema = ManualTelemetrySchema.omit({
+  telemetry_manual_id: true,
+});
+
+// Update manual telemetry payload
+export const UpdateManualTelemetrySchema =
+  ManualTelemetrySchema.partial().required({
+    telemetry_manual_id: true,
+  });
+
+// Array of uuids schema
+export const IdsSchema = z.array(z.string().uuid());
+
+// Zod inferred types
+export type Telemetry = z.infer<typeof TelemetrySchema>;
+export type ManualTelemetry = z.infer<typeof ManualTelemetrySchema>;
+export type VendorTelemetry = z.infer<typeof VendorTelemetrySchema>;
+export type CreateManualTelemetry = z.infer<typeof CreateManualTelemetrySchema>;
+export type UpdateManualTelemetry = z.infer<typeof UpdateManualTelemetrySchema>;
