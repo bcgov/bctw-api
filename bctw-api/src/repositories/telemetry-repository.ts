@@ -37,18 +37,26 @@ export class TelemetryRepository extends Repository {
         updated_by_user_id = bctw.get_user_id(${userGuid}),
         updated_at = now()
       FROM (
-      VALUES ${telemetry.map((row) => {
-        return `(
+      VALUES `;
+
+    telemetry.map((row, idx) => {
+      sql.append(`(
         ${row.telemetry_manual_id},
         ${row?.latitude ?? null},
         ${row?.longitude ?? null},
         ${row?.acquisition_date ?? null}
-        )`;
-      })}) as m2(telemetry_manual_id, latitude, longitude, acquisition_date)
+        )`);
+
+      if (idx < telemetry.length - 1) {
+        sql.append(','); // Append comma if it's not the last row
+      }
+    });
+
+    sql.append(`) as m2(telemetry_manual_id, latitude, longitude, acquisition_date)
       WHERE m.telemetry_manual_id::uuid = m2.telemetry_manual_id::uuid
       AND bctw.is_valid(m.valid_to)
       RETURNING *
-    `;
+    `);
 
     const data = await this.query<ManualTelemetry>(sql);
 
@@ -67,23 +75,20 @@ export class TelemetryRepository extends Repository {
     telemetry: CreateManualTelemetry[],
     userGuid: string
   ): Promise<ManualTelemetry[]> {
-    const sql = SQL`
-    INSERT INTO bctw.telemetry_manaual
-    (deployment_id, latitude, longitude, acquisition_date, created_by_user_id)
-    VALUES ${telemetry
-      .map(
-        (row) => SQL`(
-      ${row.deployment_id},
-      ${row.latitude},
-      ${row.longitude},
-      ${row.acquisition_date},
-      bctw.get_user_id(${userGuid}))`
+    const sqlStatement = this.knex
+      .queryBuilder()
+      .insert(
+        telemetry.map((row) => ({
+          ...row,
+          created_by_user_id: this.knex.raw(
+            `bctw.get_user_id($$${userGuid}$$)`
+          ),
+        }))
       )
-      .join(', ')}
-    RETURNING *
-    `;
+      .into('bctw.telemetry_manual')
+      .returning('*');
 
-    const res = await this.query<ManualTelemetry>(sql);
+    const res = await this.query<ManualTelemetry>(sqlStatement);
 
     return res.rows;
   }
@@ -100,13 +105,15 @@ export class TelemetryRepository extends Repository {
     manualTelemetryIds: string[],
     userGuid: string
   ): Promise<ManualTelemetry[]> {
-    const res = await this.query<ManualTelemetry>(SQL`
+    const sqlStatement = SQL`
       UPDATE bctw.telemetry_manual
-      SET valid_to = now(), updated_by_user_id = bctw.get_user_id('${userGuid}')
+      SET valid_to = now(), updated_by_user_id = bctw.get_user_id(${userGuid})
       WHERE telemetry_manual_id = ANY(${manualTelemetryIds})
       AND bctw.is_valid(valid_to)
       RETURNING *
-    `);
+    `;
+
+    const res = await this.query<ManualTelemetry>(sqlStatement);
 
     return res.rows;
   }
@@ -121,12 +128,13 @@ export class TelemetryRepository extends Repository {
   async getManualTelemetryByDeploymentIds(
     deploymentIds: string[]
   ): Promise<ManualTelemetry[]> {
-    const res = await this.query<ManualTelemetry>(SQL`
+    const sqlStatement = SQL`
       SELECT *
       FROM bctw.telemetry_manual
-      WHERE deployment_id = ANY(${deploymentIds})
-      AND bctw.is_valid(valid_to);
-    `);
+      WHERE deployment_id = ANY(${deploymentIds}::uuid[])
+      AND bctw.is_valid(valid_to);`;
+
+    const res = await this.query<ManualTelemetry>(sqlStatement);
 
     return res.rows;
   }
@@ -141,7 +149,7 @@ export class TelemetryRepository extends Repository {
   async getVendorTelemetryByDeploymentIds(
     deploymentIds: string[]
   ): Promise<VendorTelemetry[]> {
-    const res = await this.query<VendorTelemetry>(SQL`
+    const sqlStatement = SQL`
       SELECT
         t.telemetry_id,
         caa.deployment_id,
@@ -157,8 +165,9 @@ export class TelemetryRepository extends Repository {
       INNER JOIN collar_animal_assignment caa
       ON t.critter_id = caa.critter_id
       AND is_valid(caa.valid_to)
-      WHERE caa.deployment_id = ANY(${deploymentIds})
-    `);
+      WHERE caa.deployment_id = ANY(${deploymentIds}::uuid[])`;
+
+    const res = await this.query<VendorTelemetry>(sqlStatement);
 
     return res.rows;
   }
@@ -175,7 +184,7 @@ export class TelemetryRepository extends Repository {
   async getAllTelemetryByDeploymentIds(
     deploymentIds: string[]
   ): Promise<Telemetry[]> {
-    const res = await this.query<Telemetry>(SQL`
+    const sqlStatement = SQL`
       SELECT * FROM (
         SELECT m.telemetry_manual_id::text as id, m.deployment_id, m.telemetry_manual_id,
         NULL::int as telemetry_id, m.latitude, m.longitude, m.acquisition_date, 'MANUAL' as telemetry_type
@@ -193,8 +202,9 @@ export class TelemetryRepository extends Repository {
         AND is_valid(caa.valid_to)
         WHERE caa.deployment_id = ANY(${deploymentIds})) as query
 
-      ORDER BY telemetry_type='MANUAL' DESC
-    `);
+      ORDER BY telemetry_type='MANUAL' DESC;`;
+
+    const res = await this.query<Telemetry>(sqlStatement);
 
     return res.rows;
   }

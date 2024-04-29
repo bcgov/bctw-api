@@ -52,7 +52,7 @@ export class Controller {
     }
 
     if (err instanceof ZodError) {
-      const msg = err.errors[0].message;
+      const msg = `Incorrect request syntax`;
       return res.status(400).json({ error: msg, issues: err.issues });
     }
 

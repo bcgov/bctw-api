@@ -40,14 +40,32 @@ export const CreateManualTelemetrySchema = ManualTelemetrySchema.omit({
   telemetry_manual_id: true,
 });
 
+// Create multiple manual telemetry records payload
+export const CreateManyManualTelemetrySchema = z
+  .array(
+    ManualTelemetrySchema.omit({
+      telemetry_manual_id: true,
+    })
+  )
+  .min(1);
+
 // Update manual telemetry payload
 export const UpdateManualTelemetrySchema =
   ManualTelemetrySchema.partial().required({
     telemetry_manual_id: true,
   });
 
-// Array of uuids schema
-export const IdsSchema = z.array(z.string().uuid());
+// Update multiple manual telemetry records payload
+export const UpdateManyManualTelemetrySchema = z
+  .array(
+    ManualTelemetrySchema.partial().required({
+      telemetry_manual_id: true,
+    })
+  )
+  .min(1);
+
+// Array of uuids schema - must contain at least 1
+export const IdsSchema = z.array(z.string().uuid()).min(1);
 
 // Zod inferred types
 export type Telemetry = z.infer<typeof TelemetrySchema>;

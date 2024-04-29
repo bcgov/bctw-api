@@ -2,11 +2,10 @@ import { Request, Response } from 'express';
 import { Controller } from './base-controller';
 import { TelemetryService } from '../services/telemetry-service';
 import {
-  CreateManualTelemetrySchema,
+  CreateManyManualTelemetrySchema,
   IdsSchema,
-  UpdateManualTelemetrySchema,
+  UpdateManyManualTelemetrySchema,
 } from '../types/telemetry';
-import { z } from 'zod';
 
 /**
  * Includes endpoints for mutating and retrieving both 'Manual' and 'Vendor' telemetry.
@@ -128,7 +127,7 @@ export class TelemetryController extends Controller {
   ): Promise<Response> => {
     try {
       const keycloak_guid = this.getUserIdentifier(req);
-      const telemetry = z.array(CreateManualTelemetrySchema).parse(req.body);
+      const telemetry = CreateManyManualTelemetrySchema.parse(req.body);
 
       const createdTelemetry = await this.service.createManualTelemetry(
         telemetry,
@@ -182,7 +181,7 @@ export class TelemetryController extends Controller {
   ): Promise<Response> => {
     try {
       const keycloak_guid = this.getUserIdentifier(req);
-      const telemetry = z.array(UpdateManualTelemetrySchema).parse(req.body);
+      const telemetry = UpdateManyManualTelemetrySchema.parse(req.body);
 
       const updatedTelemetry = await this.service.updateManualTelemetry(
         telemetry,

@@ -1,3 +1,4 @@
+import { Knex, knex } from 'knex';
 import { Pool, QueryResult, QueryResultRow } from 'pg';
 import { SQLStatement } from 'sql-template-strings';
 
@@ -8,6 +9,7 @@ import { SQLStatement } from 'sql-template-strings';
  */
 export class Repository {
   pool: Pool;
+  knex: Knex;
 
   /**
    * Intantiates a BCTW Repository.
@@ -16,19 +18,34 @@ export class Repository {
    */
   constructor(pool: Pool) {
     this.pool = pool;
+    this.knex = knex({ client: 'pg' });
   }
 
   /**
-   * Pg query wrapper.
+   * Pg query wrapper allowing SQL queries to BCTW database.
+   * Supports SQL template strings and Knex QueryBuilders queries.
+   *
+   * @example
+   * repository.query(SQL`SELECT ${critter_id} FROM collar_animal_assignment`)
+   * repository.query(getKnex().queryBuilder().select('critter_id').from('collar_animal_assignment'))
    *
    * @async
-   * @template T - Return type.
-   * @param {string} sql - SQL template string.
-   * @returns {Promise<QueryResult<T>>}
+   * @memberof Repository
+   * @template T - Generic return type.
+   * @param {SQLStatement | Knex.QueryBuilder} sqlStatement - SQL template string OR QueryBuilder.
+   * @returns {Promise<QueryResult<T>>} Pg QueryResult.
    */
   async query<T extends QueryResultRow>(
-    sql: SQLStatement
+    sqlStatement: SQLStatement | Knex.QueryBuilder
   ): Promise<QueryResult<T>> {
-    return this.pool.query(sql);
+    // SQL template string
+    if (sqlStatement instanceof SQLStatement) {
+      return this.pool.query(sqlStatement);
+    }
+
+    const { sql, bindings } = sqlStatement.toSQL().toNative();
+
+    // Knex QueryBuilder
+    return this.pool.query(sql, bindings as any[]);
   }
 }
