@@ -1,6 +1,16 @@
-import { Knex, knex } from 'knex';
-import { Pool, QueryResult, QueryResultRow } from 'pg';
+import { Knex } from 'knex';
+import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { SQLStatement } from 'sql-template-strings';
+
+// SQL template string | Knex QueryBuilder
+type QueryStatement = SQLStatement | Knex.QueryBuilder;
+
+/**
+ * Supported client types
+ * Basic queries can use Pool while transactions implement PoolClient.
+ *
+ */
+type Client = Pool | PoolClient;
 
 /**
  * Base BCTW Repository.
@@ -8,8 +18,7 @@ import { SQLStatement } from 'sql-template-strings';
  * @class Repository
  */
 export class Repository {
-  pool: Pool;
-  knex: Knex;
+  private pool: Pool;
 
   /**
    * Intantiates a BCTW Repository.
@@ -18,11 +27,10 @@ export class Repository {
    */
   constructor(pool: Pool) {
     this.pool = pool;
-    this.knex = knex({ client: 'pg' });
   }
 
   /**
-   * Pg query wrapper allowing SQL queries to BCTW database.
+   * Pg query wrapper allowing SQL queries to the BCTW database.
    * Supports SQL template strings and Knex QueryBuilders queries.
    *
    * @example
@@ -32,20 +40,50 @@ export class Repository {
    * @async
    * @memberof Repository
    * @template T - Generic return type.
-   * @param {SQLStatement | Knex.QueryBuilder} sqlStatement - SQL template string OR QueryBuilder.
+   * @param {QueryStatement} sqlStatement - SQL template string OR Knex QueryBuilder.
+   * @param {Client} [client] - Pool or PoolClient. Defaults to Pool to allow queries without transactions.
    * @returns {Promise<QueryResult<T>>} Pg QueryResult.
    */
   async query<T extends QueryResultRow>(
-    sqlStatement: SQLStatement | Knex.QueryBuilder
+    sqlStatement: QueryStatement,
+    client: Client = this.pool
   ): Promise<QueryResult<T>> {
     // SQL template string
     if (sqlStatement instanceof SQLStatement) {
-      return this.pool.query(sqlStatement);
+      return client.query(sqlStatement);
     }
 
-    const { sql, bindings } = sqlStatement.toSQL().toNative();
-
     // Knex QueryBuilder
-    return this.pool.query(sql, bindings as any[]);
+    const { sql, bindings } = sqlStatement.toSQL().toNative();
+    return client.query(sql, bindings as any[]);
+  }
+
+  async getClient() {
+    const client = await this.pool.connect();
+
+    // start timer to track connections that aren't released
+    const queryTimer = setTimeout(() => {
+      console.error(`A client was checked out for more than 5 seconds`);
+    }, 5000);
+
+    const transaction = async (action: 'begin' | 'commit' | 'rollback') => {
+      await client.query(action);
+
+      if (action !== 'begin') {
+        clearTimeout(queryTimer);
+        client.release();
+      }
+    };
+
+    return {
+      // inject the transaction client
+      query: (sqlStatement: QueryStatement) => this.query(sqlStatement, client),
+      // transaction handlers
+      transaction: {
+        begin: () => transaction('begin'),
+        commit: () => transaction('commit'),
+        rollback: () => transaction('rollback'),
+      },
+    };
   }
 }

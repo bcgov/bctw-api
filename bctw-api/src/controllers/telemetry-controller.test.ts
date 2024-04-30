@@ -22,7 +22,6 @@ describe('TelemetryController', () => {
     let mockService: TelemetryService;
     let mockRes: Response;
     let handleApiErrorSpy: any;
-    let getUserIdSpy: any;
 
     beforeEach(() => {
       mockRes = {
@@ -31,6 +30,7 @@ describe('TelemetryController', () => {
       } as unknown as Response;
 
       mockService = {
+        getUserIdentifier: jest.fn().mockReturnValue('keycloak'),
         getAllTelemetryByDeploymentIds: jest.fn().mockResolvedValue(true),
         getManualTelemetryByDeploymentIds: jest.fn().mockResolvedValue(true),
         getVendorTelemetryByDeploymentIds: jest.fn().mockResolvedValue(true),
@@ -42,9 +42,6 @@ describe('TelemetryController', () => {
       controller = new TelemetryController(mockService);
 
       handleApiErrorSpy = jest.spyOn(controller, 'handleApiError');
-      getUserIdSpy = jest
-        .spyOn(controller, 'getUserIdentifier')
-        .mockImplementation(() => 'keycloak');
     });
 
     describe('getAllTelemetryByDeploymentIds', () => {
@@ -160,7 +157,7 @@ describe('TelemetryController', () => {
 
         await controller.createManualTelemetry(mockReq as UserRequest, mockRes);
 
-        expect(getUserIdSpy).toHaveBeenCalledWith(mockReq);
+        expect(mockService.getUserIdentifier).toHaveBeenCalledWith(mockReq);
         expect(controller.service.createManualTelemetry).toHaveBeenCalledWith(
           payload,
           'keycloak'
@@ -194,7 +191,7 @@ describe('TelemetryController', () => {
 
         await controller.deleteManualTelemetry(mockReq as UserRequest, mockRes);
 
-        expect(getUserIdSpy).toHaveBeenCalledWith(mockReq);
+        expect(mockService.getUserIdentifier).toHaveBeenCalledWith(mockReq);
         expect(controller.service.deleteManualTelemetry).toHaveBeenCalledWith(
           payload,
           'keycloak'
@@ -233,7 +230,7 @@ describe('TelemetryController', () => {
 
         await controller.updateManualTelemetry(mockReq as UserRequest, mockRes);
 
-        expect(getUserIdSpy).toHaveBeenCalledWith(mockReq);
+        expect(mockService.getUserIdentifier).toHaveBeenCalledWith(mockReq);
         expect(controller.service.updateManualTelemetry).toHaveBeenCalledWith(
           payload,
           'keycloak'

@@ -126,7 +126,7 @@ export class TelemetryController extends Controller {
     res: Response
   ): Promise<Response> => {
     try {
-      const keycloak_guid = this.getUserIdentifier(req);
+      const keycloak_guid = this.service.getUserIdentifier(req);
       const telemetry = CreateManyManualTelemetrySchema.parse(req.body);
 
       const createdTelemetry = await this.service.createManualTelemetry(
@@ -153,7 +153,7 @@ export class TelemetryController extends Controller {
     res: Response
   ): Promise<Response> => {
     try {
-      const keycloak_guid = this.getUserIdentifier(req);
+      const keycloak_guid = this.service.getUserIdentifier(req);
       const telemetry_ids = IdsSchema.parse(req.body);
 
       const deletedTelemetry = await this.service.deleteManualTelemetry(
@@ -180,7 +180,7 @@ export class TelemetryController extends Controller {
     res: Response
   ): Promise<Response> => {
     try {
-      const keycloak_guid = this.getUserIdentifier(req);
+      const keycloak_guid = this.service.getUserIdentifier(req);
       const telemetry = UpdateManyManualTelemetrySchema.parse(req.body);
 
       const updatedTelemetry = await this.service.updateManualTelemetry(

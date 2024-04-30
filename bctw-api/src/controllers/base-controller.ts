@@ -1,6 +1,5 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { Service } from '../services/base-service';
-import { UserRequest } from '../types/userRequest';
 import { apiError } from '../utils/error';
 import { ZodError } from 'zod';
 
@@ -19,23 +18,6 @@ export class Controller {
    */
   constructor(service: Service) {
     this.service = service;
-  }
-
-  /**
-   * Get user keycloak guid from request.
-   *
-   * @throws {apiError.syntaxIssue} Missing keycloak guid.
-   * @param {Request} req
-   * @returns {string} Keycloak guid.
-   */
-  getUserIdentifier(req: Request): string {
-    const keycloak_guid = (req as UserRequest).user.keycloak_guid;
-
-    if (!keycloak_guid) {
-      throw apiError.syntaxIssue(`Request must contain a user keycloak guid`);
-    }
-
-    return keycloak_guid;
   }
 
   /**
