@@ -17,4 +17,4 @@ jobs:
       - name: Setup Node
         run: npm install
       - name: Run Tests
-        run: npm run test
+        run: jest --setupFiles=dotenv/config
