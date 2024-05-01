@@ -1,4 +1,4 @@
-import { knex as knexClient } from 'knex';
+import { Knex, knex } from 'knex';
 import pg, { PoolClient } from 'pg';
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
@@ -46,7 +46,4 @@ pgPool.on('connect', (client: PoolClient): void => {
   //console.log(`postgresql client connected`);
 });
 
-// knex query builder
-const knex = knexClient({ client: 'pg' });
-
-export { isProd, pgPool, isTest, knex };
+export { isProd, pgPool, isTest };
