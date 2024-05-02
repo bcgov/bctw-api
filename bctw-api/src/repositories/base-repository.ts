@@ -22,6 +22,7 @@ export class Repository {
   /**
    * Retrieves a knex query builder.
    *
+   * @memberof Repository
    * @returns {Knex} Knex QueryBuilder.
    */
   getKnex(): Knex {
@@ -31,7 +32,8 @@ export class Repository {
   /**
    * Retrieves a client connection.
    *
-   * @returns {Connection} Minified set of connection methods.
+   * @memberof Repository
+   * @returns {Connection} Subset of connection methods.
    */
   getConnection(): Connection {
     const client = new ConnectionClient(this.pool);

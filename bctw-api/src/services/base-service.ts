@@ -3,6 +3,11 @@ import { UserRequest } from '../types/userRequest';
 import { Request } from 'express';
 import { apiError } from '../utils/error';
 
+/**
+ * Base BCTW Service.
+ *
+ * @class Service
+ */
 export class Service {
   repository: Repository;
 
@@ -18,6 +23,7 @@ export class Service {
   /**
    * Get user keycloak guid from request.
    *
+   * @memberof Service
    * @throws {apiError.syntaxIssue} Missing keycloak guid.
    * @param {Request} req
    * @returns {string} Keycloak guid.

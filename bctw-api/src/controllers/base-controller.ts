@@ -24,6 +24,7 @@ export class Controller {
    * Handle thrown API errors and return correct express response.
    *
    * @async
+   * @memberof Controller
    * @param {unknown} err - Thrown error.
    * @param {Response} res - Express Response.
    * @returns {Promise<Response>}

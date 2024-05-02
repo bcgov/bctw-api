@@ -20,7 +20,7 @@ export class TelemetryRepository extends Repository {
   /**
    * Update 'Manual' telemetry records.
    *
-   * @meberof TelemetryService
+   * @memberof TelemetryService
    * @param {Partial<ManualTelemetry>[]} Telemetry.
    * @param {userGuid} userGuid - Keycloak user guid.
    * @returns {Promise<ManualTelemetry>} Updated telemetry.
@@ -68,7 +68,7 @@ export class TelemetryRepository extends Repository {
   /**
    * Create 'Manual' telemetry records.
    *
-   * @meberof TelemetryService
+   * @memberof TelemetryService
    * @param {CreateManualTelemetry[]} Telemetry.
    * @param {userGuid} userGuid - Keycloak user guid.
    * @returns {Promise<ManualTelemetry[]>} Created telemetry.
@@ -129,7 +129,7 @@ export class TelemetryRepository extends Repository {
   /**
    * Get 'Manual' telemetry records by deployment ids.
    *
-   * @meberof TelemetryService
+   * @memberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
    * @returns {Promise<ManualTelemetry>}
    */
@@ -157,6 +157,7 @@ export class TelemetryRepository extends Repository {
    * Retrieves 'Vendor' telemetry by deployment ids.
    *
    * @async
+   * @meberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
    * @returns {Promise<VendorTelemetry[]>}
    */
@@ -198,7 +199,7 @@ export class TelemetryRepository extends Repository {
    * Normalizes payload to be the same as the ManualTelemetry response.
    * This removes some extra fields vendor telemetry normally has.
    *
-   * @meberof TelemetryService
+   * @memberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
    * @returns {Promise<Telemetry[]>}
    */

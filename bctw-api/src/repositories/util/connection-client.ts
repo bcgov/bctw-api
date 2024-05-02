@@ -81,9 +81,9 @@ export class ConnectionClient {
       return client.query(sqlStatement);
     }
 
-    // Knex QueryBuilder
     this.last_query = sqlStatement.toSQL();
 
+    // Knex QueryBuilder
     const { sql, bindings } = sqlStatement.toSQL().toNative();
     return client.query(sql, bindings as any[]);
   }

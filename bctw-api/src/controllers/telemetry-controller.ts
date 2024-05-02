@@ -13,7 +13,7 @@ import {
  * Manual: Telemetry entered or created by users.
  * Vendor: Telemetry retrieved by cronjobs ie: Vectronic / Lotek / ATS.
  *
- * Note: Endpoint methods are intentionally using ES6 arrow functions which automatically binding 'this'.
+ * Note: Endpoint methods are intentionally using ES6 arrow functions which automatically bind 'this'.
  * @example
  * // non arrow method
  * express().get('/endpoint', controller.method.bind(class))
@@ -31,7 +31,7 @@ export class TelemetryController extends Controller {
    * Instantiates an instance of TelemetryContoller and injects dependencies.
    *
    * @static
-   * @meberof TelemetryContoller
+   * @memberof TelemetryContoller
    * @returns {TelemetryController}
    */
   static init(): TelemetryController {
@@ -42,6 +42,7 @@ export class TelemetryController extends Controller {
    * Endpoint to retrieve both 'Manual' and 'Vendor' telemetry by deployment_ids.
    *
    * @async
+   * @memberof TelemetryContoller
    * @param {Request} req
    * @param {Response} res
    * @returns {Promise<Response>}
@@ -67,6 +68,7 @@ export class TelemetryController extends Controller {
    * Endpoint to retrieve 'Manual' telemetry by deployment_ids.
    *
    * @async
+   * @memberof TelemetryContoller
    * @param {Request} req
    * @param {Response} res
    * @returns {Promise<Response>}
@@ -92,6 +94,7 @@ export class TelemetryController extends Controller {
    * Endpoint to retrieve 'Vendor' telemetry by deployment_ids.
    *
    * @async
+   * @memberof TelemetryContoller
    * @param {Request} req
    * @param {Response} res
    * @returns {Promise<Response>}
@@ -117,6 +120,7 @@ export class TelemetryController extends Controller {
    * Endpoint to create 'Manual' telemetry.
    *
    * @async
+   * @memberof TelemetryContoller
    * @param {Request} req
    * @param {Response} res
    * @returns {Promise<Response>}
@@ -144,6 +148,7 @@ export class TelemetryController extends Controller {
    * Endpoint to delete 'Manual' telemetry.
    *
    * @async
+   * @memberof TelemetryContoller
    * @param {Request} req
    * @param {Response} res
    * @returns {Promise<Response>}
@@ -171,6 +176,7 @@ export class TelemetryController extends Controller {
    * Endpoint to update 'Manual' telemetry.
    *
    * @async
+   * @memberof TelemetryContoller
    * @param {Request} req
    * @param {Response} res
    * @returns {Promise<Response>}
