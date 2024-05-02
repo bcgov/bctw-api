@@ -1,4 +1,3 @@
-import { Knex, knex } from 'knex';
 import pg, { PoolClient } from 'pg';
 
 const isProd = process.env.NODE_ENV === 'production' ? true : false;
