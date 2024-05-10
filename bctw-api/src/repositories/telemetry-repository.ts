@@ -47,7 +47,13 @@ export class TelemetryRepository extends Repository {
             })
             .where({ telemetry_manual_id: row.telemetry_manual_id })
             .where(knex.raw(`bctw.is_valid(valid_to)`))
-            .returning('*')
+            .returning([
+              'telemetry_manual_id',
+              'deployment_id',
+              'latitude',
+              'longitude',
+              'acquisition_date',
+            ])
         )
       );
 
@@ -87,7 +93,13 @@ export class TelemetryRepository extends Repository {
           created_by_user_id: knex.raw(`bctw.get_user_id($$${userGuid}$$)`),
         }))
       )
-      .returning('*');
+      .returning([
+        'telemetry_manual_id',
+        'deployment_id',
+        'latitude',
+        'longitude',
+        'acquisition_date',
+      ]);
 
     const res = await connection.query<ManualTelemetry>(queryBuilder);
 
@@ -118,7 +130,12 @@ export class TelemetryRepository extends Repository {
         telemetry_manual_id = ANY(${manualTelemetryIds})
       AND
         bctw.is_valid(valid_to)
-      RETURNING telemetry_manual_id
+      RETURNING
+        telemetry_manual_id,
+        deployment_id,
+        latitude,
+        longitude,
+        acquisition_date
     `;
 
     const res = await connection.query<ManualTelemetry>(sqlStatement);
@@ -140,7 +157,11 @@ export class TelemetryRepository extends Repository {
 
     const sqlStatement = SQL`
       SELECT
-        *
+        telemetry_manual_id,
+        deployment_id,
+        latitude,
+        longitude,
+        acquisition_date
       FROM
         bctw.telemetry_manual
       WHERE
