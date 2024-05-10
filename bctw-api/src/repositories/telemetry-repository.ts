@@ -118,7 +118,7 @@ export class TelemetryRepository extends Repository {
         telemetry_manual_id = ANY(${manualTelemetryIds})
       AND
         bctw.is_valid(valid_to)
-      RETURNING *
+      RETURNING telemetry_manual_id
     `;
 
     const res = await connection.query<ManualTelemetry>(sqlStatement);
@@ -156,8 +156,8 @@ export class TelemetryRepository extends Repository {
   /**
    * Retrieves 'Vendor' telemetry by deployment ids.
    *
+   * @memberof TelemetryService
    * @async
-   * @meberof TelemetryService
    * @param {string[]} deploymentIds - uuids.
    * @returns {Promise<VendorTelemetry[]>}
    */
@@ -199,7 +199,8 @@ export class TelemetryRepository extends Repository {
    * Normalizes payload to be the same as the ManualTelemetry response.
    * This removes some extra fields vendor telemetry normally has.
    *
-   * @memberof TelemetryService
+   * @meberof TelemetryService
+   * @async
    * @param {string[]} deploymentIds - uuids.
    * @returns {Promise<Telemetry[]>}
    */
@@ -240,13 +241,19 @@ export class TelemetryRepository extends Repository {
         FROM
           bctw.telemetry t
         INNER JOIN
+          collar c
+        ON
+          c.collar_transaction_id = t.collar_transaction_id
+        INNER JOIN
           collar_animal_assignment caa
         ON
           t.critter_id = caa.critter_id
         AND
-          is_valid(caa.valid_to)
+          c.collar_id = caa.collar_id
         WHERE
-          caa.deployment_id = ANY(${deploymentIds})) as query
+          caa.deployment_id = ANY(${deploymentIds})
+        AND
+          is_valid(caa.valid_to)) as query
 
       ORDER BY telemetry_type='MANUAL' DESC;`;
 
