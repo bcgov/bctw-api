@@ -163,8 +163,8 @@ const getCritterbaseMarkingsFromRow = (
   const marking: MarkingUpsert[] = [];
   if (row.ear_tag_left_colour || row.ear_tag_left_id) {
     const ear_tag_left = {
-      primary_colour: row.ear_tag_left_colour ?? undefined,
-      identifier: row.ear_tag_left_id ? String(row.ear_tag_left_id) : undefined,
+      primary_colour: row.ear_tag_left_colour ?? null,
+      identifier: row.ear_tag_left_id ?? null,
       marking_type: 'Ear Tag',
       body_location: 'Left Ear',
     };
@@ -173,10 +173,8 @@ const getCritterbaseMarkingsFromRow = (
 
   if (row.ear_tag_right_id || row.ear_tag_right_colour) {
     const ear_tag_right = {
-      primary_colour: row.ear_tag_right_colour ?? undefined,
-      identifier: row.ear_tag_right_id
-        ? String(row.ear_tag_right_id)
-        : undefined,
+      primary_colour: row.ear_tag_right_colour ?? null,
+      identifier: row.ear_tag_right_id ?? null,
       marking_type: 'Ear Tag',
       body_location: 'Right Ear',
     };

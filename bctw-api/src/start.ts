@@ -33,15 +33,6 @@ import {
   upsertCollar,
 } from './apis/collar_api';
 import {
-  createManualTelemetry,
-  deleteManualTelemetry,
-  getManualTelemetry,
-  getManualTelemetryByDeploymentIds,
-  getVendorTelemetryByDeploymentIds,
-  getAllTelemetryByDeploymentIds,
-  updateManualTelemetry,
-} from './apis/manual_telemetry_api';
-import {
   getCritterTracks,
   getDBCritters,
   getPingsEstimate,
@@ -90,6 +81,7 @@ import {
 } from './apis/onboarding_api';
 import { fetchVendorTelemetryData } from './apis/vendor/vendor_helpers';
 import { importTelemetry } from './import/import_telemetry';
+import { TelemetryController } from './controllers/telemetry-controller';
 
 /** contains a few special handlers, but otherwise this file simply re-export other endpoints */
 
@@ -160,7 +152,11 @@ const deleteType = async function (
   }
 };
 
+// Controllers
+const telemetryController = TelemetryController.init();
+
 export {
+  telemetryController,
   addCode,
   addCodeHeader,
   getCodeLongDesc,
@@ -220,12 +216,4 @@ export {
   getDeploymentsByCritterId,
   getDeploymentsByDeviceId,
   deleteDeployment,
-  // manual telemetry
-  deleteManualTelemetry,
-  createManualTelemetry,
-  getManualTelemetry,
-  updateManualTelemetry,
-  getManualTelemetryByDeploymentIds,
-  getVendorTelemetryByDeploymentIds,
-  getAllTelemetryByDeploymentIds,
 };
