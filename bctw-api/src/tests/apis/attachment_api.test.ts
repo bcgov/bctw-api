@@ -1,6 +1,6 @@
-import * as db from '../../src/database/query';
-import * as dbRequests from '../../src/database/requests';
-import { QResult } from '../../src/types/query';
+import * as db from '../../../src/database/query';
+import * as dbRequests from '../../../src/database/requests';
+import { QResult } from '../../../src/types/query';
 import { request } from '../utils/constants';
 
 const q = jest.spyOn(db, 'query').mockImplementation();

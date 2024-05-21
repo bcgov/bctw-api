@@ -1,4 +1,4 @@
-import { query } from '../../src/database/query';
+import { query } from '../../../src/database/query';
 import { idir, request } from '../utils/constants';
 /**
  *

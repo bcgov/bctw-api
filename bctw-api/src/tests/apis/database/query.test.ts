@@ -7,7 +7,7 @@ import {
   to_pg_obj,
   to_pg_str,
   to_pg_timestamp,
-} from '../../../src/database/query';
+} from '../../../../src/database/query';
 const a = [{ id: 1, aData: 1 }];
 const b = [{ id: 1, bData: 2 }];
 const c = [

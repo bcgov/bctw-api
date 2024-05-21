@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { ErrorMsgs } from '../../src/utils/strings';
+import { ErrorMsgs } from '../../../src/utils/strings';
 import {
   existingDateDevice21510,
   idir,

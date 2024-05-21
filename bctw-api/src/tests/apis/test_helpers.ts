@@ -1,5 +1,5 @@
-import * as db from '../../src/database/query';
-import { QResult } from '../../src/types/query';
+import * as db from '../../../src/database/query';
+import { QResult } from '../../../src/types/query';
 
 export const mockQuery = jest.spyOn(db, 'query').mockImplementation();
 export const mockErr = 'TEST ERROR';

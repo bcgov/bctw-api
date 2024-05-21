@@ -4,12 +4,12 @@ import {
   getGeoJSONCritterIds,
   uuidToInt,
   intToHSL,
-} from '../../src/apis/map_api';
-import { ICollectionUnit, ICritter } from '../../src/types/critter';
+} from '../../../src/apis/map_api';
+import { ICollectionUnit, ICritter } from '../../../src/types/critter';
 import {
   FeatureCollection,
   GeoJSONPropertyCombined,
-} from '../../src/types/map';
+} from '../../../src/types/map';
 import { v4 as uuidv4 } from 'uuid';
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;

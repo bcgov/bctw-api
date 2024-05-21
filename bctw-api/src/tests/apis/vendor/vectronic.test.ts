@@ -2,13 +2,13 @@ import dayjs from 'dayjs';
 import {
   getLowestNegativeVectronicIdPosition,
   vectronicRecordExists,
-} from '../../../src/apis/vendor/vectronic';
+} from '../../../../src/apis/vendor/vectronic';
 import {
   existingDateDevice21510,
   VectronicDevice,
 } from '../../utils/constants';
-import * as db from '../../../src/database/query';
-import { QResult } from '../../../src/types/query';
+import * as db from '../../../../src/database/query';
+import { QResult } from '../../../../src/types/query';
 
 describe('Vectronic Functions', () => {
   const mockQuery = jest.spyOn(db, 'query');

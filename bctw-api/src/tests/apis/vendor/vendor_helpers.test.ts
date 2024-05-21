@@ -1,6 +1,6 @@
-import { doesVendorDeviceExist } from '../../../src/apis/vendor/vendor_helpers';
-import * as db from '../../../src/database/query';
-import { ImportVendors } from '../../../src/types/vendor';
+import { doesVendorDeviceExist } from '../../../../src/apis/vendor/vendor_helpers';
+import * as db from '../../../../src/database/query';
+import { ImportVendors } from '../../../../src/types/vendor';
 import { lotekPayload, vectronicPayload } from '../../utils/constants';
 import { qReturn } from '../test_helpers';
 const queryMock = jest.spyOn(db, 'query').mockImplementation();
