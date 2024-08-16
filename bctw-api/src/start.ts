@@ -82,6 +82,7 @@ import {
 import { fetchVendorTelemetryData } from './apis/vendor/vendor_helpers';
 import { importTelemetry } from './import/import_telemetry';
 import { TelemetryController } from './controllers/telemetry-controller';
+import { DeploymentController } from './controllers/deployment-controller';
 
 /** contains a few special handlers, but otherwise this file simply re-export other endpoints */
 
@@ -154,9 +155,11 @@ const deleteType = async function (
 
 // Controllers
 const telemetryController = TelemetryController.init();
+const deploymentController = DeploymentController.init();
 
 export {
   telemetryController,
+  deploymentController,
   addCode,
   addCodeHeader,
   getCodeLongDesc,
