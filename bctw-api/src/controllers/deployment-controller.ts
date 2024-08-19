@@ -46,8 +46,6 @@ export class DeploymentController extends Controller {
 
       const deployments = await this.service.getDeployments(deployment_ids);
 
-      console.log(deployments);
-
       return res.status(200).json(deployments);
     } catch (err) {
       return this.handleApiError(err, res);
