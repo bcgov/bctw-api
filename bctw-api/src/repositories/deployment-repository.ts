@@ -11,7 +11,10 @@ import { Deployment } from '../types/deployment';
  */
 export class DeploymentRepository extends Repository {
   /**
-   * Get deployment (aka: collar animal assignment) records by deployment_ids.
+   * Get active deployment (aka: collar animal assignment) records by deployment_ids.
+   *
+   * Note: A deployment is considered active if the valid_to field is null for both the collar_animal_assignment and
+   * collar records.
    *
    * @param {string[]} deployment_ids - Array of deployment_ids.
    * @return {*}  {Promise<Deployment[]>}
@@ -21,37 +24,34 @@ export class DeploymentRepository extends Repository {
     const connection = this.getConnection();
 
     const sqlStatement = SQL`
-      WITH w_collar AS (
-        SELECT 
-          DISTINCT collar_id, 
-          device_id, 
-          device_make, 
-          device_model
-        FROM 
-          collar
-      )
       SELECT 
-        caa.assignment_id,
-        caa.collar_id,
-        caa.critter_id,
-        caa.created_at,
-        caa.created_by_user_id,
-        caa.updated_at,
-        caa.updated_by_user_id,
-        caa.valid_from,
-        caa.valid_to,
-        caa.attachment_start,
-        caa.attachment_end,
-        caa.deployment_id,
-        w_collar.device_id,
-        w_collar.device_make,
-        w_collar.device_model
+        collar_animal_assignment.assignment_id,
+        collar_animal_assignment.collar_id,
+        collar_animal_assignment.critter_id,
+        collar_animal_assignment.created_at,
+        collar_animal_assignment.created_by_user_id,
+        collar_animal_assignment.updated_at,
+        collar_animal_assignment.updated_by_user_id,
+        collar_animal_assignment.valid_from,
+        collar_animal_assignment.valid_to,
+        collar_animal_assignment.attachment_start,
+        collar_animal_assignment.attachment_end,
+        collar_animal_assignment.deployment_id,
+        collar.device_id,
+        collar.device_make,
+        collar.device_model,
+        collar.frequency,
+        collar.frequency_unit
       FROM 
-        bctw.collar_animal_assignment caa
+        bctw.collar_animal_assignment
       LEFT JOIN 
-        w_collar ON caa.collar_id = w_collar.collar_id
+        collar ON collar_animal_assignment.collar_id = collar.collar_id
       WHERE 
-        caa.deployment_id = ANY (${deployment_ids}::uuid[]);
+        collar_animal_assignment.deployment_id = ANY (${deployment_ids}::uuid[])
+      AND
+        collar_animal_assignment.valid_to IS NULL
+      AND
+        collar.valid_to IS NULL;
     `;
 
     const res = await connection.query<Deployment>(sqlStatement);
