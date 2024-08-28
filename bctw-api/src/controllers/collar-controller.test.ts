@@ -21,6 +21,7 @@ describe('CollarController', () => {
     beforeEach(() => {
       mockRes = {
         status: jest.fn(() => mockRes),
+        send: jest.fn(() => mockRes),
         json: jest.fn(() => mockRes),
       } as unknown as Response;
 
@@ -55,8 +56,8 @@ describe('CollarController', () => {
           payload,
           'keycloak'
         );
-        expect(mockRes.status).toHaveBeenCalledWith(201);
-        expect(mockRes.json).toHaveBeenCalledWith(true);
+        expect(mockRes.status).toHaveBeenCalledWith(200);
+        expect(mockRes.send).toHaveBeenCalled();
       });
 
       it('400 - should pass error to error handler', async () => {

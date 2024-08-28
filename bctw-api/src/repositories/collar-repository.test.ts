@@ -23,7 +23,7 @@ describe('CollarRepository', () => {
       .mockReturnValue(mockConnection);
   });
 
-  describe('createManualCollar', () => {
+  describe('updateCollar', () => {
     it('should pass queryBuilder to query method', async () => {
       const data: UpdateCollarRequest = {
         collar_id: '786db5ed-2b03-4f51-a809-d18a6aa5c6f7',
@@ -36,7 +36,7 @@ describe('CollarRepository', () => {
       const res = await repo.updateCollar(data, 'user');
 
       expect(getConnectionMock).toHaveBeenCalled();
-      expect(res).toStrictEqual([true]);
+      expect(res).toBeUndefined();
     });
   });
 });

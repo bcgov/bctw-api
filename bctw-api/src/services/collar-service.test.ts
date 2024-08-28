@@ -17,11 +17,11 @@ describe('CollarService', () => {
 
     beforeEach(() => {
       service = new CollarService({
-        getCollars: jest.fn().mockResolvedValue(true),
+        updateCollar: jest.fn().mockResolvedValue(undefined),
       } as unknown as CollarRepository);
     });
 
-    describe('createManualCollar', () => {
+    describe('updateCollar', () => {
       it('should call repo method', async () => {
         const data: UpdateCollarRequest = {
           collar_id: '786db5ed-2b03-4f51-a809-d18a6aa5c6f7',
@@ -33,8 +33,11 @@ describe('CollarService', () => {
 
         const res = await service.updateCollar(data, 'user');
 
-        expect(service.repository.updateCollar).toHaveBeenCalledWith(data);
-        expect(res).toBe(true);
+        expect(service.repository.updateCollar).toHaveBeenCalledWith(
+          data,
+          'user'
+        );
+        expect(res).toBeUndefined();
       });
     });
   });
