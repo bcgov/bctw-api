@@ -1,6 +1,6 @@
 import SQL from 'sql-template-strings';
-import { Repository } from './base-repository';
 import { Deployment } from '../types/deployment';
+import { Repository } from './base-repository';
 
 /**
  * Includes database methods for mutating and retrieving deployment (aka: collar animal assignment) records.

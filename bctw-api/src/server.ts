@@ -55,6 +55,10 @@ export const app = express()
   .get(ROUTES.getCollarChangeHistoryByDeviceId, auth('SIMS_SERVICE'),api.getCollarChangeHistoryByDeviceID)
   .get(ROUTES.getCollarVendors, auth('SIMS_SERVICE'), api.getCollarVendors)
   .post(ROUTES.upsertCollar, auth('SIMS_SERVICE'), api.upsertCollar)
+
+  // collar
+  .patch(ROUTES.updateCollar, auth('SIMS_SERVICE'), api.collarController.updateCollar)
+
   // animal/device attachment
   .post(ROUTES.attachDevice, auth(), api.attachDevice)
   .post(ROUTES.unattachDevice, auth(), api.unattachDevice)

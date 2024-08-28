@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Controller } from './base-controller';
-import { IdsSchema } from '../types/deployment';
 import { DeploymentService } from '../services/deployment-service';
+import { IdsSchema } from '../types/deployment';
+import { Controller } from './base-controller';
 
 /**
  * Includes endpoints for mutating and retrieving deployment (aka: collar animal assignment) records.
@@ -21,10 +21,10 @@ export class DeploymentController extends Controller {
   service: DeploymentService;
 
   /**
-   * Instantiates an instance of DeploymentContoller and injects dependencies.
+   * Instantiates an instance of DeploymentController and injects dependencies.
    *
    * @static
-   * @memberof DeploymentContoller
+   * @memberof DeploymentController
    * @returns {DeploymentController}
    */
   static init(): DeploymentController {
