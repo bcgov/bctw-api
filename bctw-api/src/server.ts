@@ -55,15 +55,23 @@ export const app = express()
   .get(ROUTES.getCollarChangeHistoryByDeviceId, auth('SIMS_SERVICE'),api.getCollarChangeHistoryByDeviceID)
   .get(ROUTES.getCollarVendors, auth('SIMS_SERVICE'), api.getCollarVendors)
   .post(ROUTES.upsertCollar, auth('SIMS_SERVICE'), api.upsertCollar)
+
+  // collar
+  .patch(ROUTES.updateCollar, auth('SIMS_SERVICE'), api.collarController.updateCollar)
+
   // animal/device attachment
   .post(ROUTES.attachDevice, auth(), api.attachDevice)
   .post(ROUTES.unattachDevice, auth(), api.unattachDevice)
   .post(ROUTES.updateDataLife, auth(), api.updateDataLife)
-  .get(ROUTES.getDeployments, auth('SIMS_SERVICE'), api.getDeployments)
   .get(ROUTES.getDeploymentsByCritterId, auth('SIMS_SERVICE'), api.getDeploymentsByCritterId)
   .get(ROUTES.getDeploymentsByDeviceId, auth('SIMS_SERVICE'), api.getDeploymentsByDeviceId)
   .patch(ROUTES.updateDeployment, auth('SIMS_SERVICE'), api.updateDeploymentTimespan)
   .delete(ROUTES.deleteDeployment, auth('SIMS_SERVICE'), api.deleteDeployment)
+  
+  // deployments
+  .post(ROUTES.getDeployments, auth('SIMS_SERVICE'), api.deploymentController.getDeployments)
+  .get(ROUTES.getDeployments, auth('SIMS_SERVICE'), api.deploymentController.getDeployments)
+
   // permissions
   .get(ROUTES.getPermissionRequests, auth(), api.getPermissionRequests)
   .get(ROUTES.getGrantedPermissionHistory, auth(), api.getGrantedPermissionHistory)

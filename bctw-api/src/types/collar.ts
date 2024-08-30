@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { BCTWBaseType } from './base_types';
 
 export interface ICollar extends BCTWBaseType {
@@ -44,3 +45,12 @@ export class Collar implements ICollar {
   valid_from: Date;
   valid_to: Date;
 }
+
+export const UpdateCollarRequest = z.object({
+  collar_id: z.string().uuid(),
+  device_make: z.number().nullable().optional(),
+  device_model: z.string().nullable().optional(),
+  frequency: z.number().nullable().optional(),
+  frequency_unit: z.number().nullable().optional(),
+});
+export type UpdateCollarRequest = z.infer<typeof UpdateCollarRequest>;
