@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import { CollarRepository } from './collar-repository';
 import { Connection } from './util/connection-client';
-import { UpdateCollarRequest } from '../types/collar';
+import { UpdateCollar } from '../types/collar';
 
 describe('CollarRepository', () => {
   let repo: CollarRepository;
@@ -25,7 +25,7 @@ describe('CollarRepository', () => {
 
   describe('updateCollar', () => {
     it('should pass queryBuilder to query method', async () => {
-      const data: UpdateCollarRequest = {
+      const data: UpdateCollar = {
         collar_id: '786db5ed-2b03-4f51-a809-d18a6aa5c6f7',
         device_make: 281,
         device_model: 'Telonics TGW-4570',

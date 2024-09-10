@@ -11,11 +11,10 @@ import { critterbaseRouter } from './apis/critterbaseRouter';
 import { authenticateRequest, forwardUser } from './auth/authentication';
 import { deployDevice } from './apis/deployment_api';
 import { ROUTES } from './routes';
-import {authorize as auth} from './auth/authorization';
+import { authorize as auth } from './auth/authorization';
 
 // the server location for uploaded files
 const upload = multer({ dest: 'bctw-api/build/uploads' });
-
 
 // setup the express server
 export const app = express()
@@ -28,13 +27,89 @@ export const app = express()
   .use(ROUTES.critterbase, critterbaseRouter)
   .get(ROUTES.getTemplate, auth(), getTemplateFile)
 
-  // telemetry
-  .post(ROUTES.deleteManualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.deleteManualTelemetry)
-  .post(ROUTES.deploymentsManualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getManualTelemetryByDeploymentIds)
-  .post(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.createManualTelemetry)
-  .patch(ROUTES.manualTelemetry, auth('SIMS_SERVICE'), api.telemetryController.updateManualTelemetry)
-  .post(ROUTES.deploymentsVendorTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getVendorTelemetryByDeploymentIds)
-  .post(ROUTES.deploymentsManualVendorTelemetry, auth('SIMS_SERVICE'), api.telemetryController.getAllTelemetryByDeploymentIds)
+  // ENDPOINTS USED BY SIMS
+
+  /**
+   * Create a new deployment, which inserts into the collar table and then into collar_animal_deployment.
+   */
+  .post(
+    ROUTES.createDeployments,
+    auth('SIMS_SERVICE'),
+    api.deploymentController.createDeployments
+  )
+
+  /**
+   * Update an existing deployment and associated collar record
+   */
+  .post(
+    ROUTES.updateDeployment,
+    auth('SIMS_SERVICE'),
+    api.deploymentController.updateDeployment
+  )
+
+  /**
+   * Delete a deployment and associated collar record
+   */
+  .post(
+    ROUTES.deleteDeployment,
+    auth('SIMS_SERVICE'),
+    api.deploymentController.deleteDeployment
+  )
+
+  /**
+   * Delete a manual telemetry record
+   */
+  .post(
+    ROUTES.deleteManualTelemetry,
+    auth('SIMS_SERVICE'),
+    api.telemetryController.deleteManualTelemetry
+  )
+
+  /**
+   * Get manual telemetry records for a set of deployment ids
+   */
+  .post(
+    ROUTES.deploymentsManualTelemetry,
+    auth('SIMS_SERVICE'),
+    api.telemetryController.getManualTelemetryByDeploymentIds
+  )
+
+  /**
+   * Insert a manual telemetry record
+   */
+  .post(
+    ROUTES.manualTelemetry,
+    auth('SIMS_SERVICE'),
+    api.telemetryController.createManualTelemetry
+  )
+
+  /**
+   * Update a manual telemetry record
+   */
+  .patch(
+    ROUTES.manualTelemetry,
+    auth('SIMS_SERVICE'),
+    api.telemetryController.updateManualTelemetry
+  )
+
+  /**
+   * Get vendor-retrieved telemetry by deployment ids
+   */
+  .post(
+    ROUTES.deploymentsVendorTelemetry,
+    auth('SIMS_SERVICE'),
+    api.telemetryController.getVendorTelemetryByDeploymentIds
+  )
+  .post(
+    ROUTES.deploymentsManualVendorTelemetry,
+    auth('SIMS_SERVICE'),
+    api.telemetryController.getAllTelemetryByDeploymentIds
+  )
+
+  /**
+   *
+   *
+   */
 
   // map
   .get(ROUTES.getCritters, auth('SIMS_SERVICE'), api.getDBCritters)
@@ -50,33 +125,73 @@ export const app = express()
   .get(ROUTES.getCollarsAndDeviceIds, auth(), api.getCollarsAndDeviceIds)
   .get(ROUTES.getAssignedCollars, auth(), api.getAssignedCollars)
   .get(ROUTES.getAvailableCollars, auth(), api.getAvailableCollars)
-  .get(ROUTES.getCollarAssignmentHistory, auth(), api.getCollarAssignmentHistory)
+  .get(
+    ROUTES.getCollarAssignmentHistory,
+    auth(),
+    api.getCollarAssignmentHistory
+  )
   .get(ROUTES.getCollarChangeHistory, auth(), api.getCollarChangeHistory)
-  .get(ROUTES.getCollarChangeHistoryByDeviceId, auth('SIMS_SERVICE'),api.getCollarChangeHistoryByDeviceID)
+  .get(
+    ROUTES.getCollarChangeHistoryByDeviceId,
+    auth('SIMS_SERVICE'),
+    api.getCollarChangeHistoryByDeviceID
+  )
   .get(ROUTES.getCollarVendors, auth('SIMS_SERVICE'), api.getCollarVendors)
   .post(ROUTES.upsertCollar, auth('SIMS_SERVICE'), api.upsertCollar)
 
   // collar
-  .patch(ROUTES.updateCollar, auth('SIMS_SERVICE'), api.collarController.updateCollar)
+  .patch(
+    ROUTES.updateCollar,
+    auth('SIMS_SERVICE'),
+    api.collarController.updateCollar
+  )
 
   // animal/device attachment
   .post(ROUTES.attachDevice, auth(), api.attachDevice)
   .post(ROUTES.unattachDevice, auth(), api.unattachDevice)
   .post(ROUTES.updateDataLife, auth(), api.updateDataLife)
-  .get(ROUTES.getDeploymentsByCritterId, auth('SIMS_SERVICE'), api.getDeploymentsByCritterId)
-  .get(ROUTES.getDeploymentsByDeviceId, auth('SIMS_SERVICE'), api.getDeploymentsByDeviceId)
-  .patch(ROUTES.updateDeployment, auth('SIMS_SERVICE'), api.updateDeploymentTimespan)
+  .get(
+    ROUTES.getDeploymentsByCritterId,
+    auth('SIMS_SERVICE'),
+    api.getDeploymentsByCritterId
+  )
+  .get(
+    ROUTES.getDeploymentsByDeviceId,
+    auth('SIMS_SERVICE'),
+    api.getDeploymentsByDeviceId
+  )
+  .patch(
+    ROUTES.updateDeployment,
+    auth('SIMS_SERVICE'),
+    api.updateDeploymentTimespan
+  )
   .delete(ROUTES.deleteDeployment, auth('SIMS_SERVICE'), api.deleteDeployment)
-  
+
   // deployments
-  .post(ROUTES.getDeployments, auth('SIMS_SERVICE'), api.deploymentController.getDeployments)
-  .get(ROUTES.getDeployments, auth('SIMS_SERVICE'), api.deploymentController.getDeployments)
+  .post(
+    ROUTES.getDeployments,
+    auth('SIMS_SERVICE'),
+    api.deploymentController.getDeployments
+  )
+  .get(
+    ROUTES.getDeployments,
+    auth('SIMS_SERVICE'),
+    api.deploymentController.getDeployments
+  )
 
   // permissions
   .get(ROUTES.getPermissionRequests, auth(), api.getPermissionRequests)
-  .get(ROUTES.getGrantedPermissionHistory, auth(), api.getGrantedPermissionHistory)
+  .get(
+    ROUTES.getGrantedPermissionHistory,
+    auth(),
+    api.getGrantedPermissionHistory
+  )
   .post(ROUTES.submitPermissionRequest, auth(), api.submitPermissionRequest)
-  .post(ROUTES.getPermissionRequests, auth(), api.approveOrDenyPermissionRequest)
+  .post(
+    ROUTES.getPermissionRequests,
+    auth(),
+    api.approveOrDenyPermissionRequest
+  )
   // users
   .post(ROUTES.signup, auth('SIMS_SERVICE'), api.signup)
   .get(ROUTES.getUser, auth(), api.getUser)
@@ -86,7 +201,11 @@ export const app = express()
   // onboarding
   .get(ROUTES.getUserOnboardStatus, auth('ANY'), api.getUserOnboardStatus)
   .get(ROUTES.getOnboardingRequests, auth(), api.getOnboardingRequests)
-  .post(ROUTES.submitOnboardingRequest, auth('ANY'), api.submitOnboardingRequest)
+  .post(
+    ROUTES.submitOnboardingRequest,
+    auth('ANY'),
+    api.submitOnboardingRequest
+  )
   .post(ROUTES.handleOnboardingRequest, auth(), api.handleOnboardingRequest)
   // user access
   .get(ROUTES.getUserCritterAccess, auth(), api.getUserCritterAccess)
@@ -107,10 +226,21 @@ export const app = express()
   .post(ROUTES.getAllExportData, auth(), api.getAllExportData)
   .post(ROUTES.importXlsx, auth(), upload.single('validated-file'), importXlsx)
   .post(ROUTES.importFinalize, auth(), finalizeImport)
-  .post(ROUTES.deployDevice, auth('SIMS_SERVICE'), deployDevice)
-  .post(ROUTES.importXML, auth('SIMS_SERVICE'), upload.array('xml'), api.parseVectronicKeyRegistrationXML)
+
+  //
+
+  .post(
+    ROUTES.importXML,
+    auth('SIMS_SERVICE'),
+    upload.array('xml'),
+    api.parseVectronicKeyRegistrationXML
+  )
   .post(ROUTES.importTelemetry, auth(), api.importTelemetry)
-  .get(ROUTES.getCollarKeyX, auth('SIMS_SERVICE'), api.retrieveCollarKeyXRelation)
+  .get(
+    ROUTES.getCollarKeyX,
+    auth('SIMS_SERVICE'),
+    api.retrieveCollarKeyXRelation
+  )
   // vendor
   .post(ROUTES.fetchTelemetry, auth(), api.fetchVendorTelemetryData)
   // delete

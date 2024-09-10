@@ -1,5 +1,5 @@
 import { CollarRepository } from '../repositories/collar-repository';
-import { UpdateCollarRequest } from '../types/collar';
+import { UpdateCollar } from '../types/collar';
 import { CollarService } from './collar-service';
 
 describe('CollarService', () => {
@@ -23,7 +23,7 @@ describe('CollarService', () => {
 
     describe('updateCollar', () => {
       it('should call repo method', async () => {
-        const data: UpdateCollarRequest = {
+        const data: UpdateCollar = {
           collar_id: '786db5ed-2b03-4f51-a809-d18a6aa5c6f7',
           device_make: 281,
           device_model: 'Telonics TGW-4570',

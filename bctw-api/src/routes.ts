@@ -75,6 +75,9 @@ const ROUTES = {
   importXlsx: '/import-xlsx',
   importFinalize: '/import-finalize',
   deployDevice: '/deploy-device',
+  // new deployment routes used by sims
+  createDeployments: '/create-deployments',
+  //
   importXML: '/import-xml',
   importTelemetry: '/import-telemetry',
   getCollarKeyX: '/get-collars-keyx',

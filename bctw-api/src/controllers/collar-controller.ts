@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { CollarService } from '../services/collar-service';
-import { UpdateCollarRequest } from '../types/collar';
+import { UpdateCollar } from '../types/collar';
 import { Controller } from './base-controller';
 
 /**
@@ -42,7 +42,7 @@ export class CollarController extends Controller {
    */
   updateCollar = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const data = UpdateCollarRequest.parse(req.body);
+      const data = UpdateCollar.parse(req.body);
 
       const keycloak_guid = this.service.getUserIdentifier(req);
 

@@ -5,22 +5,16 @@ import { ICollar } from '../types/collar';
 import { getUserIdentifier } from '../database/requests';
 import { apiError } from '../utils/error';
 import { formatNullableSqlValue } from '../utils/formatting';
-
-interface IDeployDevice extends ICollar {
-  deployment_id: string;
-  critter_id: string;
-  attachment_start: Date;
-  attachment_end: Date;
-}
+import { ICreateDeployment } from '../types/deployment';
 
 /**
  * Provides a mechanism for importing and linking telemetry devices and critters to a user.
  * Aims to avoid collisions on any existing critters or devices by checking existing records.
  *
- * @param {IDeployDevice} data
+ * @param {ICreateDeployment} data
  * @param {string} user
  */
-const deployDeviceDb = async (data: IDeployDevice, user: string) => {
+const deployDeviceDb = async (data: ICreateDeployment, user: string) => {
   const client = await pgPool.connect(); //Using client directly here, since we want this entire procedure to be wrapped in a transaction.
 
   try {
@@ -38,6 +32,8 @@ const deployDeviceDb = async (data: IDeployDevice, user: string) => {
       // 400 error
       throw apiError.requiredProperty('device_id');
     }
+
+    // Check if the device conflicts with an existing deployment
 
     const collarSql = `SELECT bctw.get_device_id_for_bulk_import('${user}', '${JSON.stringify(
       data
