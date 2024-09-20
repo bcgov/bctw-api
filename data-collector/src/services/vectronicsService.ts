@@ -22,7 +22,7 @@ interface IVectronicResponse {
  * Class responsible for processing Vectronic GPS telemetry data and inserting it into the database.
  *
  */
-export class VectronicService extends DBService {
+export class VectronicsService extends DBService {
   vectronicsApi: string;
 
   /**

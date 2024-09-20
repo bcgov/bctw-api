@@ -4,9 +4,8 @@ import {
   IDBConnection,
   initDBPool,
 } from "../database/db";
-import { AtsService } from "../services/atsService";
 import { LotekService } from "../services/lotekService";
-import { VectronicService } from "../services/vectronicService";
+import { VectronicsService } from "../services/vectronicsService";
 import { VendorMergeService } from "../services/vendorMergeService";
 
 let connection: IDBConnection;
@@ -25,9 +24,8 @@ async function main() {
   connection = getDBConnection();
 
   // Initialize processors for Vectronic, Lotek, and ATS vendors
-  const vectronicService = new VectronicService(connection);
+  const vectronicService = new VectronicsService(connection);
   const lotekService = new LotekService(connection);
-  const atsService = new AtsService(connection);
   const vendorMerge = new VendorMergeService(connection);
 
   try {
@@ -37,7 +35,6 @@ async function main() {
     // Fetch the latest telemetry data from Vectronic, Lotek, and ATS
     await vectronicService.process();
     await lotekService.process();
-    await atsService.process();
 
     // Refresh the materialized view to combine telemetry data from each of the vendors
     await vendorMerge.process();
