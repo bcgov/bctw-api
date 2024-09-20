@@ -1,8 +1,8 @@
 import csvtojson from "csvtojson";
-const fs = require("fs").promises;
+import { Dayjs } from "dayjs";
 import { IATSRow, IDeviceReadingEvent, ITransmissionEvent } from "types/ats";
 import { isWithin24Hrs, parseAsCT, parseAsLocal } from "../../utils/time";
-import { Dayjs } from "dayjs";
+const fs = require("fs").promises;
 const dayjs = require("dayjs");
 
 /**
@@ -135,9 +135,8 @@ const mergeATSData = (
 };
 
 export {
-  mergeATSData,
   filterCollarDataAfter,
   filterTransmissionDataAfter,
-  getPaths,
-  parseCsv,
+  getPaths, mergeATSData, parseCsv
 };
+

@@ -16,6 +16,6 @@
     "forceConsistentCasingInFileNames": true, /* Disallow inconsistently-cased references to the same file. */
     "baseUrl": "scripts",
   },
-  "include": ["scripts"],
+  "include": ["scripts", "database/db.ts", "services/db.ts", "services/lotek.ts", "services/vectronic.ts"],
   "exclude": ["**/build", "**/node_modules"]
 }
