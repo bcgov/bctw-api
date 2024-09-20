@@ -3,10 +3,10 @@ import {
   getDBConnection,
   IDBConnection,
   initDBPool,
-} from "../database/db";
-import { LotekService } from "../services/lotekService";
-import { VectronicsService } from "../services/vectronicsService";
-import { VendorMergeService } from "../services/vendorMergeService";
+} from "./database/db";
+import { LotekService } from "./services/lotekService";
+import { VectronicsService } from "./services/vectronicsService";
+import { VendorMergeService } from "./services/vendorMergeService";
 
 let connection: IDBConnection;
 
@@ -24,7 +24,7 @@ async function main() {
   connection = getDBConnection();
 
   // Initialize processors for Vectronic, Lotek, and ATS vendors
-  const vectronicService = new VectronicsService(connection);
+  const vectronicsService = new VectronicsService(connection);
   const lotekService = new LotekService(connection);
   const vendorMerge = new VendorMergeService(connection);
 
@@ -33,11 +33,24 @@ async function main() {
     await connection.open();
 
     // Fetch the latest telemetry data from Vectronic, Lotek, and ATS
-    await vectronicService.process();
-    await lotekService.process();
+    try {
+      await vectronicsService.process();
+    } catch (error) {
+      console.error("Failed to process Vectronics telemetry data", error);
+    }
+
+    try {
+      await lotekService.process();
+    } catch (error) {
+      console.error("Failed to process Lotek telemetry data", error);
+    }
 
     // Refresh the materialized view to combine telemetry data from each of the vendors
-    await vendorMerge.process();
+    try {
+      await vendorMerge.process();
+    } catch (error) {
+      console.error("Failed to merge vendor telemetry", error);
+    }
 
     // Commit all changes to the database
     await connection.commit();

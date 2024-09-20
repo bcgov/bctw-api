@@ -13,6 +13,35 @@ interface ILotekDevice {
 }
 
 /**
+ * Interface representing the response from the Lotek API.
+ */
+interface ILotekResponse {
+  channelstatus: string;
+  uploadtimestamp: string;
+  latitude: number;
+  longitude: number;
+  altitude: number;
+  ecefx: number;
+  ecefy: number;
+  ecefz: number;
+  rxstatus: number;
+  pdop: number;
+  mainv: number;
+  bkupv: number;
+  temperature: number;
+  fixduration: number;
+  bhastempvoltage: boolean;
+  devname: string | null;
+  deltatime: number;
+  fixtype: number;
+  cepradius: number;
+  crc: number;
+  deviceid: number;
+  recdatetime: string;
+  timeid: string;
+}
+
+/**
  * Class responsible for processing Lotek GPS telemetry data and inserting it into the database.
  *
  */
@@ -55,7 +84,7 @@ export class LotekService extends DBService {
    *
    * @returns
    */
-  private async _authenticate(): Promise<string> {
+  async _authenticate(): Promise<string> {
     const data = `username=${encodeURIComponent(
       this.lotekUser
     )}&password=${encodeURIComponent(this.lotekPass)}&grant_type=password`;
@@ -81,7 +110,7 @@ export class LotekService extends DBService {
    * @param token - The authentication token obtained from the _authenticate method.
    * @returns
    */
-  private async _getDeviceList(token: string): Promise<ILotekDevice[]> {
+  async _getDeviceList(token: string): Promise<ILotekDevice[]> {
     const url = `${this.lotekApi}/devices`;
 
     try {
@@ -101,16 +130,16 @@ export class LotekService extends DBService {
    * @param token - The authentication token obtained from the _authenticate method.
    * @returns
    */
-  private async _requestData(
+  async _requestData(
     devices: ILotekDevice[],
     token: string
-  ): Promise<ILotekDevice[]> {
-    const results: ILotekDevice[] = [];
+  ): Promise<ILotekResponse[]> {
+    const results: ILotekResponse[] = [];
 
     for (const device of devices) {
       const url = `${this.lotekApi}/gps?deviceId=${device.nDeviceID}`;
       try {
-        const response = await axios.get<ILotekDevice>(url, {
+        const response = await axios.get<ILotekResponse>(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
         results.push(response.data); // Collect the telemetry data
@@ -125,35 +154,73 @@ export class LotekService extends DBService {
     return results;
   }
 
-  /**
-   * Inserts the telemetry data into the database.
-   *
-   * @param rows - An array of telemetry data to be inserted into the database.
-   */
-  private async _insertData(rows: ILotekDevice[]): Promise<void> {
-    if (rows.length === 0) {
-      console.log("No data to insert.");
-      return;
-    }
+  async _insertData(rows: ILotekResponse[]): Promise<void> {
+    let sql = SQL`
+    INSERT INTO telemetry_api_lotek (
+      -- fields from the vendor, verbatim
+      channelstatus,
+		  uploadtimestamp,
+		  latitude,
+		  longitude,
+		  altitude,
+		  ecefx,
+		  ecefy,
+		  ecefz,
+		  rxstatus,
+		  pdop,
+		  mainv,
+		  bkupv,
+		  temperature,
+		  fixduration,
+		  bhastempvoltage,
+		  devname,
+		  deltatime,
+		  fixtype,
+		  cepradius,
+		  crc,
+		  deviceid,
+		  recdatetime,
+      -- custom fields
+      timeid,
+      geom
+      ) VALUES `;
 
-    try {
-      let sql = SQL`INSERT INTO api_lotek_telemetry (idcollar) VALUES `;
+    // Add each row of telemetry data to the SQL query
+    rows.forEach((row, index) => {
+      sql.append(SQL`(
+      ${row.channelstatus},
+		  ${row.uploadtimestamp},
+		  ${row.latitude},
+		  ${row.longitude},
+		  ${row.altitude},
+		  ${row.ecefx},
+		  ${row.ecefy},
+		  ${row.ecefz},
+		  ${row.rxstatus},
+		  ${row.pdop},
+		  ${row.mainv},
+		  ${row.bkupv},
+		  ${row.temperature},
+		  ${row.fixduration},
+		  ${row.bhastempvoltage},
+		  ${row.devname},
+		  ${row.deltatime},
+		  ${row.fixtype},
+		  ${row.cepradius},
+		  ${row.crc},
+		  ${row.deviceid},
+		  ${row.recdatetime},
+		  concat(${row.deviceid}, '_', ${row.recdatetime}),
+      st_setSrid(st_point(${row.longitude ?? "NULL"}, ${
+        row.latitude
+      } ?? 'NULL'), 4326)
+      )`);
+      if (index < rows.length - 1) {
+        sql.append(SQL`, `);
+      }
+    });
 
-      // Add each row of telemetry data to the SQL query
-      rows.forEach((row, index) => {
-        sql.append(SQL`(${row.nDeviceID})`);
-        if (index < rows.length - 1) {
-          sql.append(SQL`, `);
-        }
-      });
-
-      sql.append(";");
-      await this.connection.sql(sql);
-    } catch (error) {
-      console.error(
-        "Failed to insert telemetry data into the database:",
-        error
-      );
-    }
+    sql.append(" ON CONFLICT DO NOTHING;"); // End the SQL statement
+    await this.connection.sql(sql);
   }
 }
