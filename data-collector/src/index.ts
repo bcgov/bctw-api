@@ -32,15 +32,19 @@ async function main() {
     // Open the database connection
     await connection.open();
 
+    console.log("Opened the database connection");
+
     // Fetch the latest telemetry data from Vectronic, Lotek, and ATS
     try {
       await vectronicsService.process();
+      await connection.commit();
     } catch (error) {
       console.error("Failed to process Vectronics telemetry data", error);
     }
 
     try {
-      await lotekService.process();
+      // await lotekService.process();
+      await connection.commit();
     } catch (error) {
       console.error("Failed to process Lotek telemetry data", error);
     }

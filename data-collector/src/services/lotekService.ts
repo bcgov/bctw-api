@@ -15,7 +15,7 @@ interface ILotekDevice {
 /**
  * Interface representing the response from the Lotek API.
  */
-interface ILotekResponse {
+interface ILotekRecord {
   channelstatus: string;
   uploadtimestamp: string;
   latitude: number;
@@ -40,6 +40,8 @@ interface ILotekResponse {
   recdatetime: string;
   timeid: string;
 }
+
+type LotekResponse = ILotekRecord[][]; // Array of arrays
 
 /**
  * Class responsible for processing Lotek GPS telemetry data and inserting it into the database.
@@ -73,7 +75,11 @@ export class LotekService extends DBService {
       const token = await this._authenticate();
       const devices = await this._getDeviceList(token);
       const data = await this._requestData(devices, token);
-      await this._insertData(data);
+
+      // Flatten the data from each separate Vectronics API request into a single array
+      const flattenedData = data.reduce((acc, val) => acc.concat(val), []);
+
+      await this._insertData(flattenedData);
     } catch (error) {
       console.error("Failed to process Lotek telemetry data: ", error);
     }
@@ -133,13 +139,24 @@ export class LotekService extends DBService {
   async _requestData(
     devices: ILotekDevice[],
     token: string
-  ): Promise<ILotekResponse[]> {
-    const results: ILotekResponse[] = [];
+  ): Promise<ILotekRecord[][]> {
+    const results: ILotekRecord[][] = [];
 
-    for (const device of devices) {
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    // REMOVE AFTER TESTING. SLICE TO LIMIT REQUESTS TO JUST 5 FOR TESTING.
+    for (const device of devices.slice(0, 5)) {
       const url = `${this.lotekApi}/gps?deviceId=${device.nDeviceID}`;
       try {
-        const response = await axios.get<ILotekResponse>(url, {
+        const response = await axios.get<ILotekRecord[]>(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
         results.push(response.data); // Collect the telemetry data
@@ -154,7 +171,7 @@ export class LotekService extends DBService {
     return results;
   }
 
-  async _insertData(rows: ILotekResponse[]): Promise<void> {
+  async _insertData(rows: ILotekRecord[]): Promise<void> {
     let sql = SQL`
     INSERT INTO telemetry_api_lotek (
       -- fields from the vendor, verbatim
@@ -188,32 +205,30 @@ export class LotekService extends DBService {
     // Add each row of telemetry data to the SQL query
     rows.forEach((row, index) => {
       sql.append(SQL`(
-      ${row.channelstatus},
-		  ${row.uploadtimestamp},
-		  ${row.latitude},
-		  ${row.longitude},
-		  ${row.altitude},
-		  ${row.ecefx},
-		  ${row.ecefy},
-		  ${row.ecefz},
-		  ${row.rxstatus},
-		  ${row.pdop},
-		  ${row.mainv},
-		  ${row.bkupv},
-		  ${row.temperature},
-		  ${row.fixduration},
-		  ${row.bhastempvoltage},
-		  ${row.devname},
-		  ${row.deltatime},
-		  ${row.fixtype},
-		  ${row.cepradius},
-		  ${row.crc},
-		  ${row.deviceid},
-		  ${row.recdatetime},
-		  concat(${row.deviceid}, '_', ${row.recdatetime}),
-      st_setSrid(st_point(${row.longitude ?? "NULL"}, ${
-        row.latitude
-      } ?? 'NULL'), 4326)
+      '${row.channelstatus}',
+		  '${row.uploadtimestamp}',
+		  '${row.latitude}',
+		  '${row.longitude}',
+		  '${row.altitude}',
+		  '${row.ecefx}',
+		  '${row.ecefy}',
+		  '${row.ecefz}',
+		  '${row.rxstatus}',
+		  '${row.pdop}',
+		  '${row.mainv}',
+		  '${row.bkupv}',
+		  '${row.temperature}',
+		  '${row.fixduration}',
+		  '${row.bhastempvoltage}',
+		  '${row.devname}',
+		  '${row.deltatime}',
+		  '${row.fixtype}',
+		  '${row.cepradius}',
+		  '${row.crc}',
+		  '${row.deviceid}',
+		  '${row.recdatetime}',
+		  concat('${row.deviceid}', '_', '${row.recdatetime}'),
+      st_setSrid(st_point(${row.longitude} ?? 'NULL', ${row.latitude} ?? 'NULL'), 4326)
       )`);
       if (index < rows.length - 1) {
         sql.append(SQL`, `);

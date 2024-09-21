@@ -2,6 +2,7 @@ import axios from "axios";
 import SQL from "sql-template-strings";
 import { IDBConnection } from "../database/db";
 import { DBService } from "./db";
+import dayjs from "dayjs";
 
 /**
  * Interface representing a device credential.
@@ -14,117 +15,118 @@ interface IDeviceCredential {
 /**
  * Interface representing the response from the Vectronic API.
  */
-interface IVectronicResponse {
-  idposition: number;
-  idcollar: number;
-  acquisitiontime: string;
+interface IVectronicRecord {
+  idPosition: number;
+  idCollar: number;
+  acquisitionTime: string;
   scts: string;
-  origincode: string;
-  ecefx: number;
-  ecefy: number;
-  ecefz: number;
+  originCode: string;
+  ecefX: number;
+  ecefY: number;
+  ecefZ: number;
   latitude: number;
   longitude: number;
   height: number;
   dop: number;
-  idfixtype: number;
-  positionerror: string | null;
-  satcount: number;
-  ch01satid: string | null;
-  ch01satcnr: string | null;
-  ch02satid: string | null;
-  ch02satcnr: string | null;
-  ch03satid: string | null;
-  ch03satcnr: string | null;
-  ch04satid: string | null;
-  ch04satcnr: string | null;
-  ch05satid: string | null;
-  ch05satcnr: string | null;
-  ch06satid: string | null;
-  ch06satcnr: string | null;
-  ch07satid: string | null;
-  ch07satcnr: string | null;
-  ch08satid: string | null;
-  ch08satcnr: string | null;
-  ch09satid: string | null;
-  ch09satcnr: string | null;
-  ch10satid: string | null;
-  ch10satcnr: string | null;
-  ch11satid: string | null;
-  ch11satcnr: string | null;
-  ch12satid: string | null;
-  ch12satcnr: string | null;
-  idmortalitystatus: number;
-  activity: string | null;
-  mainvoltage: number;
-  backupvoltage: number;
+  idFixType: number;
+  positionError: number | null;
+  satCount: number;
+  ch01SatId: number | null;
+  ch01SatCnr: number | null;
+  ch02SatId: number | null;
+  ch02SatCnr: number | null;
+  ch03SatId: number | null;
+  ch03SatCnr: number | null;
+  ch04SatId: number | null;
+  ch04SatCnr: number | null;
+  ch05SatId: number | null;
+  ch05SatCnr: number | null;
+  ch06SatId: number | null;
+  ch06SatCnr: number | null;
+  ch07SatId: number | null;
+  ch07SatCnr: number | null;
+  ch08SatId: number | null;
+  ch08SatCnr: number | null;
+  ch09SatId: number | null;
+  ch09SatCnr: number | null;
+  ch10SatId: number | null;
+  ch10SatCnr: number | null;
+  ch11SatId: number | null;
+  ch11SatCnr: number | null;
+  ch12SatId: number | null;
+  ch12SatCnr: number | null;
+  idMortalityStatus: number;
+  activity: number | null;
+  mainVoltage: number;
+  backupVoltage: number;
   temperature: number;
-  transformedx: number | null;
-  transformedy: number | null;
+  transformedX: number | null;
+  transformedY: number | null;
 }
+
+type VectronicResponse = IVectronicRecord[][]; // Array of arrays
 
 /**
  * Class responsible for processing Vectronic GPS telemetry data and inserting it into the database.
- *
  */
 export class VectronicsService extends DBService {
   vectronicsApi: string;
+  devicesPerIteration: number;
 
-  /**
-   * Constructor for the VectronicService class.
-   * @param connection - Database connection object implementing the IDBConnection interface.
-   */
   constructor(connection: IDBConnection) {
     super(connection);
     this.vectronicsApi = process.env.VECTRONICS_URL || "";
+    // Batch size is the number of devices that are processed (requested and inserted into the DB) at once.
+    // Larger batch sizes require more memory.
+    this.devicesPerIteration = 10;
   }
 
-  /**
-   * Main processing method to handle the entire flow:
-   * 1. Fetches a list of devices from the database.
-   * 2. Requests GPS telemetry data for each device from the Vectronic API.
-   * 3. Inserts the telemetry data into the database.
-   */
   async process(): Promise<void> {
-    const devices = await this._getDeviceList();
-    const data = await this._requestData(devices);
+    let devices = await this._getDeviceList();
 
-    if (data.length === 0) {
-      console.log("No data to insert.");
-      return;
+    devices = devices.slice(0, this.devicesPerIteration * 2);
+
+    for (let i = 0; i < devices.length; i += this.devicesPerIteration) {
+      console.log(
+        `Starting batch ${i / this.devicesPerIteration + 1} of ${
+          devices.length / this.devicesPerIteration
+        }`
+      );
+      const deviceBatch = devices.slice(i, i + this.devicesPerIteration);
+      const data = await this._requestData(deviceBatch);
+
+      // Flatten the data from each separate Vectronics API request into a single array
+      const flattenedData = data.reduce((acc, val) => acc.concat(val), []);
+
+      if (flattenedData.length === 0) {
+        console.log("No data to insert for this batch.");
+        continue;
+      }
+
+      await this._insertData(flattenedData);
     }
-
-    await this._insertData(data);
   }
 
-  /**
-   * Fetches the list of devices and their credentials from the database.
-   * @returns A promise that resolves to an array of device credentials.
-   */
   async _getDeviceList(): Promise<IDeviceCredential[]> {
     const response = await this.connection.sql<IDeviceCredential>(
-      SQL`SELECT idcollar, collarkey FROM api_credential_vectronic_credential;`
+      SQL`SELECT idcollar, collarkey FROM api_vectronic_credential;`
     );
 
     return response.rows;
   }
 
-  /**
-   * Requests telemetry data from the Vectronic API for a given list of devices.
-   * @param devices - An array of device credentials.
-   * @returns A promise that resolves to an array of telemetry responses.
-   */
-  async _requestData(
-    devices: IDeviceCredential[]
-  ): Promise<IVectronicResponse[]> {
-    const results: IVectronicResponse[] = [];
+  async _requestData(devices: IDeviceCredential[]): Promise<VectronicResponse> {
+    const results: VectronicResponse = [];
+    console.log(`Requesting data for ${devices.length} devices`);
 
-    // Fetch telemetry data for each device
     for (const device of devices) {
       const url = `${this.vectronicsApi}/${device.idcollar}/gps?collarkey=${device.collarkey}`;
       try {
-        const response = await axios.get<IVectronicResponse>(url);
-        results.push(response.data);
+        const response = await axios.get<IVectronicRecord[]>(url);
+        console.log(
+          `Received ${response.data.length} records for ${device.idcollar}`
+        );
+        results.push(response.data); // Push the array of records for this device
       } catch (error) {
         console.error(
           `Failed to fetch data for device ${device.idcollar}:`,
@@ -133,124 +135,146 @@ export class VectronicsService extends DBService {
       }
     }
 
-    return results;
+    return results; // Returning an array of arrays
   }
 
   /**
-   * Inserts the telemetry data into the database.
-   * @param rows - An array of telemetry data to be inserted into the database.
+   * Converts an object's keys to lowercase, preserving its values.
+   * Used in this module as JSON objects received from vendor APIs have
+   * camelCase keys, and the BCTW database has all lowercase keys.
    */
-  async _insertData(rows: IVectronicResponse[]): Promise<void> {
-    let sql = SQL`
-    INSERT INTO telemetry_api_vectronic (
-      -- fields from the vendor, verbatim
-      idposition,
-			idcollar,
-			acquisitiontime,
-			scts,
-			origincode,
-			ecefx,
-			ecefy,
-			ecefz,
-			latitude,
-			longitude,
-			height,
-			dop,
-			idfixtype,
-			positionerror,
-			satcount,
-			ch01satid,
-			ch01satcnr,
-			ch02satid,
-			ch02satcnr,
-			ch03satid,
-			ch03satcnr,
-			ch04satid,
-			ch04satcnr,
-			ch05satid,
-			ch05satcnr,
-			ch06satid,
-			ch06satcnr,
-			ch07satid,
-			ch07satcnr,
-			ch08satid,
-			ch08satcnr,
-			ch09satid,
-			ch09satcnr,
-			ch10satid,
-			ch10satcnr,
-			ch11satid,
-			ch11satcnr,
-			ch12satid,
-			ch12satcnr,
-			idmortalitystatus,
-			activity,
-			mainvoltage,
-			backupvoltage,
-			temperature,
-			transformedx,
-			transformedy,
-      -- custom fields
-      geom
-      ) VALUES `;
+  _toLowerCaseObjectKeys = (rec: IVectronicRecord): IVectronicRecord => {
+    const ret = {};
 
-    // Add each row of telemetry data to the SQL query
-    rows.forEach((row, index) => {
-      sql.append(SQL`(
-        ${row.idposition},
-        ${row.idcollar},
-        ${row.acquisitiontime},
-        ${row.scts},
-        ${row.origincode},
-        ${row.ecefx},
-        ${row.ecefy},
-        ${row.ecefz},
-        ${row.latitude},
-        ${row.longitude},
-        ${row.height},
-        ${row.dop},
-        ${row.idfixtype},
-        ${row.positionerror},
-        ${row.satcount},
-        ${row.ch01satid},
-        ${row.ch01satcnr},
-        ${row.ch02satid},
-        ${row.ch02satcnr},
-        ${row.ch03satid},
-        ${row.ch03satcnr},
-        ${row.ch04satid},
-        ${row.ch04satcnr},
-        ${row.ch05satid},
-        ${row.ch05satcnr},
-        ${row.ch06satid},
-        ${row.ch06satcnr},
-        ${row.ch07satid},
-        ${row.ch07satcnr},
-        ${row.ch08satid},
-        ${row.ch08satcnr},
-        ${row.ch09satid},
-        ${row.ch09satcnr},
-        ${row.ch10satid},
-        ${row.ch10satcnr},
-        ${row.ch11satid},
-        ${row.ch11satcnr},
-        ${row.ch12satid},
-        ${row.ch12satcnr},
-        ${row.idmortalitystatus},
-        ${row.activity},
-        ${row.mainvoltage},
-        ${row.backupvoltage},
-        ${row.temperature},
-        ${row.transformedx},
-        ${row.transformedy},
-        st_setSrid(st_point(${row.longitude ?? 'NULL'}, ${row.latitude} ?? 'NULL'), 4326)
-      )`);
-      if (index < rows.length - 1) {
-        sql.append(SQL`, `);
+    for (const key in rec) {
+      if (rec.hasOwnProperty(key)) {
+        const lower = key.toLowerCase();
+        ret[lower] = rec[key];
       }
-    });
+    }
 
-    sql.append(" ON CONFLICT DO NOTHING;"); // End the SQL statement
-    await this.connection.sql(sql);
+    return ret as IVectronicRecord;
+  };
+
+  async _insertData(rows: IVectronicRecord[]): Promise<void> {
+    if (rows.length === 0) return;
+    let insertedRowCount = 0;
+
+    const recordsPerInsert = 1000;
+    for (let i = 0; i < rows.length; i += recordsPerInsert) {
+      const batch = rows.slice(i, i + recordsPerInsert);
+
+      let sql = SQL`
+        INSERT INTO telemetry_api_vectronic (
+          idposition,
+          idcollar,
+          acquisitiontime,
+          scts,
+          origincode,
+          ecefx,
+          ecefy,
+          ecefz,
+          latitude,
+          longitude,
+          height,
+          dop,
+          idfixtype,
+          positionerror,
+          satcount,
+          ch01satid,
+          ch01satcnr,
+          ch02satid,
+          ch02satcnr,
+          ch03satid,
+          ch03satcnr,
+          ch04satid,
+          ch04satcnr,
+          ch05satid,
+          ch05satcnr,
+          ch06satid,
+          ch06satcnr,
+          ch07satid,
+          ch07satcnr,
+          ch08satid,
+          ch08satcnr,
+          ch09satid,
+          ch09satcnr,
+          ch10satid,
+          ch10satcnr,
+          ch11satid,
+          ch11satcnr,
+          ch12satid,
+          ch12satcnr,
+          idmortalitystatus,
+          activity,
+          mainvoltage,
+          backupvoltage,
+          temperature,
+          transformedx,
+          transformedy,
+          geom
+        ) VALUES `;
+
+      batch.forEach((row, index) => {
+        sql.append(SQL`(
+                ${row.idPosition},
+                ${row.idCollar},
+                ${dayjs(row.acquisitionTime).toISOString()},
+                ${dayjs(row.scts).toISOString()},
+                ${row.originCode},
+                ${row.ecefX},
+                ${row.ecefY},
+                ${row.ecefZ},
+                ${row.latitude},
+                ${row.longitude},
+                ${row.height},
+                ${row.dop},
+                ${row.idFixType},
+                ${row.positionError},
+                ${row.satCount},
+                ${row.ch01SatId},
+                ${row.ch01SatCnr},
+                ${row.ch02SatId},
+                ${row.ch02SatCnr},
+                ${row.ch03SatId},
+                ${row.ch03SatCnr},
+                ${row.ch04SatId},
+                ${row.ch04SatCnr},
+                ${row.ch05SatId},
+                ${row.ch05SatCnr},
+                ${row.ch06SatId},
+                ${row.ch06SatCnr},
+                ${row.ch07SatId},
+                ${row.ch07SatCnr},
+                ${row.ch08SatId},
+                ${row.ch08SatCnr},
+                ${row.ch09SatId},
+                ${row.ch09SatCnr},
+                ${row.ch10SatId},
+                ${row.ch10SatCnr},
+                ${row.ch11SatId},
+                ${row.ch11SatCnr},
+                ${row.ch12SatId},
+                ${row.ch12SatCnr},
+                ${row.idMortalityStatus},
+                ${row.activity},
+                ${row.mainVoltage},
+                ${row.backupVoltage},
+                ${row.temperature},
+                ${row.transformedX},
+                ${row.transformedY},
+                st_setSrid(st_point(${row.longitude}, ${row.latitude}), 4326)
+            )`);
+
+        if (index < batch.length - 1) {
+          sql.append(SQL`, `);
+        }
+      });
+
+      sql.append(" ON CONFLICT DO NOTHING RETURNING idPosition;");
+      const response = await this.connection.sql(sql);
+      insertedRowCount += response.rowCount;
+    }
+    console.log(`Successfully inserted ${insertedRowCount} new records`);
   }
 }
