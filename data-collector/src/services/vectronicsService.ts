@@ -70,6 +70,7 @@ interface IVectronicRecord {
 export class VectronicsService extends DBService {
   vectronicsApi: string;
   devicesPerIteration: number;
+  recordsPerInsert: number;
 
   /**
    * Creates an instance of VectronicsService.
@@ -78,13 +79,14 @@ export class VectronicsService extends DBService {
   constructor(connection: IDBConnection) {
     super(connection);
     this.vectronicsApi = process.env.VECTRONICS_URL || "";
-    this.devicesPerIteration = 10; // Number of devices processed at once.
+    this.devicesPerIteration = 10; // Number of devices to process in one batch
+    this.recordsPerInsert = 1000; // Number of records to insert in one batch
   }
 
   /**
    * Main processing function that fetches device data and inserts it into the database.
    * The steps are:
-   * 
+   *
    * 1. Get the devices to request data for
    * 2. Partitioning the data to avoid out-of-memory errors:
    * 2a. request data for each device in the current partition
@@ -93,8 +95,6 @@ export class VectronicsService extends DBService {
    */
   async process(): Promise<void> {
     let devices = await this._getDeviceList();
-
-    devices = devices.slice(0, this.devicesPerIteration * 20);
 
     for (let i = 0; i < devices.length; i += this.devicesPerIteration) {
       console.log(
@@ -164,11 +164,8 @@ export class VectronicsService extends DBService {
     if (rows.length === 0) return;
     let insertedRowCount = 0;
 
-    // Insert the records in batches to limit the number of values being inserted at once
-    const recordsPerInsert = 1000;
-
-    for (let i = 0; i < rows.length; i += recordsPerInsert) {
-      const batch = rows.slice(i, i + recordsPerInsert);
+    for (let i = 0; i < rows.length; i += this.recordsPerInsert) {
+      const batch = rows.slice(i, i + this.recordsPerInsert);
 
       let sql = SQL`
     INSERT INTO telemetry_api_vectronic (
@@ -281,6 +278,8 @@ export class VectronicsService extends DBService {
       const response = await this.connection.sql(sql);
       insertedRowCount += response.rowCount;
     }
-    console.log(`Successfully inserted ${insertedRowCount} new records`);
+    console.log(
+      `Successfully inserted ${insertedRowCount} new Vectronics records`
+    );
   }
 }

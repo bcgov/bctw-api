@@ -46,7 +46,8 @@ export class VendorMergeService extends DBService {
    */
   private async _refreshHistoricalTelemetry(): Promise<void> {
     try {
-      const sql = SQL`REFRESH MATERIALIZED VIEW CONCURRENTLY telemetry;`;
+      const sql = SQL`CREATE OR REPLACE MATERIALIZED VIEW telemetry AS 
+      SELECT * FROM api_vectronic_telemetry`;
       await this.connection.sql(sql);
       console.log("Telemetry materialized view refreshed successfully.");
     } catch (error) {
