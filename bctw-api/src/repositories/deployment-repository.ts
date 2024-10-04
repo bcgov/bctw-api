@@ -13,8 +13,7 @@ export class DeploymentRepository extends Repository {
   /**
    * Get active deployment (aka: collar animal assignment) records by deployment_ids.
    *
-   * Note: A deployment is considered active if the valid_to field is null for both the collar_animal_assignment and
-   * collar records.
+   * Note: A deployment is considered active if the valid_to field is null in the collar_animal_assignment record.
    *
    * @param {string[]} deployment_ids - Array of deployment_ids.
    * @return {*}  {Promise<Deployment[]>}
@@ -49,9 +48,7 @@ export class DeploymentRepository extends Repository {
       WHERE 
         collar_animal_assignment.deployment_id = ANY (${deployment_ids}::uuid[])
       AND
-        collar_animal_assignment.valid_to IS NULL
-      AND
-        collar.valid_to IS NULL;
+        collar_animal_assignment.valid_to IS NULL;
     `;
 
     const res = await connection.query<Deployment>(sqlStatement);
